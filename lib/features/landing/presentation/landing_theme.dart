@@ -505,6 +505,14 @@ class LandingAssets {
 
   // Hero and backgrounds
   static const String heroBg = '$_basePath/hero_bg.png';
+  static const String heroVideo = 'assets/videos/landing_hero.mp4';
+  static const String termsHero = '$_basePath/terms_hero.png';
+  static const String privacyHero = '$_basePath/privacy_hero.png';
+  static const String contactHero = '$_basePath/contact_hero.png';
+  static const String contactHyderabad = '$_basePath/contact_hyderabad.png';
+  static const String contactBengaluru = '$_basePath/contact_bengaluru.png';
+  static const String contactMapHyderabad = '$_basePath/contact_map_hyderabad.png';
+  static const String contactMapBengaluru = '$_basePath/contact_map_bengaluru.png';
   static const String taskStepsBg = '$_basePath/task_steps_bg.png';
   static const String phoneMockup = '$_basePath/phone_mockup.png';
   static const String whyKitchen = '$_basePath/why_kitchen.png';

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/routes.dart';
 import '../landing_theme.dart';
 
 /// Footer section with brand, social icons, link columns, services, cities, and copyright.
@@ -28,11 +30,11 @@ class FooterSection extends StatelessWidget {
 
           // Link columns
           if (isMobile)
-            _buildMobileLinkColumns()
+            _buildMobileLinkColumns(context)
           else if (isTablet)
-            _buildTabletLinkColumns()
+            _buildTabletLinkColumns(context)
           else
-            _buildDesktopLinkColumns(),
+            _buildDesktopLinkColumns(context),
           const SizedBox(height: 36),
 
           // First divider
@@ -105,7 +107,7 @@ class FooterSection extends StatelessWidget {
     );
   }
 
-  Widget _buildDesktopLinkColumns() {
+  Widget _buildDesktopLinkColumns(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -116,6 +118,7 @@ class FooterSection extends StatelessWidget {
         // Support column
         Expanded(
           child: _buildLinkColumn(
+            context: context,
             title: 'SUPPORT',
             links: [
               'Contact us',
@@ -153,7 +156,7 @@ class FooterSection extends StatelessWidget {
     );
   }
 
-  Widget _buildTabletLinkColumns() {
+  Widget _buildTabletLinkColumns(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -163,6 +166,7 @@ class FooterSection extends StatelessWidget {
             Expanded(child: _buildBrandColumn()),
             Expanded(
               child: _buildLinkColumn(
+                context: context,
                 title: 'SUPPORT',
                 links: [
                   'Contact us',
@@ -206,13 +210,14 @@ class FooterSection extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileLinkColumns() {
+  Widget _buildMobileLinkColumns(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildBrandColumn(),
         const SizedBox(height: 32),
         _buildLinkColumn(
+          context: context,
           title: 'SUPPORT',
           links: [
             'Contact us',
@@ -283,6 +288,7 @@ class FooterSection extends StatelessWidget {
   Widget _buildLinkColumn({
     required String title,
     required List<String> links,
+    BuildContext? context,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,7 +302,11 @@ class FooterSection extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 12),
               child: _FooterLink(
                 text: link,
-                onTap: () {},
+                onTap: () {
+                  if (link == 'Contact us' && context != null) {
+                    context.go(Routes.contact);
+                  }
+                },
               ),
             )),
       ],

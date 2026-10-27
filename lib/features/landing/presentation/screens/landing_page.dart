@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/routes.dart';
 import '../landing_theme.dart';
 import '../sections/hero_section.dart';
+import '../sections/trusted_kitchen_section.dart';
 import '../sections/how_it_works_section.dart';
 import '../sections/task_steps_section.dart';
 import '../sections/technicians_section.dart';
@@ -11,20 +14,31 @@ import '../sections/faq_section.dart';
 import '../sections/download_app_section.dart';
 import '../sections/footer_section.dart';
 
-/// Evergreen Landing Page - Marketing website homepage.
-/// 
-/// A pixel-perfect implementation of the Figma design combining all sections:
-/// - Hero (header + headline + CTAs)
-/// - How It Works (5-step expandable cards)
-/// - Task Steps (dark background with phone mockup)
-/// - Featured Technicians (horizontal scrolling cards)
-/// - Why Choose Us (feature cards with kitchen image)
-/// - Client Reviews (testimonial carousel)
-/// - FAQ (searchable accordion)
-/// - Download App (store badges + phone mockup)
-/// - Footer (links + social + copyright)
-class LandingPage extends StatelessWidget {
+/// Evergreen Landing Page — marketing homepage from the Figma Website frame.
+class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  final _topKey = GlobalKey();
+  final _trustedKey = GlobalKey();
+  final _howItWorksKey = GlobalKey();
+  final _taskStepsKey = GlobalKey();
+  final _whyKey = GlobalKey();
+  final _faqKey = GlobalKey();
+
+  void _scrollTo(GlobalKey key) {
+    final target = key.currentContext;
+    if (target == null) return;
+    Scrollable.ensureVisible(
+      target,
+      duration: const Duration(milliseconds: 520),
+      curve: Curves.easeOutCubic,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,33 +48,50 @@ class LandingPage extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: const [
-              // 1. Hero section with header navigation
-              HeroSection(),
-              
-              // 2. How It Works - 5-step process
-              HowItWorksSection(),
-              
-              // 3. Task Steps - Dark background with steps
-              TaskStepsSection(),
-              
-              // 4. Featured Technicians - Horizontal card carousel
-              TechniciansSection(),
-              
-              // 5. Why Choose Us - Feature cards with kitchen image
-              WhyChooseUsSection(),
-              
-              // 6. Client Reviews - Testimonial carousel
-              ReviewsSection(),
-              
-              // 7. Common Questions/FAQ - Searchable accordion
-              FaqSection(),
-              
-              // 8. Download Our App - Store badges + phone
-              DownloadAppSection(),
-              
-              // 9. Footer - Links, social icons, copyright
-              FooterSection(),
+            children: [
+              KeyedSubtree(
+                key: _topKey,
+                child: HeroSection(
+                  onHome: () => _scrollTo(_topKey),
+                  onServices: () => context.push(Routes.services),
+                  onIndustries: () => _scrollTo(_trustedKey),
+                  onAbout: () => _scrollTo(_whyKey),
+                  onHowItWorks: () => _scrollTo(_howItWorksKey),
+                  onContactUs: () => context.push(Routes.contact),
+                  onBookRepair: () => context.go(Routes.login),
+                  onSignIn: () => context.go(Routes.login),
+                  onGetEstimate: () => context.go(Routes.login),
+                  onSearch: () => _scrollTo(_faqKey),
+                ),
+              ),
+              KeyedSubtree(
+                key: _trustedKey,
+                child: TrustedKitchenSection(
+                  onBookRepair: () => context.go(Routes.login),
+                  onLearnMore: () => _scrollTo(_howItWorksKey),
+                ),
+              ),
+              HowItWorksSection(key: _howItWorksKey),
+              KeyedSubtree(
+                key: _taskStepsKey,
+                child: TaskStepsSection(
+                  onSeeHowItWorks: () => _scrollTo(_howItWorksKey),
+                ),
+              ),
+              const TechniciansSection(),
+              KeyedSubtree(
+                key: _whyKey,
+                child: const WhyChooseUsSection(),
+              ),
+              const ReviewsSection(),
+              KeyedSubtree(
+                key: _faqKey,
+                child: FaqSection(
+                  onContactUs: () => context.push(Routes.contact),
+                ),
+              ),
+              const DownloadAppSection(),
+              const FooterSection(),
             ],
           ),
         ),

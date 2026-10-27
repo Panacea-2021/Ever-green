@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../landing_theme.dart';
+import 'landing_hero_video.dart';
+import 'landing_site_header.dart';
 
 /// Hero section with full-bleed background image, header navigation, and CTA buttons.
 class HeroSection extends StatelessWidget {
@@ -9,8 +10,12 @@ class HeroSection extends StatelessWidget {
   final VoidCallback? onGetEstimate;
   final VoidCallback? onContactUs;
   final VoidCallback? onServices;
-  final VoidCallback? onPrivacyPolicy;
-  final VoidCallback? onTerms;
+  final VoidCallback? onIndustries;
+  final VoidCallback? onAbout;
+  final VoidCallback? onHowItWorks;
+  final VoidCallback? onHome;
+  final VoidCallback? onSignIn;
+  final VoidCallback? onSearch;
 
   const HeroSection({
     super.key,
@@ -18,8 +23,12 @@ class HeroSection extends StatelessWidget {
     this.onGetEstimate,
     this.onContactUs,
     this.onServices,
-    this.onPrivacyPolicy,
-    this.onTerms,
+    this.onIndustries,
+    this.onAbout,
+    this.onHowItWorks,
+    this.onHome,
+    this.onSignIn,
+    this.onSearch,
   });
 
   @override
@@ -28,46 +37,52 @@ class HeroSection extends StatelessWidget {
     final isMobile = screenWidth < 768;
     final isTablet = screenWidth >= 768 && screenWidth < 1024;
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      height: isMobile ? 700 : 900,
+      height: isMobile ? 525 : 675,
       child: Stack(
         children: [
-          // Background image with overlay
-          _buildBackground(),
+          const Positioned.fill(child: LandingHeroVideo()),
 
-          // Green tint overlay
+          // Soft green wash so the clip still reads as Evergreen.
           Positioned.fill(
             child: Container(
-              color: LandingColors.heroOverlay,
+              color: const Color(0x337EAE8C),
             ),
           ),
 
-          // Radial gradient overlay
+          // Readability gradient for the headline and header.
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.0,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [
-                    Color(0x29244830), // rgba(36,72,48,0.16)
-                    Color(0x00244830),
+                    Color(0x66000000),
+                    Color(0x14000000),
+                    Color(0x73000000),
                   ],
-                  stops: [0.0, 0.62],
+                  stops: [0.0, 0.42, 1.0],
                 ),
               ),
             ),
           ),
 
-          // Content
           Positioned.fill(
             child: Column(
               children: [
-                // Header
-                _buildHeader(context, isMobile, isTablet),
-
-                // Main content
+                LandingSiteHeader(
+                  onHome: onHome,
+                  onServices: onServices,
+                  onIndustries: onIndustries,
+                  onAbout: onAbout,
+                  onHowItWorks: onHowItWorks,
+                  onContact: onContactUs,
+                  onBookRepair: onBookRepair,
+                  onSignIn: onSignIn ?? onBookRepair,
+                  onSearch: onSearch,
+                ),
                 Expanded(
                   child: _buildHeroContent(context, isMobile, isTablet),
                 ),
@@ -79,141 +94,9 @@ class HeroSection extends StatelessWidget {
     );
   }
 
-  Widget _buildBackground() {
-    return Positioned.fill(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            LandingAssets.heroBg,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              color: const Color(0xFFD7EAD4),
-            ),
-          ),
-          // Dark overlay for text readability
-          Container(
-            color: Colors.black.withOpacity(0.2),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, bool isMobile, bool isTablet) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 32,
-        vertical: 24,
-      ),
-      child: isMobile
-          ? _buildMobileHeader(context)
-          : _buildDesktopHeader(context, isTablet),
-    );
-  }
-
-  Widget _buildMobileHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Logo
-        _buildLogo(),
-        // Menu button
-        _GlassButton(
-          onTap: () {},
-          child: const Icon(
-            Icons.menu,
-            color: LandingColors.white,
-            size: 20,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDesktopHeader(BuildContext context, bool isTablet) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Left links
-        Row(
-          children: [
-            _GlassButton(
-              onTap: onPrivacyPolicy,
-              child: Text(
-                'Privacy Policy',
-                style: LandingTypography.navLink,
-              ),
-            ),
-            const SizedBox(width: 8),
-            _GlassButton(
-              onTap: onTerms,
-              child: Text(
-                'Terms & Conditions',
-                style: LandingTypography.navLink,
-              ),
-            ),
-          ],
-        ),
-
-        // Center logo (absolute positioned)
-        _buildLogo(),
-
-        // Right buttons
-        Row(
-          children: [
-            _PrimaryButton(
-              label: 'Book a repair',
-              icon: Icons.calendar_today_outlined,
-              onTap: onBookRepair,
-            ),
-            const SizedBox(width: 8),
-            _GlassButton(
-              onTap: onContactUs,
-              child: Text(
-                'Contact Us',
-                style: LandingTypography.navLink,
-              ),
-            ),
-            const SizedBox(width: 8),
-            _GlassButton(
-              onTap: onServices,
-              child: Text(
-                'Services',
-                style: LandingTypography.navLink,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLogo() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SvgPicture.asset(
-          LandingAssets.markLogo,
-          width: 28,
-          height: 28,
-          colorFilter: const ColorFilter.mode(
-            LandingColors.white,
-            BlendMode.srcIn,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          'Evergreen',
-          style: LandingTypography.logoText,
-        ),
-      ],
-    );
-  }
-
   Widget _buildHeroContent(BuildContext context, bool isMobile, bool isTablet) {
-    final horizontalPadding = isMobile ? 20.0 : (isTablet ? 60.0 : 208.0);
-    final titleFontSize = isMobile ? 40.0 : (isTablet ? 56.0 : 88.0);
+    final horizontalPadding = isMobile ? 20.0 : (isTablet ? 60.0 : 160.0);
+    final titleFontSize = isMobile ? 34.0 : (isTablet ? 48.0 : 64.0);
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -285,104 +168,6 @@ class HeroSection extends StatelessWidget {
           onTap: onGetEstimate,
         ),
       ],
-    );
-  }
-}
-
-/// Glass-morphism style button for header navigation.
-class _GlassButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback? onTap;
-
-  const _GlassButton({
-    required this.child,
-    this.onTap,
-  });
-
-  @override
-  State<_GlassButton> createState() => _GlassButtonState();
-}
-
-class _GlassButtonState extends State<_GlassButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: _isHovered
-                ? Colors.black.withOpacity(0.25)
-                : Colors.black.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(LandingRadius.pill),
-          ),
-          child: widget.child,
-        ),
-      ),
-    );
-  }
-}
-
-/// Primary white button for header "Book a repair".
-class _PrimaryButton extends StatefulWidget {
-  final String label;
-  final IconData? icon;
-  final VoidCallback? onTap;
-
-  const _PrimaryButton({
-    required this.label,
-    this.icon,
-    this.onTap,
-  });
-
-  @override
-  State<_PrimaryButton> createState() => _PrimaryButtonState();
-}
-
-class _PrimaryButtonState extends State<_PrimaryButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: _isHovered ? Colors.white.withOpacity(0.9) : Colors.white,
-            borderRadius: BorderRadius.circular(LandingRadius.pill),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.icon != null) ...[
-                Icon(
-                  widget.icon,
-                  size: 16,
-                  color: LandingColors.textPrimary,
-                ),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                widget.label,
-                style: LandingTypography.buttonPrimary,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

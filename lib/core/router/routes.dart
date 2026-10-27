@@ -83,4 +83,10 @@ abstract class Routes {
 
   // Web-only: authenticated desktop dashboard (separate web UI).
   static const String webDashboard = '/web-dashboard';
+
+  // Public marketing legal pages (website).
+  static const String terms = '/terms';
+  static const String privacy = '/privacy';
+  static const String contact = '/contact';
+  static const String services = '/services';
 }

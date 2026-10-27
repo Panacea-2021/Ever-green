@@ -94,8 +94,15 @@ class _FaqSectionState extends State<FaqSection> {
       ),
       child: Stack(
         children: [
-          // Decorative icons
-          if (!isMobile) _buildDecorativeIcons(),
+          // Decorative icons must be Positioned so this Stack can size
+          // itself from the FAQ content. A non-positioned Stack of only
+          // Positioned children is unbounded inside a scroll view.
+          if (!isMobile)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: _buildDecorativeIcons(),
+              ),
+            ),
 
           // Main content
           Center(
@@ -144,6 +151,7 @@ class _FaqSectionState extends State<FaqSection> {
 
   Widget _buildDecorativeIcons() {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         Positioned(
           left: 78,

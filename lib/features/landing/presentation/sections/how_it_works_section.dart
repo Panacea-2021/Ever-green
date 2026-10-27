@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../landing_theme.dart';
 
-/// Data model for a step card.
 class StepCardData {
   final String number;
-  final String label;
   final String title;
   final String description;
-  final String iconPath;
+  final IconData icon;
 
   const StepCardData({
     required this.number,
-    required this.label,
     required this.title,
     required this.description,
-    required this.iconPath,
+    required this.icon,
   });
 }
 
-/// "How It Works" section with 5 expandable step cards.
+/// "From signup to sign-off in 5 steps" — Figma node 331:1343.
 class HowItWorksSection extends StatefulWidget {
   const HowItWorksSection({super.key});
 
@@ -34,157 +30,146 @@ class _HowItWorksSectionState extends State<HowItWorksSection> {
   static const List<StepCardData> _steps = [
     StepCardData(
       number: '01',
-      label: 'REGISTER',
       title: 'Register yourself',
       description:
           'Create your Evergreen account for the kitchen, the branch, or the client you look after.',
-      iconPath: LandingAssets.iconRegister,
+      icon: Icons.person_add_alt_1_outlined,
     ),
     StepCardData(
       number: '02',
-      label: 'EQUIPMENT',
       title: 'Add equipment',
       description:
           'Log the range, the fridge, and every other machine that has to stay on the line.',
-      iconPath: LandingAssets.iconEquipment,
+      icon: Icons.description_outlined,
     ),
     StepCardData(
       number: '03',
-      label: 'REPAIRS',
-      title: 'Add repairs',
+      title: 'Request a repair',
       description:
           'Raise a job the moment something leaves the line down, with the fault in plain words.',
-      iconPath: LandingAssets.iconRepairs,
+      icon: Icons.assignment_outlined,
     ),
     StepCardData(
       number: '04',
-      label: 'SERVICE ENGINEER',
-      title: 'Service engineer repair',
+      title: 'Technician visit',
       description:
-          'A certified service engineer takes the fault on site and puts that machine back to work.',
-      iconPath: LandingAssets.iconTechnician,
+          'A certified technician comes to your kitchen and puts that machine back to work.',
+      icon: Icons.handyman_outlined,
     ),
     StepCardData(
       number: '05',
-      label: 'APPROVE',
-      title: 'Approve',
+      title: 'Approve & close',
       description:
           'Review the finished job and sign it off before the service engineer leaves.',
-      iconPath: LandingAssets.iconApprove,
+      icon: Icons.check_circle_outline,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 768;
-    final isTablet = screenWidth >= 768 && screenWidth < 1024;
+    final width = MediaQuery.of(context).size.width;
+    final isMobile = width < 900;
 
     return Container(
       width: double.infinity,
-      color: LandingColors.bgMint,
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 20 : (isTablet ? 60 : 140),
-        vertical: isMobile ? 60 : 112,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      color: const Color(0xFFE5F6EA),
+      child: Stack(
         children: [
-          // Header row
-          _buildHeader(isMobile, isTablet),
-
-          SizedBox(height: isMobile ? 40 : 64),
-
-          // Step cards
-          isMobile ? _buildMobileCards() : _buildDesktopCards(isTablet),
+          const Positioned.fill(
+            child: Opacity(
+              opacity: 0.32,
+              child: Image(
+                image: AssetImage(LandingAssets.heroBg),
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+            ),
+          ),
+          const Positioned.fill(
+            child: ColoredBox(color: Color(0xE6E5F6EA)),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              isMobile ? 20 : 64,
+              isMobile ? 48 : 72,
+              isMobile ? 20 : 64,
+              isMobile ? 56 : 88,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Column(
+                  children: [
+                    _buildHeader(isMobile),
+                    SizedBox(height: isMobile ? 36 : 48),
+                    isMobile ? _buildMobileCards() : _buildDesktopCards(),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(bool isMobile, bool isTablet) {
-    if (isMobile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildEyebrow(),
-          const SizedBox(height: 24),
-          _buildIntroText(isMobile),
-        ],
-      );
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildEyebrow(),
-        SizedBox(
-          width: isTablet ? 400 : 576,
-          child: _buildIntroText(isMobile),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEyebrow() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SvgPicture.asset(
-          LandingAssets.dot,
-          width: 6,
-          height: 6,
-        ),
-        const SizedBox(width: 10),
-        Text(
-          'HOW IT WORKS',
-          style: LandingTypography.eyebrow,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildIntroText(bool isMobile) {
+  Widget _buildHeader(bool isMobile) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'From signup to\nsign-off in 5 steps',
-          style: LandingTypography.sectionSubtitle.copyWith(
-            fontSize: isMobile ? 36 : 54,
+          '·  HOW IT WORKS',
+          style: LandingTypography.eyebrow.copyWith(
+            letterSpacing: 2.0,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: isMobile ? 16 : 20),
         Text(
-          'Getting a kitchen back on the line is easier than it looks — five steps from a new account to a signed-off repair.',
-          style: LandingTypography.introBody,
+          'From signup to\nsign-off in 5 steps',
+          textAlign: TextAlign.center,
+          style: LandingTypography.sectionSubtitle.copyWith(
+            fontSize: isMobile ? 34 : 48,
+            height: 1.08,
+            letterSpacing: isMobile ? -1.0 : -1.6,
+          ),
+        ),
+        const SizedBox(height: 14),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Text(
+            'Getting a kitchen back on the line is easier than it looks — five steps from a new account to a signed-off repair.',
+            textAlign: TextAlign.center,
+            style: LandingTypography.introBody.copyWith(
+              fontSize: 15,
+              height: 1.55,
+              color: const Color(0xFF6B746E),
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildDesktopCards(bool isTablet) {
-    return SizedBox(
-      height: 420,
-      child: Row(
-        children: List.generate(_steps.length, (index) {
-          final isActive = index == _activeIndex;
-          return Expanded(
-            flex: isActive ? 3 : 1,
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: index < _steps.length - 1 ? 12 : 0,
-              ),
+  Widget _buildDesktopCards() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List.generate(_steps.length, (index) {
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: index < _steps.length - 1 ? 14 : 0,
+            ),
+            child: SizedBox(
+              height: 360,
               child: _StepCard(
                 data: _steps[index],
-                isActive: isActive,
+                isActive: index == _activeIndex,
+                fillHeight: true,
                 onTap: () => setState(() => _activeIndex = index),
               ),
             ),
-          );
-        }),
-      ),
+          ),
+        );
+      }),
     );
   }
 
@@ -195,9 +180,10 @@ class _HowItWorksSectionState extends State<HowItWorksSection> {
           padding: EdgeInsets.only(
             bottom: index < _steps.length - 1 ? 12 : 0,
           ),
-          child: _MobileStepCard(
+          child: _StepCard(
             data: _steps[index],
             isActive: index == _activeIndex,
+            fillHeight: false,
             onTap: () => setState(() => _activeIndex = index),
           ),
         );
@@ -206,199 +192,113 @@ class _HowItWorksSectionState extends State<HowItWorksSection> {
   }
 }
 
-/// Desktop step card that expands when active.
 class _StepCard extends StatefulWidget {
-  final StepCardData data;
-  final bool isActive;
-  final VoidCallback onTap;
-
   const _StepCard({
     required this.data,
     required this.isActive,
     required this.onTap,
+    this.fillHeight = false,
   });
+
+  final StepCardData data;
+  final bool isActive;
+  final VoidCallback onTap;
+  final bool fillHeight;
 
   @override
   State<_StepCard> createState() => _StepCardState();
 }
 
 class _StepCardState extends State<_StepCard> {
-  bool _isHovered = false;
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
+    final active = widget.isActive;
+    final bg = active ? LandingColors.primary : Colors.white;
+    final titleColor = active ? Colors.white : LandingColors.textDark;
+    final bodyColor = active ? const Color(0xE6FFFFFF) : const Color(0xFF6B746E);
+    final numberColor = active ? const Color(0xB3FFFFFF) : const Color(0xFF9AA39C);
+    final iconColor = active ? Colors.white : LandingColors.primary;
+
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 240),
           curve: Curves.easeOutCubic,
-          height: 420,
+          height: widget.fillHeight ? double.infinity : null,
+          transform: Matrix4.identity()
+            ..translate(0.0, _hover && !active ? -4.0 : 0.0),
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
           decoration: BoxDecoration(
-            color: widget.isActive ? LandingColors.primary : Colors.white,
+            color: bg,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              if (!active)
+                BoxShadow(
+                  color: const Color(0x14000000),
+                  blurRadius: _hover ? 22 : 14,
+                  offset: const Offset(0, 8),
+                ),
+            ],
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Step label at top
-              Positioned(
-                top: 24,
-                left: 24,
-                child: Text(
-                  '${widget.data.number}. ${widget.data.label}',
-                  style: widget.isActive
-                      ? LandingTypography.stepLabel
-                      : LandingTypography.stepLabelInactive,
+              Text(
+                widget.data.number,
+                style: TextStyle(
+                  fontFamily: LandingTypography.fontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
+                  color: numberColor,
                 ),
               ),
-
-              // Icon (centered for inactive, positioned for active)
-              if (widget.isActive)
-                Positioned(
-                  top: 151,
-                  left: 24,
-                  child: SvgPicture.asset(
-                    widget.data.iconPath,
-                    width: 36,
-                    height: 36,
-                    colorFilter: const ColorFilter.mode(
-                      Colors.white,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                )
-              else
-                Positioned(
-                  bottom: 85,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: SvgPicture.asset(
-                      widget.data.iconPath,
-                      width: 24,
-                      height: 24,
-                      colorFilter: ColorFilter.mode(
-                        _isHovered
-                            ? LandingColors.primary
-                            : LandingColors.textGray,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
+              const SizedBox(height: 18),
+              Icon(widget.data.icon, size: 28, color: iconColor),
+              const SizedBox(height: 22),
+              Text(
+                widget.data.title,
+                style: TextStyle(
+                  fontFamily: LandingTypography.fontFamily,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
+                  color: titleColor,
                 ),
-
-              // Title and description (only visible when active)
-              if (widget.isActive)
-                Positioned(
-                  bottom: 24,
-                  left: 24,
-                  right: 24,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.data.title,
-                        style: LandingTypography.cardTitle,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.data.description,
-                        style: LandingTypography.cardBody,
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                widget.data.description,
+                style: TextStyle(
+                  fontFamily: LandingTypography.fontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                  color: bodyColor,
                 ),
+              ),
+              if (widget.fillHeight) const Spacer() else const SizedBox(height: 28),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: active ? Colors.white : const Color(0xFFF3F6F1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: LandingColors.primary,
+                ),
+              ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Mobile step card with vertical layout.
-class _MobileStepCard extends StatelessWidget {
-  final StepCardData data;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _MobileStepCard({
-    required this.data,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: isActive ? LandingColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                SvgPicture.asset(
-                  data.iconPath,
-                  width: 28,
-                  height: 28,
-                  colorFilter: ColorFilter.mode(
-                    isActive ? Colors.white : LandingColors.primary,
-                    BlendMode.srcIn,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${data.number}. ${data.label}',
-                        style: isActive
-                            ? LandingTypography.stepLabel
-                            : LandingTypography.stepLabelInactive,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        data.title,
-                        style: LandingTypography.cardTitle.copyWith(
-                          fontSize: 18,
-                          color: isActive
-                              ? Colors.white
-                              : LandingColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  isActive
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
-                  color: isActive ? Colors.white : LandingColors.textGray,
-                ),
-              ],
-            ),
-            if (isActive) ...[
-              const SizedBox(height: 16),
-              Text(
-                data.description,
-                style: LandingTypography.cardBody.copyWith(
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ],
         ),
       ),
     );

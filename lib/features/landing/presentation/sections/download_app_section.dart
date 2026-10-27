@@ -30,8 +30,12 @@ class DownloadAppSection extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Decorative circles
-          if (!isMobile) _buildDecorativeCircles(),
+          if (!isMobile)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: _buildDecorativeCircles(),
+              ),
+            ),
 
           // Main content
           Column(
@@ -63,6 +67,7 @@ class DownloadAppSection extends StatelessWidget {
 
   Widget _buildDecorativeCircles() {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         // Top-left circle
         Positioned(

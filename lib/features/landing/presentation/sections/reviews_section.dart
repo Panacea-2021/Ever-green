@@ -189,8 +189,11 @@ class _ReviewsSectionState extends State<ReviewsSection> {
       );
     }
 
-    return Row(
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Far left card (small)
@@ -232,6 +235,7 @@ class _ReviewsSectionState extends State<ReviewsSection> {
           height: 204,
         ),
       ],
+      ),
     );
   }
 

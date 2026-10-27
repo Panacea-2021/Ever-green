@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/landing/presentation/screens/landing_page.dart';
+import '../../features/landing/presentation/screens/terms_page.dart';
+import '../../features/landing/presentation/screens/privacy_page.dart';
+import '../../features/landing/presentation/screens/contact_page.dart';
+import '../../features/landing/presentation/screens/services_page.dart';
 import '../../web/screens/web_dashboard_screen.dart';
 import '../../features/amcs/presentation/screens/add_equipment_screen.dart';
 import '../../features/amcs/presentation/screens/add_task_screen.dart';
@@ -111,6 +115,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         Routes.forgotPassword,
         // On the website the landing page is a public marketing page.
         if (kIsWeb) Routes.home,
+        if (kIsWeb) Routes.terms,
+        if (kIsWeb) Routes.privacy,
+        if (kIsWeb) Routes.contact,
+        if (kIsWeb) Routes.services,
       ];
 
       final isPublicRoute = publicRoutes.contains(currentPath);
@@ -178,6 +186,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.forgotPassword,
         name: 'forgotPassword',
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: Routes.terms,
+        name: 'terms',
+        builder: (context, state) => const TermsPage(),
+      ),
+      GoRoute(
+        path: Routes.privacy,
+        name: 'privacy',
+        builder: (context, state) => const PrivacyPage(),
+      ),
+      GoRoute(
+        path: Routes.contact,
+        name: 'contact',
+        builder: (context, state) => const ContactPage(),
+      ),
+      GoRoute(
+        path: Routes.services,
+        name: 'services',
+        builder: (context, state) => const ServicesPage(),
       ),
 
       // Feature routes (full screen, no bottom nav)
