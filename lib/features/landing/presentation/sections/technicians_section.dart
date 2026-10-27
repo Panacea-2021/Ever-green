@@ -69,38 +69,17 @@ class TechniciansSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 768;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white,
-            const Color(0xFFB7E8C4),
-          ],
-          stops: const [0.0, 0.48, 0.74],
+    return ColoredBox(
+      color: const Color(0xFFF3FBF5),
+      child: GestureDetector(
+        onTap: onViewAll,
+        child: Image.asset(
+          LandingAssets.featuredTechnicians,
+          width: double.infinity,
+          fit: BoxFit.fitWidth,
+          alignment: Alignment.topCenter,
+          errorBuilder: (_, __, ___) => const SizedBox(height: 240),
         ),
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 20 : 40,
-        vertical: isMobile ? 60 : 80,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          _buildHeader(isMobile),
-
-          SizedBox(height: isMobile ? 24 : 28),
-
-          // Technician cards
-          _buildCardsRow(isMobile),
-        ],
       ),
     );
   }

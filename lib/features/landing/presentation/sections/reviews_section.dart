@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -35,6 +37,7 @@ class ReviewsSection extends StatefulWidget {
 class _ReviewsSectionState extends State<ReviewsSection> {
   int _currentIndex = 0;
   late PageController _pageController;
+  Timer? _autoPlay;
 
   static const List<ReviewData> _reviews = [
     ReviewData(
@@ -96,10 +99,20 @@ class _ReviewsSectionState extends State<ReviewsSection> {
       initialPage: _currentIndex,
       viewportFraction: 1.0,
     );
+    _autoPlay = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_pageController.hasClients) return;
+      final next = (_currentIndex + 1) % _reviews.length;
+      _pageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 550),
+        curve: Curves.easeInOutCubic,
+      );
+    });
   }
 
   @override
   void dispose() {
+    _autoPlay?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -140,15 +153,11 @@ class _ReviewsSectionState extends State<ReviewsSection> {
       ),
       child: Column(
         children: [
-          // Eyebrow
           Text(
             'CUSTOMER REVIEWS',
             style: LandingTypography.eyebrowWhite,
           ),
-
           SizedBox(height: isMobile ? 16 : 28),
-
-          // Title
           Text(
             'Real kitchens.\nReal repairs.',
             textAlign: TextAlign.center,
@@ -156,18 +165,12 @@ class _ReviewsSectionState extends State<ReviewsSection> {
               fontSize: isMobile ? 40 : 64,
             ),
           ),
-
           SizedBox(height: isMobile ? 32 : 48),
-
-          // Review carousel
           SizedBox(
             height: isMobile ? 480 : 400,
             child: _buildCarousel(isMobile),
           ),
-
           SizedBox(height: isMobile ? 24 : 32),
-
-          // Pagination dots
           _buildPaginationDots(),
         ],
       ),
@@ -214,8 +217,19 @@ class _ReviewsSectionState extends State<ReviewsSection> {
 
         const SizedBox(width: 22),
 
-        // Center card (main)
-        _MainReviewCard(data: _reviews[_currentIndex]),
+        // Center card slides left, next one comes into the middle
+        SizedBox(
+          width: 780,
+          height: 360,
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) => setState(() => _currentIndex = index),
+            itemCount: _reviews.length,
+            itemBuilder: (context, index) {
+              return _MainReviewCard(data: _reviews[index]);
+            },
+          ),
+        ),
 
         const SizedBox(width: 22),
 

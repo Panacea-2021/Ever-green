@@ -34,51 +34,17 @@ class TaskStepsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final isMobile = width < 768;
-    final isTablet = width >= 768 && width < 1100;
-
-    return Container(
-      width: double.infinity,
-      height: isMobile ? null : 809,
+    return ColoredBox(
       color: const Color(0xFF002318),
-      child: Stack(
-        children: [
-          Positioned(
-            left: isMobile ? 20 : (isTablet ? 40 : 80),
-            right: isMobile ? 20 : (isTablet ? 40 : 80),
-            top: isMobile ? 220 : 280,
-            child: IgnorePointer(
-              child: CustomPaint(
-                size: Size(width, 180),
-                painter: const _CurvePainter(),
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              isMobile ? 20 : (isTablet ? 48 : 88),
-              isMobile ? 56 : 88,
-              isMobile ? 20 : (isTablet ? 48 : 72),
-              isMobile ? 48 : 56,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1280),
-                child: isMobile
-                    ? _MobileLayout(
-                        steps: _steps,
-                        onSeeHowItWorks: onSeeHowItWorks,
-                      )
-                    : _DesktopLayout(
-                        steps: _steps,
-                        isTablet: isTablet,
-                        onSeeHowItWorks: onSeeHowItWorks,
-                      ),
-              ),
-            ),
-          ),
-        ],
+      child: GestureDetector(
+        onTap: onSeeHowItWorks,
+        child: Image.asset(
+          LandingAssets.howItWorks,
+          width: double.infinity,
+          fit: BoxFit.fitWidth,
+          alignment: Alignment.topCenter,
+          errorBuilder: (_, __, ___) => const SizedBox(height: 240),
+        ),
       ),
     );
   }

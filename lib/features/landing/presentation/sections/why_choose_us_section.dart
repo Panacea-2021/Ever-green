@@ -57,17 +57,15 @@ class WhyChooseUsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 768;
-    final isTablet = screenWidth >= 768 && screenWidth < 1024;
-
-    return Container(
-      width: double.infinity,
-      height: isMobile ? null : 780,
+    return ColoredBox(
       color: LandingColors.bgLight,
-      child: isMobile
-          ? _buildMobileLayout()
-          : _buildDesktopLayout(screenWidth, isTablet),
+      child: Image.asset(
+        LandingAssets.whyChooseUs,
+        width: double.infinity,
+        fit: BoxFit.fitWidth,
+        alignment: Alignment.topCenter,
+        errorBuilder: (_, __, ___) => const SizedBox(height: 240),
+      ),
     );
   }
 

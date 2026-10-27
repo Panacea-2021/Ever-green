@@ -15,42 +15,29 @@ class ServicesPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SelectionArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ColoredBox(
-                color: Colors.white,
-                child: LandingSiteHeader(
-                  activeNav: 'Services',
-                  onHome: () => context.go(Routes.home),
-                  onServices: () {},
-                  onHowItWorks: () => context.go(Routes.home),
-                  onAbout: () => context.go(Routes.home),
-                  onIndustries: () => context.go(Routes.home),
-                  onContact: () => context.push(Routes.contact),
-                  onBookRepair: () => context.go(Routes.login),
-                  onSignIn: () => context.go(Routes.login),
-                ),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Image.asset(
+                LandingAssets.servicesPage,
+                width: double.infinity,
+                fit: BoxFit.fitWidth,
+                alignment: Alignment.topCenter,
+                errorBuilder: (_, __, ___) => const SizedBox(height: 240),
               ),
-              const SizedBox(height: 18),
-              _ServicesHero(onBook: () => context.go(Routes.login)),
-              const _CompleteServices(),
-              const _EquipmentTypes(),
-              const _Industries(),
-              const _HowWeWork(),
-              const _Performance(),
-              _AmcPlans(onBook: () => context.go(Routes.login)),
-              const _TrustedOrgs(),
-              const _LogoStrip(),
-              _ServicesFaq(onContact: () => context.push(Routes.contact)),
-              _BottomCta(
-                onAssess: () => context.go(Routes.login),
-                onContact: () => context.push(Routes.contact),
-              ),
-              const FooterSection(),
-            ],
-          ),
+            ),
+            LandingSiteHeader(
+              activeNav: 'Services',
+              onHome: () => context.go(Routes.home),
+              onServices: () {},
+              onHowItWorks: () => context.go(Routes.home),
+              onAbout: () => context.go(Routes.home),
+              onIndustries: () => context.go(Routes.home),
+              onContact: () => context.push(Routes.contact),
+              onBookRepair: () => context.go(Routes.login),
+              onSignIn: () => context.go(Routes.login),
+            ),
+          ],
         ),
       ),
     );

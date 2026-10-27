@@ -516,6 +516,11 @@ class LandingAssets {
   static const String taskStepsBg = '$_basePath/task_steps_bg.png';
   static const String phoneMockup = '$_basePath/phone_mockup.png';
   static const String whyKitchen = '$_basePath/why_kitchen.png';
+  static const String whyChooseUs = '$_basePath/why_choose_us.jpg';
+  static const String howItWorks = '$_basePath/how_it_works.jpg';
+  static const String featuredTechnicians = '$_basePath/featured_technicians.png';
+  static const String servicesPage = '$_basePath/services_page.jpg';
+  static const String reviewsBanner = '$_basePath/reviews_banner.png';
 
   // Technician photos
   static const String techMeera = '$_basePath/tech_meera.png';
