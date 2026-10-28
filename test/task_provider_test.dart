@@ -186,8 +186,8 @@ void main() {
       expect(a, isNot(contains(TaskAction.hold)));
     });
 
-    test('task details keep every card action and add Delete for managers', () {
-      final open = item(row(status: 'in_progress', technician: tech));
+    test('task details keep every card action and add Delete for managers on open tasks', () {
+      final open = item(row(technician: tech));
       final manager = user(UserRole.manager, 1);
       expect(
         taskDetailActionsFor(open, manager),
@@ -196,6 +196,8 @@ void main() {
       for (final role in [UserRole.seniorTechnician, UserRole.technician, UserRole.clientAdmin, UserRole.client]) {
         expect(taskDetailActionsFor(open, user(role, 4)), isNot(contains(TaskAction.delete)), reason: '$role');
       }
+      final started = item(row(status: 'in_progress', technician: tech));
+      expect(taskDetailActionsFor(started, manager), isNot(contains(TaskAction.delete)));
     });
 
     test('task details expose the technician workflow to the assignee', () {

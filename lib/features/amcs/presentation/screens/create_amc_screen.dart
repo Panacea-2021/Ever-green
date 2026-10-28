@@ -9,6 +9,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/password_generator.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../audit/data/audit_logger.dart';
 import '../../../audit/domain/models/audit_log_entry.dart';
@@ -60,6 +61,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
   final _passwordController = TextEditingController();
 
   bool _isPasswordVisible = false;
+  bool _sendCredentials = true;
   bool _saving = false;
 
   /// Newly picked local logo file (uploaded on save).
@@ -76,6 +78,9 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
     if (widget.isEdit) {
       _company = _resolveCompany();
       _applyEditData();
+    } else {
+      _passwordController.text = generatePassword();
+      _isPasswordVisible = true;
     }
   }
 
@@ -204,7 +209,9 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
       _emailController.text.trim(),
       _passwordController.text.trim(),
     ];
-    final anyAdmin = admin.any((v) => v.isNotEmpty);
+    // A pre-filled password alone doesn't mean a client admin is wanted.
+    final anyAdmin = admin.take(3).any((v) => v.isNotEmpty) ||
+        (widget.isEdit && admin[3].isNotEmpty);
     final hasLinkedAdmin = _company?.poc != null;
     if (anyAdmin && !hasLinkedAdmin && admin.any((v) => v.isEmpty)) {
       return 'Please provide all client admin details or leave them all empty';
@@ -217,6 +224,16 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
     }
     return null;
   }
+
+  /// A new client admin is being created (no POC linked yet), so their
+  /// login details can be emailed.
+  bool get _offersCredentialsEmail => _company?.poc == null;
+
+  bool get _hasAdminDetails => [
+        _nameController,
+        _mobileController,
+        _emailController,
+      ].every((c) => c.text.trim().isNotEmpty);
 
   Future<void> _handleSave() async {
     if (_saving) return;
@@ -262,14 +279,18 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
         adminName: changed(_nameController.text, original?.poc?.name),
         adminPhone: changed(_mobileController.text, original?.poc?.phone),
         adminEmail: changed(_emailController.text, original?.pocEmail),
-        adminPassword: _passwordController.text,
+        adminPassword:
+            widget.isEdit || _hasAdminDetails ? _passwordController.text : '',
+        sendCredentials: _sendCredentials,
       );
 
-      if (original != null) {
-        await repo.updateCompany(original.id, input);
-      } else {
-        await repo.createCompany(input);
-      }
+      final saved = original != null
+          ? await repo.updateCompany(original.id, input)
+          : await repo.createCompany(input);
+      final emailFailed = _offersCredentialsEmail &&
+          _hasAdminDetails &&
+          _sendCredentials &&
+          !saved.emailSent;
       ref.invalidate(companiesProvider);
 
       ref.logAudit(
@@ -283,11 +304,15 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            original != null
-                ? 'Company updated successfully!'
-                : 'Company created successfully!',
+            (original != null
+                    ? 'Company updated successfully!'
+                    : 'Company created successfully!') +
+                (emailFailed
+                    ? ' The login email to the client admin could not be sent.'
+                    : ''),
           ),
-          backgroundColor: AppColors.primary,
+          backgroundColor:
+              emailFailed ? Colors.orange.shade800 : AppColors.primary,
         ),
       );
       if (mounted) context.pop(true);
@@ -837,6 +862,41 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
               hint: 'Password',
               isPassword: true,
             ),
+            if (!widget.isEdit)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: const Key('regeneratePassword'),
+                  onPressed: () => setState(
+                    () => _passwordController.text = generatePassword(),
+                  ),
+                  icon: const Icon(
+                    Icons.autorenew,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  label: const Text(
+                    'Generate new password',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ),
+            if (_offersCredentialsEmail)
+              CheckboxListTile(
+                key: const Key('sendCredentialsCheckbox'),
+                value: _sendCredentials,
+                onChanged: (v) => setState(() => _sendCredentials = v ?? false),
+                activeColor: AppColors.primary,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text(
+                  'Send the client admin these login details by email',
+                  style: TextStyle(fontFamily: 'Montserrat', fontSize: 14),
+                ),
+              ),
           ],
         ),
       ),

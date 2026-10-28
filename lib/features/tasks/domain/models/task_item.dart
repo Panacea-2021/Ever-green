@@ -192,8 +192,9 @@ String? validateContactPhone(String value) {
 String normalizeContactPhone(String value) =>
     value.trim().replaceAll(RegExp(r'[\s-]'), '');
 
-/// The Ticket Queue's three tabs.
-enum QueueBucket { unassigned, awaiting, assigned }
+/// The Ticket Queue's tabs. A ticket can be in more than one
+/// (see [TaskItem.inQueueTab]).
+enum QueueTab { unassigned, awaiting, assigned, escalation }
 
 /// A ticket as the UI sees it. Built from a backend [backend.ServiceTask]
 /// (see [TaskItem.fromService]); [source] keeps the full row so screens can
@@ -267,8 +268,8 @@ class TaskItem {
     final equipmentImage = mediaUrl(t.equipment?.imageUrl);
     final tech = t.technician;
     final hasTech = tech != null;
-    final finished = t.status == ServiceStatus.completed ||
-        t.status == ServiceStatus.closed;
+    final finished =
+        t.status == ServiceStatus.completed || t.status == ServiceStatus.closed;
     return TaskItem(
       id: '${t.id}',
       title: t.name.isNotEmpty ? t.name : 'Ticket ${t.ticketNo}',
@@ -453,22 +454,76 @@ class TaskItem {
   /// Assigned to someone but they haven't accepted yet (still open).
   bool get isAwaitingAcceptance => !isClosed && hasAssignee && !isAccepted;
 
-  /// Ticket queue tab the ticket belongs to, or null once the work is done
-  /// (backend `completed` / `closed`). Every other ticket is in exactly one:
-  /// no Service Engineer -> unassigned; assigned, open, never accepted or
-  /// started -> awaiting; otherwise (accepted, started, in progress or on
-  /// hold) -> assigned.
-  QueueBucket? get queueBucket {
-    if (isClosed) return null;
-    if (!hasAssignee) return QueueBucket.unassigned;
-    return isAccepted ? QueueBucket.assigned : QueueBucket.awaiting;
+  /// Minutes an open ticket may sit with no Service Engineer before it shows
+  /// in the queue's "Awaiting" tab.
+  static const int unassignedWaitMinutes = 15;
+
+  /// Hours a ticket may keep the same status before it shows in the queue's
+  /// "Escalation" tab.
+  static const int staleStatusHours = 24;
+
+  /// Backend `closed`: the only state that never needs another move.
+  bool get isFinal => serviceStatus == ServiceStatus.closed;
+
+  /// Latest recorded status move. The backend keeps no timestamp for
+  /// resuming from hold, so a resumed ticket counts from when it was put on
+  /// hold.
+  DateTime get statusChangedAt {
+    final holds = source?.holdReasons ?? const <backend.HoldReason>[];
+    final times = <DateTime?>[
+      createdAt,
+      assignedAt,
+      acceptedAt,
+      startedAt,
+      resolvedAt,
+      closedAt,
+      for (final h in holds) ...[h.createdAt, h.updatedAt],
+    ].whereType<DateTime>();
+    return times.reduce((a, b) => a.isAfter(b) ? a : b);
+  }
+
+  /// Time since [statusChangedAt] (zero if in the future).
+  Duration statusAge([DateTime? now]) {
+    final d = (now ?? DateTime.now()).difference(statusChangedAt);
+    return d.isNegative ? Duration.zero : d;
+  }
+
+  /// Not closed and the status hasn't moved for [staleStatusHours].
+  bool isStatusStale([DateTime? now]) =>
+      !isFinal && statusAge(now).inHours >= staleStatusHours;
+
+  /// Minutes an open ticket has had no Service Engineer (0 otherwise).
+  int unassignedMinutes([DateTime? now]) {
+    if (hasAssignee || serviceStatus != ServiceStatus.open) return 0;
+    final mins = (now ?? DateTime.now()).difference(createdAt).inMinutes;
+    return mins < 0 ? 0 : mins;
+  }
+
+  /// Ticket queue membership:
+  /// - unassigned: every open ticket (backend `open`), with or without an
+  ///   engineer;
+  /// - awaiting: open with no engineer for [unassignedWaitMinutes] or more;
+  /// - assigned: any ticket with an engineer that isn't closed;
+  /// - escalation: not closed, and escalated or [isStatusStale].
+  bool inQueueTab(QueueTab tab, [DateTime? now]) {
+    switch (tab) {
+      case QueueTab.unassigned:
+        return serviceStatus == ServiceStatus.open;
+      case QueueTab.awaiting:
+        return serviceStatus == ServiceStatus.open &&
+            !hasAssignee &&
+            unassignedMinutes(now) >= unassignedWaitMinutes;
+      case QueueTab.assigned:
+        return hasAssignee && !isFinal;
+      case QueueTab.escalation:
+        return !isFinal && (escalated || isStatusStale(now));
+    }
   }
 
   /// When the current assignment started. Rows assigned before
   /// `assigned_at` was recorded fall back to the assignment row's update
   /// time, then to the ticket's creation.
-  DateTime get assignedSince =>
-      assignedAt ?? source?.updatedAt ?? createdAt;
+  DateTime get assignedSince => assignedAt ?? source?.updatedAt ?? createdAt;
 
   /// Minutes elapsed since assignment while still unaccepted (0 if n/a).
   int pendingAcceptanceMinutes([DateTime? now]) {
@@ -611,8 +666,7 @@ class TaskItem {
       assignee: json['assignee'] as String? ?? '-',
       managerName: json['managerName'] as String? ?? '',
       clientName: json['clientName'] as String? ?? '',
-      createdAt:
-          date('createdAt') ?? DateTime.fromMillisecondsSinceEpoch(0),
+      createdAt: date('createdAt') ?? DateTime.fromMillisecondsSinceEpoch(0),
       assignedAt: date('assignedAt'),
       acceptedAt: date('acceptedAt'),
       dueDate: date('dueDate'),

@@ -2,7 +2,7 @@
 enum AuditAction { created, updated, deleted, loggedIn, loggedOut, assigned }
 
 /// The type of entity the action was performed on.
-enum AuditEntity { user, task, amc, equipment, auth }
+enum AuditEntity { user, task, amc, equipment, auth, issueType }
 
 extension AuditActionX on AuditAction {
   String get label {
@@ -56,14 +56,17 @@ extension AuditEntityX on AuditEntity {
         return 'Equipment';
       case AuditEntity.auth:
         return 'Auth';
+      case AuditEntity.issueType:
+        return 'Issue Type';
     }
   }
 
-  String get key => name;
+  /// Backend `audit_entity` value (`issue_type`, ...).
+  String get key => this == AuditEntity.issueType ? 'issue_type' : name;
 
   static AuditEntity fromKey(String key) {
     return AuditEntity.values.firstWhere(
-      (e) => e.name == key,
+      (e) => e.key == key || e.name == key,
       orElse: () => AuditEntity.task,
     );
   }
@@ -121,7 +124,8 @@ class AuditLogEntry {
     String str(dynamic v) => v == null ? '' : '$v'.trim();
     return AuditLogEntry(
       id: str(json['id']),
-      actorName: str(json['actor_name']).isEmpty ? 'Unknown' : str(json['actor_name']),
+      actorName:
+          str(json['actor_name']).isEmpty ? 'Unknown' : str(json['actor_name']),
       actorRole: _roleLabel(str(json['actor_role'])),
       action: AuditActionX.fromBackend(json['action']),
       entity: AuditEntityX.fromKey(str(json['entity'])),

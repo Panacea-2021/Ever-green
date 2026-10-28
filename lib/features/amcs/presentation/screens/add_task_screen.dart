@@ -58,8 +58,12 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   /// Selected branch (backend company id).
   int? _companyId;
   int? _equipmentId;
-  CallType? _callType;
+  int? _issueTypeId;
   final _locationController = TextEditingController();
+
+  /// Once the user types a location, picking company / equipment no longer
+  /// overwrites it.
+  bool _locationEdited = false;
   final _subjectController = TextEditingController();
   final _descriptionController = TextEditingController();
 
@@ -70,6 +74,10 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   bool _preselectedEquipment = false;
 
   String? get _editTaskId => widget.editTask?['taskId']?.toString();
+
+  /// Legacy tickets have only a call type; matched to its issue type once
+  /// the list loads.
+  CallType? _pendingEditCallType;
 
   @override
   void initState() {
@@ -98,7 +106,13 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     _prefilledEdit = true;
     _companyId = t.companyId ?? _companyId;
     _equipmentId = t.equipmentId;
-    _callType = t.callType;
+    _issueTypeId = t.source?.issueTypeId;
+    _pendingEditCallType = _issueTypeId == null ? t.callType : null;
+    final location = t.source?.location ?? '';
+    if (location.isNotEmpty) {
+      _locationController.text = location;
+      _locationEdited = true;
+    }
     _subjectController.text = t.source?.name ?? t.title;
     _descriptionController.text = t.description;
   }
@@ -228,10 +242,11 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
       if (!_companyLocked) {
         _companyName = null;
         _companyId = null;
-        _locationController.clear();
       }
+      _locationController.clear();
+      _locationEdited = false;
       _equipmentId = null;
-      _callType = null;
+      _issueTypeId = null;
       _subjectController.clear();
       _descriptionController.clear();
       _selectedImages.clear();
@@ -244,13 +259,29 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  Future<void> _saveTask(TaskItem? editing) async {
+  Future<void> _saveTask(
+    TaskItem? editing,
+    List<IssueType> issueTypes,
+    ActiveEquipmentTask? activeTask,
+  ) async {
     final subject = _subjectController.text.trim();
     if (_companyName == null) return _snack('Please select a company');
     if (_companyId == null) return _snack('Please select a branch');
     if (_equipmentId == null) return _snack('Please select equipment');
-    if (_callType == null) return _snack('Please choose an issue type');
+    if (!widget.isEdit && activeTask != null) {
+      return _snack(
+        'Ticket ${activeTask.ticketNo} is still active on this equipment. '
+        'Close it before raising another.',
+      );
+    }
+    IssueType? chosen;
+    for (final it in issueTypes) {
+      if (it.id == _issueTypeId) chosen = it;
+    }
+    if (chosen == null) return _snack('Please choose an issue type');
+    final issueType = chosen;
     if (subject.isEmpty) return _snack('Please enter a subject');
+    final location = _locationController.text.trim();
 
     final actions = ref.read(taskActionsProvider);
     final description = _descriptionController.text.trim();
@@ -263,8 +294,9 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
           editing,
           name: subject,
           description: description,
-          callType: _callType,
+          issueType: issueType,
           equipmentId: _equipmentId,
+          location: location,
         ),
         success: 'Task updated successfully',
       );
@@ -277,8 +309,9 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
           equipmentId: _equipmentId!,
           name: subject,
           description: description,
-          callType: _callType!,
+          issueType: issueType,
           clientId: user.backendId,
+          location: location,
           imagePaths: List.of(_selectedImages),
         ),
         success: 'Task created successfully',
@@ -317,12 +350,6 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     }
     if (selectedCompany != null) {
       _companyName ??= selectedCompany.name;
-      final loc = selectedCompany.location ?? '';
-      if (_locationController.text != loc) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _locationController.text = loc;
-        });
-      }
     } else if (_companyName == null && companyList.isNotEmpty) {
       final pre = widget.companyName?.trim().toLowerCase();
       if (pre != null && pre.isNotEmpty) {
@@ -350,6 +377,31 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     for (final e in equipmentList) {
       if (e.id == _equipmentId) selectedEquipment = e;
     }
+    if (!_locationEdited) {
+      final loc = (selectedEquipment?.location ?? '').isNotEmpty
+          ? selectedEquipment!.location!
+          : selectedCompany?.location ?? '';
+      if (_locationController.text != loc) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_locationEdited) _locationController.text = loc;
+        });
+      }
+    }
+
+    final issueTypesAsync = ref.watch(issueTypesProvider);
+    final issueTypes = issueTypesAsync.valueOrNull ?? const <IssueType>[];
+    final pendingCallType = _pendingEditCallType;
+    if (pendingCallType != null && issueTypes.isNotEmpty) {
+      _pendingEditCallType = null;
+      for (final it in issueTypes) {
+        if (it.callType == pendingCallType) _issueTypeId = it.id;
+      }
+    }
+
+    final activeAsync = !widget.isEdit && _equipmentId != null
+        ? ref.watch(activeTaskForEquipmentProvider(_equipmentId!))
+        : null;
+    final activeTask = activeAsync?.valueOrNull;
 
     final waitingForEdit = widget.isEdit &&
         editing == null &&
@@ -393,17 +445,26 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                                 _companyLocked,
                                 equipments,
                                 selectedEquipment,
+                                activeTask,
                               ),
 
                               const SizedBox(height: 16),
 
-                              // Issue Type Dropdown
-                              _buildInlineDropdownField<CallType>(
-                                label: 'Issue Type',
-                                value: _callType,
-                                items: [for (final c in CallType.values) (c, c.label)],
-                                onChanged: (value) => setState(() => _callType = value),
-                              ),
+                              if (issueTypesAsync.hasError && issueTypes.isEmpty)
+                                _statusField(
+                                  'Couldn\'t load issue types — tap to retry',
+                                  onTap: () => ref.invalidate(issueTypesProvider),
+                                )
+                              else
+                                _buildInlineDropdownField<int>(
+                                  label: 'Issue Type',
+                                  value: _issueTypeId,
+                                  items: [
+                                    for (final it in issueTypes) (it.id, it.name),
+                                  ],
+                                  onChanged: (value) =>
+                                      setState(() => _issueTypeId = value),
+                                ),
 
                               const SizedBox(height: 16),
 
@@ -436,7 +497,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                 ),
 
                 // Bottom Buttons
-                _buildBottomButtons(editing),
+                _buildBottomButtons(editing, issueTypes, activeTask),
               ],
             ),
           ),
@@ -473,7 +534,6 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
       _companyName = picked.name;
       _companyId = picked.id;
       _equipmentId = null;
-      _locationController.text = picked.location ?? '';
     });
   }
 
@@ -561,6 +621,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   Widget _buildInlineTextField({
     required String label,
     required TextEditingController controller,
+    ValueChanged<String>? onChanged,
   }) {
     return Material(
       color: Colors.white,
@@ -569,7 +630,10 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
       borderRadius: BorderRadius.circular(32),
       child: TextField(
         controller: controller,
-        readOnly: true,
+        onChanged: onChanged,
+        maxLength: 200,
+        buildCounter: (_, {required currentLength, required isFocused, maxLength}) =>
+            null,
         cursorColor: const Color(0xFF106220),
         textAlignVertical: TextAlignVertical.center,
         style: const TextStyle(
@@ -696,6 +760,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     bool lockCompany,
     AsyncValue<List<Equipment>>? equipments,
     Equipment? selectedEquipment,
+    ActiveEquipmentTask? activeTask,
   ) {
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
@@ -766,15 +831,20 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
           const SizedBox(height: 19),
 
-          // Location Field
-          _buildInlineTextField(
-            label: 'Location',
-            controller: _locationController,
-          ),
+          _equipmentField(equipments, selectedEquipment),
+
+          if (activeTask != null) ...[
+            const SizedBox(height: 12),
+            _activeTaskBanner(activeTask),
+          ],
 
           const SizedBox(height: 19),
 
-          _equipmentField(equipments, selectedEquipment),
+          _buildInlineTextField(
+            label: 'Location (e.g. Block B, 2nd floor)',
+            controller: _locationController,
+            onChanged: (_) => _locationEdited = true,
+          ),
 
           // Equipment Specifications (shown when equipment is selected)
           if (selectedEquipment != null) ...[
@@ -1095,7 +1165,45 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     );
   }
 
-  Widget _buildBottomButtons(TaskItem? editing) {
+  Widget _activeTaskBanner(ActiveEquipmentTask t) {
+    return Container(
+      key: const Key('activeTaskBanner'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFDE8E8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD32F2F)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Color(0xFFD32F2F)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'An active task already exists on this equipment: '
+              'Ticket ${t.ticketNo}'
+              '${t.name.isEmpty ? '' : ' — ${t.name}'} (${t.status.label}). '
+              'A new task can be raised once it is closed.',
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF8A1A1A),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomButtons(
+    TaskItem? editing,
+    List<IssueType> issueTypes,
+    ActiveEquipmentTask? activeTask,
+  ) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: const BoxDecoration(color: Colors.white),
@@ -1136,7 +1244,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
           // Save Button (green gradient pill, matches Figma)
           Expanded(
             child: GestureDetector(
-              onTap: () => _saveTask(editing),
+              onTap: () => _saveTask(editing, issueTypes, activeTask),
               child: Container(
                 height: 46,
                 alignment: Alignment.center,

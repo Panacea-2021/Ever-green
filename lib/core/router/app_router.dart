@@ -53,6 +53,7 @@ import '../../features/technicians/presentation/screens/technician_tasks_screen.
 import '../../features/scanner/presentation/screens/verified_equipments_screen.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/audit/presentation/screens/audit_log_screen.dart';
+import '../../features/issue_types/presentation/screens/issue_types_screen.dart';
 import '../../features/amcs/presentation/screens/amc_renewals_screen.dart';
 import '../../features/pm/presentation/screens/pm_schedule_screen.dart';
 import '../../shared/providers/auth_state_provider.dart';
@@ -327,6 +328,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.verifiedEquipments,
         name: 'verifiedEquipments',
         builder: (context, state) => const VerifiedEquipmentsScreen(),
+      ),
+      GoRoute(
+        path: Routes.issueTypes,
+        name: 'issueTypes',
+        builder: (context, state) => const IssueTypesScreen(),
       ),
       GoRoute(
         path: Routes.auditLog,

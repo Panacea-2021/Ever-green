@@ -80,11 +80,11 @@ class TaskActionHandler {
       case TaskAction.rate:
         await _rateSheet(t);
       case TaskAction.delete:
-        final ok = await confirmTaskDelete(context, t);
-        if (!ok || !context.mounted) return;
+        final reason = await askTaskDeleteReason(context, t);
+        if (reason == null || !context.mounted) return;
         final deleted = await runTaskAction(
           context,
-          () => _actions.delete(t),
+          () => _actions.delete(t, reason),
           success: 'Task deleted',
         );
         if (deleted) onDeleted?.call();

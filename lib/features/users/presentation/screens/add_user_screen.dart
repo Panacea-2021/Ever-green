@@ -8,6 +8,7 @@ import '../../../../core/data/evergreen_repository.dart' as repo;
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/password_generator.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -26,11 +27,12 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   final _nameController = TextEditingController();
   final _mobileController = TextEditingController();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _passwordController = TextEditingController(text: generatePassword());
 
   UserRole? _selectedRole;
   int? _selectedCompanyId;
-  bool _isPasswordVisible = false;
+  bool _isPasswordVisible = true;
+  bool _sendCredentials = true;
   bool _isSaving = false;
 
   static const Color _green = Color(0xFF106220);
@@ -67,6 +69,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
           role: role,
           companyIds:
               _selectedCompanyId != null ? [_selectedCompanyId!] : const [],
+          sendCredentials: _sendCredentials,
         );
     if (!mounted) return;
     setState(() => _isSaving = false);
@@ -82,7 +85,12 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
         ref.invalidate(usersListProvider);
         if (role.isTechnicianLevel) ref.invalidate(repo.techniciansProvider);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: _green),
+          SnackBar(
+            content: Text(message),
+            backgroundColor: message.contains('could not be sent')
+                ? Colors.orange.shade800
+                : _green,
+          ),
         );
         context.pop();
       },
@@ -236,7 +244,33 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: const Key('regeneratePassword'),
+                  onPressed: () => setState(
+                    () => _passwordController.text = generatePassword(),
+                  ),
+                  icon: const Icon(Icons.autorenew, size: 18, color: _green),
+                  label: const Text(
+                    'Generate new password',
+                    style: TextStyle(fontFamily: 'Montserrat', color: _green),
+                  ),
+                ),
+              ),
+              CheckboxListTile(
+                key: const Key('sendCredentialsCheckbox'),
+                value: _sendCredentials,
+                onChanged: (v) => setState(() => _sendCredentials = v ?? false),
+                activeColor: _green,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text(
+                  'Send the user these login details by email',
+                  style: TextStyle(fontFamily: 'Montserrat', fontSize: 14),
+                ),
+              ),
+              const SizedBox(height: 8),
               _buildDropdownField<UserRole>(
                 value: _selectedRole,
                 hintText: 'Access Type',

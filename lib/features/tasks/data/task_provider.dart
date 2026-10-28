@@ -10,7 +10,8 @@ import '../domain/models/task_item.dart';
 /// Tickets from `user/getAllTasks` (already scoped per role by the backend)
 /// as [TaskItem]s, with loading / error state. Screens that need a spinner or
 /// retry watch this; refresh with `ref.invalidate(tasksProvider)`.
-final taskItemsProvider = Provider.autoDispose<AsyncValue<List<TaskItem>>>((ref) {
+final taskItemsProvider =
+    Provider.autoDispose<AsyncValue<List<TaskItem>>>((ref) {
   return ref
       .watch(tasksProvider)
       .whenData((tasks) => tasks.map(TaskItem.fromService).toList());
@@ -35,66 +36,53 @@ final escalatedTasksProvider = Provider.autoDispose<List<TaskItem>>((ref) {
   return ref.watch(taskProvider).where((t) => t.escalated).toList();
 });
 
-/// Splits tickets into the Ticket Queue tabs (see [TaskItem.queueBucket]).
-/// Unassigned: overdue, then highest priority, then oldest first. Awaiting:
-/// longest-waiting first (most at risk of breaching the acceptance window).
-/// Assigned: highest priority, then oldest first.
-Map<QueueBucket, List<TaskItem>> queueBuckets(
+int _byOverdueThenPriorityThenAge(TaskItem a, TaskItem b, DateTime? now) {
+  final ao = a.isOverdue(now) ? 1 : 0;
+  final bo = b.isOverdue(now) ? 1 : 0;
+  if (ao != bo) return bo - ao;
+  if (a.priority.rank != b.priority.rank) {
+    return b.priority.rank - a.priority.rank;
+  }
+  return a.createdAt.compareTo(b.createdAt);
+}
+
+/// The Ticket Queue tabs (see [TaskItem.inQueueTab]); a ticket can be in
+/// several. Unassigned / Assigned: overdue, then highest priority, then
+/// oldest first. Awaiting: longest without an engineer first. Escalation:
+/// longest without a status change first.
+Map<QueueTab, List<TaskItem>> queueTabs(
   Iterable<TaskItem> tasks, [
   DateTime? now,
 ]) {
-  final buckets = {for (final b in QueueBucket.values) b: <TaskItem>[]};
-  for (final t in tasks) {
-    final b = t.queueBucket;
-    if (b != null) buckets[b]!.add(t);
-  }
-  int byPriorityThenAge(TaskItem a, TaskItem b) {
-    if (a.priority.rank != b.priority.rank) {
-      return b.priority.rank - a.priority.rank;
-    }
-    return a.createdAt.compareTo(b.createdAt);
-  }
-
-  buckets[QueueBucket.unassigned]!.sort((a, b) {
-    final ao = a.isOverdue(now) ? 1 : 0;
-    final bo = b.isOverdue(now) ? 1 : 0;
-    if (ao != bo) return bo - ao;
-    return byPriorityThenAge(a, b);
-  });
-  buckets[QueueBucket.awaiting]!.sort(
-    (a, b) => b
-        .pendingAcceptanceMinutes(now)
-        .compareTo(a.pendingAcceptanceMinutes(now)),
-  );
-  buckets[QueueBucket.assigned]!.sort(byPriorityThenAge);
-  return buckets;
+  final tabs = {
+    for (final tab in QueueTab.values)
+      tab: tasks.where((t) => t.inQueueTab(tab, now)).toList(),
+  };
+  tabs[QueueTab.unassigned]!
+      .sort((a, b) => _byOverdueThenPriorityThenAge(a, b, now));
+  tabs[QueueTab.awaiting]!.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  tabs[QueueTab.assigned]!
+      .sort((a, b) => _byOverdueThenPriorityThenAge(a, b, now));
+  tabs[QueueTab.escalation]!
+      .sort((a, b) => a.statusChangedAt.compareTo(b.statusChangedAt));
+  return tabs;
 }
 
-final _queueBucketsProvider =
-    Provider.autoDispose<Map<QueueBucket, List<TaskItem>>>((ref) {
-  return queueBuckets(ref.watch(taskProvider));
+final queueTabsProvider =
+    Provider.autoDispose<Map<QueueTab, List<TaskItem>>>((ref) {
+  return queueTabs(ref.watch(taskProvider));
 });
 
 /// Tickets with no Service Engineer yet (not completed / closed), overdue
 /// and highest priority first.
 final unassignedTasksProvider = Provider.autoDispose<List<TaskItem>>((ref) {
-  return ref.watch(_queueBucketsProvider)[QueueBucket.unassigned]!;
+  return ref.watch(taskProvider).where((t) => t.isUnassigned).toList()
+    ..sort((a, b) => _byOverdueThenPriorityThenAge(a, b, null));
 });
 
 /// Count of unassigned tickets, for badges on the home/queue entry points.
 final unassignedCountProvider = Provider.autoDispose<int>((ref) {
   return ref.watch(unassignedTasksProvider).length;
-});
-
-/// Tickets assigned to a Service Engineer but not yet accepted or started
-/// (still open), longest-waiting first.
-final awaitingAcceptanceProvider = Provider.autoDispose<List<TaskItem>>((ref) {
-  return ref.watch(_queueBucketsProvider)[QueueBucket.awaiting]!;
-});
-
-/// Tickets a Service Engineer has accepted or started and not finished.
-final assignedQueueProvider = Provider.autoDispose<List<TaskItem>>((ref) {
-  return ref.watch(_queueBucketsProvider)[QueueBucket.assigned]!;
 });
 
 /// Tickets assigned but NOT accepted within the acceptance window — the
@@ -125,7 +113,8 @@ class TechnicianStats {
   bool get isOverloaded => active >= 3;
 }
 
-final technicianStatsProvider = Provider.autoDispose<List<TechnicianStats>>((ref) {
+final technicianStatsProvider =
+    Provider.autoDispose<List<TechnicianStats>>((ref) {
   final tasks = ref.watch(taskProvider);
   final byTech = <int, List<TaskItem>>{};
   for (final t in tasks) {
@@ -201,13 +190,22 @@ class TaskActions {
   static String _date(DateTime d) =>
       DateTime(d.year, d.month, d.day, 23, 59, 59).toUtc().toIso8601String();
 
-  /// Creates a ticket; the backend generates the ticket number.
+  /// Body keys for [issueType]: the managed type, plus the legacy
+  /// `call_type` key for built-in types.
+  static Map<String, dynamic> issueTypeBody(IssueType issueType) => {
+        'issue_type_link': issueType.id,
+        if (issueType.callType != null) 'call_type': issueType.callType!.key,
+      };
+
+  /// Creates a ticket; the backend generates the ticket number and refuses
+  /// equipment that already has an active ticket.
   Future<void> create({
     required int equipmentId,
     required String name,
     required String description,
-    required CallType callType,
+    required IssueType issueType,
     required int clientId,
+    String? location,
     TaskPriority? priority,
     DateTime? dueDate,
     List<String> imagePaths = const [],
@@ -217,12 +215,15 @@ class TaskActions {
       'equipment_link': equipmentId,
       'name': name,
       'description': description,
-      'call_type': callType.key,
+      ...issueTypeBody(issueType),
       'client_link': clientId,
+      if (location != null && location.trim().isNotEmpty)
+        'location': location.trim(),
       'images': images,
       if (priority != null) 'priority': priority.key,
       if (dueDate != null) 'due_date': _date(dueDate),
     });
+    _ref.invalidate(activeTaskForEquipmentProvider(equipmentId));
   }
 
   /// Body of an individual ticket: no company or equipment, just the person
@@ -230,7 +231,7 @@ class TaskActions {
   static Map<String, dynamic> individualTaskBody({
     required String name,
     required String description,
-    CallType? callType,
+    IssueType? issueType,
     TaskPriority? priority,
     required String contactName,
     required String contactPhone,
@@ -240,7 +241,7 @@ class TaskActions {
       {
         'name': name,
         'description': description,
-        if (callType != null) 'call_type': callType.key,
+        if (issueType != null) ...issueTypeBody(issueType),
         if (priority != null) 'priority': priority.key,
         'contact_name': contactName,
         'contact_phone': contactPhone,
@@ -252,7 +253,7 @@ class TaskActions {
   Future<void> createIndividual({
     required String name,
     required String description,
-    CallType? callType,
+    IssueType? issueType,
     TaskPriority? priority,
     required String contactName,
     required String contactPhone,
@@ -265,7 +266,7 @@ class TaskActions {
       individualTaskBody(
         name: name,
         description: description,
-        callType: callType,
+        issueType: issueType,
         priority: priority,
         contactName: contactName,
         contactPhone: contactPhone,
@@ -279,8 +280,9 @@ class TaskActions {
     TaskItem t, {
     String? name,
     String? description,
-    CallType? callType,
+    IssueType? issueType,
     int? equipmentId,
+    String? location,
     TaskPriority? priority,
     DateTime? dueDate,
     String? contactName,
@@ -291,7 +293,8 @@ class TaskActions {
       'task_link': t.taskId,
       if (name != null) 'name': name,
       if (description != null) 'description': description,
-      if (callType != null) 'call_type': callType.key,
+      if (issueType != null) ...issueTypeBody(issueType),
+      if (location != null) 'location': location.trim(),
       if (equipmentId != null) 'equipment_link': equipmentId,
       if (priority != null) 'priority': priority.key,
       if (dueDate != null) 'due_date': _date(dueDate),
@@ -301,8 +304,10 @@ class TaskActions {
     });
   }
 
-  Future<void> delete(TaskItem t) async {
-    await _post('user/deleteTask', {'task_link': t.taskId});
+  /// Soft-deletes an open ticket; [reason] is required by the backend.
+  Future<void> delete(TaskItem t, String reason) async {
+    await _post('user/deleteTask', {'task_link': t.taskId, 'reason': reason});
+    _ref.invalidate(deletedTasksProvider);
   }
 
   /// Assigns (or reassigns) the ticket to a technician.
@@ -463,7 +468,8 @@ class TaskActions {
     );
     final encoded = body is Map ? body['pdf_base64']?.toString() : null;
     if (encoded == null || encoded.isEmpty) {
-      throw const RepositoryException('The service report could not be generated');
+      throw const RepositoryException(
+          'The service report could not be generated');
     }
     return base64Decode(encoded);
   }

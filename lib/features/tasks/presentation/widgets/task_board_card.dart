@@ -4,7 +4,7 @@ import '../../domain/models/task_item.dart';
 import 'task_workflow.dart' show taskImage;
 
 /// Task Board card from the new design: large image, title + priority star,
-/// location / status row, Equipment / Company / S.No rows, Created At, and
+/// location / status row, Equipment / Company / Ticket ID rows, Created At, and
 /// the Report + Assign buttons. Individual tickets show the contact in place
 /// of the company and the address in place of the equipment.
 class TaskBoardCard extends StatelessWidget {
@@ -131,7 +131,7 @@ class TaskBoardCard extends StatelessWidget {
                         _infoRow('Company', t.companyName),
                       ],
                       const SizedBox(height: 4),
-                      _infoRow('S.No', t.ticketNo),
+                      _infoRow('Ticket ID', t.ticketNo),
                     ],
                   ),
                 ),

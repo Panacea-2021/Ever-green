@@ -7,6 +7,7 @@ import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../data/equipment_provider.dart';
+import '../../../pickers/presentation/screens/equipment_picker_screen.dart' show equipmentMatches;
 
 class CompanyEquipmentsScreen extends ConsumerStatefulWidget {
   final String companyId;
@@ -94,18 +95,8 @@ class _CompanyEquipmentsScreenState
         onRetry: () => ref.invalidate(equipmentsProvider(companyId)),
       ),
       data: (items) {
-        final q = _query.toLowerCase();
-        final filtered = q.isEmpty
-            ? items
-            : items.where((e) {
-                return [
-                  e.name,
-                  e.make,
-                  e.model,
-                  e.serialNumber,
-                  e.egSerialNumber,
-                ].whereType<String>().any((v) => v.toLowerCase().contains(q));
-              }).toList();
+        final filtered =
+            items.where((e) => equipmentMatches(e, _query)).toList();
         return RefreshIndicator(
           color: _addGreen,
           onRefresh: () => ref.refresh(equipmentsProvider(companyId).future),
