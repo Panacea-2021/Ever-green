@@ -31,7 +31,7 @@ enum TaskEventType {
 String taskActorRoleLabel(String role) => switch (role) {
       'eg_super_admin' => 'Super Admin',
       'eg_admin' => 'Manager',
-      'client_admin' => 'Client Admin',
+      'client_admin' => 'Company Manager',
       'client' => 'POC',
       'technician' => 'Service Engineer',
       'senior_technician' => 'Senior Service Engineer',

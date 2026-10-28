@@ -364,7 +364,7 @@ class TaskDetailsScreen extends ConsumerWidget {
           // Client
           Align(
             alignment: Alignment.centerLeft,
-            child: _infoField('Client', client.isEmpty ? '-' : client),
+            child: _infoField('Raised By', client.isEmpty ? '-' : client),
           ),
           const SizedBox(height: 14),
 

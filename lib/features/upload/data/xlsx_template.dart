@@ -111,7 +111,7 @@ const technicianTemplateHeaders = [
   'Location',
 ];
 
-/// Designation is "Senior Service Engineer" or "Junior Service Engineer".
+/// Designation is "Senior Service Engineer" or "Service Engineer".
 const technicianSampleRows = [
   [
     'Suresh Reddy',
@@ -126,7 +126,7 @@ const technicianSampleRows = [
     '9876501234',
     'kiran.rao@example.com',
     'Kiran@123',
-    'Junior Service Engineer',
+    'Service Engineer',
     'Secunderabad',
   ],
 ];

@@ -146,11 +146,11 @@ class AuditLogEntry {
       case 'senior_technician':
         return 'Senior Service Engineer';
       case 'technician':
-        return 'Junior Service Engineer';
+        return 'Service Engineer';
       case 'client_admin':
-        return 'Client Admin';
+        return 'Company Manager';
       case 'client':
-        return 'Client / POC';
+        return 'POC';
       default:
         return role;
     }

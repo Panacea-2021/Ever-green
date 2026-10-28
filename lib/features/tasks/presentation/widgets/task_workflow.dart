@@ -190,7 +190,7 @@ class _FinishTaskDialogState extends State<_FinishTaskDialog> {
         children: [
           Text(
             '${widget.closing ? 'Close' : 'Mark completed'} "${t.title}" '
-            '(Ticket ${t.ticketNo})? The POC, client admin and engineer '
+            '(Ticket ${t.ticketNo})? The POC, company manager and engineer '
             'will be notified.',
             style: const TextStyle(fontFamily: 'Montserrat', fontSize: 13.5),
           ),
@@ -232,8 +232,7 @@ List<TaskAction> taskActionsFor(TaskItem t, User? user) =>
 
 /// Which overflow-menu items apply to [role].
 List<TaskMenuItem> taskMenuFor(UserRole role) {
-  final isManagerial =
-      role == UserRole.superAdmin || role == UserRole.manager;
+  final isManagerial = role == UserRole.superAdmin || role == UserRole.manager;
   final canAssign = isManagerial || role == UserRole.seniorTechnician;
   return [
     if (canAssign) TaskMenuItem.assign,
@@ -606,7 +605,7 @@ class _DeleteTaskDialogState extends State<_DeleteTaskDialog> {
                 const SizedBox(height: 8),
                 Text(
                   'Delete "${t.title}" (Ticket ${t.ticketNo})?\n'
-                  'The raiser, client admin and engineer will be notified.',
+                  'The raiser, company manager and engineer will be notified.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontFamily: 'Montserrat',
@@ -628,7 +627,8 @@ class _DeleteTaskDialogState extends State<_DeleteTaskDialog> {
                   onChanged: (_) {
                     if (_showError) setState(() => _showError = false);
                   },
-                  style: const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
+                  style:
+                      const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
                   decoration: InputDecoration(
                     labelText: 'Reason for deleting *',
                     errorText: _showError ? 'Please enter a reason' : null,
@@ -893,7 +893,8 @@ class _EditTaskSheetState extends ConsumerState<_EditTaskSheet> {
     final t = widget.task;
     final keyboard = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 8, 20, keyboard + widget.bottomInset + 16),
+      padding:
+          EdgeInsets.fromLTRB(20, 8, 20, keyboard + widget.bottomInset + 16),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

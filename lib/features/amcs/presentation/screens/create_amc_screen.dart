@@ -214,7 +214,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
         (widget.isEdit && admin[3].isNotEmpty);
     final hasLinkedAdmin = _company?.poc != null;
     if (anyAdmin && !hasLinkedAdmin && admin.any((v) => v.isEmpty)) {
-      return 'Please provide all client admin details or leave them all empty';
+      return 'Please provide all company manager details or leave them all empty';
     }
     if (admin[1].isNotEmpty && !_mobilePattern.hasMatch(admin[1])) {
       return 'Please enter valid mobile number';
@@ -308,7 +308,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
                     ? 'Company updated successfully!'
                     : 'Company created successfully!') +
                 (emailFailed
-                    ? ' The login email to the client admin could not be sent.'
+                    ? ' The login email to the company manager could not be sent.'
                     : ''),
           ),
           backgroundColor:
@@ -821,7 +821,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Client Details',
+              'Company Manager Details',
               style: TextStyle(
                 fontFamily: 'Montserrat',
                 fontSize: 18,
@@ -893,7 +893,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
                 title: const Text(
-                  'Send the client admin these login details by email',
+                  'Send the company manager these login details by email',
                   style: TextStyle(fontFamily: 'Montserrat', fontSize: 14),
                 ),
               ),

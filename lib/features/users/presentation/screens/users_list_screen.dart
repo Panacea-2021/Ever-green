@@ -34,7 +34,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   static const Color _footerBg = Color(0xFFEBF0EA);
 
   final List<String> _tabs = [
-    'Clients',
+    'Company Managers',
     'POCs',
     'Service Engineers',
     'Managers',
@@ -46,7 +46,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     super.dispose();
   }
 
-  /// Clients = client admins, POCs = client users, Managers = EverGreen admins.
+  /// Company Managers = client admins, POCs = client users, Managers =
+  /// EverGreen admins.
   bool _inTab(UserRole role) {
     switch (_selectedTab) {
       case 1:

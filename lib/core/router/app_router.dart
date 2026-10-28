@@ -549,9 +549,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.tasks,
             name: 'tasks',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: TaskBoardScreen(isRootTab: true),
-            ),
+            pageBuilder: (context, state) {
+              final status =
+                  state.extra is TaskStatus ? state.extra! as TaskStatus : null;
+              return NoTransitionPage(
+                child: TaskBoardScreen(
+                  key: ValueKey(status),
+                  isRootTab: true,
+                  initialStatus: status,
+                ),
+              );
+            },
           ),
           GoRoute(
             path: Routes.profile,

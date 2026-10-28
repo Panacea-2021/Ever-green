@@ -60,7 +60,7 @@ void main() {
     final i = technicianTemplateHeaders.indexOf('Designation');
     expect(technicianSampleRows.map((r) => r[i]), [
       'Senior Service Engineer',
-      'Junior Service Engineer',
+      'Service Engineer',
     ]);
   });
 
