@@ -67,14 +67,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
     'Bi-Weekly': TmFrequency.biweekly,
   };
 
-  List<String> get _years {
-    final now = DateTime.now().year;
-    final years = [for (var y = now; y > now - 5; y--) '$y'];
-    if (_selectedYear != null && !years.contains(_selectedYear)) {
-      years.add(_selectedYear!);
-    }
-    return years;
-  }
+  static const int _firstManufacturerYear = 1970;
 
   List<String> get _frequencies {
     final labels = _frequencyValues.keys.toList();
@@ -196,14 +189,18 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
             child: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
           ),
           const SizedBox(width: 14),
-          Text(
-            widget.isEdit ? 'Update Equipment' : 'Add Equipment',
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-              letterSpacing: -0.6,
+          Flexible(
+            child: Text(
+              widget.isEdit ? 'Update Equipment' : 'Add Equipment',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                letterSpacing: -0.6,
+              ),
             ),
           ),
         ],
@@ -270,7 +267,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
           ],
 
           // Fields
-          _pillField(_equipmentNameController, 'Fridge'),
+          _pillField(_equipmentNameController, 'Equipment Name'),
           const SizedBox(height: 19),
           _pillField(_makeController, 'Make'),
           const SizedBox(height: 19),
@@ -284,15 +281,15 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
           const SizedBox(height: 19),
 
           // Location
-          _pillField(_locationController, 'Hyderabad'),
+          _pillField(_locationController, 'Location'),
           const SizedBox(height: 19),
 
-          // Manufacturer Year dropdown
           _dropdownField(
             'Manufacturer Year',
             _selectedYear,
-            _years,
-            (v) => setState(() => _selectedYear = v),
+            const [],
+            (_) {},
+            onTapOverride: _pickYear,
           ),
           const SizedBox(height: 19),
 
@@ -515,11 +512,12 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
   // ---------------------------------------------------------------------------
   Widget _buildUploadBox() {
     final image = mediaUrl(_imageUrl);
+    final hasImage = image.isNotEmpty;
     return GestureDetector(
       onTap: _uploadingImage ? null : _showImagePickerDialog,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 28),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           color: const Color(0xFFEBEDFF),
           borderRadius: BorderRadius.circular(16),
@@ -527,22 +525,26 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
         child: Column(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: hasImage ? 140 : 48,
+              height: hasImage ? 140 : 48,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.06),
-                shape: BoxShape.circle,
+                shape: hasImage ? BoxShape.rectangle : BoxShape.circle,
+                borderRadius: hasImage ? BorderRadius.circular(12) : null,
               ),
               child: _uploadingImage
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: _green,
+                  ? const Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _green,
+                        ),
                       ),
                     )
-                  : image.isNotEmpty
+                  : hasImage
                       ? Image.network(
                           image,
                           fit: BoxFit.cover,
@@ -551,9 +553,13 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
                       : _uploadIcon(),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Please upload your image here',
-              style: TextStyle(
+            Text(
+              hasImage
+                  ? 'Tap to change the equipment image'
+                  : widget.isEdit
+                      ? 'Please upload your image here'
+                      : 'Equipment image (required)',
+              style: const TextStyle(
                 fontFamily: 'Montserrat',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -608,25 +614,29 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
                       borderRadius: BorderRadius.circular(32),
                       border: Border.all(color: _resetBorder, width: 1),
                     ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.cloud_upload_outlined,
-                          color: Color(0xFF0E501B),
-                          size: 18,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Bulk Upload',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.cloud_upload_outlined,
                             color: Color(0xFF0E501B),
+                            size: 18,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 8),
+                          Text(
+                            'Bulk Upload',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0E501B),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -740,6 +750,51 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickYear() async {
+    final now = DateTime.now();
+    final current = int.tryParse(_selectedYear ?? '');
+    final firstYear = current != null && current < _firstManufacturerYear
+        ? current
+        : _firstManufacturerYear;
+    final lastYear = current != null && current > now.year ? current : now.year;
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Manufacturer Year',
+          style:
+              TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600),
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+        content: SizedBox(
+          width: 300,
+          height: 320,
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                    primary: _green,
+                    onPrimary: Colors.white,
+                  ),
+            ),
+            child: YearPicker(
+              firstDate: DateTime(firstYear),
+              lastDate: DateTime(lastYear),
+              selectedDate: DateTime(current ?? now.year),
+              onChanged: (date) => Navigator.pop(context, date.year),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+    if (picked != null && mounted) setState(() => _selectedYear = '$picked');
   }
 
   void _showImagePickerDialog() {
@@ -892,6 +947,15 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
     // createEquipment always parses manufacturer_date.
     if (!widget.isEdit && year == null) {
       _snack('Please select the manufacturer year', error: true);
+      return;
+    }
+    if (_uploadingImage) {
+      _snack('Please wait for the image to finish uploading', error: true);
+      return;
+    }
+    if (!widget.isEdit && (_imageUrl ?? '').isEmpty) {
+      _snack('Please upload an equipment image', error: true);
+      _showImagePickerDialog();
       return;
     }
 

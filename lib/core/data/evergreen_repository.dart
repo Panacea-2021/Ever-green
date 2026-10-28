@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
@@ -191,7 +193,22 @@ class RepositoryException implements Exception {
   String toString() => message;
 }
 
+/// How long reference lists stay cached after the last screen using them
+/// closes. Saves invalidate these providers, so edits still show at once.
+const listCacheDuration = Duration(seconds: 60);
+
+/// Keeps an auto-dispose provider's value for [duration] after its last
+/// listener leaves, so moving between screens does not refetch it.
+void cacheFor(Ref ref, Duration duration) {
+  final link = ref.keepAlive();
+  Timer? timer;
+  ref.onCancel(() => timer = Timer(duration, link.close));
+  ref.onResume(() => timer?.cancel());
+  ref.onDispose(() => timer?.cancel());
+}
+
 final companiesProvider = FutureProvider.autoDispose<List<Company>>((ref) {
+  cacheFor(ref, listCacheDuration);
   return ref.watch(evergreenRepositoryProvider).getCompanies();
 });
 
@@ -207,6 +224,7 @@ final deletedTasksProvider =
 
 /// Issue types offered when raising a task.
 final issueTypesProvider = FutureProvider.autoDispose<List<IssueType>>((ref) {
+  cacheFor(ref, listCacheDuration);
   return ref.watch(evergreenRepositoryProvider).getIssueTypes();
 });
 
@@ -221,6 +239,7 @@ final allIssueTypesProvider =
 /// Service types offered when adding or editing equipment.
 final serviceTypesProvider =
     FutureProvider.autoDispose<List<ServiceType>>((ref) {
+  cacheFor(ref, listCacheDuration);
   return ref.watch(evergreenRepositoryProvider).getServiceTypes();
 });
 
@@ -243,12 +262,14 @@ final activeTaskForEquipmentProvider = FutureProvider.autoDispose
 /// All equipment visible to the user, or one company's when [companyId] is set.
 final equipmentsProvider =
     FutureProvider.autoDispose.family<List<Equipment>, int?>((ref, companyId) {
+  cacheFor(ref, listCacheDuration);
   return ref
       .watch(evergreenRepositoryProvider)
       .getEquipments(companyId: companyId);
 });
 
 final techniciansProvider = FutureProvider.autoDispose<List<User>>((ref) {
+  cacheFor(ref, listCacheDuration);
   return ref
       .watch(evergreenRepositoryProvider)
       .getUsers(accessLevel: 'technician');

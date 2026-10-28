@@ -182,25 +182,16 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
     final name = _companyController.text.trim();
     final branch = _branchNameController.text.trim();
     final gst = _gstController.text.trim().toUpperCase();
-    final address = _addressController.text.trim();
     if (name.isEmpty) return 'Please enter company name';
     if (branch.isEmpty) return 'Please enter branch name';
-    if (!widget.isEdit && address.isEmpty) {
-      return 'Please enter company address';
-    }
-    if ((!widget.isEdit || gst.isNotEmpty) && !_gstPattern.hasMatch(gst)) {
+    if (gst.isNotEmpty && !_gstPattern.hasMatch(gst)) {
       return 'Please enter a valid GST number';
     }
-    if (_isAmc) {
-      if (_amcType == null) {
-        return 'Please select an AMC category (NC AMC or C AMC)';
-      }
-      if (_startDate == null || _endDate == null) {
-        return 'AMC contracts require a start and end date';
-      }
-      if (_endDate!.isBefore(_startDate!)) {
-        return 'End date must be after the start date';
-      }
+    if (_isAmc &&
+        _startDate != null &&
+        _endDate != null &&
+        _endDate!.isBefore(_startDate!)) {
+      return 'End date must be after the start date';
     }
 
     final admin = [
@@ -709,25 +700,28 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
             ),
             const SizedBox(height: 22),
 
-            _pillField(controller: _companyController, hint: 'Company Name'),
+            _pillField(controller: _companyController, hint: 'Company Name *'),
             const SizedBox(height: 19),
-            _pillField(controller: _branchNameController, hint: 'Branch Name'),
+            _pillField(
+              controller: _branchNameController,
+              hint: 'Branch Name *',
+            ),
             const SizedBox(height: 19),
             _pillField(
               controller: _companyEmailController,
-              hint: 'Company Email',
+              hint: 'Company Email (optional)',
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 19),
             _pillField(
               controller: _gstController,
-              hint: 'GST Number',
+              hint: 'GST Number (optional)',
               capitalization: TextCapitalization.characters,
             ),
             const SizedBox(height: 19),
             _pillField(
               controller: _addressController,
-              hint: 'Company Address',
+              hint: 'Company Address (optional)',
               keyboardType: TextInputType.streetAddress,
             ),
             const SizedBox(height: 19),

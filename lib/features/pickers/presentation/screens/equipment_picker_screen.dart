@@ -72,6 +72,7 @@ class EquipmentPickerScreen extends ConsumerWidget {
         ].join('  •  ');
         return PickerCard(
           icon: Icons.handyman_outlined,
+          imageUrl: mediaUrl(e.imageUrl),
           title: e.name.isEmpty ? 'Equipment #${e.id}' : e.name,
           tag: e.isActive ? e.serviceType?.name : 'Inactive',
           selected: e.id == selectedId,

@@ -244,6 +244,7 @@ class PickerCard extends StatelessWidget {
     required this.onTap,
     this.selected = false,
     this.tag,
+    this.imageUrl,
   });
 
   final IconData icon;
@@ -252,6 +253,9 @@ class PickerCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool selected;
   final String? tag;
+
+  /// Shown in place of [icon] when set; [icon] is the fallback if it fails.
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -284,11 +288,19 @@ class PickerCard extends StatelessWidget {
                 Container(
                   width: 46,
                   height: 46,
+                  clipBehavior: Clip.antiAlias,
                   decoration: const BoxDecoration(
                     color: Color(0xFFEBF0EA),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: pickerGreen, size: 24),
+                  child: (imageUrl ?? '').isEmpty
+                      ? Icon(icon, color: pickerGreen, size: 24)
+                      : Image.network(
+                          imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Icon(icon, color: pickerGreen, size: 24),
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
