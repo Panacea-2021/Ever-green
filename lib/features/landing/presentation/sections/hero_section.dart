@@ -39,7 +39,7 @@ class HeroSection extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: isMobile ? 525 : 675,
+      height: isMobile ? 470 : 600,
       child: Stack(
         children: [
           const Positioned.fill(child: LandingHeroVideo()),

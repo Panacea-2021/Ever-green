@@ -27,7 +27,8 @@ class FaqSection extends StatefulWidget {
 }
 
 class _FaqSectionState extends State<FaqSection> {
-  int? _expandedIndex = 1;
+  /// Nothing is open until the visitor chooses a question.
+  int? _expandedIndex;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -83,43 +84,99 @@ class _FaqSectionState extends State<FaqSection> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
+    final faqs = _filteredFaqs;
 
     return ColoredBox(
-      color: const Color(0xFFEAF8EF),
+      color: const Color(0xFFF4F7F5),
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 20 : 80,
-          vertical: isMobile ? 56 : 80,
+          horizontal: isMobile ? 20 : 72,
+          vertical: isMobile ? 48 : 64,
         ),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
+            constraints: const BoxConstraints(maxWidth: 760),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Ask your Doubts here',
+                  'ASK YOUR DOUBTS HERE',
+                  textAlign: TextAlign.center,
                   style: LandingTypography.eyebrow.copyWith(
-                    color: const Color(0xFF7A847C),
-                    fontWeight: FontWeight.w500,
+                    color: LandingColors.primary,
+                    letterSpacing: 1.6,
+                    fontSize: 11,
                   ),
                 ),
-                SizedBox(height: isMobile ? 12 : 16),
+                const SizedBox(height: 10),
                 Text(
                   'FAQs',
+                  textAlign: TextAlign.center,
                   style: LandingTypography.sectionTitle.copyWith(
-                    fontSize: isMobile ? 42 : 56,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1.2,
+                    fontSize: isMobile ? 34 : 44,
+                    height: 1.05,
+                    letterSpacing: -0.8,
                   ),
                 ),
-                SizedBox(height: isMobile ? 24 : 28),
+                const SizedBox(height: 10),
+                const Center(
+                  child: SizedBox(
+                    width: 48,
+                    height: 3,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: LandingColors.primary,
+                        borderRadius: BorderRadius.all(Radius.circular(99)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Search a question, then open the one you want.',
+                  textAlign: TextAlign.center,
+                  style: LandingTypography.introBody.copyWith(
+                    fontSize: 14,
+                    color: const Color(0xFF6B746E),
+                  ),
+                ),
+                const SizedBox(height: 22),
                 _SearchBar(
                   controller: _searchController,
-                  onChanged: (value) => setState(() => _searchQuery = value),
+                  onChanged: (value) => setState(() {
+                    _searchQuery = value;
+                    _expandedIndex = null;
+                  }),
+                  onClear: () => setState(() {
+                    _searchController.clear();
+                    _searchQuery = '';
+                    _expandedIndex = null;
+                  }),
                 ),
-                SizedBox(height: isMobile ? 16 : 20),
-                ..._buildFaqCards(),
-                SizedBox(height: isMobile ? 20 : 24),
+                const SizedBox(height: 14),
+                if (faqs.isEmpty)
+                  const _EmptySearch()
+                else
+                  _FaqList(
+                    children: [
+                      for (var i = 0; i < faqs.length; i++)
+                        _FaqRow(
+                          data: faqs[i],
+                          number: '${_faqs.indexOf(faqs[i]) + 1}',
+                          isExpanded:
+                              _expandedIndex == _faqs.indexOf(faqs[i]),
+                          onTap: () {
+                            final originalIndex = _faqs.indexOf(faqs[i]);
+                            setState(() {
+                              _expandedIndex = _expandedIndex == originalIndex
+                                  ? null
+                                  : originalIndex;
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                const SizedBox(height: 18),
                 _Footer(onContactUs: widget.onContactUs),
               ],
             ),
@@ -128,62 +185,83 @@ class _FaqSectionState extends State<FaqSection> {
       ),
     );
   }
-
-  List<Widget> _buildFaqCards() {
-    final faqs = _filteredFaqs;
-    return List.generate(faqs.length, (index) {
-      final originalIndex = _faqs.indexOf(faqs[index]);
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: _FaqCard(
-          data: faqs[index],
-          number: '${originalIndex + 1}',
-          isExpanded: _expandedIndex == originalIndex,
-          onTap: () {
-            setState(() {
-              _expandedIndex =
-                  _expandedIndex == originalIndex ? null : originalIndex;
-            });
-          },
-        ),
-      );
-    });
-  }
 }
 
-class _SearchBar extends StatelessWidget {
+class _SearchBar extends StatefulWidget {
   const _SearchBar({
     required this.controller,
     required this.onChanged,
+    required this.onClear,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  @override
+  State<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<_SearchBar> {
+  final FocusNode _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final focused = _focus.hasFocus;
+    final hasText = widget.controller.text.isNotEmpty;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
       height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      padding: const EdgeInsets.only(left: 6, right: 6),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFE8EEE9)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: focused ? LandingColors.primary : const Color(0xFFD5DED8),
+          width: focused ? 1.5 : 1,
+        ),
+        boxShadow: focused ? LandingShadows.searchShadow : null,
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, size: 18, color: Color(0xFF9AA39C)),
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE7F6EC),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.search,
+              size: 18,
+              color: LandingColors.primary,
+            ),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
-              controller: controller,
-              onChanged: onChanged,
+              controller: widget.controller,
+              focusNode: _focus,
+              onChanged: widget.onChanged,
               decoration: const InputDecoration(
                 hintText: 'Search questions',
                 hintStyle: TextStyle(
                   fontFamily: LandingTypography.fontFamily,
                   fontSize: 14,
-                  color: Color(0xFF9AA39C),
+                  color: Color(0xFF8B948E),
                 ),
                 border: InputBorder.none,
                 isDense: true,
@@ -196,8 +274,53 @@ class _SearchBar extends StatelessWidget {
               ),
             ),
           ),
+          if (hasText)
+            IconButton(
+              onPressed: widget.onClear,
+              tooltip: 'Clear search',
+              icon: const Icon(Icons.close, size: 18),
+              color: const Color(0xFF6B746E),
+            ),
         ],
       ),
+    );
+  }
+}
+
+class _EmptySearch extends StatelessWidget {
+  const _EmptySearch();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 28),
+      child: Text(
+        'No questions match that search.',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: LandingTypography.fontFamily,
+          fontSize: 14,
+          color: Color(0xFF6B746E),
+        ),
+      ),
+    );
+  }
+}
+
+class _FaqList extends StatelessWidget {
+  const _FaqList({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) const SizedBox(height: 10),
+          children[i],
+        ],
+      ],
     );
   }
 }
@@ -234,8 +357,8 @@ class _Footer extends StatelessWidget {
   }
 }
 
-class _FaqCard extends StatelessWidget {
-  const _FaqCard({
+class _FaqRow extends StatelessWidget {
+  const _FaqRow({
     required this.data,
     required this.number,
     required this.isExpanded,
@@ -249,73 +372,85 @@ class _FaqCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(isExpanded ? 24 : 999),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(isExpanded ? 24 : 999),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.fromLTRB(
-            22,
-            isExpanded ? 18 : 16,
-            18,
-            isExpanded ? 18 : 16,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(isExpanded ? 24 : 999),
-            border: Border.all(
-              color: isExpanded ? LandingColors.primary : Colors.transparent,
-              width: isExpanded ? 1.5 : 1,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  SizedBox(
-                    width: 18,
-                    child: Text(
-                      number,
-                      style: LandingTypography.faqNumber.copyWith(
-                        color: const Color(0xFF9AA39C),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isExpanded
+              ? LandingColors.primary
+              : const Color(0xFFE3EAE5),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isExpanded
+                            ? LandingColors.primary
+                            : const Color(0xFFE7F6EC),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        number,
+                        style: LandingTypography.faqNumber.copyWith(
+                          color: isExpanded
+                              ? Colors.white
+                              : LandingColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      data.question,
-                      style: LandingTypography.faqQuestion.copyWith(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        data.question,
+                        style: LandingTypography.faqQuestion.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  Icon(
-                    isExpanded ? Icons.close : Icons.add,
-                    size: 20,
-                    color: isExpanded
-                        ? LandingColors.primary
-                        : const Color(0xFF6B746E),
-                  ),
-                ],
-              ),
-              if (isExpanded)
-                Padding(
-                  padding: const EdgeInsets.only(left: 30, top: 10, right: 8),
-                  child: Text(
-                    data.answer,
-                    style: LandingTypography.faqAnswer.copyWith(
-                      fontSize: 14,
-                      height: 1.5,
-                      color: const Color(0xFF6B746E),
+                    Icon(
+                      isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      size: 22,
+                      color: isExpanded
+                          ? LandingColors.primary
+                          : const Color(0xFF6B746E),
                     ),
-                  ),
+                  ],
                 ),
-            ],
+                if (isExpanded)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 40, top: 8, right: 28),
+                    child: Text(
+                      data.answer,
+                      style: LandingTypography.faqAnswer.copyWith(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: const Color(0xFF5C6B60),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

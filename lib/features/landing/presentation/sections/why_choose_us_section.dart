@@ -77,18 +77,15 @@ class _DesktopLayout extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.38,
-            child: const Padding(
-              padding: EdgeInsets.only(left: 0),
-              child: AspectRatio(
-                aspectRatio: 1.05,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(36),
-                    bottomRight: Radius.circular(36),
-                  ),
-                  child: _PhotoPanel(),
+            width: (MediaQuery.sizeOf(context).width * 0.34).clamp(360.0, 480.0),
+            child: AspectRatio(
+              aspectRatio: 378 / 278,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
                 ),
+                child: const _PhotoPanel(),
               ),
             ),
           ),
@@ -163,24 +160,97 @@ class _PhotoPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return const Stack(
       fit: StackFit.expand,
       children: [
-        Image.asset(
-          LandingAssets.whyChooseUs,
-          fit: BoxFit.cover,
-          alignment: const Alignment(-1, 0),
-          filterQuality: FilterQuality.high,
-          isAntiAlias: true,
-          gaplessPlayback: true,
-        ),
-        const Positioned(
-          left: 20,
-          bottom: 24,
+        _KitchenPhoto(),
+        Positioned(
+          left: 16,
+          bottom: 16,
           child: _ReliableBadge(),
         ),
       ],
     );
+  }
+}
+
+/// The file is a whole-section banner. This paints only the kitchen photo,
+/// stopping before the caption baked into the lower left and the heading
+/// baked into the right side, so those words are not drawn twice.
+class _KitchenPhoto extends StatefulWidget {
+  const _KitchenPhoto();
+
+  @override
+  State<_KitchenPhoto> createState() => _KitchenPhotoState();
+}
+
+class _KitchenPhotoState extends State<_KitchenPhoto> {
+  ImageStream? _stream;
+  ImageInfo? _info;
+  late final ImageStreamListener _listener = ImageStreamListener((info, _) {
+    setState(() {
+      _info?.dispose();
+      _info = info;
+    });
+  });
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final next = const AssetImage(LandingAssets.whyChooseUs).resolve(
+      createLocalImageConfiguration(context),
+    );
+    if (next.key == _stream?.key) return;
+    _stream?.removeListener(_listener);
+    _stream = next;
+    _stream!.addListener(_listener);
+  }
+
+  @override
+  void dispose() {
+    _stream?.removeListener(_listener);
+    _info?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final info = _info;
+    if (info == null) {
+      return const ColoredBox(color: Color(0xFFE7F4EA));
+    }
+    return CustomPaint(
+      painter: _KitchenCropPainter(info),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _KitchenCropPainter extends CustomPainter {
+  const _KitchenCropPainter(this.info);
+
+  final ImageInfo info;
+
+  static const _source = Rect.fromLTWH(0, 4, 378, 278);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fitted = applyBoxFit(BoxFit.cover, _source.size, size);
+    final src = Alignment.center.inscribe(fitted.source, _source);
+    final dst = Alignment.center.inscribe(fitted.destination, Offset.zero & size);
+    canvas.drawImageRect(
+      info.image,
+      src,
+      dst,
+      Paint()
+        ..filterQuality = FilterQuality.medium
+        ..isAntiAlias = false,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _KitchenCropPainter oldDelegate) {
+    return oldDelegate.info != info;
   }
 }
 

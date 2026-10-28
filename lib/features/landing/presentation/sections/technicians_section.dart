@@ -248,21 +248,20 @@ class _TechnicianCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: SizedBox(
-              height: 148,
-              width: double.infinity,
+            child: AspectRatio(
+              aspectRatio: 198 / 96,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   _PersonPhoto(index: data.photoIndex),
                   const Positioned(
-                    top: 10,
-                    left: 10,
+                    top: 8,
+                    left: 8,
                     child: _VerifiedChip(),
                   ),
                   Positioned(
-                    left: 10,
-                    bottom: 10,
+                    left: 8,
+                    bottom: 8,
                     child: _ExperienceChip(
                       label: '${data.experience} Experience',
                     ),
@@ -339,49 +338,96 @@ class _TechnicianCard extends StatelessWidget {
   }
 }
 
-class _PersonPhoto extends StatelessWidget {
+/// Crops one technician out of the shared banner and paints that region
+/// straight into the card. A scaled transform was resampling the same pixels
+/// a second time, which is what made the photos look soft.
+class _PersonPhoto extends StatefulWidget {
   const _PersonPhoto({required this.index});
 
   final int index;
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const srcW = 1024.0;
-        const srcH = 346.0;
-        const cropW = 178.0;
-        const cropH = 108.0;
-        const originY = 126.0;
-        final originX = 26.0 + index * 198.0;
-        final scaleW = constraints.maxWidth / cropW;
-        final scaleH = constraints.maxHeight / cropH;
-        final scale = scaleW > scaleH ? scaleW : scaleH;
+  State<_PersonPhoto> createState() => _PersonPhotoState();
+}
 
-        return ClipRect(
-          child: OverflowBox(
-            alignment: Alignment.topLeft,
-            minWidth: srcW * scale,
-            maxWidth: srcW * scale,
-            minHeight: srcH * scale,
-            maxHeight: srcH * scale,
-            child: Transform.translate(
-              offset: Offset(-originX * scale, -originY * scale),
-              child: Image.asset(
-                LandingAssets.featuredTechnicians,
-                width: srcW * scale,
-                height: srcH * scale,
-                fit: BoxFit.fill,
-                alignment: Alignment.topLeft,
-                filterQuality: FilterQuality.high,
-                isAntiAlias: true,
-                gaplessPlayback: true,
-              ),
-            ),
-          ),
-        );
-      },
+class _PersonPhotoState extends State<_PersonPhoto> {
+  ImageStream? _stream;
+  ImageInfo? _info;
+  late final ImageStreamListener _listener = ImageStreamListener((info, _) {
+    setState(() {
+      _info?.dispose();
+      _info = info;
+    });
+  });
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final next = const AssetImage(LandingAssets.featuredTechnicians).resolve(
+      createLocalImageConfiguration(context),
     );
+    if (next.key == _stream?.key) return;
+    _stream?.removeListener(_listener);
+    _stream = next;
+    _stream!.addListener(_listener);
+  }
+
+  @override
+  void dispose() {
+    _stream?.removeListener(_listener);
+    _info?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final info = _info;
+    if (info == null) return const SizedBox.expand();
+    return CustomPaint(
+      painter: _SpriteCropPainter(info: info, index: widget.index),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _SpriteCropPainter extends CustomPainter {
+  const _SpriteCropPainter({required this.info, required this.index});
+
+  final ImageInfo info;
+  final int index;
+
+  /// Photo area only, above the caption already printed inside the banner.
+  /// Keeping that caption out stops it sitting under the sharp label.
+  static const _crops = <Rect>[
+    Rect.fromLTWH(10, 99, 198, 96),
+    Rect.fromLTWH(221, 99, 194, 96),
+    Rect.fromLTWH(423, 99, 188, 96),
+    Rect.fromLTWH(618, 99, 196, 96),
+    Rect.fromLTWH(821, 99, 188, 96),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final source = _crops[index.clamp(0, _crops.length - 1)];
+    final fitted = applyBoxFit(BoxFit.cover, source.size, size);
+    final src = Alignment.topCenter.inscribe(fitted.source, source);
+    final dst = Alignment.topCenter.inscribe(
+      fitted.destination,
+      Offset.zero & size,
+    );
+    canvas.drawImageRect(
+      info.image,
+      src,
+      dst,
+      Paint()
+        ..filterQuality = FilterQuality.low
+        ..isAntiAlias = false,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SpriteCropPainter oldDelegate) {
+    return oldDelegate.info != info || oldDelegate.index != index;
   }
 }
 
@@ -426,7 +472,7 @@ class _ExperienceChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Color(0xE6000000),
+        color: Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(

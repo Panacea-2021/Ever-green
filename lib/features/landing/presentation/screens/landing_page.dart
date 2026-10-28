@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../landing_theme.dart';
 import '../sections/hero_section.dart';
-import '../sections/trusted_kitchen_section.dart';
-import '../sections/how_it_works_section.dart';
+import '../sections/home_intro_artwork.dart';
 import '../sections/task_steps_section.dart';
 import '../sections/technicians_section.dart';
 import '../sections/why_choose_us_section.dart';
@@ -66,12 +65,12 @@ class _LandingPageState extends State<LandingPage> {
               ),
               KeyedSubtree(
                 key: _trustedKey,
-                child: TrustedKitchenSection(
+                child: HomeIntroArtwork(
+                  stepsKey: _howItWorksKey,
                   onBookRepair: () => context.go(Routes.login),
                   onLearnMore: () => _scrollTo(_howItWorksKey),
                 ),
               ),
-              HowItWorksSection(key: _howItWorksKey),
               KeyedSubtree(
                 key: _taskStepsKey,
                 child: TaskStepsSection(
