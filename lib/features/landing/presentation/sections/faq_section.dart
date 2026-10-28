@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../landing_theme.dart';
 
-/// Data model for a FAQ item.
 class FaqData {
   final String question;
   final String answer;
@@ -14,7 +12,8 @@ class FaqData {
   });
 }
 
-/// Common Questions/FAQ section with searchable expandable cards.
+/// FAQ section matching the provided screenshot.
+/// Search stays in the top pill only — never inside a question card.
 class FaqSection extends StatefulWidget {
   final VoidCallback? onContactUs;
 
@@ -28,7 +27,7 @@ class FaqSection extends StatefulWidget {
 }
 
 class _FaqSectionState extends State<FaqSection> {
-  int? _expandedIndex = 1; // Second item expanded by default
+  int? _expandedIndex = 1;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -67,10 +66,11 @@ class _FaqSectionState extends State<FaqSection> {
 
   List<FaqData> get _filteredFaqs {
     if (_searchQuery.isEmpty) return _faqs;
+    final q = _searchQuery.toLowerCase();
     return _faqs
         .where((faq) =>
-            faq.question.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            faq.answer.toLowerCase().contains(_searchQuery.toLowerCase()))
+            faq.question.toLowerCase().contains(q) ||
+            faq.answer.toLowerCase().contains(q))
         .toList();
   }
 
@@ -82,241 +82,133 @@ class _FaqSectionState extends State<FaqSection> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 768;
+    final isMobile = MediaQuery.of(context).size.width < 768;
 
-    return Container(
-      width: double.infinity,
-      color: LandingColors.bgMint,
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 20 : 80,
-        vertical: isMobile ? 60 : 88,
-      ),
-      child: Stack(
-        children: [
-          // Decorative icons must be Positioned so this Stack can size
-          // itself from the FAQ content. A non-positioned Stack of only
-          // Positioned children is unbounded inside a scroll view.
-          if (!isMobile)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: _buildDecorativeIcons(),
-              ),
-            ),
-
-          // Main content
-          Center(
-            child: SizedBox(
-              width: isMobile ? double.infinity : 760,
-              child: Column(
-                children: [
-                  // Eyebrow
-                  Text(
-                    'Ask your Doubts here',
-                    style: LandingTypography.eyebrow,
+    return ColoredBox(
+      color: const Color(0xFFEAF8EF),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 20 : 80,
+          vertical: isMobile ? 56 : 80,
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Column(
+              children: [
+                Text(
+                  'Ask your Doubts here',
+                  style: LandingTypography.eyebrow.copyWith(
+                    color: const Color(0xFF7A847C),
+                    fontWeight: FontWeight.w500,
                   ),
-
-                  SizedBox(height: isMobile ? 16 : 28),
-
-                  // Title
-                  Text(
-                    'FAQs',
-                    style: LandingTypography.sectionTitle.copyWith(
-                      fontSize: isMobile ? 40 : 56,
-                    ),
-                  ),
-
-                  SizedBox(height: isMobile ? 24 : 28),
-
-                  // Search bar
-                  _buildSearchBar(isMobile),
-
-                  SizedBox(height: isMobile ? 20 : 28),
-
-                  // FAQ cards
-                  ..._buildFaqCards(isMobile),
-
-                  SizedBox(height: isMobile ? 24 : 28),
-
-                  // Footer
-                  _buildFooter(isMobile),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDecorativeIcons() {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Positioned(
-          left: 78,
-          top: 72,
-          child: SvgPicture.asset(
-            LandingAssets.iconPot,
-            width: 36,
-            height: 36,
-            colorFilter: ColorFilter.mode(
-              LandingColors.primary.withOpacity(0.3),
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        Positioned(
-          right: 72,
-          top: 96,
-          child: SvgPicture.asset(
-            LandingAssets.iconUtensils,
-            width: 32,
-            height: 32,
-            colorFilter: ColorFilter.mode(
-              LandingColors.primary.withOpacity(0.3),
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        Positioned(
-          left: 64,
-          top: 430,
-          child: SvgPicture.asset(
-            LandingAssets.iconFlame,
-            width: 28,
-            height: 28,
-            colorFilter: ColorFilter.mode(
-              LandingColors.primary.withOpacity(0.3),
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        Positioned(
-          right: 56,
-          top: 390,
-          child: SvgPicture.asset(
-            LandingAssets.iconHat,
-            width: 36,
-            height: 36,
-            colorFilter: ColorFilter.mode(
-              LandingColors.primary.withOpacity(0.3),
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        Positioned(
-          left: 96,
-          top: 760,
-          child: SvgPicture.asset(
-            LandingAssets.iconFridge,
-            width: 30,
-            height: 30,
-            colorFilter: ColorFilter.mode(
-              LandingColors.primary.withOpacity(0.3),
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        Positioned(
-          right: 100,
-          top: 740,
-          child: SvgPicture.asset(
-            LandingAssets.iconCup,
-            width: 30,
-            height: 30,
-            colorFilter: ColorFilter.mode(
-              LandingColors.primary.withOpacity(0.3),
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSearchBar(bool isMobile) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE4E4E4)),
-        boxShadow: LandingShadows.searchShadow,
-      ),
-      child: Row(
-        children: [
-          SvgPicture.asset(
-            LandingAssets.iconSearch,
-            width: 16,
-            height: 16,
-            colorFilter: const ColorFilter.mode(
-              LandingColors.textLight,
-              BlendMode.srcIn,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) => setState(() => _searchQuery = value),
-              decoration: InputDecoration(
-                hintText: 'Search questions',
-                hintStyle: LandingTypography.faqNumber.copyWith(
-                  color: LandingColors.textLight,
                 ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-                isDense: true,
-              ),
-              style: LandingTypography.faqQuestion.copyWith(
-                fontSize: 14,
-              ),
+                SizedBox(height: isMobile ? 12 : 16),
+                Text(
+                  'FAQs',
+                  style: LandingTypography.sectionTitle.copyWith(
+                    fontSize: isMobile ? 42 : 56,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1.2,
+                  ),
+                ),
+                SizedBox(height: isMobile ? 24 : 28),
+                _SearchBar(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+                SizedBox(height: isMobile ? 16 : 20),
+                ..._buildFaqCards(),
+                SizedBox(height: isMobile ? 20 : 24),
+                _Footer(onContactUs: widget.onContactUs),
+              ],
             ),
           ),
-          if (_searchQuery.isNotEmpty)
-            GestureDetector(
-              onTap: () {
-                _searchController.clear();
-                setState(() => _searchQuery = '');
-              },
-              child: const Icon(
-                Icons.close,
-                size: 18,
-                color: LandingColors.textLight,
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
 
-  List<Widget> _buildFaqCards(bool isMobile) {
+  List<Widget> _buildFaqCards() {
     final faqs = _filteredFaqs;
     return List.generate(faqs.length, (index) {
       final originalIndex = _faqs.indexOf(faqs[index]);
       return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.only(bottom: 10),
         child: _FaqCard(
           data: faqs[index],
-          number: (originalIndex + 1).toString(),
+          number: '${originalIndex + 1}',
           isExpanded: _expandedIndex == originalIndex,
           onTap: () {
             setState(() {
-              if (_expandedIndex == originalIndex) {
-                _expandedIndex = null;
-              } else {
-                _expandedIndex = originalIndex;
-              }
+              _expandedIndex =
+                  _expandedIndex == originalIndex ? null : originalIndex;
             });
           },
         ),
       );
     });
   }
+}
 
-  Widget _buildFooter(bool isMobile) {
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({
+    required this.controller,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE8EEE9)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search, size: 18, color: Color(0xFF9AA39C)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              onChanged: onChanged,
+              decoration: const InputDecoration(
+                hintText: 'Search questions',
+                hintStyle: TextStyle(
+                  fontFamily: LandingTypography.fontFamily,
+                  fontSize: 14,
+                  color: Color(0xFF9AA39C),
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: const TextStyle(
+                fontFamily: LandingTypography.fontFamily,
+                fontSize: 14,
+                color: LandingColors.textDark,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Footer extends StatelessWidget {
+  const _Footer({this.onContactUs});
+
+  final VoidCallback? onContactUs;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -329,7 +221,7 @@ class _FaqSectionState extends State<FaqSection> {
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: widget.onContactUs,
+          onTap: onContactUs,
           child: Text(
             'Contact Us',
             style: LandingTypography.buttonPrimary.copyWith(
@@ -342,13 +234,7 @@ class _FaqSectionState extends State<FaqSection> {
   }
 }
 
-/// FAQ card with expand/collapse animation.
-class _FaqCard extends StatefulWidget {
-  final FaqData data;
-  final String number;
-  final bool isExpanded;
-  final VoidCallback onTap;
-
+class _FaqCard extends StatelessWidget {
   const _FaqCard({
     required this.data,
     required this.number,
@@ -356,96 +242,79 @@ class _FaqCard extends StatefulWidget {
     required this.onTap,
   });
 
-  @override
-  State<_FaqCard> createState() => _FaqCardState();
-}
-
-class _FaqCardState extends State<_FaqCard>
-    with SingleTickerProviderStateMixin {
-  bool _isHovered = false;
+  final FaqData data;
+  final String number;
+  final bool isExpanded;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(isExpanded ? 24 : 999),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(isExpanded ? 24 : 999),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(
+            22,
+            isExpanded ? 18 : 16,
+            18,
+            isExpanded ? 18 : 16,
+          ),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(isExpanded ? 24 : 999),
             border: Border.all(
-              color: widget.isExpanded
-                  ? LandingColors.borderActive
-                  : (_isHovered
-                      ? LandingColors.primary.withOpacity(0.3)
-                      : LandingColors.border),
-              width: widget.isExpanded ? 1.5 : 1,
+              color: isExpanded ? LandingColors.primary : Colors.transparent,
+              width: isExpanded ? 1.5 : 1,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row
               Row(
                 children: [
-                  // Number
-                  Text(
-                    widget.number,
-                    style: LandingTypography.faqNumber,
-                  ),
-
-                  const SizedBox(width: 16),
-
-                  // Question
-                  Expanded(
+                  SizedBox(
+                    width: 18,
                     child: Text(
-                      widget.data.question,
-                      style: LandingTypography.faqQuestion,
-                    ),
-                  ),
-
-                  // Expand/collapse icon
-                  AnimatedRotation(
-                    turns: widget.isExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: SvgPicture.asset(
-                      widget.isExpanded
-                          ? LandingAssets.iconCollapse
-                          : LandingAssets.iconExpand,
-                      width: 16,
-                      height: 16,
-                      colorFilter: ColorFilter.mode(
-                        widget.isExpanded
-                            ? LandingColors.primary
-                            : LandingColors.textGray,
-                        BlendMode.srcIn,
+                      number,
+                      style: LandingTypography.faqNumber.copyWith(
+                        color: const Color(0xFF9AA39C),
                       ),
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      data.question,
+                      style: LandingTypography.faqQuestion.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    isExpanded ? Icons.close : Icons.add,
+                    size: 20,
+                    color: isExpanded
+                        ? LandingColors.primary
+                        : const Color(0xFF6B746E),
+                  ),
                 ],
               ),
-
-              // Answer (animated)
-              AnimatedCrossFade(
-                firstChild: const SizedBox.shrink(),
-                secondChild: Padding(
-                  padding: const EdgeInsets.only(left: 30, top: 10, right: 28),
+              if (isExpanded)
+                Padding(
+                  padding: const EdgeInsets.only(left: 30, top: 10, right: 8),
                   child: Text(
-                    widget.data.answer,
-                    style: LandingTypography.faqAnswer,
+                    data.answer,
+                    style: LandingTypography.faqAnswer.copyWith(
+                      fontSize: 14,
+                      height: 1.5,
+                      color: const Color(0xFF6B746E),
+                    ),
                   ),
                 ),
-                crossFadeState: widget.isExpanded
-                    ? CrossFadeState.showSecond
-                    : CrossFadeState.showFirst,
-                duration: const Duration(milliseconds: 300),
-              ),
             ],
           ),
         ),

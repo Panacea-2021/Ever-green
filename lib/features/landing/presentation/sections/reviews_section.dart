@@ -95,16 +95,13 @@ class _ReviewsSectionState extends State<ReviewsSection> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-      initialPage: _currentIndex,
-      viewportFraction: 1.0,
-    );
+    _pageController = PageController(initialPage: 0);
     _autoPlay = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted || !_pageController.hasClients) return;
-      final next = (_currentIndex + 1) % _reviews.length;
+      final next = _pageController.page!.round() + 1;
       _pageController.animateToPage(
         next,
-        duration: const Duration(milliseconds: 550),
+        duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOutCubic,
       );
     });
@@ -118,9 +115,11 @@ class _ReviewsSectionState extends State<ReviewsSection> {
   }
 
   void _goToPage(int index) {
-    setState(() => _currentIndex = index);
+    if (!_pageController.hasClients) return;
+    final current = _pageController.page!.round();
+    final base = current - (current % _reviews.length);
     _pageController.animateToPage(
-      index,
+      base + index,
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeOutCubic,
     );
@@ -168,7 +167,24 @@ class _ReviewsSectionState extends State<ReviewsSection> {
           SizedBox(height: isMobile ? 32 : 48),
           SizedBox(
             height: isMobile ? 480 : 400,
-            child: _buildCarousel(isMobile),
+            child: PageView.builder(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              onPageChanged: (index) {
+                setState(() => _currentIndex = index % _reviews.length);
+              },
+              itemBuilder: (context, index) {
+                final review = _reviews[index % _reviews.length];
+                return Center(
+                  child: isMobile
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: _MobileReviewCard(data: review),
+                        )
+                      : _MainReviewCard(data: review),
+                );
+              },
+            ),
           ),
           SizedBox(height: isMobile ? 24 : 32),
           _buildPaginationDots(),

@@ -3,376 +3,473 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../landing_theme.dart';
 
-/// Data model for a technician card.
 class TechnicianData {
   final String name;
+  final String role;
   final String specialty;
   final String experience;
   final String rating;
-  final String imagePath;
+  final String reviews;
+  final List<String> tags;
+  final int photoIndex;
 
   const TechnicianData({
     required this.name,
+    required this.role,
     required this.specialty,
     required this.experience,
     required this.rating,
-    required this.imagePath,
+    required this.reviews,
+    required this.tags,
+    required this.photoIndex,
   });
 }
 
-/// Featured Technicians section with horizontally scrolling cards.
+/// Featured Technicians — same photos and copy, sharp Flutter text.
 class TechniciansSection extends StatelessWidget {
-  final VoidCallback? onViewAll;
-
   const TechniciansSection({
     super.key,
     this.onViewAll,
   });
 
+  final VoidCallback? onViewAll;
+
   static const List<TechnicianData> _technicians = [
     TechnicianData(
       name: 'Meera Iyer',
-      specialty: 'Ranges and ovens, from a dead burner to a full line down.',
-      experience: '9 years',
+      role: 'Kitchen Appliance Specialist',
+      specialty: 'Expert in heat appliances and full kitchen diagnostics.',
+      experience: '9+ years',
       rating: '4.9',
-      imagePath: LandingAssets.techMeera,
+      reviews: '320+',
+      tags: ['Ovens', 'Hobs', 'Cookers'],
+      photoIndex: 0,
     ),
     TechnicianData(
       name: 'Arjun Patel',
-      specialty: 'Refrigeration for walk-ins, reach-ins, and prep fridges.',
-      experience: '7 years',
+      role: 'Refrigeration & Cooling Expert',
+      specialty: 'Specialist in refrigeration, walk-ins and cooling systems.',
+      experience: '7+ years',
       rating: '4.8',
-      imagePath: LandingAssets.techArjun,
+      reviews: '280+',
+      tags: ['Fridges', 'Freezers', 'Cold Rooms'],
+      photoIndex: 1,
     ),
     TechnicianData(
       name: 'Sara Qureshi',
-      specialty: 'Hoods and ventilation, filters, fans, and makeup air.',
-      experience: '6 years',
+      role: 'Ventilation & Hood Specialist',
+      specialty: 'Expert in hoods, ventilation and air quality systems.',
+      experience: '6+ years',
       rating: '4.9',
-      imagePath: LandingAssets.techSara,
+      reviews: '310+',
+      tags: ['Hoods', 'Ventilation', 'Filters'],
+      photoIndex: 2,
     ),
     TechnicianData(
       name: 'Nikhil Rao',
-      specialty: 'Microwaves, combi ovens, and the small machines on the pass.',
-      experience: '11 years',
+      role: 'Microwave & Small Appliance Expert',
+      specialty:
+          'Specialist in microwaves, dishwashers and small kitchen appliances.',
+      experience: '11+ years',
       rating: '4.7',
-      imagePath: LandingAssets.techNikhil,
+      reviews: '260+',
+      tags: ['Microwaves', 'Dishwashers', 'Appliances'],
+      photoIndex: 3,
     ),
     TechnicianData(
       name: 'Leela Nair',
-      specialty: 'Warewashers and the machines that keep the dish pit moving.',
-      experience: '5 years',
-      rating: '4.8',
-      imagePath: LandingAssets.techLeela,
+      role: 'Laundry Appliance Specialist',
+      specialty: 'Expert in washing machines, dryers and ice machines.',
+      experience: '5+ years',
+      rating: '4.6',
+      reviews: '190+',
+      tags: ['Washers', 'Dryers', 'Ice Machines'],
+      photoIndex: 4,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isMobile = width < 768;
+
     return ColoredBox(
       color: const Color(0xFFF3FBF5),
-      child: GestureDetector(
-        onTap: onViewAll,
-        child: Image.asset(
-          LandingAssets.featuredTechnicians,
-          width: double.infinity,
-          fit: BoxFit.fitWidth,
-          alignment: Alignment.topCenter,
-          errorBuilder: (_, __, ___) => const SizedBox(height: 240),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          isMobile ? 20 : 48,
+          isMobile ? 48 : 56,
+          isMobile ? 20 : 48,
+          isMobile ? 48 : 64,
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(bool isMobile) {
-    return Stack(
-      children: [
-        Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Featured Service Engineers',
-              style: LandingTypography.sectionTitle.copyWith(
-                fontSize: isMobile ? 32 : 56,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Scroll the people who take the range, the fridge, and the hood.',
-              style: LandingTypography.introBody.copyWith(
-                color: LandingColors.textSecondary,
+            _Header(isMobile: isMobile, onViewAll: onViewAll),
+            SizedBox(height: isMobile ? 24 : 28),
+            SizedBox(
+              height: isMobile ? 390 : 410,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: _technicians.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  return _TechnicianCard(data: _technicians[index]);
+                },
               ),
             ),
           ],
         ),
-
-        // View all button (desktop only)
-        if (!isMobile)
-          Positioned(
-            top: 6,
-            right: 0,
-            child: _ViewAllButton(onTap: onViewAll),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildCardsRow(bool isMobile) {
-    return SizedBox(
-      height: isMobile ? 380 : 463,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        itemCount: _technicians.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 16),
-        itemBuilder: (context, index) {
-          return _TechnicianCard(
-            data: _technicians[index],
-            isMobile: isMobile,
-          );
-        },
       ),
     );
   }
 }
 
-/// View All button.
-class _ViewAllButton extends StatefulWidget {
-  final VoidCallback? onTap;
-
-  const _ViewAllButton({this.onTap});
-
-  @override
-  State<_ViewAllButton> createState() => _ViewAllButtonState();
-}
-
-class _ViewAllButtonState extends State<_ViewAllButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(
-            color: _isHovered
-                ? Colors.white
-                : Colors.white.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(100),
-            border: Border.all(
-              color: LandingColors.primaryDark.withOpacity(0.15),
-            ),
-          ),
-          child: Text(
-            'View all',
-            style: LandingTypography.buttonPrimary.copyWith(
-              color: LandingColors.primaryDark,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Technician card with photo, name, specialty, and badges.
-class _TechnicianCard extends StatefulWidget {
-  final TechnicianData data;
-  final bool isMobile;
-
-  const _TechnicianCard({
-    required this.data,
+class _Header extends StatelessWidget {
+  const _Header({
     required this.isMobile,
+    this.onViewAll,
   });
 
-  @override
-  State<_TechnicianCard> createState() => _TechnicianCardState();
-}
-
-class _TechnicianCardState extends State<_TechnicianCard> {
-  bool _isHovered = false;
+  final bool isMobile;
+  final VoidCallback? onViewAll;
 
   @override
   Widget build(BuildContext context) {
-    final cardWidth = widget.isMobile ? 240.0 : 300.0;
-    final cardHeight = widget.isMobile ? 380.0 : 463.0;
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        width: cardWidth,
-        height: cardHeight,
-        transform: Matrix4.identity()
-          ..translate(0.0, _isHovered ? -8.0 : 0.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: _isHovered
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 30,
-                    offset: const Offset(0, 15),
-                  ),
-                ]
-              : [],
+    final title = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE5F6EA),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            'OUR EXPERTS',
+            style: LandingTypography.eyebrow.copyWith(
+              fontSize: 11,
+              letterSpacing: 1.2,
+            ),
+          ),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: Stack(
-            fit: StackFit.expand,
+        const SizedBox(height: 10),
+        Text(
+          'Featured Technicians',
+          style: LandingTypography.sectionTitle.copyWith(
+            fontSize: isMobile ? 32 : 44,
+            height: 1.1,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Skilled, verified, and trusted professionals to keep your kitchen running smoothly.',
+          style: LandingTypography.introBody.copyWith(
+            color: LandingColors.textSecondary,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+
+    final actions = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextButton(
+          onPressed: onViewAll,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Photo
-              Image.asset(
-                widget.data.imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: LandingColors.primary.withOpacity(0.3),
-                  child: const Icon(
-                    Icons.person,
-                    size: 80,
-                    color: Colors.white54,
-                  ),
+              Text(
+                'View all technicians',
+                style: LandingTypography.buttonPrimary.copyWith(
+                  color: LandingColors.primaryDark,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
               ),
-
-              // Gradient shade
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.15),
-                      Colors.black.withOpacity(0.88),
-                    ],
-                    stops: const [0.0, 0.42, 1.0],
-                  ),
-                ),
-              ),
-
-              // Details overlay
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(
-                    18,
-                    0,
-                    18,
-                    widget.isMobile ? 16 : 20,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Name
-                      Text(
-                        widget.data.name,
-                        style: LandingTypography.techName.copyWith(
-                          fontSize: widget.isMobile ? 22 : 26,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Specialty
-                      Text(
-                        widget.data.specialty,
-                        style: LandingTypography.techDescription.copyWith(
-                          fontSize: widget.isMobile ? 12 : 13,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Badges
-                      Row(
-                        children: [
-                          _Badge(label: widget.data.experience),
-                          const SizedBox(width: 8),
-                          _RatingBadge(rating: widget.data.rating),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.arrow_forward,
+                size: 16,
+                color: LandingColors.primaryDark,
               ),
             ],
           ),
         ),
+      ],
+    );
+
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          title,
+          const SizedBox(height: 12),
+          actions,
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(child: title),
+        actions,
+      ],
+    );
+  }
+}
+
+class _TechnicianCard extends StatelessWidget {
+  const _TechnicianCard({required this.data});
+
+  final TechnicianData data;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 248,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 12,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              height: 148,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _PersonPhoto(index: data.photoIndex),
+                  const Positioned(
+                    top: 10,
+                    left: 10,
+                    child: _VerifiedChip(),
+                  ),
+                  Positioned(
+                    left: 10,
+                    bottom: 10,
+                    child: _ExperienceChip(
+                      label: '${data.experience} Experience',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            data.name,
+            style: const TextStyle(
+              fontFamily: LandingTypography.fontFamily,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: LandingColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            data.role,
+            style: const TextStyle(
+              fontFamily: LandingTypography.fontFamily,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: LandingColors.primary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              SvgPicture.asset(
+                LandingAssets.star,
+                width: 12,
+                height: 12,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFFF5B400),
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '${data.rating}  (${data.reviews})',
+                style: const TextStyle(
+                  fontFamily: LandingTypography.fontFamily,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: LandingColors.textDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: data.tags.map(_TagChip.new).toList(),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            data.specialty,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: LandingTypography.fontFamily,
+              fontSize: 12,
+              height: 1.4,
+              color: Color(0xFF6B746E),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Experience badge.
-class _Badge extends StatelessWidget {
+class _PersonPhoto extends StatelessWidget {
+  const _PersonPhoto({required this.index});
+
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const srcW = 1024.0;
+        const srcH = 346.0;
+        const cropW = 178.0;
+        const cropH = 108.0;
+        const originY = 126.0;
+        final originX = 26.0 + index * 198.0;
+        final scaleW = constraints.maxWidth / cropW;
+        final scaleH = constraints.maxHeight / cropH;
+        final scale = scaleW > scaleH ? scaleW : scaleH;
+
+        return ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minWidth: srcW * scale,
+            maxWidth: srcW * scale,
+            minHeight: srcH * scale,
+            maxHeight: srcH * scale,
+            child: Transform.translate(
+              offset: Offset(-originX * scale, -originY * scale),
+              child: Image.asset(
+                LandingAssets.featuredTechnicians,
+                width: srcW * scale,
+                height: srcH * scale,
+                fit: BoxFit.fill,
+                alignment: Alignment.topLeft,
+                filterQuality: FilterQuality.high,
+                isAntiAlias: true,
+                gaplessPlayback: true,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _VerifiedChip extends StatelessWidget {
+  const _VerifiedChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: LandingColors.primary,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.verified, size: 12, color: Colors.white),
+          SizedBox(width: 4),
+          Text(
+            'Verified',
+            style: TextStyle(
+              fontFamily: LandingTypography.fontFamily,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExperienceChip extends StatelessWidget {
+  const _ExperienceChip({required this.label});
+
   final String label;
 
-  const _Badge({required this.label});
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Text(
-        label,
-        style: LandingTypography.techBadge,
-      ),
-    );
-  }
-}
-
-/// Rating badge with star icon.
-class _RatingBadge extends StatelessWidget {
-  final String rating;
-
-  const _RatingBadge({required this.rating});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(100),
+        color: Color(0xE6000000),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SvgPicture.asset(
-            LandingAssets.stars,
-            width: 11,
-            height: 11,
-            colorFilter: const ColorFilter.mode(
-              Colors.amber,
-              BlendMode.srcIn,
-            ),
-          ),
+          const Icon(Icons.work_outline, size: 11, color: Colors.white),
           const SizedBox(width: 4),
           Text(
-            rating,
-            style: LandingTypography.techBadge,
+            label,
+            style: const TextStyle(
+              fontFamily: LandingTypography.fontFamily,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TagChip extends StatelessWidget {
+  const _TagChip(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Color(0xFFF3F6F1),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontFamily: LandingTypography.fontFamily,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF4A524C),
+        ),
       ),
     );
   }

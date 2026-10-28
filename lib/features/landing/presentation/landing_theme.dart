@@ -518,7 +518,7 @@ class LandingAssets {
   static const String whyKitchen = '$_basePath/why_kitchen.png';
   static const String whyChooseUs = '$_basePath/why_choose_us.jpg';
   static const String howItWorks = '$_basePath/how_it_works.jpg';
-  static const String featuredTechnicians = '$_basePath/featured_technicians.png';
+  static const String featuredTechnicians = '$_basePath/featured_technicians.jpg';
   static const String servicesPage = '$_basePath/services_page.jpg';
   static const String reviewsBanner = '$_basePath/reviews_banner.png';
 
@@ -619,4 +619,85 @@ class LandingBreakpoints {
 
   static bool isWide(BuildContext context) =>
       MediaQuery.of(context).size.width >= wide;
+}
+
+/// Soft fade-and-rise used on landing sections.
+class LandingEntrance extends StatefulWidget {
+  const LandingEntrance({
+    super.key,
+    required this.child,
+    this.delay = Duration.zero,
+  });
+
+  final Widget child;
+  final Duration delay;
+
+  @override
+  State<LandingEntrance> createState() => _LandingEntranceState();
+}
+
+class _LandingEntranceState extends State<LandingEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    Future<void>.delayed(widget.delay, () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
+  }
+}
+
+/// Full-width landing image decoded at device pixel ratio so it stays sharp.
+class LandingFullWidthImage extends StatelessWidget {
+  const LandingFullWidthImage(
+    this.asset, {
+    super.key,
+    this.background = Colors.white,
+  });
+
+  final String asset;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: background,
+      child: Image.asset(
+        asset,
+        width: double.infinity,
+        fit: BoxFit.fitWidth,
+        alignment: Alignment.topCenter,
+        filterQuality: FilterQuality.medium,
+        isAntiAlias: false,
+        gaplessPlayback: true,
+      ),
+    );
+  }
 }

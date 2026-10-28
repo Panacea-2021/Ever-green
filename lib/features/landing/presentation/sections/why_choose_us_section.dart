@@ -3,395 +3,406 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../landing_theme.dart';
 
-/// Data model for a feature card.
 class FeatureCardData {
   final String title;
   final String description;
   final String iconPath;
-  final Offset position; // Relative position for desktop layout
 
   const FeatureCardData({
     required this.title,
     required this.description,
     required this.iconPath,
-    required this.position,
   });
 }
 
-/// "Why Choose Us" section with kitchen image, floating cards, and decorative orbs.
+/// Why Choose Us — same photo and copy, rendered as sharp Flutter text.
 class WhyChooseUsSection extends StatelessWidget {
   const WhyChooseUsSection({super.key});
 
   static const List<FeatureCardData> _features = [
     FeatureCardData(
       title: 'Verified professionals',
-      description: 'Licensed engineers, checked before they arrive.',
+      description:
+          'Licensed, background-checked, and experienced technicians.',
       iconPath: LandingAssets.glyphVerified,
-      position: Offset(619, 281),
     ),
     FeatureCardData(
       title: 'Transparent pricing',
-      description: 'You approve the price before any work starts.',
+      description:
+          'You approve the price before any work starts. No hidden fees.',
       iconPath: LandingAssets.glyphPricing,
-      position: Offset(837, 145),
     ),
     FeatureCardData(
-      title: 'Convenient Scheduling',
-      description: 'Pick a visit window that fits the service.',
+      title: 'Convenient scheduling',
+      description: 'Pick a time window that fits your routine.',
       iconPath: LandingAssets.glyphSchedule,
-      position: Offset(1090, 232),
-    ),
-    FeatureCardData(
-      title: 'Service support',
-      description: 'A desk that stays on the job until it is done.',
-      iconPath: LandingAssets.glyphSupport,
-      position: Offset(1120, 482),
     ),
     FeatureCardData(
       title: 'Applicable warranty',
-      description: 'Covered repairs stay covered after sign-off.',
+      description: 'Repairs covered under service warranty for peace of mind.',
       iconPath: LandingAssets.glyphWarranty,
-      position: Offset(855, 497),
+    ),
+    FeatureCardData(
+      title: 'Service support',
+      description:
+          'A dedicated support team from booking to repair completion.',
+      iconPath: LandingAssets.glyphSupport,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isMobile = width < 900;
+
     return ColoredBox(
-      color: LandingColors.bgLight,
-      child: Image.asset(
-        LandingAssets.whyChooseUs,
-        width: double.infinity,
-        fit: BoxFit.fitWidth,
-        alignment: Alignment.topCenter,
-        errorBuilder: (_, __, ___) => const SizedBox(height: 240),
-      ),
+      color: const Color(0xFFF3FBF5),
+      child: isMobile
+          ? _MobileLayout(features: _features)
+          : _DesktopLayout(features: _features),
     );
   }
+}
 
-  Widget _buildDesktopLayout(double screenWidth, bool isTablet) {
-    final scale = screenWidth / 1440;
+class _DesktopLayout extends StatelessWidget {
+  const _DesktopLayout({required this.features});
 
-    return Stack(
-      children: [
-        // Kitchen image on left
-        Positioned(
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 547 * scale,
-          child: Image.asset(
-            LandingAssets.whyKitchen,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              color: LandingColors.primary.withOpacity(0.2),
-            ),
-          ),
-        ),
+  final List<FeatureCardData> features;
 
-        // Green accent bar on right
-        Positioned(
-          right: 0,
-          top: -33,
-          child: Transform.rotate(
-            angle: 0.0,
-            child: Container(
-              width: 254,
-              height: 894,
-              color: LandingColors.orbAccent,
-            ),
-          ),
-        ),
-
-        // Decorative orbs
-        _buildOrbs(scale),
-
-        // Title
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 48,
-          child: Center(
-            child: Text(
-              'Why Choose Us?',
-              style: LandingTypography.whyTitle,
-            ),
-          ),
-        ),
-
-        // Feature cards
-        ..._buildPositionedCards(scale),
-      ],
-    );
-  }
-
-  Widget _buildOrbs(double scale) {
-    return Stack(
-      children: [
-        // Orb leaf (large)
-        Positioned(
-          left: 1080 * scale,
-          top: 28,
-          child: SvgPicture.asset(
-            LandingAssets.orbLeaf,
-            width: 112,
-            height: 112,
-          ),
-        ),
-
-        // Orb deep (medium)
-        Positioned(
-          left: 1204 * scale,
-          top: 266,
-          child: SvgPicture.asset(
-            LandingAssets.orbDeep,
-            width: 72,
-            height: 72,
-          ),
-        ),
-
-        // Orb mint (medium)
-        Positioned(
-          left: 1268 * scale,
-          top: 610,
-          child: SvgPicture.asset(
-            LandingAssets.orbMint,
-            width: 80,
-            height: 80,
-          ),
-        ),
-
-        // Orb small
-        Positioned(
-          left: 760 * scale,
-          top: 300,
-          child: SvgPicture.asset(
-            LandingAssets.orbSmall,
-            width: 44,
-            height: 44,
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _buildPositionedCards(double scale) {
-    return _features.map((feature) {
-      return Positioned(
-        left: feature.position.dx * scale,
-        top: feature.position.dy,
-        child: _FeatureCard(
-          data: feature,
-          width: 184.8,
-          height: 207.68,
-        ),
-      );
-    }).toList();
-  }
-
-  Widget _buildMobileLayout() {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(0, 40, 0, 48),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Kitchen image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              LandingAssets.whyKitchen,
-              width: double.infinity,
-              height: 250,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 250,
-                color: LandingColors.primary.withOpacity(0.2),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.38,
+            child: const Padding(
+              padding: EdgeInsets.only(left: 0),
+              child: AspectRatio(
+                aspectRatio: 1.05,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(36),
+                    bottomRight: Radius.circular(36),
+                  ),
+                  child: _PhotoPanel(),
+                ),
               ),
             ),
           ),
-
-          const SizedBox(height: 32),
-
-          // Title
-          Text(
-            'Why Choose Us?',
-            style: LandingTypography.whyTitle.copyWith(
-              fontSize: 36,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(36, 8, 48, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _Header(),
+                  const SizedBox(height: 24),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var i = 0; i < 3; i++) ...[
+                        if (i > 0) const SizedBox(width: 14),
+                        Expanded(child: _FeatureCard(data: features[i])),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _FeatureCard(data: features[3])),
+                      const SizedBox(width: 14),
+                      Expanded(child: _FeatureCard(data: features[4])),
+                      const Expanded(child: SizedBox()),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-
-          const SizedBox(height: 24),
-
-          // Feature cards in grid
-          _buildMobileCards(),
         ],
       ),
     );
   }
-
-  Widget _buildMobileCards() {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: _features.map((feature) {
-        return _FeatureCard(
-          data: feature,
-          width: double.infinity,
-          height: null,
-          isMobile: true,
-        );
-      }).toList(),
-    );
-  }
 }
 
-/// Feature card with icon, title, and description.
-class _FeatureCard extends StatefulWidget {
-  final FeatureCardData data;
-  final double? width;
-  final double? height;
-  final bool isMobile;
+class _MobileLayout extends StatelessWidget {
+  const _MobileLayout({required this.features});
 
-  const _FeatureCard({
-    required this.data,
-    this.width,
-    this.height,
-    this.isMobile = false,
-  });
-
-  @override
-  State<_FeatureCard> createState() => _FeatureCardState();
-}
-
-class _FeatureCardState extends State<_FeatureCard> {
-  bool _isHovered = false;
+  final List<FeatureCardData> features;
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        width: widget.isMobile ? null : widget.width,
-        height: widget.isMobile ? null : widget.height,
-        padding: EdgeInsets.all(widget.isMobile ? 20 : 17.6),
-        transform: Matrix4.identity()
-          ..translate(0.0, _isHovered ? -4.0 : 0.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28.16),
-          boxShadow: [
-            BoxShadow(
-              color: _isHovered
-                  ? LandingColors.shadowGreen.withOpacity(0.2)
-                  : LandingColors.shadowGreen,
-              blurRadius: _isHovered ? 40 : 31.68,
-              offset: Offset(0, _isHovered ? 20 : 15.84),
-            ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 48),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const ClipRRect(
+            borderRadius: BorderRadius.all(Radius.circular(24)),
+            child: SizedBox(height: 280, child: _PhotoPanel()),
+          ),
+          const SizedBox(height: 28),
+          const _Header(),
+          const SizedBox(height: 20),
+          for (var i = 0; i < features.length; i++) ...[
+            if (i > 0) const SizedBox(height: 12),
+            _FeatureCard(data: features[i], isMobile: true),
           ],
-        ),
-        child: widget.isMobile
-            ? _buildMobileContent()
-            : _buildDesktopContent(),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildDesktopContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+class _PhotoPanel extends StatelessWidget {
+  const _PhotoPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        // Icon
-        Container(
-          width: 49.28,
-          height: 49.28,
-          decoration: BoxDecoration(
-            color: LandingColors.bgIconGreen,
-            borderRadius: BorderRadius.circular(24.64),
+        Image.asset(
+          LandingAssets.whyChooseUs,
+          fit: BoxFit.cover,
+          alignment: const Alignment(-1, 0),
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+          gaplessPlayback: true,
+        ),
+        const Positioned(
+          left: 20,
+          bottom: 24,
+          child: _ReliableBadge(),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReliableBadge extends StatelessWidget {
+  const _ReliableBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xE6106220),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.verified_user_outlined, color: Colors.white, size: 16),
+          SizedBox(width: 8),
+          Text(
+            'Reliable repairs\nfor a happier home',
+            style: TextStyle(
+              fontFamily: LandingTypography.fontFamily,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              height: 1.25,
+              color: Colors.white,
+            ),
           ),
-          child: Center(
-            child: SvgPicture.asset(
-              widget.data.iconPath,
-              width: 24.64,
-              height: 24.64,
-              colorFilter: const ColorFilter.mode(
-                LandingColors.primary,
-                BlendMode.srcIn,
+        ],
+      ),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Expanded(child: _Copy()),
+        const SizedBox(width: 12),
+        Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                color: Color(0xFF2BB24A),
+                shape: BoxShape.circle,
               ),
             ),
-          ),
-        ),
-
-        // Text content
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.data.title,
-              style: LandingTypography.featureCardTitle,
-            ),
-            const SizedBox(height: 5.28),
-            Text(
-              widget.data.description,
-              style: LandingTypography.featureCardBody,
+            const SizedBox(height: 8),
+            const Text(
+              'Your kitchen\nOur priority',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: LandingTypography.fontFamily,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                fontStyle: FontStyle.italic,
+                color: Color(0xB3106220),
+                height: 1.2,
+              ),
             ),
           ],
         ),
       ],
     );
   }
+}
 
-  Widget _buildMobileContent() {
-    return Row(
+class _Copy extends StatelessWidget {
+  const _Copy();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Icon
         Container(
-          width: 48,
-          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: LandingColors.bgIconGreen,
-            borderRadius: BorderRadius.circular(16),
+            color: const Color(0xFFE5F6EA),
+            borderRadius: BorderRadius.circular(999),
           ),
-          child: Center(
-            child: SvgPicture.asset(
-              widget.data.iconPath,
-              width: 24,
-              height: 24,
-              colorFilter: const ColorFilter.mode(
-                LandingColors.primary,
-                BlendMode.srcIn,
-              ),
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 16),
-
-        // Text content
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              const Icon(Icons.eco, size: 12, color: LandingColors.primary),
+              const SizedBox(width: 6),
               Text(
-                widget.data.title,
-                style: LandingTypography.featureCardTitle.copyWith(
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                widget.data.description,
-                style: LandingTypography.featureCardBody.copyWith(
-                  fontSize: 13,
+                'WHY CHOOSE US',
+                style: LandingTypography.eyebrow.copyWith(
+                  fontSize: 11,
+                  letterSpacing: 1.4,
                 ),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 12),
+        Text(
+          'Why Choose Us?',
+          style: LandingTypography.sectionTitle.copyWith(
+            fontSize: 40,
+            height: 1.1,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Everything you need for a smooth and hassle-free kitchen repair experience — all in one place.',
+          style: LandingTypography.introBody.copyWith(
+            fontSize: 14,
+            height: 1.5,
+            color: LandingColors.textSecondary,
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({
+    required this.data,
+    this.isMobile = false,
+  });
+
+  final FeatureCardData data;
+  final bool isMobile;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: isMobile ? double.infinity : null,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 12,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: isMobile ? _mobile() : _desktop(),
+    );
+  }
+
+  Widget _desktop() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _icon(),
+        const SizedBox(height: 16),
+        Text(
+          data.title,
+          style: LandingTypography.featureCardTitle.copyWith(fontSize: 15),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          data.description,
+          style: LandingTypography.featureCardBody.copyWith(
+            fontSize: 12,
+            height: 1.45,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _mobile() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _icon(),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                data.title,
+                style: LandingTypography.featureCardTitle.copyWith(fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                data.description,
+                style: LandingTypography.featureCardBody.copyWith(fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _icon() {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: LandingColors.bgIconGreen,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Center(
+        child: SvgPicture.asset(
+          data.iconPath,
+          width: 22,
+          height: 22,
+          colorFilter: const ColorFilter.mode(
+            LandingColors.primary,
+            BlendMode.srcIn,
+          ),
+        ),
+      ),
     );
   }
 }
