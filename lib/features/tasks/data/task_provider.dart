@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/data/evergreen_repository.dart';
 import '../../../core/models/backend_models.dart' hide TaskStatus;
+import '../domain/models/task_event.dart';
 import '../domain/models/task_item.dart';
 
 /// Tickets from `user/getAllTasks` (already scoped per role by the backend)
@@ -153,6 +154,19 @@ final technicianStatsProvider =
 final pendingScreenshotsProvider =
     StateProvider<Map<String, List<String>>>((ref) => const {});
 
+/// A ticket's timeline (`user/getTaskTimeline`), oldest step first.
+final taskTimelineProvider =
+    FutureProvider.autoDispose.family<List<TaskEvent>, int>((ref, taskId) async {
+  final repo = ref.watch(evergreenRepositoryProvider);
+  final body = unwrap(
+    await repo.api.post<dynamic>(
+      'user/getTaskTimeline',
+      data: {'task_link': taskId},
+    ),
+  );
+  return dataList(body).map(TaskEvent.fromJson).toList();
+});
+
 final taskActionsProvider = Provider<TaskActions>((ref) => TaskActions(ref));
 
 /// Ticket mutations against the EverGreen backend. Every call throws a
@@ -167,6 +181,7 @@ class TaskActions {
   Future<dynamic> _post(String path, Map<String, dynamic> body) async {
     final result = unwrap(await _repo.api.post<dynamic>(path, data: body));
     _ref.invalidate(tasksProvider);
+    _ref.invalidate(taskTimelineProvider);
     return result;
   }
 
@@ -347,10 +362,12 @@ class TaskActions {
 
   /// Moves the ticket to [status] (`updateTaskStatus`). Use [startWork] and
   /// [hold] for the transitions that carry hold-reason data.
-  Future<void> setStatus(TaskItem t, ServiceStatus status) async {
+  /// [note] is shown on the ticket's timeline (e.g. why it was closed).
+  Future<void> setStatus(TaskItem t, ServiceStatus status, {String? note}) async {
     await _post('user/updateTaskStatus', {
       'task_user_link': _taskUserLink(t),
       'status': status.key,
+      if (note != null && note.trim().isNotEmpty) 'reason': note.trim(),
     });
   }
 

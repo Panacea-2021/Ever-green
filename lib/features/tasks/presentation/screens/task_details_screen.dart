@@ -7,6 +7,7 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
+import '../widgets/task_timeline.dart';
 import '../widgets/task_action_button.dart';
 import '../widgets/task_action_handler.dart';
 import '../widgets/task_workflow.dart';
@@ -196,6 +197,11 @@ class TaskDetailsScreen extends ConsumerWidget {
                   if (task != null && actions.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     _buildActionsCard(context, ref, task, actions),
+                  ],
+
+                  if (task != null && task.taskId > 0) ...[
+                    const SizedBox(height: 20),
+                    TaskTimelineCard(taskId: task.taskId),
                   ],
 
                   const SizedBox(height: 24),

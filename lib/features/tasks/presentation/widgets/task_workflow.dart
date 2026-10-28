@@ -35,6 +35,8 @@ enum TaskAction {
   hold('Hold', Icons.pause_rounded),
   startWork('Start Work', Icons.play_arrow_rounded),
   rate('Confirm & Rate', Icons.star_rounded),
+  markCompleted('Mark Completed', Icons.done_rounded),
+  closeTask('Close Task', Icons.lock_outline_rounded),
   delete('Delete', Icons.delete_outline);
 
   const TaskAction(this.label, this.icon);
@@ -59,6 +61,8 @@ enum TaskMenuItem { assign, status, edit, delete }
 /// - Senior Technician: assign / reassign while open
 /// - the assigned technician: accept, start, hold, screenshots, complete
 /// - client-side roles: confirm & rate completed work
+/// - Super Admin, Manager, POC and Client Admin: mark completed / close once
+///   an engineer is assigned
 List<TaskButton> taskButtonsFor(TaskItem t, User? user) {
   final role = user?.role ?? UserRole.client;
   final isSuperAdmin = role == UserRole.superAdmin;
@@ -109,13 +113,117 @@ List<TaskButton> taskButtonsFor(TaskItem t, User? user) {
     }
   }
 
-  if (role.isClientSide &&
+  final rates = role.isClientSide &&
       t.approval == ApprovalState.completed &&
-      t.rating == null) {
-    add(TaskAction.rate, TaskButtonKind.filled);
+      t.rating == null;
+  if (rates) add(TaskAction.rate, TaskButtonKind.filled);
+
+  if (canFinishTask(t, role)) {
+    if (t.serviceStatus != ServiceStatus.completed) {
+      add(TaskAction.markCompleted);
+    }
+    // Confirm & Rate already closes the ticket for client-side roles.
+    if (!rates) add(TaskAction.closeTask, TaskButtonKind.filled);
   }
 
   return buttons;
+}
+
+/// Super Admin, Manager, POC and Client Admin may mark a ticket completed or
+/// close it once an engineer is assigned (the backend limits client-side
+/// roles to their own company).
+bool canFinishTask(TaskItem t, UserRole role) =>
+    (role == UserRole.superAdmin ||
+        role == UserRole.manager ||
+        role.isClientSide) &&
+    t.hasAssignee &&
+    t.serviceStatus != ServiceStatus.closed;
+
+/// Asks to confirm marking [t] completed ([closing] false) or closing it,
+/// with an optional note for the timeline. Null when cancelled.
+Future<String?> askTaskFinishNote(
+  BuildContext context,
+  TaskItem t, {
+  required bool closing,
+}) {
+  return showDialog<String>(
+    context: context,
+    builder: (_) => _FinishTaskDialog(task: t, closing: closing),
+  );
+}
+
+class _FinishTaskDialog extends StatefulWidget {
+  const _FinishTaskDialog({required this.task, required this.closing});
+
+  final TaskItem task;
+  final bool closing;
+
+  @override
+  State<_FinishTaskDialog> createState() => _FinishTaskDialogState();
+}
+
+class _FinishTaskDialogState extends State<_FinishTaskDialog> {
+  final _note = TextEditingController();
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.task;
+    final verb = widget.closing ? 'Close' : 'Mark Completed';
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text(
+        widget.closing ? 'Close Task' : 'Mark Task Completed',
+        style: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${widget.closing ? 'Close' : 'Mark completed'} "${t.title}" '
+            '(Ticket ${t.ticketNo})? The POC, client admin and engineer '
+            'will be notified.',
+            style: const TextStyle(fontFamily: 'Montserrat', fontSize: 13.5),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            key: const Key('finishNoteField'),
+            controller: _note,
+            minLines: 1,
+            maxLines: 3,
+            maxLength: 300,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: 'Note (optional)',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: _green),
+          onPressed: () => Navigator.pop(context, _note.text.trim()),
+          child: Text(verb, style: const TextStyle(color: Colors.white)),
+        ),
+      ],
+    );
+  }
 }
 
 /// Just the actions of [taskButtonsFor].

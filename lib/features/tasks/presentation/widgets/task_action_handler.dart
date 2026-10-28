@@ -8,6 +8,7 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/service_report_service.dart';
 import '../../data/task_provider.dart';
+import '../../domain/models/task_event.dart';
 import '../../domain/models/task_item.dart';
 import 'task_workflow.dart';
 
@@ -79,6 +80,20 @@ class TaskActionHandler {
         );
       case TaskAction.rate:
         await _rateSheet(t);
+      case TaskAction.markCompleted:
+      case TaskAction.closeTask:
+        final closing = action == TaskAction.closeTask;
+        final note = await askTaskFinishNote(context, t, closing: closing);
+        if (note == null || !context.mounted) return;
+        await runTaskAction(
+          context,
+          () => _actions.setStatus(
+            t,
+            closing ? ServiceStatus.closed : ServiceStatus.completed,
+            note: note,
+          ),
+          success: closing ? '${t.title} closed' : '${t.title} marked completed',
+        );
       case TaskAction.delete:
         final reason = await askTaskDeleteReason(context, t);
         if (reason == null || !context.mounted) return;
@@ -163,11 +178,17 @@ class TaskActionHandler {
         bytes = null;
       }
     }
+    var events = const <TaskEvent>[];
+    if (bytes == null && t.taskId > 0) {
+      try {
+        events = await ref.read(taskTimelineProvider(t.taskId).future);
+      } catch (_) {}
+    }
     try {
       if (share) {
-        await ServiceReportService.share(t, bytes: bytes);
+        await ServiceReportService.share(t, bytes: bytes, events: events);
       } else {
-        await ServiceReportService.open(t, bytes: bytes);
+        await ServiceReportService.open(t, bytes: bytes, events: events);
       }
     } catch (_) {
       messenger.showSnackBar(
