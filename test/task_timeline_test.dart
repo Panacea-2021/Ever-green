@@ -248,7 +248,9 @@ void main() {
     expect(find.text('Assigned to Ravi'), findsOneWidget);
     expect(find.text('Put on hold'), findsOneWidget);
     expect(find.textContaining('Priya (POC)'), findsWidgets);
-    expect(find.textContaining('On hold for 1h 00m'), findsOneWidget);
+    expect(find.text('1h 00m'), findsWidgets);
+    expect(find.textContaining('On hold for'), findsNothing);
+    expect(find.textContaining('Next step after'), findsNothing);
     expect(find.byKey(const Key('timelineSummary-Working')), findsOneWidget);
   });
 }

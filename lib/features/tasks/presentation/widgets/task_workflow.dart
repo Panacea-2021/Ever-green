@@ -211,16 +211,15 @@ class _FinishTaskDialogState extends State<_FinishTaskDialog> {
           ),
         ],
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: _green),
-          onPressed: () => Navigator.pop(context, _note.text.trim()),
-          child: Text(verb, style: const TextStyle(color: Colors.white)),
-        ),
+        TaskDialogButtons([
+          TaskDialogButton.cancel(onPressed: () => Navigator.pop(context)),
+          TaskDialogButton(
+            label: verb,
+            onPressed: () => Navigator.pop(context, _note.text.trim()),
+          ),
+        ]),
       ],
     );
   }
@@ -460,29 +459,20 @@ class _ReasonDialogState extends State<_ReasonDialog> {
           ),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(fontFamily: 'Montserrat'),
+        TaskDialogButtons([
+          TaskDialogButton.cancel(onPressed: () => Navigator.pop(context)),
+          TaskDialogButton(
+            label: widget.confirmLabel,
+            color: _danger,
+            onPressed: () {
+              final reason = _controller.text.trim();
+              if (reason.isEmpty) return;
+              Navigator.pop(context, reason);
+            },
           ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final reason = _controller.text.trim();
-            if (reason.isEmpty) return;
-            Navigator.pop(context, reason);
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: _danger),
-          child: Text(
-            widget.confirmLabel,
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              color: Colors.white,
-            ),
-          ),
-        ),
+        ]),
       ],
     );
   }
@@ -694,6 +684,109 @@ class _DeleteTaskDialogState extends State<_DeleteTaskDialog> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A dialog button in the Delete Task dialog's style. Labels shrink to fit
+/// on one line instead of wrapping inside the button.
+class TaskDialogButton extends StatelessWidget {
+  const TaskDialogButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.color = _green,
+    this.filled = true,
+    this.borderColor,
+  });
+
+  /// The grey outlined Cancel button.
+  const TaskDialogButton.cancel({super.key, required this.onPressed})
+      : label = 'Cancel',
+        icon = null,
+        color = const Color(0xFF545454),
+        filled = false,
+        borderColor = const Color(0xFFD8D8D8);
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final Color color;
+  final bool filled;
+
+  /// Outline colour of an unfilled button; defaults to [color].
+  final Color? borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = filled ? Colors.white : color;
+    final content = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: foreground),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            label,
+            maxLines: 1,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 14,
+              fontWeight: filled ? FontWeight.w700 : FontWeight.w600,
+              color: foreground,
+            ),
+          ),
+        ],
+      ),
+    );
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+    );
+    const padding = EdgeInsets.symmetric(horizontal: 10);
+    return SizedBox(
+      height: 48,
+      child: filled
+          ? ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                padding: padding,
+                shape: shape,
+              ),
+              child: content,
+            )
+          : OutlinedButton(
+              onPressed: onPressed,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: borderColor ?? color),
+                padding: padding,
+                shape: shape,
+              ),
+              child: content,
+            ),
+    );
+  }
+}
+
+/// [buttons] side by side with equal widths and a 12 px gap.
+class TaskDialogButtons extends StatelessWidget {
+  const TaskDialogButtons(this.buttons, {super.key});
+
+  final List<Widget> buttons;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var i = 0; i < buttons.length; i++) ...[
+          if (i > 0) const SizedBox(width: 12),
+          Expanded(child: buttons[i]),
+        ],
+      ],
     );
   }
 }

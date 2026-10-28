@@ -8,7 +8,6 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
-import '../../data/amc_provider.dart';
 import '../../domain/models/amc_contract.dart';
 import '../widgets/amc_async_states.dart';
 
@@ -453,9 +452,6 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
         t.images.isNotEmpty ? t.images.first : t.equipment?.imageUrl,
       );
 
-  /// A rejected ticket is the backend's "disabled" task.
-  bool _isActive(ServiceTask t) => t.approval != ApprovalStage.rejected;
-
   Widget _buildTaskCard(ServiceTask task) {
     final companyLabel = task.company?.displayName ?? widget.companyName ?? '';
     final created = task.createdAt;
@@ -692,7 +688,6 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
       size.width - at.dx,
       size.height - at.dy,
     );
-    final active = _isActive(task);
     final canManage = _canManage;
     final choice = await showMenu<String>(
       context: context,
@@ -703,17 +698,7 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       items: [
         _popupItem('view', Icons.visibility_outlined, 'View Details'),
-        if (canManage) ...[
-          _popupItem('edit', Icons.edit_outlined, 'Edit'),
-          _popupItem(
-            active ? 'disable' : 'enable',
-            active ? Icons.block : Icons.check_circle_outline,
-            active ? 'Disable' : 'Enable',
-            isDestructive: active,
-            // No backend action restores a rejected ticket.
-            enabled: active,
-          ),
-        ],
+        if (canManage) _popupItem('edit', Icons.edit_outlined, 'Edit'),
       ],
     );
     if (choice == null || !mounted) return;
@@ -722,8 +707,6 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
         _navigateToTaskDetails(task);
       case 'edit':
         _editTask(task);
-      case 'disable':
-        _disableTask(task);
     }
   }
 
@@ -791,119 +774,6 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
         'isEdit': true,
         'editTask': {'taskId': task.id},
       },
-    );
-  }
-
-  Future<void> _disableTask(ServiceTask task) async {
-    final reason = await _askReason();
-    if (reason == null || !mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref.read(amcRepositoryProvider).rejectTask(task.id, reason);
-      ref.invalidate(tasksProvider);
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Task disabled',
-            style: TextStyle(fontFamily: 'Montserrat'),
-          ),
-          backgroundColor: _green,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
-    } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('$e'), backgroundColor: _danger),
-      );
-    }
-  }
-
-  /// `rejectTask` requires a reason.
-  Future<String?> _askReason() => showDialog<String>(
-        context: context,
-        builder: (_) => const _ReasonDialog(),
-      );
-}
-
-class _ReasonDialog extends StatefulWidget {
-  const _ReasonDialog();
-
-  @override
-  State<_ReasonDialog> createState() => _ReasonDialogState();
-}
-
-class _ReasonDialogState extends State<_ReasonDialog> {
-  static const Color _green = Color(0xFF106220);
-  static const Color _danger = Color(0xFFD32F2F);
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: const Text(
-        'Disable task?',
-        style: TextStyle(
-          fontFamily: 'Montserrat',
-          fontSize: 19,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF1A1A1A),
-        ),
-      ),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        maxLines: 3,
-        minLines: 1,
-        cursorColor: _green,
-        style: const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
-        decoration: InputDecoration(
-          hintText: 'Reason',
-          hintStyle: TextStyle(
-            fontFamily: 'Montserrat',
-            color: Colors.black.withValues(alpha: 0.3),
-          ),
-          focusedBorder: const UnderlineInputBorder(
-            borderSide: BorderSide(color: _green),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Cancel',
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              fontWeight: FontWeight.w600,
-              color: Colors.black.withValues(alpha: 0.45),
-            ),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            final v = _controller.text.trim();
-            if (v.isNotEmpty) Navigator.pop(context, v);
-          },
-          child: const Text(
-            'Disable',
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              fontWeight: FontWeight.w700,
-              color: _danger,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

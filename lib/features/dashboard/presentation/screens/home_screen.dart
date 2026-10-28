@@ -976,6 +976,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return last.map((e) => e.toDouble()).toList();
   }
 
+  /// Card icon with the title on its own line below it, so narrow cards
+  /// show the whole title (shrunk if needed) instead of cutting it off.
+  Widget _cardHeading({
+    required IconData icon,
+    required Color tint,
+    required String title,
+    required TextStyle style,
+    double circle = 34,
+    double iconSize = 19,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: circle,
+          height: circle,
+          decoration: BoxDecoration(
+            color: tint.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: tint, size: iconSize),
+        ),
+        const SizedBox(height: 8),
+        _fitLeft(Text(title, maxLines: 1, style: style)),
+      ],
+    );
+  }
+
+  /// One line that scales down to the available width, aligned left.
+  Widget _fitLeft(Widget child) => SizedBox(
+        width: double.infinity,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: child,
+        ),
+      );
+
   Widget _statCard({
     required IconData icon,
     required Color tint,
@@ -1006,36 +1044,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.14),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: tint, size: 19),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 15,
-                    height: 1.1,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.6),
-                    letterSpacing: -0.4,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          _cardHeading(
+            icon: icon,
+            tint: tint,
+            title: title,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.black.withValues(alpha: 0.6),
+              letterSpacing: -0.4,
+            ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -1073,16 +1094,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(width: 3),
               Expanded(
-                child: Text(
-                  trend.label,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: deltaColor,
-                    letterSpacing: -0.3,
+                child: _fitLeft(
+                  Text(
+                    trend.label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: deltaColor,
+                      letterSpacing: -0.3,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1252,33 +1275,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: tint, size: 16),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.55),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          _cardHeading(
+            icon: icon,
+            tint: tint,
+            title: label,
+            circle: 28,
+            iconSize: 16,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black.withValues(alpha: 0.55),
+            ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -1309,17 +1319,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(width: 2),
                 Flexible(
-                  child: Text(
+                  child: _fitLeft(Text(
                     '${trend!.percent}% vs last mo',
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'Montserrat',
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,
                       color: deltaColor,
                     ),
-                  ),
+                  )),
                 ),
               ],
             )
@@ -1825,46 +1834,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.14),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: tint, size: 19),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.6),
-                    letterSpacing: -0.4,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          _cardHeading(
+            icon: icon,
+            tint: tint,
+            title: title,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black.withValues(alpha: 0.6),
+              letterSpacing: -0.4,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           TweenAnimationBuilder<int>(
             tween: IntTween(begin: 0, end: value),
             duration: const Duration(milliseconds: 700),
             curve: Curves.easeOutCubic,
-            builder: (_, v, __) => Text(
-              '$v',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
-                color: tint,
-                letterSpacing: -0.9,
+            builder: (_, v, __) => _fitLeft(
+              Text(
+                '$v',
+                maxLines: 1,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                  color: tint,
+                  letterSpacing: -0.9,
+                ),
               ),
             ),
           ),

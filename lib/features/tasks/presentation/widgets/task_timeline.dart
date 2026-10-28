@@ -210,14 +210,34 @@ class _TimelineStep extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    event.title,
-                    style: const TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1F1F1F),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          event.title,
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F1F1F),
+                          ),
+                        ),
+                      ),
+                      if (spent != null) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          spent,
+                          key: Key('timelineDuration-${event.id}'),
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: _muted,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -234,29 +254,6 @@ class _TimelineStep extends StatelessWidget {
                       ),
                     ),
                   ],
-                  if (spent != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.timer_outlined,
-                          size: 13,
-                          color: _muted,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            spent,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontStyle: FontStyle.italic,
-                              color: _muted,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -266,20 +263,10 @@ class _TimelineStep extends StatelessWidget {
     );
   }
 
+  /// Time spent in this step before the next one (or so far, when last).
   String? _durationText() {
     final d = duration;
-    if (d == null) return null;
-    final value = formatTaskDuration(d);
-    final soFar = isLast ? ' so far' : '';
-    return switch (event.type) {
-      TaskEventType.hold => 'On hold for $value$soFar',
-      TaskEventType.started ||
-      TaskEventType.resumed ||
-      TaskEventType.reopened =>
-        'Worked for $value$soFar',
-      TaskEventType.completed => 'Awaiting closure for $value$soFar',
-      _ => isLast ? 'Waiting $value so far' : 'Next step after $value',
-    };
+    return d == null ? null : formatTaskDuration(d);
   }
 
   static String _notePrefix(TaskEventType type) => switch (type) {

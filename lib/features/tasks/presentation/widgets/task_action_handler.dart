@@ -139,29 +139,37 @@ class TaskActionHandler {
           'Generate service report for "${t.title}"?',
           style: const TextStyle(fontFamily: 'Montserrat'),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel',
-                style: TextStyle(fontFamily: 'Montserrat')),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(ctx, true),
-            icon: const Icon(Icons.share, size: 16, color: Colors.white),
-            label: const Text(
-              'Share',
-              style: TextStyle(fontFamily: 'Montserrat', color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(backgroundColor: _green),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(ctx, false),
-            icon: const Icon(Icons.print, size: 16, color: Colors.white),
-            label: const Text(
-              'Print',
-              style: TextStyle(fontFamily: 'Montserrat', color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(backgroundColor: _green),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TaskDialogButtons([
+                TaskDialogButton(
+                  label: 'Share',
+                  icon: Icons.share_outlined,
+                  filled: false,
+                  onPressed: () => Navigator.pop(ctx, true),
+                ),
+                TaskDialogButton(
+                  label: 'Print',
+                  icon: Icons.print_outlined,
+                  onPressed: () => Navigator.pop(ctx, false),
+                ),
+              ]),
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF545454),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -317,20 +325,15 @@ class TaskActionHandler {
           '$name already has $active active tasks. Assign anyway?',
           style: const TextStyle(fontFamily: 'Montserrat'),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel',
-                style: TextStyle(fontFamily: 'Montserrat')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: _green),
-            child: const Text(
-              'Assign anyway',
-              style: TextStyle(fontFamily: 'Montserrat', color: Colors.white),
+          TaskDialogButtons([
+            TaskDialogButton.cancel(onPressed: () => Navigator.pop(ctx, false)),
+            TaskDialogButton(
+              label: 'Assign anyway',
+              onPressed: () => Navigator.pop(ctx, true),
             ),
-          ),
+          ]),
         ],
       ),
     );

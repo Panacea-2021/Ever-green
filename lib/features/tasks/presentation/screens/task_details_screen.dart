@@ -733,35 +733,6 @@ class TaskDetailsScreen extends ConsumerWidget {
     );
   }
 
-  /// Disable: a pending request is rejected (with a reason); any other
-  /// ticket is closed.
-  Future<void> _disable(
-      BuildContext context, WidgetRef ref, TaskItem? task) async {
-    if (task == null) return;
-    final actions = ref.read(taskActionsProvider);
-    if (task.approval == ApprovalState.requested) {
-      final reason = await askTaskReason(
-        context,
-        title: 'Disable task',
-        hint: 'Reason for disabling',
-        confirmLabel: 'Disable',
-      );
-      if (reason == null || !context.mounted) return;
-      await runTaskAction(
-        context,
-        () => actions.rejectRequest(task, reason: reason),
-        success: 'Task disabled',
-      );
-      return;
-    }
-    if (task.serviceStatus == ServiceStatus.closed) return;
-    await runTaskAction(
-      context,
-      () => actions.setStatus(task, ServiceStatus.closed),
-      success: 'Task disabled',
-    );
-  }
-
   Widget _buildBottomButtons(
     BuildContext context,
     WidgetRef ref,
@@ -794,34 +765,6 @@ class TaskDetailsScreen extends ConsumerWidget {
         top: false,
         child: Row(
           children: [
-            // Disable button
-            Expanded(
-              child: GestureDetector(
-                onTap: () => _disable(context, ref, task),
-                child: Container(
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(
-                        color: const Color(0xFF155622).withValues(alpha: 0.5),
-                        width: 1),
-                  ),
-                  child: const Text(
-                    'Disable',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF0E501B),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Edit button
             Expanded(
               child: GestureDetector(
                 onTap: () {
