@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/data/evergreen_repository.dart' as repo;
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/count_badge.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/user_provider.dart';
@@ -224,40 +225,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   // Result header (count of users in the selected tab)
   // ---------------------------------------------------------------------------
   Widget _buildResultHeader(int count) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: Row(
-        children: [
-          Text(
-            _tabs[_selectedTab],
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-              letterSpacing: -0.4,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFF11682E).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '$count',
-              style: const TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF11682E),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return CountHeader(label: _tabs[_selectedTab], count: count);
   }
 
   // ---------------------------------------------------------------------------

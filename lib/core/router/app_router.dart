@@ -335,6 +335,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const IssueTypesScreen(),
       ),
       GoRoute(
+        path: Routes.serviceTypes,
+        name: 'serviceTypes',
+        builder: (context, state) => const ServiceTypesScreen(),
+      ),
+      GoRoute(
         path: Routes.auditLog,
         name: 'auditLog',
         builder: (context, state) => const AuditLogScreen(),

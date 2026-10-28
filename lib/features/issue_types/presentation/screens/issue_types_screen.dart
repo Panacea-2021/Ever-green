@@ -3,27 +3,99 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
-import '../../../../core/models/backend_models.dart';
 
 const _green = Color(0xFF106220);
 const _issueTypeNameMax = 60;
 
-/// Super Admin / Manager list of issue (service) types used when raising
-/// tickets: add new ones, rename, and turn them on or off. Inactive types
-/// stay on existing tickets but can't be picked for new ones.
+/// The admin-managed name lists: issue types (picked when raising a ticket)
+/// and service types (set on equipment).
+enum ManagedTypeKind {
+  issue('Issue Types', 'issue type', 'Issue type', 'issueType',
+      'e.g. Installation', Icons.build_circle_outlined),
+  service('Service Types', 'service type', 'Service type', 'serviceType',
+      'e.g. Chiller AMC', Icons.miscellaneous_services_outlined);
+
+  const ManagedTypeKind(
+    this.title,
+    this.noun,
+    this.label,
+    this.keyPrefix,
+    this.hint,
+    this.icon,
+  );
+  final String title;
+  final String noun;
+  final String label;
+  final String keyPrefix;
+  final String hint;
+  final IconData icon;
+}
+
+typedef _TypeRow = ({int id, String name, bool isActive, bool builtIn});
+
+/// Super Admin / Manager list of issue types used when raising tickets:
+/// add new ones, rename, and turn them on or off. Inactive types stay on
+/// existing tickets but can't be picked for new ones.
 class IssueTypesScreen extends ConsumerStatefulWidget {
-  const IssueTypesScreen({super.key});
+  const IssueTypesScreen({super.key, this.kind = ManagedTypeKind.issue});
+
+  final ManagedTypeKind kind;
 
   @override
   ConsumerState<IssueTypesScreen> createState() => _IssueTypesScreenState();
 }
 
+/// Same screen for service types, which are set on equipment and shown when
+/// raising a ticket for it.
+class ServiceTypesScreen extends IssueTypesScreen {
+  const ServiceTypesScreen({super.key}) : super(kind: ManagedTypeKind.service);
+}
+
 class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
   final Set<int> _busy = {};
 
+  ManagedTypeKind get _kind => widget.kind;
+  bool get _isIssue => _kind == ManagedTypeKind.issue;
+
   void _refresh() {
-    ref.invalidate(allIssueTypesProvider);
-    ref.invalidate(issueTypesProvider);
+    if (_isIssue) {
+      ref.invalidate(allIssueTypesProvider);
+      ref.invalidate(issueTypesProvider);
+    } else {
+      ref.invalidate(allServiceTypesProvider);
+      ref.invalidate(serviceTypesProvider);
+    }
+  }
+
+  AsyncValue<List<_TypeRow>> _watchRows() => _isIssue
+      ? ref.watch(allIssueTypesProvider).whenData(
+            (l) => [
+              for (final t in l)
+                (
+                  id: t.id,
+                  name: t.name,
+                  isActive: t.isActive,
+                  builtIn: t.callType != null,
+                ),
+            ],
+          )
+      : ref.watch(allServiceTypesProvider).whenData(
+            (l) => [
+              for (final t in l)
+                (id: t.id, name: t.name, isActive: t.isActive, builtIn: false),
+            ],
+          );
+
+  Future<void> _create(String name) {
+    final repo = ref.read(evergreenRepositoryProvider);
+    return _isIssue ? repo.createIssueType(name) : repo.createServiceType(name);
+  }
+
+  Future<void> _update(int id, {String? name, bool? isActive}) {
+    final repo = ref.read(evergreenRepositoryProvider);
+    return _isIssue
+        ? repo.updateIssueType(id, name: name, isActive: isActive)
+        : repo.updateServiceType(id, name: name, isActive: isActive);
   }
 
   void _snack(String message, {bool error = false}) {
@@ -36,32 +108,30 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
     );
   }
 
-  Future<void> _edit([IssueType? existing]) async {
+  Future<void> _edit([_TypeRow? existing]) async {
     final name = await showDialog<String>(
       context: context,
-      builder: (_) => _IssueTypeNameDialog(initial: existing?.name),
+      builder: (_) =>
+          _IssueTypeNameDialog(kind: _kind, initial: existing?.name),
     );
     if (name == null || name == existing?.name) return;
-    final repo = ref.read(evergreenRepositoryProvider);
     try {
       if (existing == null) {
-        await repo.createIssueType(name);
+        await _create(name);
       } else {
-        await repo.updateIssueType(existing.id, name: name);
+        await _update(existing.id, name: name);
       }
       _refresh();
-      _snack(existing == null ? 'Issue type added' : 'Issue type renamed');
+      _snack('${_kind.label} ${existing == null ? 'added' : 'renamed'}');
     } catch (e) {
       _snack('$e', error: true);
     }
   }
 
-  Future<void> _toggle(IssueType type, bool active) async {
+  Future<void> _toggle(_TypeRow type, bool active) async {
     setState(() => _busy.add(type.id));
     try {
-      await ref
-          .read(evergreenRepositoryProvider)
-          .updateIssueType(type.id, isActive: active);
+      await _update(type.id, isActive: active);
       _refresh();
     } catch (e) {
       _snack('$e', error: true);
@@ -72,17 +142,17 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final types = ref.watch(allIssueTypesProvider);
+    final types = _watchRows();
     return Scaffold(
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton.extended(
-        key: const Key('addIssueType'),
+        key: Key(_isIssue ? 'addIssueType' : 'addServiceType'),
         backgroundColor: _green,
         onPressed: () => _edit(),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'New Issue Type',
-          style: TextStyle(
+        label: Text(
+          'New ${_kind.title.substring(0, _kind.title.length - 1)}',
+          style: const TextStyle(
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.w600,
             color: Colors.white,
@@ -104,7 +174,7 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Could not load issue types\n$e',
+                        'Could not load ${_kind.noun}s\n$e',
                         textAlign: TextAlign.center,
                       ),
                       TextButton(
@@ -116,13 +186,13 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
                 ),
                 data: (list) => RefreshIndicator(
                   color: _green,
-                  onRefresh: () => ref.refresh(allIssueTypesProvider.future),
+                  onRefresh: () async => _refresh(),
                   child: list.isEmpty
                       ? ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          children: const [
-                            SizedBox(height: 120),
-                            Center(child: Text('No issue types yet')),
+                          children: [
+                            const SizedBox(height: 120),
+                            Center(child: Text('No ${_kind.noun}s yet')),
                           ],
                         )
                       : ListView.separated(
@@ -164,10 +234,10 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
             ),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Issue Types',
-              style: TextStyle(
+              _kind.title,
+              style: const TextStyle(
                 fontFamily: 'Montserrat',
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -180,10 +250,10 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
     );
   }
 
-  Widget _tile(IssueType type) {
+  Widget _tile(_TypeRow type) {
     final busy = _busy.contains(type.id);
     return Container(
-      key: Key('issueType-${type.id}'),
+      key: Key('${_kind.keyPrefix}-${type.id}'),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
         color: type.isActive ? const Color(0xFFEBF0EA) : Colors.grey.shade100,
@@ -192,7 +262,7 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
       child: Row(
         children: [
           Icon(
-            Icons.build_circle_outlined,
+            _kind.icon,
             color: type.isActive ? _green : Colors.grey,
           ),
           const SizedBox(width: 12),
@@ -212,7 +282,7 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
                 ),
                 Text(
                   [
-                    if (type.callType != null) 'Built-in',
+                    if (type.builtIn) 'Built-in',
                     type.isActive ? 'Active' : 'Inactive',
                   ].join(' · '),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
@@ -237,8 +307,9 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
 }
 
 class _IssueTypeNameDialog extends StatefulWidget {
+  final ManagedTypeKind kind;
   final String? initial;
-  const _IssueTypeNameDialog({this.initial});
+  const _IssueTypeNameDialog({required this.kind, this.initial});
 
   @override
   State<_IssueTypeNameDialog> createState() => _IssueTypeNameDialogState();
@@ -257,15 +328,16 @@ class _IssueTypeNameDialogState extends State<_IssueTypeNameDialog> {
   Widget build(BuildContext context) {
     final name = _controller.text.trim();
     return AlertDialog(
-      title:
-          Text(widget.initial == null ? 'New issue type' : 'Rename issue type'),
+      title: Text(
+        '${widget.initial == null ? 'New' : 'Rename'} ${widget.kind.noun}',
+      ),
       content: TextField(
-        key: const Key('issueTypeNameField'),
+        key: Key('${widget.kind.keyPrefix}NameField'),
         controller: _controller,
         autofocus: true,
         maxLength: _issueTypeNameMax,
         textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(hintText: 'e.g. Installation'),
+        decoration: InputDecoration(hintText: widget.kind.hint),
         onChanged: (_) => setState(() {}),
       ),
       actions: [

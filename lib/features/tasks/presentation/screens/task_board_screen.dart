@@ -7,6 +7,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/widgets/scaffold_with_bottom_nav.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
+import '../../../../shared/widgets/count_badge.dart';
 import '../../../../shared/widgets/app_drawer.dart';
 import '../../../../shared/widgets/custom_menu_icon.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -76,9 +77,9 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
       );
     }
 
-    final visible = scoped.where((t) {
-      if (_statusFilter != null && t.status != _statusFilter) return false;
-      return t.matchesQuery(_query);
+    final searched = scoped.where((t) => t.matchesQuery(_query)).toList();
+    final visible = searched.where((t) {
+      return _statusFilter == null || t.status == _statusFilter;
     }).toList()
       ..sort((a, b) {
         // Overdue first, then priority, then newest.
@@ -94,6 +95,27 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
     final canSeeDeleted =
         role == UserRole.superAdmin || role == UserRole.manager;
     final showDeleted = canSeeDeleted && _deletedTab;
+    final deletedCount = canSeeDeleted
+        ? ref
+            .watch(deletedTasksProvider)
+            .valueOrNull
+            ?.map(TaskItem.fromService)
+            .where((t) => t.matchesQuery(_query))
+            .length
+        : null;
+    final loaded = async.hasValue;
+    final counts = <String, int?>{
+      'All': loaded ? searched.length : null,
+      for (final (label, status) in _statusChips)
+        label: loaded ? searched.where((t) => t.status == status).length : null,
+      _deletedLabel: deletedCount,
+    };
+    final selectedLabel = showDeleted
+        ? _deletedLabel
+        : _statusFilter == null
+            ? 'All'
+            : _statusChips.firstWhere((c) => c.$2 == _statusFilter).$1;
+    final selectedCount = counts[selectedLabel];
 
     final title = role == UserRole.technician
         ? 'My Tasks'
@@ -124,8 +146,18 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
               children: [
                 _header(title, visible.length, role),
                 _searchBar(),
-                _filters(canSeeDeleted),
+                _filters(canSeeDeleted, counts),
                 const SizedBox(height: 4),
+                if (selectedCount != null) ...[
+                  CountHeader(
+                    key: const Key('taskCountHeader'),
+                    label: selectedLabel == 'All'
+                        ? 'All Tasks'
+                        : '$selectedLabel Tasks',
+                    count: selectedCount,
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 if (showDeleted)
                   Expanded(child: _deletedList())
                 else
@@ -280,15 +312,20 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
     );
   }
 
+  static const _statusChips = <(String, TaskStatus)>[
+    ('Open', TaskStatus.open),
+    ('Hold', TaskStatus.hold),
+    ('In Progress', TaskStatus.inProgress),
+    ('Closed', TaskStatus.closed),
+  ];
+
   /// Rounded status chips with "All" first, then "Deleted" for
-  /// [canSeeDeleted]; the active chip is filled green.
-  Widget _filters(bool canSeeDeleted) {
+  /// [canSeeDeleted]; the active chip is filled green. Each shows its
+  /// [counts] entry once loaded.
+  Widget _filters(bool canSeeDeleted, Map<String, int?> counts) {
     final chips = <MapEntry<String, TaskStatus?>>[
       const MapEntry('All', null),
-      const MapEntry('Open', TaskStatus.open),
-      const MapEntry('Hold', TaskStatus.hold),
-      const MapEntry('In Progress', TaskStatus.inProgress),
-      const MapEntry('Closed', TaskStatus.closed),
+      for (final (label, status) in _statusChips) MapEntry(label, status),
       if (canSeeDeleted) const MapEntry(_deletedLabel, null),
     ];
     return SizedBox(
@@ -330,14 +367,27 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
                       ]
                     : null,
               ),
-              child: Text(
-                chips[i].key,
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: sel ? Colors.white : const Color(0xFF1F1F1F),
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    chips[i].key,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: sel ? Colors.white : const Color(0xFF1F1F1F),
+                    ),
+                  ),
+                  if (counts[chips[i].key] != null) ...[
+                    const SizedBox(width: 6),
+                    CountBadge(
+                      counts[chips[i].key]!,
+                      key: Key('taskStatusCount-${chips[i].key}'),
+                      onDark: sel,
+                    ),
+                  ],
+                ],
               ),
             ),
           );

@@ -16,6 +16,7 @@ bool equipmentMatches(Equipment e, String query) => fuzzyMatches(query, [
       e.egSerialNumber,
       e.type,
       e.location,
+      e.serviceType?.name,
     ]);
 
 /// Full-page searchable list of one company's equipment. Inactive equipment
@@ -62,8 +63,9 @@ class EquipmentPickerScreen extends ConsumerWidget {
       onRetry: () => ref.invalidate(equipmentsProvider(companyId)),
       emptyText: 'No equipment for this company',
       itemBuilder: (context, e) {
-        final makeModel =
-            [e.make ?? '', e.model ?? ''].where((s) => s.isNotEmpty).join(' · ');
+        final makeModel = [e.make ?? '', e.model ?? '']
+            .where((s) => s.isNotEmpty)
+            .join(' · ');
         final serials = [
           if (e.egSerialNumber.isNotEmpty) 'EG ${e.egSerialNumber}',
           if ((e.serialNumber ?? '').isNotEmpty) 'S.No ${e.serialNumber}',
@@ -71,7 +73,7 @@ class EquipmentPickerScreen extends ConsumerWidget {
         return PickerCard(
           icon: Icons.handyman_outlined,
           title: e.name.isEmpty ? 'Equipment #${e.id}' : e.name,
-          tag: e.isActive ? null : 'Inactive',
+          tag: e.isActive ? e.serviceType?.name : 'Inactive',
           selected: e.id == selectedId,
           lines: [makeModel, serials],
           onTap: () => Navigator.of(context).pop(e),

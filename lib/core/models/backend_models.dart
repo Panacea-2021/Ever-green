@@ -113,6 +113,28 @@ class IssueType {
       );
 }
 
+/// Admin-managed service type set on equipment (e.g. "Chiller AMC").
+class ServiceType {
+  final int id;
+  final String name;
+  final bool isActive;
+
+  const ServiceType(
+      {required this.id, required this.name, this.isActive = true});
+
+  factory ServiceType.fromJson(Map<String, dynamic> json) => ServiceType(
+        id: _int(json['id']),
+        name: _str(json['name']),
+        isActive: json['is_active'] != false,
+      );
+
+  /// `equipment.service_type` (`{id, name}`), or null.
+  static ServiceType? fromNullable(Object? json) {
+    final m = _map(json);
+    return m == null ? null : ServiceType.fromJson(m);
+  }
+}
+
 /// The ticket that blocks raising another one on the same equipment.
 class ActiveEquipmentTask {
   final int id;
@@ -338,6 +360,7 @@ class Equipment {
   final DateTime? installedAt;
   final DateTime? verifiedAt;
   final TaskPerson? verifier;
+  final ServiceType? serviceType;
   final Map<String, dynamic> raw;
 
   const Equipment({
@@ -362,6 +385,7 @@ class Equipment {
     this.installedAt,
     this.verifiedAt,
     this.verifier,
+    this.serviceType,
     this.raw = const {},
   });
 
@@ -391,6 +415,7 @@ class Equipment {
       installedAt: _date(json['installed_at']),
       verifiedAt: _date(json['verified_at']),
       verifier: TaskPerson.fromJson(json['verifier']),
+      serviceType: ServiceType.fromNullable(json['service_type']),
       raw: json,
     );
   }

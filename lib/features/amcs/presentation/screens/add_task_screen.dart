@@ -7,6 +7,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart' hide TaskStatus;
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
+import '../../../pickers/presentation/screens/location_picker_screen.dart';
 import '../../../pickers/presentation/screens/company_picker_screen.dart';
 import '../../../pickers/presentation/screens/equipment_picker_screen.dart';
 import '../../../tasks/data/task_provider.dart';
@@ -72,6 +73,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
   bool _prefilledEdit = false;
   bool _preselectedEquipment = false;
+  Company? _selectedCompany;
 
   String? get _editTaskId => widget.editTask?['taskId']?.toString();
 
@@ -331,8 +333,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     // Client roles may only raise tickets for their own companies.
     var companies = ref.watch(companiesProvider);
     final ownIds = user?.companies.map((c) => c.id).toSet() ?? const <int>{};
-    _allowedCompanyIds =
-        role.isClientSide && ownIds.isNotEmpty ? ownIds : null;
+    _allowedCompanyIds = role.isClientSide && ownIds.isNotEmpty ? ownIds : null;
     if (role.isClientSide && ownIds.isNotEmpty) {
       companies = companies.whenData(
         (list) => list.where((c) => ownIds.contains(c.id)).toList(),
@@ -348,6 +349,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     for (final c in companyList) {
       if (c.id == _companyId) selectedCompany = c;
     }
+    _selectedCompany = selectedCompany;
     if (selectedCompany != null) {
       _companyName ??= selectedCompany.name;
     } else if (_companyName == null && companyList.isNotEmpty) {
@@ -433,7 +435,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                 Expanded(
                   child: waitingForEdit
                       ? const Center(
-                          child: CircularProgressIndicator(color: Color(0xFF106220)),
+                          child: CircularProgressIndicator(
+                              color: Color(0xFF106220)),
                         )
                       : SingleChildScrollView(
                           padding: const EdgeInsets.all(16),
@@ -450,17 +453,20 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
                               const SizedBox(height: 16),
 
-                              if (issueTypesAsync.hasError && issueTypes.isEmpty)
+                              if (issueTypesAsync.hasError &&
+                                  issueTypes.isEmpty)
                                 _statusField(
                                   'Couldn\'t load issue types — tap to retry',
-                                  onTap: () => ref.invalidate(issueTypesProvider),
+                                  onTap: () =>
+                                      ref.invalidate(issueTypesProvider),
                                 )
                               else
                                 _buildInlineDropdownField<int>(
                                   label: 'Issue Type',
                                   value: _issueTypeId,
                                   items: [
-                                    for (final it in issueTypes) (it.id, it.name),
+                                    for (final it in issueTypes)
+                                      (it.id, it.name),
                                   ],
                                   onChanged: (value) =>
                                       setState(() => _issueTypeId = value),
@@ -512,8 +518,11 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   Widget _companyField(AsyncValue<List<Company>> companies, bool locked) {
     if (!companies.hasValue) {
       return _statusField(
-        companies.hasError ? 'Couldn\'t load companies — tap to retry' : 'Loading companies…',
-        onTap: companies.hasError ? () => ref.invalidate(companiesProvider) : null,
+        companies.hasError
+            ? 'Couldn\'t load companies — tap to retry'
+            : 'Loading companies…',
+        onTap:
+            companies.hasError ? () => ref.invalidate(companiesProvider) : null,
       );
     }
     return _pickerField(
@@ -535,6 +544,17 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
       _companyId = picked.id;
       _equipmentId = null;
     });
+  }
+
+  Future<void> _pickLocation() async {
+    final picked = await LocationPickerScreen.open(
+      context,
+      company: _selectedCompany,
+      selected: _locationController.text,
+    );
+    if (picked == null || !mounted) return;
+    _locationEdited = true;
+    _locationController.text = picked;
   }
 
   Future<void> _pickEquipment() async {
@@ -615,59 +635,6 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                 if (value != _companyId) _equipmentId = null;
                 _companyId = value;
               }),
-    );
-  }
-
-  Widget _buildInlineTextField({
-    required String label,
-    required TextEditingController controller,
-    ValueChanged<String>? onChanged,
-  }) {
-    return Material(
-      color: Colors.white,
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(32),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        maxLength: 200,
-        buildCounter: (_, {required currentLength, required isFocused, maxLength}) =>
-            null,
-        cursorColor: const Color(0xFF106220),
-        textAlignVertical: TextAlignVertical.center,
-        style: const TextStyle(
-          fontFamily: 'Montserrat',
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: Colors.black,
-        ),
-        decoration: InputDecoration(
-          hintText: label,
-          hintStyle: TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: Colors.black.withValues(alpha: 0.4),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(32),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(32),
-            borderSide: const BorderSide(color: Color(0xFF106220), width: 1.5),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(32),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
     );
   }
 
@@ -840,10 +807,16 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
           const SizedBox(height: 19),
 
-          _buildInlineTextField(
-            label: 'Location (e.g. Block B, 2nd floor)',
-            controller: _locationController,
-            onChanged: (_) => _locationEdited = true,
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _locationController,
+            builder: (context, value, _) => KeyedSubtree(
+              key: const Key('taskLocationField'),
+              child: _pickerField(
+                label: 'Location (e.g. Block B, 2nd floor)',
+                value: value.text.trim().isEmpty ? null : value.text.trim(),
+                onTap: _pickLocation,
+              ),
+            ),
           ),
 
           // Equipment Specifications (shown when equipment is selected)
@@ -933,6 +906,10 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
             ),
           ),
           const SizedBox(height: 12),
+          if (e.serviceType != null) ...[
+            _buildSpecItem('Service Type', e.serviceType!.name),
+            const SizedBox(height: 8),
+          ],
 
           // Specs in two columns
           Row(
@@ -1132,7 +1109,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                             width: 0.8,
                           ),
                         ),
-                        child: localImageThumb(_selectedImages[index], size: 88),
+                        child:
+                            localImageThumb(_selectedImages[index], size: 88),
                       ),
                       Positioned(
                         top: 0,
@@ -1241,33 +1219,33 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
             const SizedBox(width: 16),
 
-          // Save Button (green gradient pill, matches Figma)
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _saveTask(editing, issueTypes, activeTask),
-              child: Container(
-                height: 46,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF138A2A), Color(0xFF106220)],
+            // Save Button (green gradient pill, matches Figma)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _saveTask(editing, issueTypes, activeTask),
+                child: Container(
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF138A2A), Color(0xFF106220)],
+                    ),
+                    borderRadius: BorderRadius.circular(32),
                   ),
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           ],
         ),
       ),

@@ -79,7 +79,8 @@ void main() {
     }
   });
 
-  testWidgets('POC drawer: no Users List / AMC Renewals; has history + password',
+  testWidgets(
+      'POC drawer: no Users List / AMC Renewals; has history + password',
       (tester) async {
     final titles = await _drawerTitles(tester, UserRole.client);
     expect(titles, isNot(contains('Users List')));
@@ -114,6 +115,14 @@ void main() {
       final titles = await _drawerTitles(tester, role);
       expect(titles, isNot(contains('Change Password')), reason: '$role');
       expect(titles, contains('Activity History'), reason: '$role');
+    }
+  });
+
+  testWidgets('Service Types only for Super Admin and Manager', (tester) async {
+    for (final role in UserRole.values) {
+      final titles = await _drawerTitles(tester, role);
+      final admin = role == UserRole.superAdmin || role == UserRole.manager;
+      expect(titles.contains('Service Types'), admin, reason: '$role');
     }
   });
 

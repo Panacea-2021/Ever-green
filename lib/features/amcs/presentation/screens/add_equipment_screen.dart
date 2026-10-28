@@ -21,7 +21,8 @@ class AddEquipmentScreen extends ConsumerStatefulWidget {
   /// Keys: id (required for edit), companyId, name, make, model,
   /// serialNumber, location, year, frequency ([TmFrequency.key]),
   /// description, imageUrl, status ([EquipmentCondition.key]), type,
-  /// installedAt (ISO). Pops `true` after saving.
+  /// installedAt (ISO), serviceTypeId, serviceTypeName. Pops `true` after
+  /// saving.
   final Map<String, dynamic>? editEquipment;
 
   const AddEquipmentScreen({
@@ -47,6 +48,8 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
 
   String? _selectedYear;
   String? _selectedFrequency;
+  int? _serviceTypeId;
+  String? _serviceTypeName;
   int? _companyId;
   String? _imageUrl;
   bool _uploadingImage = false;
@@ -124,6 +127,9 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
     _companyId = int.tryParse(s('companyId')) ?? int.tryParse(widget.companyId);
     final image = s('imageUrl');
     _imageUrl = image.isEmpty ? null : image;
+    _serviceTypeId = int.tryParse(s('serviceTypeId'));
+    final serviceType = s('serviceTypeName');
+    _serviceTypeName = serviceType.isEmpty ? null : serviceType;
   }
 
   @override
@@ -299,10 +305,45 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
           ),
           const SizedBox(height: 19),
 
+          _buildServiceTypeField(),
+          const SizedBox(height: 19),
+
           // Description
           _buildDescriptionField(),
         ],
       ),
+    );
+  }
+
+  static const _noServiceType = 'No service type';
+
+  /// Active service types; the equipment's current one stays listed even if
+  /// it was deactivated.
+  Widget _buildServiceTypeField() {
+    final types =
+        ref.watch(serviceTypesProvider).valueOrNull ?? const <ServiceType>[];
+    final names = [
+      for (final t in types) t.name,
+      if (_serviceTypeName != null && !types.any((t) => t.id == _serviceTypeId))
+        _serviceTypeName!,
+    ];
+    return _dropdownField(
+      'Service Type',
+      _serviceTypeName,
+      [if (_serviceTypeName != null) _noServiceType, ...names],
+      (v) => setState(() {
+        if (v == null || v == _noServiceType) {
+          _serviceTypeId = null;
+          _serviceTypeName = null;
+          return;
+        }
+        for (final t in types) {
+          if (t.name == v) {
+            _serviceTypeId = t.id;
+            _serviceTypeName = t.name;
+          }
+        }
+      }),
     );
   }
 
@@ -866,9 +907,8 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
         ? EquipmentStatusX.fromKey(edit?['status']?.toString())
         : EquipmentStatus.operational;
     final editType = edit?['type']?.toString().trim() ?? '';
-    final type = widget.isEdit
-        ? (editType.isEmpty ? null : editType)
-        : (model ?? make);
+    final type =
+        widget.isEdit ? (editType.isEmpty ? null : editType) : (model ?? make);
     final installedAt = widget.isEdit
         ? DateTime.tryParse('${edit?['installedAt'] ?? ''}')
         : DateTime.now();
@@ -888,6 +928,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
       if (_imageUrl != null) 'image_url': _imageUrl,
       'status': status.condition.key,
       if (type != null) 'type': type,
+      'service_type_link': _serviceTypeId,
       if (installedAt != null)
         'installed_at': installedAt.toUtc().toIso8601String(),
     };

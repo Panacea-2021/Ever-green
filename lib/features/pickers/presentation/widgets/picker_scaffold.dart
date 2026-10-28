@@ -15,6 +15,7 @@ class PickerScaffold<T> extends StatefulWidget {
     required this.itemBuilder,
     required this.onRetry,
     required this.emptyText,
+    this.queryItemBuilder,
   });
 
   final String title;
@@ -26,6 +27,10 @@ class PickerScaffold<T> extends StatefulWidget {
 
   /// Shown when there is nothing to pick at all.
   final String emptyText;
+
+  /// Optional first row for the typed search text (e.g. "Use 'Block C'"),
+  /// shown whenever the search box isn't empty.
+  final Widget? Function(BuildContext context, String query)? queryItemBuilder;
 
   @override
   State<PickerScaffold<T>> createState() => _PickerScaffoldState<T>();
@@ -163,27 +168,34 @@ class _PickerScaffoldState<T> extends State<PickerScaffold<T>> {
       );
     }
     final all = items.value!;
-    if (all.isEmpty) {
+    final q = _query.trim().toLowerCase();
+    final queryItem = q.isEmpty
+        ? null
+        : widget.queryItemBuilder?.call(context, _query.trim());
+    if (all.isEmpty && queryItem == null) {
       return _message(Icons.inbox_outlined, widget.emptyText, '');
     }
-    final q = _query.trim().toLowerCase();
     final visible =
         q.isEmpty ? all : all.where((i) => widget.matches(i, q)).toList();
-    if (visible.isEmpty) {
+    if (visible.isEmpty && queryItem == null) {
       return _message(
         Icons.search_off,
         'No matches',
         'Nothing matches "${_query.trim()}"',
       );
     }
+    final offset = queryItem == null ? 0 : 1;
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-      itemCount: visible.length,
-      itemBuilder: (context, i) => widget.itemBuilder(context, visible[i]),
+      itemCount: visible.length + offset,
+      itemBuilder: (context, i) => i < offset
+          ? queryItem!
+          : widget.itemBuilder(context, visible[i - offset]),
     );
   }
 
-  Widget _message(IconData icon, String title, String subtitle, {Widget? action}) {
+  Widget _message(IconData icon, String title, String subtitle,
+      {Widget? action}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),

@@ -245,6 +245,16 @@ class AppDrawer extends ConsumerWidget {
                               context.push(Routes.issueTypes);
                             },
                           ),
+                        if (Permissions.canManageIssueTypes(role))
+                          _buildMenuItem(
+                            context,
+                            icon: Icons.miscellaneous_services_outlined,
+                            title: 'Service Types',
+                            onTap: () {
+                              Navigator.pop(context);
+                              context.push(Routes.serviceTypes);
+                            },
+                          ),
                         if (Permissions.canBulkUpload(role)) ...[
                           _buildMenuItem(
                             context,

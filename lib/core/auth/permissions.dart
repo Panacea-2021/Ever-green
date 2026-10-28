@@ -47,6 +47,7 @@ class Permissions {
       Routes.uploadTechnicians,
       Routes.uploadAmc,
       Routes.issueTypes,
+      Routes.serviceTypes,
     ],
     // Senior Technician: a field lead — their own tasks plus the ability to
     // assign/reassign to junior technicians and see technician performance.

@@ -192,6 +192,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                     individual ? null : sNo,
                     desc,
                     lastUpdated,
+                    task?.source?.equipment?.serviceType?.name,
                   ),
 
                   if (task != null && actions.isNotEmpty) ...[
@@ -476,6 +477,7 @@ class TaskDetailsScreen extends ConsumerWidget {
     String? serialNo,
     String description,
     String lastUpdated,
+    String? serviceType,
   ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 11),
@@ -535,6 +537,14 @@ class TaskDetailsScreen extends ConsumerWidget {
                       'Issue Type', issueType.isEmpty ? '-' : issueType),
                 ),
                 const SizedBox(height: 12),
+
+                if (serviceType != null) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _infoField('Service Type', serviceType),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
                 // Technician
                 Align(
