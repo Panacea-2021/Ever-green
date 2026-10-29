@@ -80,7 +80,8 @@ class ServicesHeader extends StatelessWidget {
                 if (desktop) ...[
                   for (final item in items) _NavLink(item: item),
                   const SizedBox(width: 20),
-                  SvcButton(label: 'Book a service', compact: true, onTap: onBook),
+                  SvcButton(
+                      label: 'Book a service', compact: true, onTap: onBook),
                 ] else ...[
                   SvcButton(
                     label: 'Book',
@@ -209,10 +210,13 @@ class ServicesHero extends StatelessWidget {
           spacing: 22,
           runSpacing: 16,
           children: [
-            _HeroFeature(Icons.verified_outlined, 'Certified & trained\ntechnicians'),
-            _HeroFeature(Icons.support_agent_outlined, '24/7 emergency\nsupport'),
+            _HeroFeature(
+                Icons.verified_outlined, 'Certified & trained\ntechnicians'),
+            _HeroFeature(
+                Icons.support_agent_outlined, '24/7 emergency\nsupport'),
             _HeroFeature(Icons.public_outlined, 'Pan-India\nservice coverage'),
-            _HeroFeature(Icons.handshake_outlined, 'Trusted by leading\norganizations'),
+            _HeroFeature(
+                Icons.handshake_outlined, 'Trusted by leading\norganizations'),
           ],
         ),
       ],
@@ -504,7 +508,8 @@ class _ServiceCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     description,
-                    style: svcText(size: 13, height: 1.55, color: SvcColors.body),
+                    style:
+                        svcText(size: 13, height: 1.55, color: SvcColors.body),
                   ),
                   const Spacer(),
                   const SizedBox(height: 14),
@@ -628,7 +633,8 @@ class EquipmentSection extends StatelessWidget {
                     Text(
                       item.$3,
                       textAlign: TextAlign.center,
-                      style: svcText(size: 11, color: SvcColors.body, height: 1.4),
+                      style:
+                          svcText(size: 11, color: SvcColors.body, height: 1.4),
                     ),
                     const SizedBox(height: 4),
                   ],
@@ -642,31 +648,49 @@ class EquipmentSection extends StatelessWidget {
 }
 
 class IndustriesSection extends StatelessWidget {
-  const IndustriesSection({super.key});
+  const IndustriesSection({
+    super.key,
+    this.lightBackground = false,
+  });
+
+  final bool lightBackground;
 
   static const _items = [
     (SvcAssets.itCampus, 'IT Campuses', 'Large-scale cafeterias & pantries'),
-    (SvcAssets.cafeteria, 'Corporate Cafeterias', 'High-volume daily operations'),
-    (SvcAssets.hostels, 'Hostels & Universities', 'Mess kitchens serving thousands'),
+    (
+      SvcAssets.cafeteria,
+      'Corporate Cafeterias',
+      'High-volume daily operations'
+    ),
+    (
+      SvcAssets.hostels,
+      'Hostels & Universities',
+      'Mess kitchens serving thousands'
+    ),
     (SvcAssets.hotels, 'Hotels & Resorts', 'Multi-outlet F&B operations'),
     (SvcAssets.hospitals, 'Hospitals', 'Hygiene-critical kitchens'),
-    (SvcAssets.restaurants, 'Restaurants & Cloud Kitchens', 'Fast-paced commercial setups'),
+    (
+      SvcAssets.restaurants,
+      'Restaurants & Cloud Kitchens',
+      'Fast-paced commercial setups'
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return SvcSection(
-      color: SvcColors.primaryDeep,
+      color: lightBackground ? Colors.white : SvcColors.primaryDeep,
+      vertical: lightBackground ? 96 : null,
       child: SvcSplit(
         leftFlex: 3,
         rightFlex: 7,
-        left: const SvcIntro(
+        left: SvcIntro(
           eyebrow: 'Industries we serve',
           title: 'One service partner. ',
           highlight: 'Every kitchen.',
           body: 'We work with large organisations across industries to '
               'maintain and support their kitchen operations.',
-          light: true,
+          light: !lightBackground,
         ),
         right: SvcGrid(
           columns: svcColumns(context, desktop: 3, tablet: 3, mobile: 1),
@@ -734,10 +758,26 @@ class ProcessSection extends StatelessWidget {
   const ProcessSection({super.key});
 
   static const _steps = [
-    (SvcAssets.step1, 'Assess your needs', 'We understand your kitchen setup, equipment and requirements.'),
-    (SvcAssets.step2, 'Get a customized plan', 'We recommend the right service or AMC plan for your needs.'),
-    (SvcAssets.step3, 'Service execution', 'Our certified technicians deliver quality service on time.'),
-    (SvcAssets.step4, 'Ongoing support', 'Regular maintenance, reports and 24/7 support.'),
+    (
+      SvcAssets.step1,
+      'Assess your needs',
+      'We understand your kitchen setup, equipment and requirements.'
+    ),
+    (
+      SvcAssets.step2,
+      'Get a customized plan',
+      'We recommend the right service or AMC plan for your needs.'
+    ),
+    (
+      SvcAssets.step3,
+      'Service execution',
+      'Our certified technicians deliver quality service on time.'
+    ),
+    (
+      SvcAssets.step4,
+      'Ongoing support',
+      'Regular maintenance, reports and 24/7 support.'
+    ),
   ];
 
   @override
@@ -785,7 +825,8 @@ class ProcessSection extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: i < _steps.length - 1
-                            ? Container(height: 1.5, color: SvcColors.mintStrong)
+                            ? Container(
+                                height: 1.5, color: SvcColors.mintStrong)
                             : const SizedBox.shrink(),
                       ),
                     ],
@@ -800,7 +841,8 @@ class ProcessSection extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     _steps[i].$3,
-                    style: svcText(size: 12.5, color: SvcColors.body, height: 1.5),
+                    style:
+                        svcText(size: 12.5, color: SvcColors.body, height: 1.5),
                   ),
                 ],
               ),

@@ -163,8 +163,7 @@ class _FaqSectionState extends State<FaqSection> {
                         _FaqRow(
                           data: faqs[i],
                           number: '${_faqs.indexOf(faqs[i]) + 1}',
-                          isExpanded:
-                              _expandedIndex == _faqs.indexOf(faqs[i]),
+                          isExpanded: _expandedIndex == _faqs.indexOf(faqs[i]),
                           onTap: () {
                             final originalIndex = _faqs.indexOf(faqs[i]);
                             setState(() {
@@ -264,6 +263,10 @@ class _SearchBarState extends State<_SearchBar> {
                   color: Color(0xFF8B948E),
                 ),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
               ),
@@ -377,9 +380,7 @@ class _FaqRow extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isExpanded
-              ? LandingColors.primary
-              : const Color(0xFFE3EAE5),
+          color: isExpanded ? LandingColors.primary : const Color(0xFFE3EAE5),
         ),
       ),
       child: Material(
@@ -408,9 +409,8 @@ class _FaqRow extends StatelessWidget {
                       child: Text(
                         number,
                         style: LandingTypography.faqNumber.copyWith(
-                          color: isExpanded
-                              ? Colors.white
-                              : LandingColors.primary,
+                          color:
+                              isExpanded ? Colors.white : LandingColors.primary,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),

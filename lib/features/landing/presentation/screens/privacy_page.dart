@@ -55,6 +55,15 @@ class PrivacyPage extends StatelessWidget {
       title: 'PRIVACY AND POLICY',
       heroAsset: LandingAssets.privacyHero,
       sections: _sections,
+      desktopHeroHeight: 280,
+      mobileHeroHeight: 240,
+      bodyOverlap: 36,
+      bodyMaxWidth: 1040,
+      bodyRadius: 20,
+      desktopTitleFontSize: 48,
+      heroContentBottomInset: 0,
+      showCloseButton: true,
+      backgroundColor: Color(0xFFE5F6EA),
     );
   }
 }

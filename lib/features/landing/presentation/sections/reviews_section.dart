@@ -167,24 +167,7 @@ class _ReviewsSectionState extends State<ReviewsSection> {
           SizedBox(height: isMobile ? 32 : 48),
           SizedBox(
             height: isMobile ? 480 : 400,
-            child: PageView.builder(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              onPageChanged: (index) {
-                setState(() => _currentIndex = index % _reviews.length);
-              },
-              itemBuilder: (context, index) {
-                final review = _reviews[index % _reviews.length];
-                return Center(
-                  child: isMobile
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: _MobileReviewCard(data: review),
-                        )
-                      : _MainReviewCard(data: review),
-                );
-              },
-            ),
+            child: _buildCarousel(isMobile),
           ),
           SizedBox(height: isMobile ? 24 : 32),
           _buildPaginationDots(),
@@ -197,12 +180,17 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     if (isMobile) {
       return PageView.builder(
         controller: _pageController,
-        onPageChanged: (index) => setState(() => _currentIndex = index),
-        itemCount: _reviews.length,
+        physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (index) =>
+            setState(() => _currentIndex = index % _reviews.length),
         itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: _MobileReviewCard(data: _reviews[index]),
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: _MobileReviewCard(
+                data: _reviews[index % _reviews.length],
+              ),
+            ),
           );
         },
       );
@@ -211,60 +199,55 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Far left card (small)
-        _SideCard(
-          imagePath: _reviews[(_currentIndex - 2 + _reviews.length) % _reviews.length].photoPath,
-          width: 78,
-          height: 204,
-        ),
-
-        const SizedBox(width: 22),
-
-        // Left card (medium)
-        _SideCard(
-          imagePath: _reviews[(_currentIndex - 1 + _reviews.length) % _reviews.length].photoPath,
-          width: 112,
-          height: 292,
-        ),
-
-        const SizedBox(width: 22),
-
-        // Center card slides left, next one comes into the middle
-        SizedBox(
-          width: 780,
-          height: 360,
-          child: PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) => setState(() => _currentIndex = index),
-            itemCount: _reviews.length,
-            itemBuilder: (context, index) {
-              return _MainReviewCard(data: _reviews[index]);
-            },
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _SideCard(
+            imagePath: _reviews[
+                    (_currentIndex - 2 + _reviews.length) % _reviews.length]
+                .photoPath,
+            width: 78,
+            height: 204,
           ),
-        ),
-
-        const SizedBox(width: 22),
-
-        // Right card (medium)
-        _SideCard(
-          imagePath: _reviews[(_currentIndex + 1) % _reviews.length].photoPath,
-          width: 112,
-          height: 292,
-        ),
-
-        const SizedBox(width: 22),
-
-        // Far right card (small)
-        _SideCard(
-          imagePath: _reviews[(_currentIndex + 2) % _reviews.length].photoPath,
-          width: 78,
-          height: 204,
-        ),
-      ],
+          const SizedBox(width: 22),
+          _SideCard(
+            imagePath: _reviews[
+                    (_currentIndex - 1 + _reviews.length) % _reviews.length]
+                .photoPath,
+            width: 112,
+            height: 292,
+          ),
+          const SizedBox(width: 22),
+          SizedBox(
+            width: 780,
+            height: 360,
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) =>
+                  setState(() => _currentIndex = index % _reviews.length),
+              itemBuilder: (context, index) {
+                return _MainReviewCard(
+                  data: _reviews[index % _reviews.length],
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 22),
+          _SideCard(
+            imagePath:
+                _reviews[(_currentIndex + 1) % _reviews.length].photoPath,
+            width: 112,
+            height: 292,
+          ),
+          const SizedBox(width: 22),
+          _SideCard(
+            imagePath:
+                _reviews[(_currentIndex + 2) % _reviews.length].photoPath,
+            width: 78,
+            height: 204,
+          ),
+        ],
       ),
     );
   }
@@ -408,13 +391,12 @@ class _MainReviewCard extends StatelessWidget {
   Widget _buildHeadline() {
     // Split headline to highlight specific word
     final parts = data.headline.split(data.highlightWord);
-    
+
     return RichText(
       text: TextSpan(
         style: LandingTypography.reviewHeadline,
         children: [
-          if (parts.isNotEmpty && parts[0].isNotEmpty)
-            TextSpan(text: parts[0]),
+          if (parts.isNotEmpty && parts[0].isNotEmpty) TextSpan(text: parts[0]),
           TextSpan(
             text: data.highlightWord,
             style: LandingTypography.reviewHeadline.copyWith(

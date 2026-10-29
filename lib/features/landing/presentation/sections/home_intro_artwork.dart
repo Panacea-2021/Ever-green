@@ -185,7 +185,8 @@ class _IntroCopy extends StatelessWidget {
             spacing: 28,
             runSpacing: 16,
             children: [
-              _Point(Icons.bolt_rounded, 'Quick booking', 'In just a few minutes'),
+              _Point(
+                  Icons.bolt_rounded, 'Quick booking', 'In just a few minutes'),
               _Point(
                 Icons.verified_user_outlined,
                 'Verified technicians',
@@ -436,7 +437,8 @@ class _StepsState extends State<_Steps> {
     final isMobile = widget.isMobile;
     final steps = widget.steps;
     return Padding(
-      padding: EdgeInsets.fromLTRB(isMobile ? 16 : 28, 12, isMobile ? 16 : 28, 40),
+      padding:
+          EdgeInsets.fromLTRB(isMobile ? 16 : 28, 12, isMobile ? 16 : 28, 40),
       child: Column(
         children: [
           Text(
@@ -539,87 +541,92 @@ class _StepCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 250),
-          padding: const EdgeInsets.fromLTRB(16, 36, 16, 16),
-          decoration: BoxDecoration(
-            color: dark ? LandingColors.primary : Colors.white,
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(step.icon, color: dark ? Colors.white : LandingColors.primary, size: 26),
-              const SizedBox(height: 14),
-              Text(
-                step.title,
-                style: TextStyle(
-                  fontFamily: LandingTypography.fontFamily,
-                  fontSize: 16,
-                  height: 1.25,
-                  fontWeight: FontWeight.w700,
-                  color: fg,
-                ),
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(minHeight: 280),
+              padding: const EdgeInsets.fromLTRB(16, 36, 16, 16),
+              decoration: BoxDecoration(
+                color: dark ? LandingColors.primary : Colors.white,
+                borderRadius: BorderRadius.circular(22),
               ),
-              const SizedBox(height: 8),
-              Text(
-                step.body,
-                style: TextStyle(
-                  fontFamily: LandingTypography.fontFamily,
-                  fontSize: 13.5,
-                  height: 1.4,
-                  color: muted,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(step.icon,
+                      color: dark ? Colors.white : LandingColors.primary,
+                      size: 26),
+                  const SizedBox(height: 14),
+                  Text(
+                    step.title,
+                    style: TextStyle(
+                      fontFamily: LandingTypography.fontFamily,
+                      fontSize: 16,
+                      height: 1.25,
+                      fontWeight: FontWeight.w700,
+                      color: fg,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    step.body,
+                    style: TextStyle(
+                      fontFamily: LandingTypography.fontFamily,
+                      fontSize: 13.5,
+                      height: 1.4,
+                      color: muted,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: dark ? Colors.white : const Color(0xFFF3F7F4),
+                      border: dark
+                          ? null
+                          : Border.all(color: const Color(0xFFD7E3DB)),
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: dark
+                          ? LandingColors.primary
+                          : const Color(0xFF3E4A43),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 18),
-              Container(
-                width: 34,
-                height: 34,
+            ),
+            Positioned(
+              top: -12,
+              left: 16,
+              child: Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
+                  color: dark ? Colors.white : const Color(0xFFF7FBF8),
                   shape: BoxShape.circle,
-                  color: dark ? Colors.white : const Color(0xFFF3F7F4),
-                  border: dark
-                      ? null
-                      : Border.all(color: const Color(0xFFD7E3DB)),
+                  border: Border.all(
+                    color: dark ? Colors.white : const Color(0xFFD7E3DB),
+                  ),
                 ),
-                child: Icon(
-                  Icons.arrow_forward,
-                  size: 16,
-                  color: dark ? LandingColors.primary : const Color(0xFF3E4A43),
+                child: Text(
+                  step.number,
+                  style: TextStyle(
+                    fontFamily: LandingTypography.fontFamily,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color:
+                        dark ? LandingColors.primary : const Color(0xFF142117),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: -12,
-          left: 16,
-          child: Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: dark ? Colors.white : const Color(0xFFF7FBF8),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: dark ? Colors.white : const Color(0xFFD7E3DB),
               ),
             ),
-            child: Text(
-              step.number,
-              style: TextStyle(
-                fontFamily: LandingTypography.fontFamily,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: dark ? LandingColors.primary : const Color(0xFF142117),
-              ),
-            ),
-          ),
-        ),
-      ],
+          ],
         ),
       ),
     );

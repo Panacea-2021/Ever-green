@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../../core/router/routes.dart';
 import '../../landing_theme.dart';
 import 'services_common.dart';
 import 'services_top_sections.dart' show SvcLogo;
@@ -9,10 +11,26 @@ class WhyChooseSection extends StatelessWidget {
   const WhyChooseSection({super.key});
 
   static const _features = [
-    (Icons.workspace_premium_outlined, 'Experienced & certified technicians', 'Skilled professionals with industry expertise.'),
-    (Icons.support_agent_outlined, '24/7 support for critical operations', 'Round-the-clock help when it matters most.'),
-    (Icons.timer_outlined, 'Minimized equipment downtime', 'Proactive maintenance and quick repairs.'),
-    (Icons.apartment_outlined, 'Customized AMC for large facilities', 'Flexible plans built around your scale.'),
+    (
+      Icons.workspace_premium_outlined,
+      'Experienced & certified technicians',
+      'Skilled professionals with industry expertise.'
+    ),
+    (
+      Icons.support_agent_outlined,
+      '24/7 support for critical operations',
+      'Round-the-clock help when it matters most.'
+    ),
+    (
+      Icons.timer_outlined,
+      'Minimized equipment downtime',
+      'Proactive maintenance and quick repairs.'
+    ),
+    (
+      Icons.apartment_outlined,
+      'Customized AMC for large facilities',
+      'Flexible plans built around your scale.'
+    ),
   ];
 
   @override
@@ -45,9 +63,13 @@ class WhyChooseSection extends StatelessWidget {
                 children: [
                   SvcIconBox(f.$1, size: 42, light: true),
                   const SizedBox(height: 12),
-                  Text(f.$2, style: svcText(size: 13.5, weight: FontWeight.w700, height: 1.3)),
+                  Text(f.$2,
+                      style: svcText(
+                          size: 13.5, weight: FontWeight.w700, height: 1.3)),
                   const SizedBox(height: 6),
-                  Text(f.$3, style: svcText(size: 12, color: SvcColors.body, height: 1.5)),
+                  Text(f.$3,
+                      style: svcText(
+                          size: 12, color: SvcColors.body, height: 1.5)),
                 ],
               ),
           ],
@@ -90,21 +112,43 @@ class WhyChooseSection extends StatelessWidget {
   }
 }
 
-class PlansSection extends StatelessWidget {
+class PlansSection extends StatefulWidget {
   const PlansSection({super.key, required this.onKnowMore});
 
   final VoidCallback onKnowMore;
 
+  @override
+  State<PlansSection> createState() => _PlansSectionState();
+}
+
+class _PlansSectionState extends State<PlansSection> {
+  int? _selectedPlanIndex;
+
   static const _plans = [
-    ('Basic Plan', ['Routine inspections', 'Basic servicing', 'Priority support'], false),
+    (
+      'Basic Plan',
+      ['Routine inspections', 'Basic servicing', 'Priority support'],
+      false
+    ),
     (
       'Standard Plan',
-      ['Preventive maintenance', 'Emergency repair support', 'Compliance checks', 'Detailed reports'],
+      [
+        'Preventive maintenance',
+        'Emergency repair support',
+        'Compliance checks',
+        'Detailed reports'
+      ],
       true,
     ),
     (
       'Premium Plan',
-      ['All Standard features', '24/7 priority support', 'Dedicated engineer', 'Equipment upgrades', 'Customized service plans'],
+      [
+        'All Standard features',
+        '24/7 priority support',
+        'Dedicated engineer',
+        'Equipment upgrades',
+        'Customized service plans'
+      ],
       false,
     ),
   ];
@@ -128,8 +172,15 @@ class PlansSection extends StatelessWidget {
           spacing: 18,
           runSpacing: 18,
           children: [
-            for (final p in _plans)
-              _PlanCard(name: p.$1, features: p.$2, featured: p.$3, onKnowMore: onKnowMore),
+            for (var i = 0; i < _plans.length; i++)
+              _PlanCard(
+                name: _plans[i].$1,
+                features: _plans[i].$2,
+                selected: _selectedPlanIndex == i,
+                popular: _plans[i].$3,
+                onSelect: () => setState(() => _selectedPlanIndex = i),
+                onKnowMore: widget.onKnowMore,
+              ),
           ],
         ),
       ),
@@ -141,89 +192,115 @@ class _PlanCard extends StatelessWidget {
   const _PlanCard({
     required this.name,
     required this.features,
-    required this.featured,
+    required this.selected,
+    required this.popular,
+    required this.onSelect,
     required this.onKnowMore,
   });
 
   final String name;
   final List<String> features;
-  final bool featured;
+  final bool selected;
+  final bool popular;
+  final VoidCallback onSelect;
   final VoidCallback onKnowMore;
 
   @override
   Widget build(BuildContext context) {
-    final fg = featured ? Colors.white : SvcColors.text;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: featured ? SvcColors.primary : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: featured ? SvcColors.primary : SvcColors.border),
-        boxShadow: featured
-            ? [
-                BoxShadow(
-                  color: SvcColors.primary.withOpacity(0.3),
-                  blurRadius: 32,
-                  offset: const Offset(0, 16),
-                ),
-              ]
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(name, style: svcText(size: 18, weight: FontWeight.w800, color: fg)),
-              ),
-              if (featured)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(LandingRadius.pill),
-                  ),
-                  child: Text(
-                    'Most Popular',
-                    style: svcText(size: 10.5, weight: FontWeight.w700, color: SvcColors.primary),
-                  ),
-                ),
-            ],
+    final fg = selected ? Colors.white : SvcColors.text;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onSelect,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: selected ? SvcColors.primary : Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected ? SvcColors.primary : SvcColors.border,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: SvcColors.primary.withOpacity(0.3),
+                      blurRadius: 32,
+                      offset: const Offset(0, 16),
+                    ),
+                  ]
+                : null,
           ),
-          const SizedBox(height: 20),
-          for (final f in features)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 17,
-                    color: featured ? SvcColors.highlightLight : SvcColors.highlight,
-                  ),
-                  const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      f,
-                      style: svcText(
-                        size: 13,
-                        color: featured ? Colors.white.withOpacity(0.9) : SvcColors.body,
+                    child: Text(name,
+                        style: svcText(
+                            size: 18, weight: FontWeight.w800, color: fg)),
+                  ),
+                  if (popular)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(LandingRadius.pill),
+                      ),
+                      child: Text(
+                        'Most Popular',
+                        style: svcText(
+                            size: 10.5,
+                            weight: FontWeight.w700,
+                            color: SvcColors.primary),
                       ),
                     ),
-                  ),
                 ],
               ),
-            ),
-          const Spacer(),
-          const SizedBox(height: 12),
-          SvcButton(
-            label: 'Know more',
-            compact: true,
-            variant: featured ? SvcButtonVariant.white : SvcButtonVariant.outline,
-            onTap: onKnowMore,
+              const SizedBox(height: 20),
+              for (final f in features)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        size: 17,
+                        color: selected
+                            ? SvcColors.highlightLight
+                            : SvcColors.highlight,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          f,
+                          style: svcText(
+                            size: 13,
+                            color: selected
+                                ? Colors.white.withOpacity(0.9)
+                                : SvcColors.body,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const Spacer(),
+              const SizedBox(height: 12),
+              SvcButton(
+                label: 'Know more',
+                compact: true,
+                variant: selected
+                    ? SvcButtonVariant.white
+                    : SvcButtonVariant.outline,
+                hoverColor: SvcColors.highlightLight,
+                onTap: onKnowMore,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -233,9 +310,21 @@ class CaseStudiesSection extends StatelessWidget {
   const CaseStudiesSection({super.key});
 
   static const _cases = [
-    (SvcAssets.case1, 'Major IT Campus – Bengaluru', 'Reduced equipment downtime with a preventive AMC across multiple cafeterias.'),
-    (SvcAssets.case2, 'University Hostel – Hyderabad', 'Daily support for a high-volume mess kitchen serving thousands of students.'),
-    (SvcAssets.case3, 'Hotel Chain – Pan India', 'Standardised maintenance and reporting across properties nationwide.'),
+    (
+      SvcAssets.case1,
+      'Major IT Campus – Bengaluru',
+      'Reduced equipment downtime with a preventive AMC across multiple cafeterias.'
+    ),
+    (
+      SvcAssets.case2,
+      'University Hostel – Hyderabad',
+      'Daily support for a high-volume mess kitchen serving thousands of students.'
+    ),
+    (
+      SvcAssets.case3,
+      'Hotel Chain – Pan India',
+      'Standardised maintenance and reporting across properties nationwide.'
+    ),
   ];
 
   @override
@@ -265,16 +354,23 @@ class CaseStudiesSection extends StatelessWidget {
                     SvcImage(
                       c.$1,
                       height: 150,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(15)),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(c.$2, style: svcText(size: 14, weight: FontWeight.w700)),
+                          Text(c.$2,
+                              style:
+                                  svcText(size: 14, weight: FontWeight.w700)),
                           const SizedBox(height: 6),
-                          Text(c.$3, style: svcText(size: 12.5, color: SvcColors.body, height: 1.5)),
+                          Text(c.$3,
+                              style: svcText(
+                                  size: 12.5,
+                                  color: SvcColors.body,
+                                  height: 1.5)),
                         ],
                       ),
                     ),
@@ -317,7 +413,8 @@ class TestimonialsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.format_quote_rounded, size: 30, color: SvcColors.highlight),
+          const Icon(Icons.format_quote_rounded,
+              size: 30, color: SvcColors.highlight),
           const SizedBox(height: 8),
           Text(
             'Evergreen has been our trusted partner for kitchen maintenance '
@@ -337,8 +434,10 @@ class TestimonialsSection extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Facilities Manager', style: svcText(size: 13, weight: FontWeight.w700)),
-                  Text('Leading IT Company', style: svcText(size: 12, color: SvcColors.body)),
+                  Text('Facilities Manager',
+                      style: svcText(size: 13, weight: FontWeight.w700)),
+                  Text('Leading IT Company',
+                      style: svcText(size: 12, color: SvcColors.body)),
                 ],
               ),
             ],
@@ -367,7 +466,8 @@ class TestimonialsSection extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   c.$1,
-                  style: svcText(size: 15, weight: FontWeight.w800, color: c.$2),
+                  style:
+                      svcText(size: 15, weight: FontWeight.w800, color: c.$2),
                 ),
               ),
             ),
@@ -484,7 +584,8 @@ class _FaqTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: open ? SvcColors.mint : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: open ? SvcColors.mintStrong : SvcColors.border),
+        border:
+            Border.all(color: open ? SvcColors.mintStrong : SvcColors.border),
       ),
       child: Material(
         color: Colors.transparent,
@@ -502,15 +603,19 @@ class _FaqTile extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(question, style: svcText(size: 14, weight: FontWeight.w600)),
+                        child: Text(question,
+                            style: svcText(size: 14, weight: FontWeight.w600)),
                       ),
                       const SizedBox(width: 12),
-                      Icon(open ? Icons.remove : Icons.add, size: 20, color: SvcColors.primary),
+                      Icon(open ? Icons.remove : Icons.add,
+                          size: 20, color: SvcColors.primary),
                     ],
                   ),
                   if (open) ...[
                     const SizedBox(height: 10),
-                    Text(answer, style: svcText(size: 13, color: SvcColors.body, height: 1.6)),
+                    Text(answer,
+                        style: svcText(
+                            size: 13, color: SvcColors.body, height: 1.6)),
                   ],
                 ],
               ),
@@ -541,7 +646,8 @@ class ServicesCtaSection extends StatelessWidget {
       children: [
         const SvcEyebrow('Ready to get started', light: true),
         const SizedBox(height: 14),
-        const SvcHeading(title: "Let's keep your kitchen running.", light: true),
+        const SvcHeading(
+            title: "Let's keep your kitchen running.", light: true),
         const SizedBox(height: 12),
         const SvcBody(
           'Get reliable maintenance, repairs and AMC for your commercial '
@@ -599,9 +705,37 @@ class ServicesFooter extends StatelessWidget {
   final VoidCallback onBook;
 
   static const _columns = [
-    ('Services', ['Preventive Maintenance', 'Emergency Repairs', 'Equipment Installation', 'Deep Cleaning', 'AMC & Compliance']),
-    ('Industries', ['IT Campuses', 'Corporate Cafeterias', 'Hostels & Universities', 'Hotels & Resorts', 'Hospitals']),
-    ('Company', ['About Us', 'How It Works', 'AMC Plans', 'Case Studies', 'FAQs']),
+    (
+      'Services',
+      [
+        'Preventive Maintenance',
+        'Emergency Repairs',
+        'Equipment Installation',
+        'Deep Cleaning',
+        'AMC & Compliance'
+      ]
+    ),
+    (
+      'Industries',
+      [
+        'IT Campuses',
+        'Corporate Cafeterias',
+        'Hostels & Universities',
+        'Hotels & Resorts',
+        'Hospitals'
+      ]
+    ),
+    (
+      'Company',
+      [
+        'About Us',
+        'How It Works',
+        'AMC Plans',
+        'Case Studies',
+        'FAQs',
+        'Privacy Policy'
+      ]
+    ),
   ];
 
   @override
@@ -617,7 +751,8 @@ class ServicesFooter extends StatelessWidget {
         Text(
           'Reliable maintenance, repairs and AMC for commercial kitchens '
           'across India.',
-          style: svcText(size: 13, height: 1.6, color: Colors.white.withOpacity(0.6)),
+          style: svcText(
+              size: 13, height: 1.6, color: Colors.white.withOpacity(0.6)),
         ),
         const SizedBox(height: 18),
         Row(
@@ -640,7 +775,8 @@ class ServicesFooter extends StatelessWidget {
                   ),
                   child: SvgPicture.asset(
                     icon,
-                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                    colorFilter:
+                        const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                   ),
                 ),
               ),
@@ -654,16 +790,37 @@ class ServicesFooter extends StatelessWidget {
           children: [
             Text(
               title.toUpperCase(),
-              style: svcText(size: 12, weight: FontWeight.w700, letterSpacing: 1.2, color: Colors.white),
+              style: svcText(
+                  size: 12,
+                  weight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  color: Colors.white),
             ),
             const SizedBox(height: 14),
             for (final link in links)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  link,
-                  style: svcText(size: 13, color: Colors.white.withOpacity(0.65)),
-                ),
+                child: link == 'Privacy Policy'
+                    ? MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () => context.go(Routes.privacy),
+                          child: Text(
+                            link,
+                            style: svcText(
+                              size: 13,
+                              color: Colors.white.withOpacity(0.65),
+                            ),
+                          ),
+                        ),
+                      )
+                    : Text(
+                        link,
+                        style: svcText(
+                          size: 13,
+                          color: Colors.white.withOpacity(0.65),
+                        ),
+                      ),
               ),
           ],
         );
@@ -673,7 +830,11 @@ class ServicesFooter extends StatelessWidget {
       children: [
         Text(
           'CONTACT',
-          style: svcText(size: 12, weight: FontWeight.w700, letterSpacing: 1.2, color: Colors.white),
+          style: svcText(
+              size: 12,
+              weight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: Colors.white),
         ),
         const SizedBox(height: 14),
         MouseRegion(
@@ -682,7 +843,10 @@ class ServicesFooter extends StatelessWidget {
             onTap: onBook,
             child: Text(
               'Book a service',
-              style: svcText(size: 13, weight: FontWeight.w600, color: SvcColors.highlightLight),
+              style: svcText(
+                  size: 13,
+                  weight: FontWeight.w600,
+                  color: SvcColors.highlightLight),
             ),
           ),
         ),
@@ -693,16 +857,20 @@ class ServicesFooter extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.location_on_outlined, size: 15, color: Colors.white.withOpacity(0.65)),
+                Icon(Icons.location_on_outlined,
+                    size: 15, color: Colors.white.withOpacity(0.65)),
                 const SizedBox(width: 6),
-                Text(city, style: svcText(size: 13, color: Colors.white.withOpacity(0.65))),
+                Text(city,
+                    style: svcText(
+                        size: 13, color: Colors.white.withOpacity(0.65))),
               ],
             ),
           ),
       ],
     );
 
-    final bottomText = svcText(size: 12.5, color: Colors.white.withOpacity(0.5));
+    final bottomText =
+        svcText(size: 12.5, color: Colors.white.withOpacity(0.5));
 
     return Container(
       width: double.infinity,
@@ -745,12 +913,20 @@ class ServicesFooter extends StatelessWidget {
                   runSpacing: 10,
                   spacing: 24,
                   children: [
-                    Text('© ${DateTime.now().year} Evergreen. All rights reserved.', style: bottomText),
+                    Text(
+                        '© ${DateTime.now().year} Evergreen. All rights reserved.',
+                        style: bottomText),
                     Wrap(
                       spacing: 24,
                       children: [
-                        Text('Privacy Policy', style: bottomText),
-                        Text('Terms of Service', style: bottomText),
+                        InkWell(
+                          onTap: () => context.go(Routes.privacy),
+                          child: Text('Privacy Policy', style: bottomText),
+                        ),
+                        InkWell(
+                          onTap: () => context.go(Routes.terms),
+                          child: Text('Terms of Service', style: bottomText),
+                        ),
                       ],
                     ),
                   ],

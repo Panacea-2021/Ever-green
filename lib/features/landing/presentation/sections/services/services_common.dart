@@ -288,6 +288,7 @@ class SvcButton extends StatefulWidget {
     this.onTap,
     this.showArrow = true,
     this.compact = false,
+    this.hoverColor,
   });
 
   final String label;
@@ -295,6 +296,7 @@ class SvcButton extends StatefulWidget {
   final VoidCallback? onTap;
   final bool showArrow;
   final bool compact;
+  final Color? hoverColor;
 
   @override
   State<SvcButton> createState() => _SvcButtonState();
@@ -314,11 +316,11 @@ class _SvcButtonState extends State<SvcButton> {
         bg = _hovered ? SvcColors.primaryDeep : SvcColors.primary;
         fg = Colors.white;
       case SvcButtonVariant.outline:
-        bg = _hovered ? SvcColors.mint : Colors.white;
+        bg = _hovered ? widget.hoverColor ?? SvcColors.mint : Colors.white;
         fg = SvcColors.primary;
         border = SvcColors.primary.withOpacity(0.35);
       case SvcButtonVariant.white:
-        bg = _hovered ? SvcColors.mint : Colors.white;
+        bg = _hovered ? widget.hoverColor ?? SvcColors.mint : Colors.white;
         fg = SvcColors.primary;
       case SvcButtonVariant.outlineLight:
         bg = _hovered ? Colors.white.withOpacity(0.12) : Colors.transparent;
@@ -435,7 +437,8 @@ class _SvcCardState extends State<SvcCard> {
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      cursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+      cursor:
+          widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
@@ -449,8 +452,8 @@ class _SvcCardState extends State<SvcCard> {
             border: Border.all(color: SvcColors.border),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0B3B1E)
-                    .withOpacity(_hovered ? 0.12 : 0.05),
+                color:
+                    const Color(0xFF0B3B1E).withOpacity(_hovered ? 0.12 : 0.05),
                 blurRadius: _hovered ? 28 : 16,
                 offset: Offset(0, _hovered ? 12 : 6),
               ),

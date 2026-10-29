@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
+import '../sections/landing_site_header.dart';
 import '../sections/services/services_bottom_sections.dart';
 import '../sections/services/services_top_sections.dart';
 
@@ -19,9 +20,11 @@ class ServicesPage extends StatefulWidget {
 class _ServicesPageState extends State<ServicesPage> {
   final _servicesKey = GlobalKey();
   final _industriesKey = GlobalKey();
+  final _processKey = GlobalKey();
   final _whyKey = GlobalKey();
   final _plansKey = GlobalKey();
   final _contactKey = GlobalKey();
+  final _faqKey = GlobalKey();
 
   // Not restored from PageStorage, so the page always opens at the top.
   final _scrollController = ScrollController(keepScrollOffset: false);
@@ -50,17 +53,18 @@ class _ServicesPageState extends State<ServicesPage> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          ServicesHeader(
-            onLogo: () => context.go(Routes.home),
-            onBook: toContact,
-            items: [
-              SvcNavItem('Home', () => context.go(Routes.home)),
-              SvcNavItem('Services', () => _scrollTo(_servicesKey), active: true),
-              SvcNavItem('Industries', () => _scrollTo(_industriesKey)),
-              SvcNavItem('Plans', () => _scrollTo(_plansKey)),
-              SvcNavItem('About', () => _scrollTo(_whyKey)),
-              SvcNavItem('Contact', toContact),
-            ],
+          LandingSiteHeader(
+            onHome: () => context.go(Routes.home),
+            onServices: () => _scrollTo(_servicesKey),
+            onIndustries: () => context.go(Routes.industries),
+            onAbout: () => context.go(Routes.about),
+            onHowItWorks: () => context.go(Routes.howItWorks),
+            onContact: () => context.go(Routes.contact),
+            onPrivacy: () => context.go(Routes.privacy),
+            onBookRepair: toContact,
+            onSignIn: () => context.go(Routes.login),
+            onSearch: () => _scrollTo(_faqKey),
+            activeNav: 'Services',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -69,15 +73,16 @@ class _ServicesPageState extends State<ServicesPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ServicesHero(onBook: toContact, onAssess: toContact),
-                  ServicesGridSection(key: _servicesKey, onLearnMore: toContact),
+                  ServicesGridSection(
+                      key: _servicesKey, onLearnMore: toContact),
                   const EquipmentSection(),
                   IndustriesSection(key: _industriesKey),
-                  const ProcessSection(),
+                  ProcessSection(key: _processKey),
                   WhyChooseSection(key: _whyKey),
                   PlansSection(key: _plansKey, onKnowMore: toContact),
                   const CaseStudiesSection(),
                   const TestimonialsSection(),
-                  const ServicesFaqSection(),
+                  ServicesFaqSection(key: _faqKey),
                   ServicesCtaSection(
                     key: _contactKey,
                     onAssessment: () => context.go(Routes.login),

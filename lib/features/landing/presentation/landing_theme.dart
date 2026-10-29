@@ -507,18 +507,25 @@ class LandingAssets {
   static const String heroBg = '$_basePath/hero_bg.png';
   static const String heroVideo = 'assets/videos/landing_hero.mp4';
   static const String termsHero = '$_basePath/terms_hero.png';
-  static const String privacyHero = '$_basePath/privacy_hero.png';
+  static const String privacyHero = '$_basePath/privacy_policy_hero.jpg';
   static const String contactHero = '$_basePath/contact_hero.png';
   static const String contactHyderabad = '$_basePath/contact_hyderabad.png';
   static const String contactBengaluru = '$_basePath/contact_bengaluru.png';
-  static const String contactMapHyderabad = '$_basePath/contact_map_hyderabad.png';
-  static const String contactMapBengaluru = '$_basePath/contact_map_bengaluru.png';
+  static const String contactMapHyderabad =
+      '$_basePath/contact_map_hyderabad.png';
+  static const String contactMapBengaluru =
+      '$_basePath/contact_map_bengaluru.png';
   static const String taskStepsBg = '$_basePath/task_steps_bg.png';
+  static const String taskStepsBanner = '$_basePath/task_steps_banner.png';
   static const String phoneMockup = '$_basePath/phone_mockup.png';
   static const String whyKitchen = '$_basePath/why_kitchen.png';
   static const String whyChooseUs = '$_basePath/why_choose_us.jpg';
+  static const String whyChooseUsBanner = '$_basePath/why_choose_us_banner.png';
   static const String howItWorks = '$_basePath/how_it_works.jpg';
-  static const String featuredTechnicians = '$_basePath/featured_technicians.jpg';
+  static const String featuredTechnicians =
+      '$_basePath/featured_technicians.jpg';
+  static const String featuredTechniciansBanner =
+      '$_basePath/featured_technicians_banner.png';
   static const String servicesPage = '$_basePath/services_page.jpg';
   static const String reviewsBanner = '$_basePath/reviews_banner.png';
 

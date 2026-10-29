@@ -89,4 +89,7 @@ abstract class Routes {
   static const String privacy = '/privacy';
   static const String contact = '/contact';
   static const String services = '/services';
+  static const String industries = '/industries';
+  static const String about = '/about';
+  static const String howItWorks = '/how-it-works';
 }

@@ -13,6 +13,7 @@ class LandingSiteHeader extends StatelessWidget {
     this.onAbout,
     this.onHowItWorks,
     this.onContact,
+    this.onPrivacy,
     this.onBookRepair,
     this.onSignIn,
     this.onSearch,
@@ -25,6 +26,7 @@ class LandingSiteHeader extends StatelessWidget {
   final VoidCallback? onAbout;
   final VoidCallback? onHowItWorks;
   final VoidCallback? onContact;
+  final VoidCallback? onPrivacy;
   final VoidCallback? onBookRepair;
   final VoidCallback? onSignIn;
   final VoidCallback? onSearch;
@@ -56,6 +58,7 @@ class LandingSiteHeader extends StatelessWidget {
                   onAbout: onAbout,
                   onHowItWorks: onHowItWorks,
                   onContact: onContact,
+                  onPrivacy: onPrivacy,
                 )
               : _DesktopBar(
                   isCompact: isCompact,
@@ -65,6 +68,7 @@ class LandingSiteHeader extends StatelessWidget {
                   onAbout: onAbout,
                   onHowItWorks: onHowItWorks,
                   onContact: onContact,
+                  onPrivacy: onPrivacy,
                   onBookRepair: onBookRepair,
                   onSignIn: onSignIn,
                   onSearch: onSearch,
@@ -85,6 +89,7 @@ class _DesktopBar extends StatelessWidget {
     this.onAbout,
     this.onHowItWorks,
     this.onContact,
+    this.onPrivacy,
     this.onBookRepair,
     this.onSignIn,
     this.onSearch,
@@ -98,6 +103,7 @@ class _DesktopBar extends StatelessWidget {
   final VoidCallback? onAbout;
   final VoidCallback? onHowItWorks;
   final VoidCallback? onContact;
+  final VoidCallback? onPrivacy;
   final VoidCallback? onBookRepair;
   final VoidCallback? onSignIn;
   final VoidCallback? onSearch;
@@ -143,6 +149,11 @@ class _DesktopBar extends StatelessWidget {
                       _NavLink(label: 'Industries', onTap: onIndustries),
                     _NavLink(label: 'About', onTap: onAbout),
                     _NavLink(label: 'How it works', onTap: onHowItWorks),
+                    _NavLink(
+                      label: 'Privacy Policy',
+                      onTap: onPrivacy,
+                      active: activeNav == 'Privacy Policy',
+                    ),
                     _NavLink(label: 'Contact', onTap: onContact),
                   ],
                 ),
@@ -186,6 +197,7 @@ class _MobileBar extends StatelessWidget {
     this.onAbout,
     this.onHowItWorks,
     this.onContact,
+    this.onPrivacy,
   });
 
   final VoidCallback? onBookRepair;
@@ -196,6 +208,7 @@ class _MobileBar extends StatelessWidget {
   final VoidCallback? onAbout;
   final VoidCallback? onHowItWorks;
   final VoidCallback? onContact;
+  final VoidCallback? onPrivacy;
 
   @override
   Widget build(BuildContext context) {
@@ -250,7 +263,9 @@ class _MobileBar extends StatelessWidget {
                 _SheetLink(label: 'Services', onTap: () => go(onServices)),
                 _SheetLink(label: 'Industries', onTap: () => go(onIndustries)),
                 _SheetLink(label: 'About', onTap: () => go(onAbout)),
-                _SheetLink(label: 'How it works', onTap: () => go(onHowItWorks)),
+                _SheetLink(
+                    label: 'How it works', onTap: () => go(onHowItWorks)),
+                _SheetLink(label: 'Privacy Policy', onTap: () => go(onPrivacy)),
                 _SheetLink(label: 'Contact', onTap: () => go(onContact)),
                 const SizedBox(height: 16),
                 _HeaderCta(
@@ -455,9 +470,7 @@ class _HeaderCtaState extends State<_HeaderCta> {
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(999),
-            border: filled
-                ? null
-                : Border.all(color: const Color(0x1A142117)),
+            border: filled ? null : Border.all(color: const Color(0x1A142117)),
           ),
           alignment: Alignment.center,
           child: Text(

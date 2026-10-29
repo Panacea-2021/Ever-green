@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
 import '../landing_theme.dart';
-import '../sections/footer_section.dart';
+import '../sections/services/services_bottom_sections.dart';
 
 /// Shared marketing legal page (Terms / Privacy) — close control, no site nav.
 class LegalDocumentPage extends StatelessWidget {
@@ -12,11 +12,29 @@ class LegalDocumentPage extends StatelessWidget {
     required this.title,
     required this.heroAsset,
     required this.sections,
+    this.desktopHeroHeight = 560,
+    this.mobileHeroHeight = 420,
+    this.bodyOverlap = 72,
+    this.bodyMaxWidth = 980,
+    this.bodyRadius = 28,
+    this.desktopTitleFontSize = 56,
+    this.heroContentBottomInset,
+    this.showCloseButton = true,
+    this.backgroundColor = const Color(0xFFF6F7F4),
   });
 
   final String title;
   final String heroAsset;
   final List<(String, List<String>)> sections;
+  final double desktopHeroHeight;
+  final double mobileHeroHeight;
+  final double bodyOverlap;
+  final double bodyMaxWidth;
+  final double bodyRadius;
+  final double desktopTitleFontSize;
+  final double? heroContentBottomInset;
+  final bool showCloseButton;
+  final Color backgroundColor;
 
   void _close(BuildContext context) {
     if (context.canPop()) {
@@ -29,7 +47,7 @@ class LegalDocumentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F4),
+      backgroundColor: backgroundColor,
       body: SelectionArea(
         child: SingleChildScrollView(
           child: Column(
@@ -39,9 +57,23 @@ class LegalDocumentPage extends StatelessWidget {
                 title: title,
                 heroAsset: heroAsset,
                 onClose: () => _close(context),
+                desktopHeroHeight: desktopHeroHeight,
+                mobileHeroHeight: mobileHeroHeight,
+                desktopTitleFontSize: desktopTitleFontSize,
+                contentBottomInset: heroContentBottomInset,
+                showCloseButton: showCloseButton,
               ),
-              _LegalBody(sections: sections),
-              const FooterSection(),
+              _LegalBody(
+                sections: sections,
+                overlap: bodyOverlap,
+                maxWidth: bodyMaxWidth,
+                radius: bodyRadius,
+              ),
+              ServicesCtaSection(
+                onAssessment: () => context.go(Routes.login),
+                onContact: () => context.go(Routes.login),
+              ),
+              ServicesFooter(onBook: () => context.go(Routes.login)),
             ],
           ),
         ),
@@ -55,17 +87,27 @@ class _LegalHero extends StatelessWidget {
     required this.title,
     required this.heroAsset,
     required this.onClose,
+    required this.desktopHeroHeight,
+    required this.mobileHeroHeight,
+    required this.desktopTitleFontSize,
+    required this.contentBottomInset,
+    required this.showCloseButton,
   });
 
   final String title;
   final String heroAsset;
   final VoidCallback onClose;
+  final double desktopHeroHeight;
+  final double mobileHeroHeight;
+  final double desktopTitleFontSize;
+  final double? contentBottomInset;
+  final bool showCloseButton;
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final isMobile = width < 768;
-    final heroHeight = isMobile ? 420.0 : 560.0;
+    final heroHeight = isMobile ? mobileHeroHeight : desktopHeroHeight;
 
     return SizedBox(
       height: heroHeight,
@@ -92,7 +134,7 @@ class _LegalHero extends StatelessWidget {
                 isMobile ? 20 : 48,
                 0,
                 isMobile ? 20 : 48,
-                isMobile ? 72 : 96,
+                contentBottomInset ?? (isMobile ? 72 : 96),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -102,7 +144,7 @@ class _LegalHero extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: LandingTypography.fontFamily,
-                      fontSize: isMobile ? 32 : 56,
+                      fontSize: isMobile ? 32 : desktopTitleFontSize,
                       fontWeight: FontWeight.w600,
                       height: 1.05,
                       letterSpacing: isMobile ? -0.6 : -1.2,
@@ -133,13 +175,14 @@ class _LegalHero extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            top: isMobile ? 20 : 36,
-            right: isMobile ? 16 : 36,
-            child: SelectionContainer.disabled(
-              child: _CloseButton(onTap: onClose),
+          if (showCloseButton)
+            Positioned(
+              top: isMobile ? 20 : 36,
+              right: isMobile ? 16 : 36,
+              child: SelectionContainer.disabled(
+                child: _CloseButton(onTap: onClose),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -176,9 +219,17 @@ class _CloseButton extends StatelessWidget {
 }
 
 class _LegalBody extends StatelessWidget {
-  const _LegalBody({required this.sections});
+  const _LegalBody({
+    required this.sections,
+    required this.overlap,
+    required this.maxWidth,
+    required this.radius,
+  });
 
   final List<(String, List<String>)> sections;
+  final double overlap;
+  final double maxWidth;
+  final double radius;
 
   @override
   Widget build(BuildContext context) {
@@ -186,7 +237,7 @@ class _LegalBody extends StatelessWidget {
     final isMobile = width < 768;
 
     return Transform.translate(
-      offset: Offset(0, isMobile ? -48 : -72),
+      offset: Offset(0, isMobile ? -overlap * (48 / 72) : -overlap),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           isMobile ? 16 : 80,
@@ -196,7 +247,7 @@ class _LegalBody extends StatelessWidget {
         ),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 980),
+            constraints: BoxConstraints(maxWidth: maxWidth),
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.fromLTRB(
@@ -207,7 +258,7 @@ class _LegalBody extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(radius),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

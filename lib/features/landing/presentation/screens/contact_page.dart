@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
 import '../landing_theme.dart';
-import '../sections/footer_section.dart';
+import '../sections/services/services_bottom_sections.dart';
 
 /// Website Contact Us page — Figma node 232:167.
 class ContactPage extends StatefulWidget {
@@ -52,7 +52,11 @@ class _ContactPageState extends State<ContactPage> {
             children: [
               _ContactHero(onClose: _close),
               const _ContactCities(),
-              const FooterSection(),
+              ServicesCtaSection(
+                onAssessment: () => context.go(Routes.login),
+                onContact: () => context.go(Routes.login),
+              ),
+              ServicesFooter(onBook: () => context.go(Routes.login)),
             ],
           ),
         ),
@@ -70,7 +74,7 @@ class _ContactHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final isMobile = width < 768;
-    final heroHeight = isMobile ? 420.0 : 560.0;
+    final heroHeight = isMobile ? 240.0 : 280.0;
 
     return SizedBox(
       height: heroHeight,
@@ -97,7 +101,7 @@ class _ContactHero extends StatelessWidget {
                 isMobile ? 20 : 48,
                 0,
                 isMobile ? 20 : 48,
-                isMobile ? 72 : 96,
+                0,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -209,8 +213,7 @@ class _ContactCities extends StatelessWidget {
       name: 'BENGALURU',
       email: 'bengaluru@evergreen.kitchen',
       phone: '+91 80 4567 2100',
-      address:
-          '201, 100 Feet Road, Indiranagar, Bengaluru, Karnataka 560038',
+      address: '201, 100 Feet Road, Indiranagar, Bengaluru, Karnataka 560038',
       photo: LandingAssets.contactBengaluru,
       map: LandingAssets.contactMapBengaluru,
       mapsUrl:
@@ -224,7 +227,7 @@ class _ContactCities extends StatelessWidget {
     final isMobile = width < 900;
 
     return Transform.translate(
-      offset: Offset(0, isMobile ? -48 : -72),
+      offset: Offset(0, isMobile ? -24 : -36),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           isMobile ? 16 : 80,
@@ -245,7 +248,7 @@ class _ContactCities extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: isMobile
                   ? Column(

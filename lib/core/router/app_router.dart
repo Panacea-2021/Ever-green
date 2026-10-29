@@ -8,6 +8,7 @@ import '../../features/landing/presentation/screens/terms_page.dart';
 import '../../features/landing/presentation/screens/privacy_page.dart';
 import '../../features/landing/presentation/screens/contact_page.dart';
 import '../../features/landing/presentation/screens/services_page.dart';
+import '../../features/landing/presentation/screens/website_info_page.dart';
 import '../../web/screens/web_dashboard_screen.dart';
 import '../../features/amcs/presentation/screens/add_equipment_screen.dart';
 import '../../features/amcs/presentation/screens/add_task_screen.dart';
@@ -119,6 +120,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (kIsWeb) Routes.privacy,
         if (kIsWeb) Routes.contact,
         if (kIsWeb) Routes.services,
+        if (kIsWeb) Routes.industries,
+        if (kIsWeb) Routes.about,
+        if (kIsWeb) Routes.howItWorks,
       ];
 
       final isPublicRoute = publicRoutes.contains(currentPath);
@@ -207,6 +211,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'services',
         builder: (context, state) => const ServicesPage(),
       ),
+      GoRoute(
+        path: Routes.industries,
+        name: 'industries',
+        builder: (context, state) =>
+            const WebsiteInfoPage(kind: WebsiteInfoKind.industries),
+      ),
+      GoRoute(
+        path: Routes.about,
+        name: 'about',
+        builder: (context, state) =>
+            const WebsiteInfoPage(kind: WebsiteInfoKind.about),
+      ),
+      GoRoute(
+        path: Routes.howItWorks,
+        name: 'howItWorks',
+        builder: (context, state) =>
+            const WebsiteInfoPage(kind: WebsiteInfoKind.howItWorks),
+      ),
 
       // Feature routes (full screen, no bottom nav)
       GoRoute(
@@ -260,7 +282,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.usersList,
         name: 'usersList',
         builder: (context, state) => UsersListScreen(
-          initialTab: (state.extra as Map<String, dynamic>?)?['tab'] as int? ?? 0,
+          initialTab:
+              (state.extra as Map<String, dynamic>?)?['tab'] as int? ?? 0,
         ),
       ),
       GoRoute(
@@ -323,9 +346,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.taskBoard,
         name: 'taskBoard',
         builder: (context, state) => TaskBoardScreen(
-          initialStatus: state.extra is TaskStatus
-              ? state.extra! as TaskStatus
-              : null,
+          initialStatus:
+              state.extra is TaskStatus ? state.extra! as TaskStatus : null,
         ),
       ),
       GoRoute(

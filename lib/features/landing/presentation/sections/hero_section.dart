@@ -14,6 +14,7 @@ class HeroSection extends StatelessWidget {
   final VoidCallback? onAbout;
   final VoidCallback? onHowItWorks;
   final VoidCallback? onHome;
+  final VoidCallback? onPrivacy;
   final VoidCallback? onSignIn;
   final VoidCallback? onSearch;
 
@@ -27,6 +28,7 @@ class HeroSection extends StatelessWidget {
     this.onAbout,
     this.onHowItWorks,
     this.onHome,
+    this.onPrivacy,
     this.onSignIn,
     this.onSearch,
   });
@@ -39,7 +41,7 @@ class HeroSection extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: isMobile ? 470 : 600,
+      height: isMobile ? 460 : 560,
       child: Stack(
         children: [
           const Positioned.fill(child: LandingHeroVideo()),
@@ -79,6 +81,7 @@ class HeroSection extends StatelessWidget {
                   onAbout: onAbout,
                   onHowItWorks: onHowItWorks,
                   onContact: onContactUs,
+                  onPrivacy: onPrivacy,
                   onBookRepair: onBookRepair,
                   onSignIn: onSignIn ?? onBookRepair,
                   onSearch: onSearch,

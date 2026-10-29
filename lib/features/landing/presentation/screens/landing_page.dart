@@ -5,13 +5,13 @@ import '../../../../core/router/routes.dart';
 import '../landing_theme.dart';
 import '../sections/hero_section.dart';
 import '../sections/home_intro_artwork.dart';
+import '../sections/services/services_bottom_sections.dart';
 import '../sections/task_steps_section.dart';
 import '../sections/technicians_section.dart';
 import '../sections/why_choose_us_section.dart';
 import '../sections/reviews_section.dart';
 import '../sections/faq_section.dart';
 import '../sections/download_app_section.dart';
-import '../sections/footer_section.dart';
 
 /// Evergreen Landing Page — marketing homepage from the Figma Website frame.
 class LandingPage extends StatefulWidget {
@@ -39,6 +39,51 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
+  void _showTechnicians() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          children: const [
+            Text(
+              'Featured technicians',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            SizedBox(height: 16),
+            ListTile(
+              leading: Icon(Icons.person_outline),
+              title: Text('Meera Iyer'),
+              subtitle: Text('Kitchen Appliance Specialist'),
+            ),
+            ListTile(
+              leading: Icon(Icons.person_outline),
+              title: Text('Arjun Patel'),
+              subtitle: Text('Refrigeration & Cooling Expert'),
+            ),
+            ListTile(
+              leading: Icon(Icons.person_outline),
+              title: Text('Sara Qureshi'),
+              subtitle: Text('Ventilation & Hood Specialist'),
+            ),
+            ListTile(
+              leading: Icon(Icons.person_outline),
+              title: Text('Nikhil Rao'),
+              subtitle: Text('Microwave & Small Appliance Expert'),
+            ),
+            ListTile(
+              leading: Icon(Icons.person_outline),
+              title: Text('Leela Nair'),
+              subtitle: Text('Laundry Appliance Specialist'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,10 +98,11 @@ class _LandingPageState extends State<LandingPage> {
                 child: HeroSection(
                   onHome: () => _scrollTo(_topKey),
                   onServices: () => context.push(Routes.services),
-                  onIndustries: () => _scrollTo(_trustedKey),
-                  onAbout: () => _scrollTo(_whyKey),
-                  onHowItWorks: () => _scrollTo(_howItWorksKey),
-                  onContactUs: () => context.push(Routes.contact),
+                  onIndustries: () => context.go(Routes.industries),
+                  onAbout: () => context.go(Routes.about),
+                  onHowItWorks: () => context.go(Routes.howItWorks),
+                  onContactUs: () => context.go(Routes.contact),
+                  onPrivacy: () => context.go(Routes.privacy),
                   onBookRepair: () => context.go(Routes.login),
                   onSignIn: () => context.go(Routes.login),
                   onGetEstimate: () => context.go(Routes.login),
@@ -74,10 +120,10 @@ class _LandingPageState extends State<LandingPage> {
               KeyedSubtree(
                 key: _taskStepsKey,
                 child: TaskStepsSection(
-                  onSeeHowItWorks: () => _scrollTo(_howItWorksKey),
+                  onSeeHowItWorks: () => context.go(Routes.howItWorks),
                 ),
               ),
-              const TechniciansSection(),
+              TechniciansSection(onViewAll: _showTechnicians),
               KeyedSubtree(
                 key: _whyKey,
                 child: const WhyChooseUsSection(),
@@ -90,7 +136,11 @@ class _LandingPageState extends State<LandingPage> {
                 ),
               ),
               const DownloadAppSection(),
-              const FooterSection(),
+              ServicesCtaSection(
+                onAssessment: () => context.go(Routes.login),
+                onContact: () => context.go(Routes.login),
+              ),
+              ServicesFooter(onBook: () => context.go(Routes.login)),
             ],
           ),
         ),
