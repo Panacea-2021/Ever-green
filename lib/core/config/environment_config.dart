@@ -7,7 +7,7 @@ class EnvironmentConfig {
   /// Only one EverGreen backend exists (Render, production database), so every
   /// flavor talks to it. The free Render instance sleeps when idle; the first
   /// request after a nap can take ~50s, hence the long timeouts.
-  static const String backendUrl = 'https://evergreen-backend-lgmy.onrender.com/';
+  static const String backendUrl = 'https://evergreen-backend-lgmy.onrender.com';
 
   /// Sent as the `api-key` header on the two routes that run before a JWT
   /// exists (`auth/signIn`, `user/forgetPassword`). Same value the Kotlin app ships.
