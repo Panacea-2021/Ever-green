@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 import '../landing_theme.dart';
 import '../sections/services/services_bottom_sections.dart';
 
@@ -53,10 +54,12 @@ class _ContactPageState extends State<ContactPage> {
               _ContactHero(onClose: _close),
               const _ContactCities(),
               ServicesCtaSection(
-                onAssessment: () => context.go(Routes.login),
-                onContact: () => context.go(Routes.login),
+                onAssessment: () => showWebsiteLoginDialog(context),
+                onContact: () => showWebsiteLoginDialog(context),
               ),
-              ServicesFooter(onBook: () => context.go(Routes.login)),
+              ServicesFooter(
+                onBook: () => showWebsiteLoginDialog(context),
+              ),
             ],
           ),
         ),

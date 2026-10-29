@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/routes.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
@@ -45,6 +46,11 @@ class WebAppShell extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final role = ref.watch(currentUserRoleProvider);
 
+    Future<void> signOut() async {
+      await ref.read(authControllerProvider).logout();
+      if (context.mounted) context.go(Routes.home);
+    }
+
     return Scaffold(
       backgroundColor: WebTokens.cream,
       body: Row(
@@ -54,6 +60,7 @@ class WebAppShell extends ConsumerWidget {
             collapsed: collapsed,
             activeRoute: activeRoute,
             items: _items,
+            onSignOut: signOut,
           ),
           Expanded(
             child: Column(
@@ -84,12 +91,14 @@ class _SideNav extends StatelessWidget {
     required this.collapsed,
     required this.activeRoute,
     required this.items,
+    required this.onSignOut,
   });
 
   final double width;
   final bool collapsed;
   final String activeRoute;
   final List<WebNavItem> items;
+  final Future<void> Function() onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +151,7 @@ class _SideNav extends StatelessWidget {
               item: item,
               active: activeRoute == item.route,
               collapsed: collapsed,
+              onTap: item.route == Routes.login ? onSignOut : null,
             ),
           const Spacer(),
           Padding(
@@ -154,6 +164,7 @@ class _SideNav extends StatelessWidget {
               ),
               active: false,
               collapsed: collapsed,
+              onTap: onSignOut,
             ),
           ),
         ],
@@ -167,11 +178,13 @@ class _NavTile extends StatefulWidget {
     required this.item,
     required this.active,
     required this.collapsed,
+    this.onTap,
   });
 
   final WebNavItem item;
   final bool active;
   final bool collapsed;
+  final Future<void> Function()? onTap;
 
   @override
   State<_NavTile> createState() => _NavTileState();
@@ -194,7 +207,7 @@ class _NavTileState extends State<_NavTile> {
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
-        onTap: () => context.go(widget.item.route),
+        onTap: widget.onTap ?? () => context.go(widget.item.route),
         child: Container(
           margin: EdgeInsets.symmetric(
             horizontal: widget.collapsed ? 12 : 14,

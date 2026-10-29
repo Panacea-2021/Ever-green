@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 import '../sections/landing_site_header.dart';
 import '../sections/services/services_bottom_sections.dart';
 import '../sections/services/services_top_sections.dart';
@@ -61,8 +62,8 @@ class _ServicesPageState extends State<ServicesPage> {
             onHowItWorks: () => context.go(Routes.howItWorks),
             onContact: () => context.go(Routes.contact),
             onPrivacy: () => context.go(Routes.privacy),
-            onBookRepair: toContact,
-            onSignIn: () => context.go(Routes.login),
+            onBookRepair: () => showWebsiteLoginDialog(context),
+            onSignIn: () => showWebsiteLoginDialog(context),
             onSearch: () => _scrollTo(_faqKey),
             activeNav: 'Services',
           ),
@@ -72,9 +73,14 @@ class _ServicesPageState extends State<ServicesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  ServicesHero(onBook: toContact, onAssess: toContact),
+                  ServicesHero(
+                    onBook: () => showWebsiteLoginDialog(context),
+                    onAssess: toContact,
+                  ),
                   ServicesGridSection(
-                      key: _servicesKey, onLearnMore: toContact),
+                    key: _servicesKey,
+                    onLearnMore: toContact,
+                  ),
                   const EquipmentSection(),
                   IndustriesSection(key: _industriesKey),
                   ProcessSection(key: _processKey),
@@ -85,10 +91,12 @@ class _ServicesPageState extends State<ServicesPage> {
                   ServicesFaqSection(key: _faqKey),
                   ServicesCtaSection(
                     key: _contactKey,
-                    onAssessment: () => context.go(Routes.login),
-                    onContact: () => context.go(Routes.login),
+                    onAssessment: () => showWebsiteLoginDialog(context),
+                    onContact: () => showWebsiteLoginDialog(context),
                   ),
-                  ServicesFooter(onBook: toContact),
+                  ServicesFooter(
+                    onBook: () => showWebsiteLoginDialog(context),
+                  ),
                 ],
               ),
             ),

@@ -11,7 +11,7 @@ class WhyChooseUsSection extends StatelessWidget {
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 768;
         final imageWidth =
-            isMobile ? 900.0 : constraints.maxWidth.clamp(0.0, 1600.0);
+            isMobile ? 1000.0 : constraints.maxWidth.clamp(0.0, 1600.0);
         final banner = SizedBox(
           width: imageWidth,
           child: AspectRatio(
@@ -19,7 +19,7 @@ class WhyChooseUsSection extends StatelessWidget {
             child: Image.asset(
               LandingAssets.whyChooseUsBanner,
               fit: BoxFit.fill,
-              filterQuality: FilterQuality.high,
+              filterQuality: FilterQuality.medium,
             ),
           ),
         );

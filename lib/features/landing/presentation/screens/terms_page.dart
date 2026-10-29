@@ -63,6 +63,8 @@ class TermsPage extends StatelessWidget {
       title: 'TERMS AND CONDITIONS',
       heroAsset: LandingAssets.termsHero,
       sections: _sections,
+      desktopHeroHeight: 280,
+      mobileHeroHeight: 240,
     );
   }
 }

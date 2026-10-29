@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -75,21 +78,32 @@ class AuthController {
     });
   }
 
-  /// Tells the backend (`POST auth/logout`, audit trail) before clearing the
-  /// local session. The server call is best-effort and never blocks logout.
+  /// Clears the local session immediately and notifies the backend in the
+  /// background so a slow server cannot keep the user signed in locally.
   Future<void> logout() async {
     final authNotifier = _ref.read(authStateProvider.notifier);
     final logoutUseCase = _ref.read(logoutUseCaseProvider);
 
+    unawaited(_notifyBackendLogout());
+    await logoutUseCase();
+    authNotifier.logout();
+  }
+
+  Future<void> _notifyBackendLogout() async {
     try {
-      await _ref
+      final result = await _ref
           .read(apiClientProvider)
           .post<dynamic>('auth/logout')
           .timeout(const Duration(seconds: 5));
-    } catch (_) {}
-
-    await logoutUseCase();
-    authNotifier.logout();
+      result.fold(
+        (failure) => debugPrint(
+          'AuthController: backend logout failed (${failure.displayMessage})',
+        ),
+        (_) {},
+      );
+    } catch (error) {
+      debugPrint('AuthController: backend logout request failed ($error)');
+    }
   }
 }
 

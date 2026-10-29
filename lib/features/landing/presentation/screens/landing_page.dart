@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 import '../landing_theme.dart';
 import '../sections/hero_section.dart';
 import '../sections/home_intro_artwork.dart';
@@ -103,9 +104,9 @@ class _LandingPageState extends State<LandingPage> {
                   onHowItWorks: () => context.go(Routes.howItWorks),
                   onContactUs: () => context.go(Routes.contact),
                   onPrivacy: () => context.go(Routes.privacy),
-                  onBookRepair: () => context.go(Routes.login),
-                  onSignIn: () => context.go(Routes.login),
-                  onGetEstimate: () => context.go(Routes.login),
+                  onBookRepair: () => showWebsiteLoginDialog(context),
+                  onSignIn: () => showWebsiteLoginDialog(context),
+                  onGetEstimate: () => showWebsiteLoginDialog(context),
                   onSearch: () => _scrollTo(_faqKey),
                 ),
               ),
@@ -113,7 +114,7 @@ class _LandingPageState extends State<LandingPage> {
                 key: _trustedKey,
                 child: HomeIntroArtwork(
                   stepsKey: _howItWorksKey,
-                  onBookRepair: () => context.go(Routes.login),
+                  onBookRepair: () => showWebsiteLoginDialog(context),
                   onLearnMore: () => _scrollTo(_howItWorksKey),
                 ),
               ),
@@ -137,10 +138,12 @@ class _LandingPageState extends State<LandingPage> {
               ),
               const DownloadAppSection(),
               ServicesCtaSection(
-                onAssessment: () => context.go(Routes.login),
-                onContact: () => context.go(Routes.login),
+                onAssessment: () => showWebsiteLoginDialog(context),
+                onContact: () => showWebsiteLoginDialog(context),
               ),
-              ServicesFooter(onBook: () => context.go(Routes.login)),
+              ServicesFooter(
+                onBook: () => showWebsiteLoginDialog(context),
+              ),
             ],
           ),
         ),

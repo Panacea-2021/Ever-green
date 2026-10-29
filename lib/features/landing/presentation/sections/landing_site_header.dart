@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/routes.dart';
+import '../../../../shared/providers/auth_state_provider.dart';
 import '../landing_theme.dart';
 
 /// Floating cream masthead — Figma node 54:17 (1348×68, radius 34).
-class LandingSiteHeader extends StatelessWidget {
+class LandingSiteHeader extends ConsumerWidget {
   const LandingSiteHeader({
     super.key,
     this.onHome,
@@ -33,47 +37,55 @@ class LandingSiteHeader extends StatelessWidget {
   final String? activeNav;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final width = MediaQuery.of(context).size.width;
     final isCompact = width < 900;
     final isMobile = width < 768;
+    final isAuthenticated = ref.watch(authStateProvider).isAuthenticated;
+    void onDashboard() => context.go(Routes.webDashboard);
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        isMobile ? 16 : 46,
-        isMobile ? 14 : 18,
-        isMobile ? 16 : 46,
-        0,
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1348),
-          child: isMobile
-              ? _MobileBar(
-                  onBookRepair: onBookRepair,
-                  onSignIn: onSignIn,
-                  onHome: onHome,
-                  onServices: onServices,
-                  onIndustries: onIndustries,
-                  onAbout: onAbout,
-                  onHowItWorks: onHowItWorks,
-                  onContact: onContact,
-                  onPrivacy: onPrivacy,
-                )
-              : _DesktopBar(
-                  isCompact: isCompact,
-                  onHome: onHome,
-                  onServices: onServices,
-                  onIndustries: onIndustries,
-                  onAbout: onAbout,
-                  onHowItWorks: onHowItWorks,
-                  onContact: onContact,
-                  onPrivacy: onPrivacy,
-                  onBookRepair: onBookRepair,
-                  onSignIn: onSignIn,
-                  onSearch: onSearch,
-                  activeNav: activeNav,
-                ),
+    return SelectionContainer.disabled(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          isMobile ? 16 : 46,
+          isMobile ? 14 : 18,
+          isMobile ? 16 : 46,
+          0,
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1348),
+            child: isMobile
+                ? _MobileBar(
+                    onBookRepair: onBookRepair,
+                    onSignIn: onSignIn,
+                    isAuthenticated: isAuthenticated,
+                    onDashboard: onDashboard,
+                    onHome: onHome,
+                    onServices: onServices,
+                    onIndustries: onIndustries,
+                    onAbout: onAbout,
+                    onHowItWorks: onHowItWorks,
+                    onContact: onContact,
+                    onPrivacy: onPrivacy,
+                  )
+                : _DesktopBar(
+                    isCompact: isCompact,
+                    onHome: onHome,
+                    onServices: onServices,
+                    onIndustries: onIndustries,
+                    onAbout: onAbout,
+                    onHowItWorks: onHowItWorks,
+                    onContact: onContact,
+                    onPrivacy: onPrivacy,
+                    onBookRepair: onBookRepair,
+                    onSignIn: onSignIn,
+                    isAuthenticated: isAuthenticated,
+                    onDashboard: onDashboard,
+                    onSearch: onSearch,
+                    activeNav: activeNav,
+                  ),
+          ),
         ),
       ),
     );
@@ -92,6 +104,8 @@ class _DesktopBar extends StatelessWidget {
     this.onPrivacy,
     this.onBookRepair,
     this.onSignIn,
+    required this.isAuthenticated,
+    required this.onDashboard,
     this.onSearch,
     this.activeNav,
   });
@@ -106,6 +120,8 @@ class _DesktopBar extends StatelessWidget {
   final VoidCallback? onPrivacy;
   final VoidCallback? onBookRepair;
   final VoidCallback? onSignIn;
+  final bool isAuthenticated;
+  final VoidCallback onDashboard;
   final VoidCallback? onSearch;
   final String? activeNav;
 
@@ -175,9 +191,9 @@ class _DesktopBar extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               _HeaderCta(
-                label: 'Sign in',
+                label: isAuthenticated ? 'Dashboard' : 'Sign in',
                 filled: false,
-                onTap: onSignIn,
+                onTap: isAuthenticated ? onDashboard : onSignIn,
               ),
             ],
           ),
@@ -191,6 +207,8 @@ class _MobileBar extends StatelessWidget {
   const _MobileBar({
     this.onBookRepair,
     this.onSignIn,
+    required this.isAuthenticated,
+    required this.onDashboard,
     this.onHome,
     this.onServices,
     this.onIndustries,
@@ -202,6 +220,8 @@ class _MobileBar extends StatelessWidget {
 
   final VoidCallback? onBookRepair;
   final VoidCallback? onSignIn;
+  final bool isAuthenticated;
+  final VoidCallback onDashboard;
   final VoidCallback? onHome;
   final VoidCallback? onServices;
   final VoidCallback? onIndustries;
@@ -232,6 +252,7 @@ class _MobileBar extends StatelessWidget {
           const Spacer(),
           IconButton(
             onPressed: () => _openMenu(context),
+            mouseCursor: SystemMouseCursors.click,
             icon: const Icon(Icons.menu, color: LandingColors.textDark),
           ),
         ],
@@ -264,7 +285,9 @@ class _MobileBar extends StatelessWidget {
                 _SheetLink(label: 'Industries', onTap: () => go(onIndustries)),
                 _SheetLink(label: 'About', onTap: () => go(onAbout)),
                 _SheetLink(
-                    label: 'How it works', onTap: () => go(onHowItWorks)),
+                  label: 'How it works',
+                  onTap: () => go(onHowItWorks),
+                ),
                 _SheetLink(label: 'Privacy Policy', onTap: () => go(onPrivacy)),
                 _SheetLink(label: 'Contact', onTap: () => go(onContact)),
                 const SizedBox(height: 16),
@@ -275,9 +298,9 @@ class _MobileBar extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 _HeaderCta(
-                  label: 'Sign in',
+                  label: isAuthenticated ? 'Dashboard' : 'Sign in',
                   filled: false,
-                  onTap: () => go(onSignIn),
+                  onTap: () => go(isAuthenticated ? onDashboard : onSignIn),
                 ),
               ],
             ),
@@ -296,18 +319,21 @@ class _SheetLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(
-        label,
-        style: const TextStyle(
-          fontFamily: LandingTypography.fontFamily,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: LandingColors.textDark,
+    return MouseRegion(
+      cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(
+          label,
+          style: const TextStyle(
+            fontFamily: LandingTypography.fontFamily,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: LandingColors.textDark,
+          ),
         ),
+        onTap: onTap,
       ),
-      onTap: onTap,
     );
   }
 }
@@ -374,7 +400,8 @@ class _NavLinkState extends State<_NavLink> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      cursor: SystemMouseCursors.click,
+      cursor:
+          widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
@@ -413,7 +440,8 @@ class _IconCircleButtonState extends State<_IconCircleButton> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      cursor: SystemMouseCursors.click,
+      cursor:
+          widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(

@@ -63,6 +63,8 @@ class PushService {
 
   /// Never throws: the app must still start if Firebase is unavailable.
   static Future<void> initialize() async {
+    if (kIsWeb) return;
+
     try {
       await Firebase.initializeApp();
       FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);

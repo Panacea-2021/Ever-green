@@ -29,8 +29,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     final phone = email.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-    final deviceId = await _tokenStorage.getDeviceId();
-    final fcmId = await PushService.currentToken();
+    final deviceIdFuture = _tokenStorage.getDeviceId();
+    final fcmIdFuture = PushService.currentToken();
+    final deviceId = await deviceIdFuture;
+    final fcmId = await fcmIdFuture;
 
     final result = await _apiClient.post<Map<String, dynamic>>(
       'auth/signIn',
@@ -74,7 +76,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     return const Left(
       AuthenticationFailure(
-        message: 'Accounts are created by EverGreen. Contact your administrator.',
+        message:
+            'Accounts are created by EverGreen. Contact your administrator.',
       ),
     );
   }

@@ -50,7 +50,7 @@ class _TechniciansSectionState extends State<TechniciansSection> {
                 Image.asset(
                   LandingAssets.featuredTechniciansBanner,
                   fit: BoxFit.fill,
-                  filterQuality: FilterQuality.high,
+                  filterQuality: FilterQuality.medium,
                 ),
                 for (var i = 0; i < _cardBounds.length; i++)
                   if (_activeCard == i)

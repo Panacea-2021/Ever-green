@@ -26,8 +26,40 @@ class TaskStepsSection extends StatelessWidget {
               children: [
                 Image.asset(
                   LandingAssets.taskStepsBanner,
-                  fit: BoxFit.fill,
-                  filterQuality: FilterQuality.high,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.medium,
+                ),
+                Positioned(
+                  left: imageWidth * 0.056,
+                  top: imageWidth * (569 / 1600) * 0.074,
+                  child: Container(
+                    width: imageWidth * 0.126,
+                    height: imageWidth * (569 / 1600) * 0.04,
+                    color: const Color(0xFF001B12),
+                    child: Row(
+                      children: [
+                        Text(
+                          'HOW IT WORKS',
+                          style: TextStyle(
+                            fontFamily: LandingTypography.fontFamily,
+                            color: Colors.white.withValues(alpha: 0.96),
+                            fontSize: (imageWidth * 0.0085).clamp(11.0, 14.0),
+                            fontWeight: FontWeight.w600,
+                            letterSpacing:
+                                (imageWidth * 0.0011).clamp(1.3, 1.8),
+                          ),
+                        ),
+                        SizedBox(width: imageWidth * 0.006),
+                        Expanded(
+                          child: Container(
+                            height: 1,
+                            color: Colors.white.withValues(alpha: 0.72),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 if (onSeeHowItWorks != null)
                   Positioned(
