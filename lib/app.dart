@@ -10,6 +10,7 @@ import 'core/router/app_router.dart';
 import 'core/router/routes.dart';
 import 'core/theme/app_theme.dart';
 import 'shared/providers/auth_state_provider.dart';
+import 'shared/widgets/global_scroll_to_top.dart';
 
 class EverGreenApp extends ConsumerStatefulWidget {
   const EverGreenApp({super.key});
@@ -95,6 +96,9 @@ class _EverGreenAppState extends ConsumerState<EverGreenApp> {
         // Force light theme so dark-mode phones do not break the UI.
         themeMode: ThemeMode.light,
         routerConfig: router,
+        builder: (context, child) => GlobalScrollToTop(
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
     );
   }

@@ -121,7 +121,7 @@ class _TechniciansSectionState extends State<TechniciansSection> {
             : ((contentWidth - _cardGap * 4) / 5).clamp(220.0, 280.0);
         final cardExtent = cardWidth + _cardGap;
         final imageHeight = cardWidth * 0.68;
-        final cardHeight = imageHeight + 194;
+        final cardHeight = imageHeight + 250;
 
         return Container(
           width: double.infinity,
@@ -461,36 +461,19 @@ class _TechnicianCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 9),
+                // Skill chips keep their natural (readable) size and may wrap
+                // onto a second row. The area is a fixed two-row height so every
+                // card stays exactly the same size.
                 SizedBox(
-                  height: 24,
+                  height: 61,
                   width: double.infinity,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 5,
                       children: [
-                        for (final (i, tag) in tags.indexed)
-                          Container(
-                            margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 9,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEAF2EB),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              tag,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                height: 1.2,
-                                fontWeight: FontWeight.w600,
-                                color: _detailColor,
-                              ),
-                            ),
-                          ),
+                        for (final tag in tags) _TagChip(label: tag),
                       ],
                     ),
                   ),
@@ -514,6 +497,36 @@ class _TechnicianCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One equal-width skill chip. The label scales down slightly rather than
+/// wrapping, so a row of chips always stays on a single line.
+class _TagChip extends StatelessWidget {
+  const _TagChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF2EB),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        softWrap: false,
+        style: const TextStyle(
+          fontSize: 13,
+          height: 1.2,
+          fontWeight: FontWeight.w600,
+          color: _TechnicianCard._detailColor,
+        ),
       ),
     );
   }

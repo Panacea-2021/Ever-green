@@ -48,63 +48,63 @@ class _LandingPageState extends State<LandingPage> {
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              KeyedSubtree(
-                key: _topKey,
-                child: HeroSection(
-                  onHome: () => _scrollTo(_topKey),
-                  onServices: () => context.push(Routes.services),
-                  onIndustries: () => context.go(Routes.industries),
-                  onAbout: () => context.go(Routes.about),
-                  onHowItWorks: () => context.go(Routes.howItWorks),
-                  onContactUs: () => context.go(Routes.contact),
-                  onPrivacy: () => context.go(Routes.privacy),
-                  onBookRepair: () => showWebsiteLoginDialog(context),
-                  onSignIn: () => showWebsiteLoginDialog(context),
-                  onGetEstimate: () => showWebsiteLoginDialog(context),
-                  onSearch: () => _scrollTo(_faqKey),
-                ),
+                children: [
+                  KeyedSubtree(
+                    key: _topKey,
+                    child: HeroSection(
+                      onHome: () => _scrollTo(_topKey),
+                      onServices: () => context.push(Routes.services),
+                      onIndustries: () => context.go(Routes.industries),
+                      onAbout: () => context.go(Routes.about),
+                      onHowItWorks: () => context.go(Routes.howItWorks),
+                      onContactUs: () => context.go(Routes.contact),
+                      onPrivacy: () => context.go(Routes.privacy),
+                      onBookRepair: () => showWebsiteLoginDialog(context),
+                      onSignIn: () => showWebsiteLoginDialog(context),
+                      onGetEstimate: () => showWebsiteLoginDialog(context),
+                      onSearch: () => _scrollTo(_faqKey),
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _trustedKey,
+                    child: HomeIntroArtwork(
+                      stepsKey: _howItWorksKey,
+                      onBookRepair: () => showWebsiteLoginDialog(context),
+                      onLearnMore: () => _scrollTo(_howItWorksKey),
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _taskStepsKey,
+                    child: TaskStepsSection(
+                      onSeeHowItWorks: () => context.go(Routes.howItWorks),
+                    ),
+                  ),
+                  TechniciansSection(
+                    onViewAll: () => context.push(Routes.technicians),
+                  ),
+                  KeyedSubtree(
+                    key: _whyKey,
+                    child: const WhyChooseUsSection(),
+                  ),
+                  const ReviewsSection(),
+                  KeyedSubtree(
+                    key: _faqKey,
+                    child: FaqSection(
+                      onContactUs: () => context.push(Routes.contact),
+                    ),
+                  ),
+                  const DownloadAppSection(),
+                  ServicesCtaSection(
+                    onAssessment: () => showWebsiteLoginDialog(context),
+                    onContact: () => showWebsiteLoginDialog(context),
+                  ),
+                  ServicesFooter(
+                    onBook: () => showWebsiteLoginDialog(context),
+                  ),
+                ],
               ),
-              KeyedSubtree(
-                key: _trustedKey,
-                child: HomeIntroArtwork(
-                  stepsKey: _howItWorksKey,
-                  onBookRepair: () => showWebsiteLoginDialog(context),
-                  onLearnMore: () => _scrollTo(_howItWorksKey),
-                ),
-              ),
-              KeyedSubtree(
-                key: _taskStepsKey,
-                child: TaskStepsSection(
-                  onSeeHowItWorks: () => context.go(Routes.howItWorks),
-                ),
-              ),
-              TechniciansSection(
-                onViewAll: () => context.push(Routes.technicians),
-              ),
-              KeyedSubtree(
-                key: _whyKey,
-                child: const WhyChooseUsSection(),
-              ),
-              const ReviewsSection(),
-              KeyedSubtree(
-                key: _faqKey,
-                child: FaqSection(
-                  onContactUs: () => context.push(Routes.contact),
-                ),
-              ),
-              const DownloadAppSection(),
-              ServicesCtaSection(
-                onAssessment: () => showWebsiteLoginDialog(context),
-                onContact: () => showWebsiteLoginDialog(context),
-              ),
-              ServicesFooter(
-                onBook: () => showWebsiteLoginDialog(context),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 }

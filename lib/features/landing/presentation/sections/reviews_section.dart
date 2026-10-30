@@ -209,6 +209,12 @@ class _ReviewsSectionState extends State<ReviewsSection> {
             imagePath: _reviews[
                     (_currentIndex - 2 + _reviews.length) % _reviews.length]
                 .photoPath,
+            reviewerName: _reviews[
+                    (_currentIndex - 2 + _reviews.length) % _reviews.length]
+                .reviewerName,
+            onTap: () => _goToPage(
+              (_currentIndex - 2 + _reviews.length) % _reviews.length,
+            ),
             width: 78,
             height: 204,
           ),
@@ -217,6 +223,12 @@ class _ReviewsSectionState extends State<ReviewsSection> {
             imagePath: _reviews[
                     (_currentIndex - 1 + _reviews.length) % _reviews.length]
                 .photoPath,
+            reviewerName: _reviews[
+                    (_currentIndex - 1 + _reviews.length) % _reviews.length]
+                .reviewerName,
+            onTap: () => _goToPage(
+              (_currentIndex - 1 + _reviews.length) % _reviews.length,
+            ),
             width: 112,
             height: 292,
           ),
@@ -239,6 +251,9 @@ class _ReviewsSectionState extends State<ReviewsSection> {
           _SideCard(
             imagePath:
                 _reviews[(_currentIndex + 1) % _reviews.length].photoPath,
+            reviewerName:
+                _reviews[(_currentIndex + 1) % _reviews.length].reviewerName,
+            onTap: () => _goToPage((_currentIndex + 1) % _reviews.length),
             width: 112,
             height: 292,
           ),
@@ -246,6 +261,9 @@ class _ReviewsSectionState extends State<ReviewsSection> {
           _SideCard(
             imagePath:
                 _reviews[(_currentIndex + 2) % _reviews.length].photoPath,
+            reviewerName:
+                _reviews[(_currentIndex + 2) % _reviews.length].reviewerName,
+            onTap: () => _goToPage((_currentIndex + 2) % _reviews.length),
             width: 78,
             height: 204,
           ),
@@ -282,33 +300,47 @@ class _ReviewsSectionState extends State<ReviewsSection> {
 /// Side preview card showing just the photo.
 class _SideCard extends StatelessWidget {
   final String imagePath;
+  final String reviewerName;
+  final VoidCallback onTap;
   final double width;
   final double height;
 
   const _SideCard({
     required this.imagePath,
+    required this.reviewerName,
+    required this.onTap,
     required this.width,
     required this.height,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(36),
-        boxShadow: LandingShadows.smallCardShadow,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Image.asset(
-          imagePath,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            color: LandingColors.primary.withOpacity(0.2),
+    return Semantics(
+      button: true,
+      label: 'Show review by $reviewerName',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: width,
+            height: height,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(36),
+              boxShadow: LandingShadows.smallCardShadow,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: Image.asset(
+                imagePath,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: LandingColors.primary.withOpacity(0.2),
+                ),
+              ),
+            ),
           ),
         ),
       ),
