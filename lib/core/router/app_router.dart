@@ -8,6 +8,7 @@ import '../../features/landing/presentation/screens/terms_page.dart';
 import '../../features/landing/presentation/screens/privacy_page.dart';
 import '../../features/landing/presentation/screens/contact_page.dart';
 import '../../features/landing/presentation/screens/services_page.dart';
+import '../../features/landing/presentation/screens/technicians_page.dart';
 import '../../features/landing/presentation/screens/website_info_page.dart';
 import '../../web/screens/web_dashboard_screen.dart';
 import '../../features/amcs/presentation/screens/add_equipment_screen.dart';
@@ -121,6 +122,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (kIsWeb) Routes.contact,
         if (kIsWeb) Routes.services,
         if (kIsWeb) Routes.industries,
+        if (kIsWeb) Routes.technicians,
         if (kIsWeb) Routes.about,
         if (kIsWeb) Routes.howItWorks,
       ];
@@ -210,6 +212,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.services,
         name: 'services',
         builder: (context, state) => const ServicesPage(),
+      ),
+      GoRoute(
+        path: Routes.technicians,
+        name: 'technicians',
+        builder: (context, state) => const TechniciansPage(),
       ),
       GoRoute(
         path: Routes.industries,

@@ -60,7 +60,7 @@ class HomeIntroArtwork extends StatelessWidget {
     final isMobile = width < 900;
 
     return ColoredBox(
-      color: const Color(0xFFE7F4EA),
+      color: const Color(0xFFDCF0E1),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -146,7 +146,7 @@ class _IntroCopy extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFDDF3E4),
+              color: const Color(0xFFC8E8D1),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
@@ -244,7 +244,7 @@ class _Point extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: const BoxDecoration(
-              color: Color(0xFFDDF3E4),
+              color: Color(0xFFC8E8D1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 18, color: LandingColors.primary),

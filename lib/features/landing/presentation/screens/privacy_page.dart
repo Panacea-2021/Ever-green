@@ -63,7 +63,7 @@ class PrivacyPage extends StatelessWidget {
       desktopTitleFontSize: 48,
       heroContentBottomInset: 0,
       showCloseButton: true,
-      backgroundColor: Color(0xFFE5F6EA),
+      backgroundColor: Color(0xFFDAF1E1),
     );
   }
 }

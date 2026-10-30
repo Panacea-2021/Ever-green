@@ -13,6 +13,7 @@ class SvcColors {
   static const Color highlightLight = Color(0xFF6FD897);
   static const Color mint = Color(0xFFEEF6EF);
   static const Color mintStrong = Color(0xFFE0F0E4);
+  static const Color sectionMint = Color(0xFFE2F2E6);
   static const Color text = Color(0xFF0F1A13);
   static const Color body = Color(0xFF5B6B60);
   static const Color border = Color(0xFFE2EBE4);

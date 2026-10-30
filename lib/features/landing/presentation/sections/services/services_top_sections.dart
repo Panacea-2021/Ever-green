@@ -251,7 +251,7 @@ class ServicesHero extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white, SvcColors.mint],
+          colors: [Colors.white, SvcColors.sectionMint],
         ),
       ),
       padding: EdgeInsets.symmetric(vertical: mobile ? 32 : 56),
@@ -601,7 +601,7 @@ class EquipmentSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SvcSection(
-      color: SvcColors.mint,
+      color: SvcColors.sectionMint,
       child: SvcSplit(
         leftFlex: 3,
         rightFlex: 8,

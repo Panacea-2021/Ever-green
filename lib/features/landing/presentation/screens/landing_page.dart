@@ -40,51 +40,6 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
-  void _showTechnicians() {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          children: const [
-            Text(
-              'Featured technicians',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
-            SizedBox(height: 16),
-            ListTile(
-              leading: Icon(Icons.person_outline),
-              title: Text('Meera Iyer'),
-              subtitle: Text('Kitchen Appliance Specialist'),
-            ),
-            ListTile(
-              leading: Icon(Icons.person_outline),
-              title: Text('Arjun Patel'),
-              subtitle: Text('Refrigeration & Cooling Expert'),
-            ),
-            ListTile(
-              leading: Icon(Icons.person_outline),
-              title: Text('Sara Qureshi'),
-              subtitle: Text('Ventilation & Hood Specialist'),
-            ),
-            ListTile(
-              leading: Icon(Icons.person_outline),
-              title: Text('Nikhil Rao'),
-              subtitle: Text('Microwave & Small Appliance Expert'),
-            ),
-            ListTile(
-              leading: Icon(Icons.person_outline),
-              title: Text('Leela Nair'),
-              subtitle: Text('Laundry Appliance Specialist'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,7 +79,9 @@ class _LandingPageState extends State<LandingPage> {
                   onSeeHowItWorks: () => context.go(Routes.howItWorks),
                 ),
               ),
-              TechniciansSection(onViewAll: _showTechnicians),
+              TechniciansSection(
+                onViewAll: () => context.push(Routes.technicians),
+              ),
               KeyedSubtree(
                 key: _whyKey,
                 child: const WhyChooseUsSection(),

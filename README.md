@@ -85,6 +85,31 @@ lib/
    flutter run -t lib/main_prod.dart
    ```
 
+### Deploying the website
+
+Build the web app with a base path matching where the host serves it. For a
+custom domain or a site served from the domain root:
+
+```bash
+flutter build web --release --base-href /
+```
+
+For a GitHub Pages project site, use the repository name as the path:
+
+```bash
+flutter build web --release --base-href /<repository-name>/
+```
+
+For Vercel, use `/` as the base path (the repository name is not part of the
+Vercel site URL), publish `build/web`, and configure a single-page-app fallback
+to `index.html` for app routes. The build environment must have Flutter
+installed before running the build command.
+
+The static host must serve `index.html` for app routes such as `/services` and
+`/contact` (while serving existing asset files normally). Without that
+single-page-app fallback, direct links and page refreshes on those routes return
+a host-level 404.
+
 ## Environment Configuration
 
 The app supports three environments:

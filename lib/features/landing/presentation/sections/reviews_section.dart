@@ -98,7 +98,9 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     _pageController = PageController(initialPage: 0);
     _autoPlay = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted || !_pageController.hasClients) return;
-      final next = _pageController.page!.round() + 1;
+      final page = _pageController.page;
+      if (page == null) return;
+      final next = page.round() + 1;
       _pageController.animateToPage(
         next,
         duration: const Duration(milliseconds: 600),

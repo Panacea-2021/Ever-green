@@ -78,7 +78,7 @@ class WhyChooseSection extends StatelessWidget {
     );
 
     return SvcSection(
-      color: SvcColors.mint,
+      color: SvcColors.sectionMint,
       child: desktop
           ? Row(
               children: [
@@ -476,7 +476,7 @@ class TestimonialsSection extends StatelessWidget {
     );
 
     return SvcSection(
-      color: SvcColors.mint,
+      color: SvcColors.sectionMint,
       child: desktop
           ? Row(
               children: [
@@ -699,6 +699,28 @@ class ServicesCtaSection extends StatelessWidget {
   }
 }
 
+String _footerRoute(String link) => switch (link) {
+      'Preventive Maintenance' ||
+      'Emergency Repairs' ||
+      'Equipment Installation' ||
+      'Deep Cleaning' ||
+      'AMC & Compliance' ||
+      'AMC Plans' ||
+      'Case Studies' =>
+        Routes.services,
+      'IT Campuses' ||
+      'Corporate Cafeterias' ||
+      'Hostels & Universities' ||
+      'Hotels & Resorts' ||
+      'Hospitals' =>
+        Routes.industries,
+      'About Us' => Routes.about,
+      'How It Works' => Routes.howItWorks,
+      'FAQs' => Routes.home,
+      'Privacy Policy' => Routes.privacy,
+      _ => throw StateError('No route configured for footer link "$link".'),
+    };
+
 class ServicesFooter extends StatelessWidget {
   const ServicesFooter({super.key, required this.onBook});
 
@@ -800,27 +822,19 @@ class ServicesFooter extends StatelessWidget {
             for (final link in links)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: link == 'Privacy Policy'
-                    ? MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () => context.go(Routes.privacy),
-                          child: Text(
-                            link,
-                            style: svcText(
-                              size: 13,
-                              color: Colors.white.withOpacity(0.65),
-                            ),
-                          ),
-                        ),
-                      )
-                    : Text(
-                        link,
-                        style: svcText(
-                          size: 13,
-                          color: Colors.white.withOpacity(0.65),
-                        ),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () => context.go(_footerRoute(link)),
+                    child: Text(
+                      link,
+                      style: svcText(
+                        size: 13,
+                        color: Colors.white.withOpacity(0.65),
                       ),
+                    ),
+                  ),
+                ),
               ),
           ],
         );
@@ -854,16 +868,22 @@ class ServicesFooter extends StatelessWidget {
         for (final city in const ['Hyderabad', 'Bengaluru'])
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.location_on_outlined,
-                    size: 15, color: Colors.white.withOpacity(0.65)),
-                const SizedBox(width: 6),
-                Text(city,
-                    style: svcText(
-                        size: 13, color: Colors.white.withOpacity(0.65))),
-              ],
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => context.go(Routes.contact),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_on_outlined,
+                        size: 15, color: Colors.white.withOpacity(0.65)),
+                    const SizedBox(width: 6),
+                    Text(city,
+                        style: svcText(
+                            size: 13, color: Colors.white.withOpacity(0.65))),
+                  ],
+                ),
+              ),
             ),
           ),
       ],
