@@ -193,48 +193,57 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'forgotPassword',
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
+      // Website pages open without a transition, like the landing page.
       GoRoute(
         path: Routes.terms,
         name: 'terms',
-        builder: (context, state) => const TermsPage(),
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: TermsPage()),
       ),
       GoRoute(
         path: Routes.privacy,
         name: 'privacy',
-        builder: (context, state) => const PrivacyPage(),
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: PrivacyPage()),
       ),
       GoRoute(
         path: Routes.contact,
         name: 'contact',
-        builder: (context, state) => const ContactPage(),
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: ContactPage()),
       ),
       GoRoute(
         path: Routes.services,
         name: 'services',
-        builder: (context, state) => const ServicesPage(),
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: ServicesPage()),
       ),
       GoRoute(
         path: Routes.technicians,
         name: 'technicians',
-        builder: (context, state) => const TechniciansPage(),
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: TechniciansPage()),
       ),
       GoRoute(
         path: Routes.industries,
         name: 'industries',
-        builder: (context, state) =>
-            const WebsiteInfoPage(kind: WebsiteInfoKind.industries),
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: WebsiteInfoPage(kind: WebsiteInfoKind.industries),
+        ),
       ),
       GoRoute(
         path: Routes.about,
         name: 'about',
-        builder: (context, state) =>
-            const WebsiteInfoPage(kind: WebsiteInfoKind.about),
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: WebsiteInfoPage(kind: WebsiteInfoKind.about),
+        ),
       ),
       GoRoute(
         path: Routes.howItWorks,
         name: 'howItWorks',
-        builder: (context, state) =>
-            const WebsiteInfoPage(kind: WebsiteInfoKind.howItWorks),
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: WebsiteInfoPage(kind: WebsiteInfoKind.howItWorks),
+        ),
       ),
 
       // Feature routes (full screen, no bottom nav)
