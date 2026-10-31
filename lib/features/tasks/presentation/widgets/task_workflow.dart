@@ -124,8 +124,7 @@ List<TaskAction> taskActionsFor(TaskItem t, User? user) =>
 
 /// Which overflow-menu items apply to [role].
 List<TaskMenuItem> taskMenuFor(UserRole role) {
-  final isManagerial =
-      role == UserRole.superAdmin || role == UserRole.manager;
+  final isManagerial = role == UserRole.superAdmin || role == UserRole.manager;
   final canAssign = isManagerial || role == UserRole.seniorTechnician;
   return [
     if (canAssign) TaskMenuItem.assign,
@@ -741,7 +740,8 @@ class _EditTaskSheetState extends ConsumerState<_EditTaskSheet> {
     final t = widget.task;
     final keyboard = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 8, 20, keyboard + widget.bottomInset + 16),
+      padding:
+          EdgeInsets.fromLTRB(20, 8, 20, keyboard + widget.bottomInset + 16),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

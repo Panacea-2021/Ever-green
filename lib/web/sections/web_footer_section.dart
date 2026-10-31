@@ -14,7 +14,12 @@ class WebFooterSection extends StatelessWidget {
     ),
     (
       'COMPANY',
-      ['Why choose us', 'Service Engineers', 'Customer reviews', 'Download the app']
+      [
+        'Why choose us',
+        'Service Engineers',
+        'Customer reviews',
+        'Download the app'
+      ]
     ),
     ('KITCHEN', ['Warranty', 'Pricing', 'Visit window', 'Job note']),
   ];

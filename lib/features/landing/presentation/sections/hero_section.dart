@@ -198,31 +198,31 @@ class _HeroButtonState extends State<_HeroButton> {
   Widget build(BuildContext context) {
     return SelectionContainer.disabled(
       child: MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          decoration: BoxDecoration(
-            color: widget.isPrimary
-                ? (_isHovered ? Colors.white.withOpacity(0.9) : Colors.white)
-                : (_isHovered
-                    ? Colors.black.withOpacity(0.25)
-                    : Colors.black.withOpacity(0.15)),
-            borderRadius: BorderRadius.circular(LandingRadius.pill),
-          ),
-          child: Text(
-            widget.label,
-            style: widget.isPrimary
-                ? LandingTypography.buttonPrimary
-                : LandingTypography.buttonSecondary,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            decoration: BoxDecoration(
+              color: widget.isPrimary
+                  ? (_isHovered ? Colors.white.withOpacity(0.9) : Colors.white)
+                  : (_isHovered
+                      ? Colors.black.withOpacity(0.25)
+                      : Colors.black.withOpacity(0.15)),
+              borderRadius: BorderRadius.circular(LandingRadius.pill),
+            ),
+            child: Text(
+              widget.label,
+              style: widget.isPrimary
+                  ? LandingTypography.buttonPrimary
+                  : LandingTypography.buttonSecondary,
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }

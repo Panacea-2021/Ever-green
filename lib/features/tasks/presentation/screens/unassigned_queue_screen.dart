@@ -299,8 +299,13 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
           const SizedBox(height: 2),
           Text(
             [
-              if (t.isIndividual) ...[t.contactName, t.address]
-              else ...[t.equipment, t.companyName],
+              if (t.isIndividual) ...[
+                t.contactName,
+                t.address
+              ] else ...[
+                t.equipment,
+                t.companyName
+              ],
             ].where((s) => s.isNotEmpty).join('  •  '),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -495,65 +500,65 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
           TechnicianChoices(
             builder: (techs, stats) => Column(
               children: [
-          for (final tech in techs)
-            Builder(
-              builder: (_) {
-                final s = statsFor(tech, stats);
-                final isCurrent = tech.backendId == t.technicianId;
-                final overloaded = s.isOverloaded;
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  enabled: !isCurrent,
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFFEBF0EA),
-                    child: Text(
-                      tech.name.isNotEmpty ? tech.name[0] : '?',
-                      style: const TextStyle(color: _green),
-                    ),
+                for (final tech in techs)
+                  Builder(
+                    builder: (_) {
+                      final s = statsFor(tech, stats);
+                      final isCurrent = tech.backendId == t.technicianId;
+                      final overloaded = s.isOverloaded;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        enabled: !isCurrent,
+                        leading: CircleAvatar(
+                          backgroundColor: const Color(0xFFEBF0EA),
+                          child: Text(
+                            tech.name.isNotEmpty ? tech.name[0] : '?',
+                            style: const TextStyle(color: _green),
+                          ),
+                        ),
+                        title: Text(
+                          tech.name,
+                          style: const TextStyle(fontFamily: 'Montserrat'),
+                        ),
+                        subtitle: Text(
+                          isCurrent
+                              ? 'Current assignee'
+                              : '${s.active} active task(s)',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 12,
+                            color: overloaded
+                                ? const Color(0xFFD32F2F)
+                                : const Color(0xFF6B6B6B),
+                          ),
+                        ),
+                        trailing: isCurrent
+                            ? const Icon(Icons.check, color: _green)
+                            : overloaded
+                                ? const Text(
+                                    'Busy',
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      color: Color(0xFFD32F2F),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  )
+                                : const Icon(Icons.chevron_right),
+                        onTap: isCurrent
+                            ? null
+                            : () async {
+                                Navigator.pop(sheetContext);
+                                if (overloaded) {
+                                  final ok = await _confirmOverload(
+                                      tech.name, s.active);
+                                  if (ok != true || !mounted) return;
+                                }
+                                _doAssign(t, tech, isReassign);
+                              },
+                      );
+                    },
                   ),
-                  title: Text(
-                    tech.name,
-                    style: const TextStyle(fontFamily: 'Montserrat'),
-                  ),
-                  subtitle: Text(
-                    isCurrent
-                        ? 'Current assignee'
-                        : '${s.active} active task(s)',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 12,
-                      color: overloaded
-                          ? const Color(0xFFD32F2F)
-                          : const Color(0xFF6B6B6B),
-                    ),
-                  ),
-                  trailing: isCurrent
-                      ? const Icon(Icons.check, color: _green)
-                      : overloaded
-                          ? const Text(
-                              'Busy',
-                              style: TextStyle(
-                                fontFamily: 'Montserrat',
-                                color: Color(0xFFD32F2F),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            )
-                          : const Icon(Icons.chevron_right),
-                  onTap: isCurrent
-                      ? null
-                      : () async {
-                          Navigator.pop(sheetContext);
-                          if (overloaded) {
-                            final ok =
-                                await _confirmOverload(tech.name, s.active);
-                            if (ok != true || !mounted) return;
-                          }
-                          _doAssign(t, tech, isReassign);
-                        },
-                );
-              },
-            ),
               ],
             ),
           ),

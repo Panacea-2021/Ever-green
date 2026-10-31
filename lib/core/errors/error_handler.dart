@@ -14,7 +14,8 @@ class ErrorHandler {
       if (error.statusCode == 401) {
         return Failure.authentication(message: error.message);
       }
-      return Failure.server(message: error.message, statusCode: error.statusCode);
+      return Failure.server(
+          message: error.message, statusCode: error.statusCode);
     }
 
     if (error is DioException) {

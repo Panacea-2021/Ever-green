@@ -143,7 +143,8 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
                       error: e,
                       onRetry: () => ref.invalidate(tasksProvider),
                     ),
-                    data: (all) => _buildTaskList(_filtered(_companyTasks(all))),
+                    data: (all) =>
+                        _buildTaskList(_filtered(_companyTasks(all))),
                   ),
                 ),
               ],

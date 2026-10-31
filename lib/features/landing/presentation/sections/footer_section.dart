@@ -18,7 +18,9 @@ class FooterSection extends StatelessWidget {
       width: double.infinity,
       color: LandingColors.black,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? LandingSpacing.pagePaddingMobile : LandingSpacing.sectionXL,
+        horizontal: isMobile
+            ? LandingSpacing.pagePaddingMobile
+            : LandingSpacing.sectionXL,
         vertical: LandingSpacing.sectionLarge,
       ),
       child: Column(

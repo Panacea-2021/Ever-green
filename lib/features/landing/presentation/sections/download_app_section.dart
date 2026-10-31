@@ -374,8 +374,7 @@ class _FeatureCardState extends State<_FeatureCard> {
         duration: const Duration(milliseconds: 300),
         width: widget.isMobile ? null : widget.width,
         padding: const EdgeInsets.all(24),
-        transform: Matrix4.identity()
-          ..translate(0.0, _isHovered ? -4.0 : 0.0),
+        transform: Matrix4.identity()..translate(0.0, _isHovered ? -4.0 : 0.0),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(28),

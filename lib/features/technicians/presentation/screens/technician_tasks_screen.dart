@@ -157,8 +157,11 @@ class _TechnicianTasksScreenState extends ConsumerState<TechnicianTasksScreen> {
                 color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back,
-                  size: 20, color: Color(0xFF1F1F1F),),
+              child: const Icon(
+                Icons.arrow_back,
+                size: 20,
+                color: Color(0xFF1F1F1F),
+              ),
             ),
           ),
           const SizedBox(width: 14),

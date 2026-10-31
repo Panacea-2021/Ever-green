@@ -181,7 +181,8 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_off_outlined, size: 72, color: Colors.grey.shade300),
+            Icon(Icons.cloud_off_outlined,
+                size: 72, color: Colors.grey.shade300),
             const SizedBox(height: 16),
             Text(
               "Couldn't load activity",

@@ -76,9 +76,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       _saving = true;
       _error = null;
     });
-    final result = await ref
-        .read(usersRepositoryProvider)
-        .changePassword(currentPassword: _current.text, newPassword: _next.text);
+    final result = await ref.read(usersRepositoryProvider).changePassword(
+        currentPassword: _current.text, newPassword: _next.text);
     if (!mounted) return;
     result.fold(
       (failure) => setState(() {
@@ -265,9 +264,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               Icon(
                 _error == null ? Icons.info_outline : Icons.error_outline,
                 size: 14,
-                color: _error == null
-                    ? const Color(0xFF9B9B9B)
-                    : AppColors.error,
+                color:
+                    _error == null ? const Color(0xFF9B9B9B) : AppColors.error,
               ),
               const SizedBox(width: 6),
               Expanded(

@@ -592,7 +592,8 @@ class _CompanyProfileSheet extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 10),
-          for (final (icon, label, value) in rows) _detailRow(icon, label, value),
+          for (final (icon, label, value) in rows)
+            _detailRow(icon, label, value),
         ],
       ),
     );
@@ -729,8 +730,18 @@ class _CompanyProfileSheet extends ConsumerWidget {
   }
 
   static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   static String _date(DateTime? d) {

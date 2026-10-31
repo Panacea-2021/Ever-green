@@ -31,9 +31,11 @@ void main() {
     );
     expect(text, contains('<c r="A1" t="inlineStr" s="1">'));
     expect(
-        text,
-        contains(
-            '<c r="A2" t="inlineStr"><is><t xml:space="preserve">x &amp; y</t>',),);
+      text,
+      contains(
+        '<c r="A2" t="inlineStr"><is><t xml:space="preserve">x &amp; y</t>',
+      ),
+    );
     expect(text, isNot(contains('r="B2"')));
     expect(text, contains('<c r="C2" t="inlineStr">'));
   });

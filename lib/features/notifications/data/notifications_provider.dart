@@ -78,10 +78,12 @@ class NotificationsRepository {
 
   /// The caller's own notifications, newest first.
   Future<(List<NotificationEntry>, bool)> getPage(int page) async {
-    final body = unwrap(await _repo.api.post<dynamic>(
-      'user/getNotificationsPage',
-      data: {'page': page, 'limit': pageSize},
-    ),);
+    final body = unwrap(
+      await _repo.api.post<dynamic>(
+        'user/getNotificationsPage',
+        data: {'page': page, 'limit': pageSize},
+      ),
+    );
     final items = dataList(body).map(NotificationEntry.fromJson).toList();
     final hasMore = body is Map && body['has_more'] is bool
         ? body['has_more'] as bool
@@ -90,30 +92,36 @@ class NotificationsRepository {
   }
 
   Future<void> markRead({List<int>? ids}) async {
-    unwrap(await _repo.api.post<dynamic>(
-      'user/markNotificationsRead',
-      data: ids == null ? {'all': true} : {'notification_ids': ids},
-    ),);
+    unwrap(
+      await _repo.api.post<dynamic>(
+        'user/markNotificationsRead',
+        data: ids == null ? {'all': true} : {'notification_ids': ids},
+      ),
+    );
   }
 
   Future<int> getUnreadCount() async {
-    final body = unwrap(await _repo.api.post<dynamic>(
-      'user/getUnreadNotificationsCount',
-      data: {},
-    ),);
+    final body = unwrap(
+      await _repo.api.post<dynamic>(
+        'user/getUnreadNotificationsCount',
+        data: {},
+      ),
+    );
     final data = body is Map ? body['data'] : null;
     final count = data is Map ? data['count'] : null;
     return count is num ? count.toInt() : int.tryParse('$count') ?? 0;
   }
 }
 
-final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) {
+final notificationsRepositoryProvider =
+    Provider<NotificationsRepository>((ref) {
   return NotificationsRepository(ref.watch(evergreenRepositoryProvider));
 });
 
 /// Unread badge count. Falls back to 0 if the endpoint is unavailable so the
 /// badge never blocks the UI.
-final unreadNotificationsCountProvider = FutureProvider.autoDispose<int>((ref) async {
+final unreadNotificationsCountProvider =
+    FutureProvider.autoDispose<int>((ref) async {
   try {
     return await ref.watch(notificationsRepositoryProvider).getUnreadCount();
   } catch (_) {
@@ -121,12 +129,15 @@ final unreadNotificationsCountProvider = FutureProvider.autoDispose<int>((ref) a
   }
 });
 
-class NotificationsController extends AutoDisposeAsyncNotifier<NotificationsFeed> {
-  NotificationsRepository get _repo => ref.read(notificationsRepositoryProvider);
+class NotificationsController
+    extends AutoDisposeAsyncNotifier<NotificationsFeed> {
+  NotificationsRepository get _repo =>
+      ref.read(notificationsRepositoryProvider);
 
   @override
   Future<NotificationsFeed> build() async {
-    final (items, hasMore) = await ref.watch(notificationsRepositoryProvider).getPage(1);
+    final (items, hasMore) =
+        await ref.watch(notificationsRepositoryProvider).getPage(1);
     return NotificationsFeed(items: items, page: 1, hasMore: hasMore);
   }
 
@@ -137,12 +148,17 @@ class NotificationsController extends AutoDisposeAsyncNotifier<NotificationsFeed
     try {
       final (items, hasMore) = await _repo.getPage(feed.page + 1);
       final seen = feed.items.map((e) => e.notification.id).toSet();
-      state = AsyncData(feed.copyWith(
-        items: [...feed.items, ...items.where((e) => !seen.contains(e.notification.id))],
-        page: feed.page + 1,
-        hasMore: hasMore,
-        loadingMore: false,
-      ),);
+      state = AsyncData(
+        feed.copyWith(
+          items: [
+            ...feed.items,
+            ...items.where((e) => !seen.contains(e.notification.id))
+          ],
+          page: feed.page + 1,
+          hasMore: hasMore,
+          loadingMore: false,
+        ),
+      );
     } catch (e) {
       state = AsyncData(feed.copyWith(loadingMore: false, loadMoreError: e));
     }
@@ -153,15 +169,18 @@ class NotificationsController extends AutoDisposeAsyncNotifier<NotificationsFeed
   Future<void> markRead({List<int>? ids}) async {
     final feed = state.valueOrNull;
     if (feed != null) {
-      state = AsyncData(feed.copyWith(
-        items: [
-          for (final e in feed.items)
-            if (!e.notification.isRead && (ids == null || ids.contains(e.notification.id)))
-              e.markedRead()
-            else
-              e,
-        ],
-      ),);
+      state = AsyncData(
+        feed.copyWith(
+          items: [
+            for (final e in feed.items)
+              if (!e.notification.isRead &&
+                  (ids == null || ids.contains(e.notification.id)))
+                e.markedRead()
+              else
+                e,
+          ],
+        ),
+      );
     }
     try {
       await _repo.markRead(ids: ids);
@@ -172,7 +191,7 @@ class NotificationsController extends AutoDisposeAsyncNotifier<NotificationsFeed
   }
 }
 
-final notificationsControllerProvider =
-    AsyncNotifierProvider.autoDispose<NotificationsController, NotificationsFeed>(
+final notificationsControllerProvider = AsyncNotifierProvider.autoDispose<
+    NotificationsController, NotificationsFeed>(
   NotificationsController.new,
 );

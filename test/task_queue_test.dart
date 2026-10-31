@@ -61,7 +61,8 @@ void main() {
       'assigned, not accepted': item(
         row(id: 3, technician: _tech, assignedAt: '2026-10-01T11:50:00Z'),
       ),
-      'assigned, null assigned_at (legacy)': item(row(id: 4, technician: _tech)),
+      'assigned, null assigned_at (legacy)':
+          item(row(id: 4, technician: _tech)),
       'accepted, not started': item(
         row(id: 5, technician: _tech, acceptedAt: '2026-10-01T11:00:00Z'),
       ),
@@ -117,8 +118,10 @@ void main() {
           for (final t in list) t.id,
       ];
       expect(ids.toSet().length, ids.length);
-      expect(b[QueueBucket.unassigned]!.map((t) => t.id), unorderedEquals(['1', '2']));
-      expect(b[QueueBucket.awaiting]!.map((t) => t.id), unorderedEquals(['3', '4', '11']));
+      expect(b[QueueBucket.unassigned]!.map((t) => t.id),
+          unorderedEquals(['1', '2']));
+      expect(b[QueueBucket.awaiting]!.map((t) => t.id),
+          unorderedEquals(['3', '4', '11']));
       expect(
         b[QueueBucket.assigned]!.map((t) => t.id),
         unorderedEquals(['5', '6', '7', '8', '12']),

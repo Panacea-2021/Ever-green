@@ -33,7 +33,8 @@ class TaskStepsSection extends StatelessWidget {
       number: '2',
       icon: '$_assets/hiw_user_round.svg',
       title: 'Technician will come',
-      body: 'Our certified technician will be assigned and visit your location.',
+      body:
+          'Our certified technician will be assigned and visit your location.',
     ),
     (
       number: '3',

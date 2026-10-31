@@ -62,7 +62,11 @@ void main() {
     });
 
     test('no links yields an empty list', () {
-      expect(companiesFromMe({'data': {'company_user': []}}), isEmpty);
+      expect(
+          companiesFromMe({
+            'data': {'company_user': []}
+          }),
+          isEmpty);
       expect(companiesFromMe({'data': {}}), isEmpty);
       expect(companiesFromMe(null), isEmpty);
     });

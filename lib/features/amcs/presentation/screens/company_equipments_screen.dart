@@ -373,7 +373,8 @@ class _CompanyEquipmentsScreenState
       await ref.read(equipmentApiProvider).setActive(equipment.id, activate);
       ref.invalidate(equipmentsProvider);
       ref.invalidate(equipmentInfoProvider);
-      _snack(activate ? 'Equipment marked active' : 'Equipment marked inactive');
+      _snack(
+          activate ? 'Equipment marked active' : 'Equipment marked inactive');
     } catch (e) {
       _snack('$e', error: true);
     } finally {
@@ -499,7 +500,8 @@ class _CompanyEquipmentsScreenState
                           value: 'details',
                           child: Text('View details'),
                         ),
-                        const PopupMenuItem(value: 'qr', child: Text('QR code')),
+                        const PopupMenuItem(
+                            value: 'qr', child: Text('QR code')),
                         if (canManage)
                           PopupMenuItem(
                             value: 'toggle',

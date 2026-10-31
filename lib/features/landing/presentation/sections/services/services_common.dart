@@ -332,41 +332,41 @@ class _SvcButtonState extends State<SvcButton> {
     return SelectionContainer.disabled(
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.compact ? 16 : 22,
-            vertical: widget.compact ? 10 : 14,
-          ),
-          decoration: BoxDecoration(
-            color: bg,
-            border: Border.all(color: border),
-            borderRadius: BorderRadius.circular(LandingRadius.pill),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                widget.label,
-                style: svcText(
-                  size: widget.compact ? 13 : 14,
-                  weight: FontWeight.w600,
-                  color: fg,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.compact ? 16 : 22,
+              vertical: widget.compact ? 10 : 14,
+            ),
+            decoration: BoxDecoration(
+              color: bg,
+              border: Border.all(color: border),
+              borderRadius: BorderRadius.circular(LandingRadius.pill),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.label,
+                  style: svcText(
+                    size: widget.compact ? 13 : 14,
+                    weight: FontWeight.w600,
+                    color: fg,
+                  ),
                 ),
-              ),
-              if (widget.showArrow) ...[
-                const SizedBox(width: 8),
-                Icon(Icons.arrow_forward, size: 16, color: fg),
+                if (widget.showArrow) ...[
+                  const SizedBox(width: 8),
+                  Icon(Icons.arrow_forward, size: 16, color: fg),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }

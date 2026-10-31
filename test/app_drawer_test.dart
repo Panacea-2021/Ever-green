@@ -79,7 +79,8 @@ void main() {
     }
   });
 
-  testWidgets('POC drawer: no Users List / AMC Renewals; has history + password',
+  testWidgets(
+      'POC drawer: no Users List / AMC Renewals; has history + password',
       (tester) async {
     final titles = await _drawerTitles(tester, UserRole.client);
     expect(titles, isNot(contains('Users List')));

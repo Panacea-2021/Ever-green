@@ -118,7 +118,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 24),
                     ],
 
-                    _sectionHeader(showOrgOverview ? 'Task Status' : 'My Task Status'),
+                    _sectionHeader(
+                        showOrgOverview ? 'Task Status' : 'My Task Status'),
                     const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -517,11 +518,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final role = ref.watch(currentUserRoleProvider);
     if (!Permissions.canViewOrgOverview(role)) return _buildMyTasksSummaryBar();
     final users = _userStats?.total ?? _users?.length;
-    final amcs = ref
-        .watch(companiesProvider)
-        .valueOrNull
-        ?.where((c) => c.isAmc)
-        .length;
+    final amcs =
+        ref.watch(companiesProvider).valueOrNull?.where((c) => c.isAmc).length;
     final tasks = _counts?.total;
 
     return _summaryCard([

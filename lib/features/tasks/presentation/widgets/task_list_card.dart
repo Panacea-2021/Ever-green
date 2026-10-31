@@ -327,24 +327,39 @@ class _TaskListCardState extends State<TaskListCard> {
           ],
         ),
         const SizedBox(height: 8),
-        _infoRow(Icons.person_outline, 'Service Engineer',
-            t.hasAssignee ? t.assignee : '-',),
+        _infoRow(
+          Icons.person_outline,
+          'Service Engineer',
+          t.hasAssignee ? t.assignee : '-',
+        ),
         const SizedBox(height: 4),
         if (t.isIndividual)
-          _infoRow(Icons.location_on_outlined, 'Address',
-              t.address.isEmpty ? '-' : t.address,)
+          _infoRow(
+            Icons.location_on_outlined,
+            'Address',
+            t.address.isEmpty ? '-' : t.address,
+          )
         else
-          _infoRow(Icons.apartment_outlined, 'Company',
-              t.companyName.isEmpty ? '-' : t.companyName,),
+          _infoRow(
+            Icons.apartment_outlined,
+            'Company',
+            t.companyName.isEmpty ? '-' : t.companyName,
+          ),
         const SizedBox(height: 4),
-        _infoRow(Icons.confirmation_number_outlined, 'Ticket No',
-            t.ticketNo.isEmpty ? '-' : t.ticketNo,),
+        _infoRow(
+          Icons.confirmation_number_outlined,
+          'Ticket No',
+          t.ticketNo.isEmpty ? '-' : t.ticketNo,
+        ),
         if (overdueLine(t) != null) ...[
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded,
-                  size: 15, color: Color(0xFFD32F2F),),
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 15,
+                color: Color(0xFFD32F2F),
+              ),
               const SizedBox(width: 5),
               Text(
                 overdueLine(t)!,
@@ -543,5 +558,3 @@ class _TaskListCardState extends State<TaskListCard> {
     return '$dd-$mm-${d.year}';
   }
 }
-
-

@@ -11,7 +11,8 @@ class TechniciansListScreen extends ConsumerStatefulWidget {
   const TechniciansListScreen({super.key});
 
   @override
-  ConsumerState<TechniciansListScreen> createState() => _TechniciansListScreenState();
+  ConsumerState<TechniciansListScreen> createState() =>
+      _TechniciansListScreenState();
 }
 
 class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
@@ -42,7 +43,9 @@ class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
   Widget build(BuildContext context) {
     final async = ref.watch(techniciansProvider);
     final technicians = _filter(
-      (async.valueOrNull ?? const <User>[]).map(TechnicianInfo.fromUser).toList(),
+      (async.valueOrNull ?? const <User>[])
+          .map(TechnicianInfo.fromUser)
+          .toList(),
     );
 
     Widget body;
@@ -51,7 +54,9 @@ class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
     } else if (!async.hasValue && async.hasError) {
       body = _message('${async.error}', retry: true);
     } else if (technicians.isEmpty) {
-      body = _message(_searchQuery.isEmpty ? 'No service engineers yet' : 'No matching service engineers');
+      body = _message(_searchQuery.isEmpty
+          ? 'No service engineers yet'
+          : 'No matching service engineers');
     } else {
       body = RefreshIndicator(
         color: _addGreen,
@@ -63,7 +68,8 @@ class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(17, 0, 17, 24),
           itemCount: technicians.length,
-          itemBuilder: (context, index) => _buildTechnicianCard(technicians[index]),
+          itemBuilder: (context, index) =>
+              _buildTechnicianCard(technicians[index]),
         ),
       );
     }
@@ -270,9 +276,11 @@ class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    _infoRow(Icons.email, 'Email', technician.email.isEmpty ? '-' : technician.email),
+                    _infoRow(Icons.email, 'Email',
+                        technician.email.isEmpty ? '-' : technician.email),
                     const SizedBox(height: 8),
-                    _infoRow(Icons.phone, 'Mobile', technician.mobile.isEmpty ? '-' : technician.mobile),
+                    _infoRow(Icons.phone, 'Mobile',
+                        technician.mobile.isEmpty ? '-' : technician.mobile),
                     const SizedBox(height: 8),
                     _infoRow(Icons.person, 'Role', technician.role),
                   ],

@@ -80,10 +80,14 @@ void main() {
       onAssign: () => assigns++,
     );
     expect(find.text('Fridge not cooling'), findsOneWidget);
-    expect(find.textContaining('Equipment : ', findRichText: true), findsOneWidget);
-    expect(find.textContaining('Company : ', findRichText: true), findsOneWidget);
-    expect(find.textContaining('S.No : TKT-12', findRichText: true), findsOneWidget);
-    expect(find.textContaining('Created At : 01-10-2026', findRichText: true), findsOneWidget);
+    expect(find.textContaining('Equipment : ', findRichText: true),
+        findsOneWidget);
+    expect(
+        find.textContaining('Company : ', findRichText: true), findsOneWidget);
+    expect(find.textContaining('S.No : TKT-12', findRichText: true),
+        findsOneWidget);
+    expect(find.textContaining('Created At : 01-10-2026', findRichText: true),
+        findsOneWidget);
     expect(find.text('Reassign'), findsOneWidget);
     await tester.tap(find.text('Report'));
     await tester.tap(find.text('Reassign'));
@@ -92,20 +96,25 @@ void main() {
   });
 
   testWidgets('unassigned ticket shows Assign', (tester) async {
-    await pumpCard(tester, item(row(status: 'open', technician: null)), onAssign: () {});
+    await pumpCard(tester, item(row(status: 'open', technician: null)),
+        onAssign: () {});
     expect(find.text('Assign'), findsOneWidget);
   });
 
-  testWidgets('roles without assign get a full-width Report only', (tester) async {
+  testWidgets('roles without assign get a full-width Report only',
+      (tester) async {
     await pumpCard(tester, item(row()));
     expect(find.text('Assign'), findsNothing);
     expect(find.text('Reassign'), findsNothing);
-    final report = tester.getSize(find.ancestor(of: find.text('Report'), matching: find.byType(Container)).first);
+    final report = tester.getSize(find
+        .ancestor(of: find.text('Report'), matching: find.byType(Container))
+        .first);
     final card = tester.getSize(find.byType(TaskBoardCard));
     expect(report.width, greaterThan(card.width * 0.8));
   });
 
-  testWidgets('star is filled for high priority and toggles when allowed', (tester) async {
+  testWidgets('star is filled for high priority and toggles when allowed',
+      (tester) async {
     var toggles = 0;
     await pumpCard(tester, item(row()), onToggleStar: () => toggles++);
     expect(find.byIcon(Icons.star), findsOneWidget);
@@ -120,15 +129,20 @@ void main() {
   testWidgets('individual ticket shows contact and address', (tester) async {
     await pumpCard(tester, item(row(individual: true)));
     expect(find.text('Individual'), findsOneWidget);
-    expect(find.textContaining('Address : 12 MG Road, Pune', findRichText: true), findsOneWidget);
-    expect(find.textContaining('Contact : Anil Kumar', findRichText: true), findsOneWidget);
-    expect(find.textContaining('Equipment : ', findRichText: true), findsNothing);
+    expect(
+        find.textContaining('Address : 12 MG Road, Pune', findRichText: true),
+        findsOneWidget);
+    expect(find.textContaining('Contact : Anil Kumar', findRichText: true),
+        findsOneWidget);
+    expect(
+        find.textContaining('Equipment : ', findRichText: true), findsNothing);
   });
 
   testWidgets('overdue tickets show the SLA line', (tester) async {
     await pumpCard(tester, item(row()));
     expect(find.textContaining('Overdue by'), findsOneWidget);
-    final fresh = item(row(createdAt: DateTime.now().toUtc().toIso8601String()));
+    final fresh =
+        item(row(createdAt: DateTime.now().toUtc().toIso8601String()));
     await pumpCard(tester, fresh);
     expect(find.textContaining('Overdue by'), findsNothing);
   });

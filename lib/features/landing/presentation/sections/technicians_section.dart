@@ -442,8 +442,11 @@ class _TechnicianCardState extends State<_TechnicianCard> {
                               ),
                             ),
                           ),
-                          const Icon(Icons.star,
-                              size: 15, color: Color(0xFFFFAC18),),
+                          const Icon(
+                            Icons.star,
+                            size: 15,
+                            color: Color(0xFFFFAC18),
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             '${technician.rating} ',

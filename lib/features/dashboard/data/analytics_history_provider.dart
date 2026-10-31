@@ -107,9 +107,8 @@ List<AnalyticsSnapshot> buildAnalyticsHistory({
   List<Equipment>? equipment,
 }) {
   final out = <AnalyticsSnapshot>[];
-  final amcCompanies = (companies ?? const <Company>[])
-      .where((c) => c.isAmc)
-      .toList();
+  final amcCompanies =
+      (companies ?? const <Company>[]).where((c) => c.isAmc).toList();
 
   for (var m = DateTime(now.year - analyticsYearsBack);
       !m.isAfter(DateTime(now.year, now.month));

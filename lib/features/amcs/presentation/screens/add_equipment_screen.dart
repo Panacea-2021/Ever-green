@@ -866,9 +866,8 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
         ? EquipmentStatusX.fromKey(edit?['status']?.toString())
         : EquipmentStatus.operational;
     final editType = edit?['type']?.toString().trim() ?? '';
-    final type = widget.isEdit
-        ? (editType.isEmpty ? null : editType)
-        : (model ?? make);
+    final type =
+        widget.isEdit ? (editType.isEmpty ? null : editType) : (model ?? make);
     final installedAt = widget.isEdit
         ? DateTime.tryParse('${edit?['installedAt'] ?? ''}')
         : DateTime.now();

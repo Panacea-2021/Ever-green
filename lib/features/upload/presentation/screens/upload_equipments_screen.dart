@@ -495,7 +495,8 @@ class _UploadEquipmentsScreenState
         rows: equipmentSampleRows,
       );
       if (path != null) {
-        _snack('Sample Excel saved. Replace the example rows with your equipment.');
+        _snack(
+            'Sample Excel saved. Replace the example rows with your equipment.');
       }
     } catch (e) {
       _snack('Could not save the sample Excel: $e', error: true);

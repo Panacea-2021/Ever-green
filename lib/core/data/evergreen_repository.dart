@@ -47,7 +47,8 @@ class EvergreenRepository {
   }
 
   /// Admin-only on the backend.
-  Future<List<User>> getUsers({String? accessLevel, String? designation}) async {
+  Future<List<User>> getUsers(
+      {String? accessLevel, String? designation}) async {
     final body = unwrap(
       await api.post<dynamic>(
         'user/getAllUser',
@@ -61,8 +62,10 @@ class EvergreenRepository {
   }
 
   /// Uploads one file to `upload-file` and returns the stored URL/path.
-  Future<String> uploadFile(String filePath, {required String folderName}) async {
-    final form = FormData.fromMap({'file': await MultipartFile.fromFile(filePath)});
+  Future<String> uploadFile(String filePath,
+      {required String folderName}) async {
+    final form =
+        FormData.fromMap({'file': await MultipartFile.fromFile(filePath)});
     final body = unwrap(
       await api.post<dynamic>(
         'user/upload-file',
@@ -116,9 +119,13 @@ final tasksProvider = FutureProvider.autoDispose<List<ServiceTask>>((ref) {
 /// All equipment visible to the user, or one company's when [companyId] is set.
 final equipmentsProvider =
     FutureProvider.autoDispose.family<List<Equipment>, int?>((ref, companyId) {
-  return ref.watch(evergreenRepositoryProvider).getEquipments(companyId: companyId);
+  return ref
+      .watch(evergreenRepositoryProvider)
+      .getEquipments(companyId: companyId);
 });
 
 final techniciansProvider = FutureProvider.autoDispose<List<User>>((ref) {
-  return ref.watch(evergreenRepositoryProvider).getUsers(accessLevel: 'technician');
+  return ref
+      .watch(evergreenRepositoryProvider)
+      .getUsers(accessLevel: 'technician');
 });

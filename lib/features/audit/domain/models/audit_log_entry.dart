@@ -121,7 +121,8 @@ class AuditLogEntry {
     String str(dynamic v) => v == null ? '' : '$v'.trim();
     return AuditLogEntry(
       id: str(json['id']),
-      actorName: str(json['actor_name']).isEmpty ? 'Unknown' : str(json['actor_name']),
+      actorName:
+          str(json['actor_name']).isEmpty ? 'Unknown' : str(json['actor_name']),
       actorRole: _roleLabel(str(json['actor_role'])),
       action: AuditActionX.fromBackend(json['action']),
       entity: AuditEntityX.fromKey(str(json['entity'])),

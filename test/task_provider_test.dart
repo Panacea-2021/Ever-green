@@ -52,7 +52,8 @@ Map<String, dynamic> row({
 TaskItem item(Map<String, dynamic> json) =>
     TaskItem.fromService(ServiceTask.fromJson(json));
 
-User user(UserRole role, int id) => User(id: '$id', email: '', name: 'U$id', role: role);
+User user(UserRole role, int id) =>
+    User(id: '$id', email: '', name: 'U$id', role: role);
 
 void main() {
   group('TaskItem.fromService', () {
@@ -78,7 +79,8 @@ void main() {
       expect(t.approval, ApprovalState.approved);
     });
 
-    test('SLA follows the design: due date, else created + priority window', () {
+    test('SLA follows the design: due date, else created + priority window',
+        () {
       final created = DateTime.now().toUtc().subtract(const Duration(hours: 2));
       final fresh = item(row(createdAt: created.toIso8601String()));
       expect(fresh.isOverdue(), isFalse);
@@ -93,7 +95,10 @@ void main() {
 
     test('completed shows in the closed tab, awaiting client confirmation', () {
       final t = item(
-        row(status: 'completed', approval: 'completed', technician: {'id': 4, 'name': 'Nazir'}),
+        row(
+            status: 'completed',
+            approval: 'completed',
+            technician: {'id': 4, 'name': 'Nazir'}),
       );
       expect(t.serviceStatus, ServiceStatus.completed);
       expect(t.status, TaskStatus.closed);
@@ -106,7 +111,9 @@ void main() {
       final t = item(row(technician: {'id': 4, 'name': 'Nazir'}));
       expect(t.isAwaitingAcceptance, isTrue);
       final accepted = item(
-        row(technician: {'id': 4, 'name': 'Nazir'}, acceptedAt: '2026-10-01T11:00:00Z'),
+        row(
+            technician: {'id': 4, 'name': 'Nazir'},
+            acceptedAt: '2026-10-01T11:00:00Z'),
       );
       expect(accepted.isAwaitingAcceptance, isFalse);
     });
@@ -117,30 +124,53 @@ void main() {
 
     test('manager assigns an unassigned ticket but cannot start it', () {
       final a = taskActionsFor(item(row()), user(UserRole.manager, 1));
-      expect(a, containsAll([TaskAction.serviceReport, TaskAction.assign, TaskAction.priority, TaskAction.status]));
+      expect(
+          a,
+          containsAll([
+            TaskAction.serviceReport,
+            TaskAction.assign,
+            TaskAction.priority,
+            TaskAction.status
+          ]));
       expect(a, isNot(contains(TaskAction.startWork)));
     });
 
     test('overdue, unescalated tickets can be escalated by managers', () {
-      final a = taskActionsFor(item(row(technician: tech)), user(UserRole.manager, 1));
-      expect(a, containsAll([TaskAction.reassign, TaskAction.unassign, TaskAction.escalate]));
+      final a = taskActionsFor(
+          item(row(technician: tech)), user(UserRole.manager, 1));
+      expect(
+          a,
+          containsAll(
+              [TaskAction.reassign, TaskAction.unassign, TaskAction.escalate]));
     });
 
     test('assigned technician accepts, then starts, holds and completes', () {
       final me = user(UserRole.technician, 4);
-      expect(taskActionsFor(item(row(technician: tech)), me), contains(TaskAction.accept));
-      final accepted = item(row(technician: tech, acceptedAt: '2026-10-01T11:00:00Z'));
-      expect(taskActionsFor(accepted, me), containsAll([TaskAction.startWork, TaskAction.hold]));
-      final working = taskActionsFor(item(row(status: 'in_progress', technician: tech)), me);
-      expect(working, containsAll([TaskAction.addScreenshot, TaskAction.complete, TaskAction.hold]));
+      expect(taskActionsFor(item(row(technician: tech)), me),
+          contains(TaskAction.accept));
+      final accepted =
+          item(row(technician: tech, acceptedAt: '2026-10-01T11:00:00Z'));
+      expect(taskActionsFor(accepted, me),
+          containsAll([TaskAction.startWork, TaskAction.hold]));
+      final working = taskActionsFor(
+          item(row(status: 'in_progress', technician: tech)), me);
+      expect(
+          working,
+          containsAll([
+            TaskAction.addScreenshot,
+            TaskAction.complete,
+            TaskAction.hold
+          ]));
     });
 
     test('another technician only sees the service report', () {
-      final a = taskActionsFor(item(row(technician: tech)), user(UserRole.technician, 99));
+      final a = taskActionsFor(
+          item(row(technician: tech)), user(UserRole.technician, 99));
       expect(a, [TaskAction.serviceReport]);
     });
 
-    test('admins and senior technicians approve or reject requested tickets', () {
+    test('admins and senior technicians approve or reject requested tickets',
+        () {
       final requested = item(row(approval: 'requested'));
       expect(
         taskActionsFor(requested, user(UserRole.seniorTechnician, 6)),
@@ -152,22 +182,37 @@ void main() {
           containsAll([TaskAction.approve, TaskAction.reject]),
         );
       }
-      for (final role in [UserRole.technician, UserRole.clientAdmin, UserRole.client]) {
-        expect(taskActionsFor(requested, user(role, 4)), isNot(contains(TaskAction.approve)));
+      for (final role in [
+        UserRole.technician,
+        UserRole.clientAdmin,
+        UserRole.client
+      ]) {
+        expect(taskActionsFor(requested, user(role, 4)),
+            isNot(contains(TaskAction.approve)));
       }
     });
 
     test('client-side roles confirm & rate completed, unrated work', () {
-      final done = item(row(status: 'completed', approval: 'completed', technician: tech));
-      expect(taskActionsFor(done, user(UserRole.clientAdmin, 8)), contains(TaskAction.rate));
-      final rated = item(row(status: 'completed', approval: 'completed', technician: tech, rating: 4));
-      expect(taskActionsFor(rated, user(UserRole.clientAdmin, 8)), isNot(contains(TaskAction.rate)));
+      final done = item(
+          row(status: 'completed', approval: 'completed', technician: tech));
+      expect(taskActionsFor(done, user(UserRole.clientAdmin, 8)),
+          contains(TaskAction.rate));
+      final rated = item(row(
+          status: 'completed',
+          approval: 'completed',
+          technician: tech,
+          rating: 4));
+      expect(taskActionsFor(rated, user(UserRole.clientAdmin, 8)),
+          isNot(contains(TaskAction.rate)));
     });
 
     test('super admin keeps controls on closed tickets; managers do not', () {
-      final closed = item(row(status: 'closed', approval: 'confirmed', technician: tech));
-      expect(taskActionsFor(closed, user(UserRole.superAdmin, 1)), contains(TaskAction.status));
-      expect(taskActionsFor(closed, user(UserRole.manager, 1)), [TaskAction.serviceReport]);
+      final closed =
+          item(row(status: 'closed', approval: 'confirmed', technician: tech));
+      expect(taskActionsFor(closed, user(UserRole.superAdmin, 1)),
+          contains(TaskAction.status));
+      expect(taskActionsFor(closed, user(UserRole.manager, 1)),
+          [TaskAction.serviceReport]);
     });
 
     test('a ticket on hold can be resumed by its technician', () {
@@ -176,7 +221,12 @@ void main() {
           status: 'hold',
           technician: tech,
           holds: [
-            {'id': 30, 'hold': 'spare_required', 'is_active': true, 'spare_part_number': 'SP-1'},
+            {
+              'id': 30,
+              'hold': 'spare_required',
+              'is_active': true,
+              'spare_part_number': 'SP-1'
+            },
           ],
         ),
       );
@@ -193,38 +243,57 @@ void main() {
         taskDetailActionsFor(open, manager),
         [...taskActionsFor(open, manager), TaskAction.delete],
       );
-      for (final role in [UserRole.seniorTechnician, UserRole.technician, UserRole.clientAdmin, UserRole.client]) {
-        expect(taskDetailActionsFor(open, user(role, 4)), isNot(contains(TaskAction.delete)), reason: '$role');
+      for (final role in [
+        UserRole.seniorTechnician,
+        UserRole.technician,
+        UserRole.clientAdmin,
+        UserRole.client
+      ]) {
+        expect(taskDetailActionsFor(open, user(role, 4)),
+            isNot(contains(TaskAction.delete)),
+            reason: '$role');
       }
     });
 
     test('task details expose the technician workflow to the assignee', () {
       final me = user(UserRole.technician, 4);
-      expect(taskDetailActionsFor(item(row(technician: tech)), me), contains(TaskAction.accept));
+      expect(taskDetailActionsFor(item(row(technician: tech)), me),
+          contains(TaskAction.accept));
       final working = item(row(status: 'in_progress', technician: tech));
       expect(
         taskDetailActionsFor(working, me),
-        containsAll([TaskAction.addScreenshot, TaskAction.complete, TaskAction.hold]),
+        containsAll(
+            [TaskAction.addScreenshot, TaskAction.complete, TaskAction.hold]),
       );
     });
 
-    test('task details expose approve / reject, escalate and rate per role', () {
+    test('task details expose approve / reject, escalate and rate per role',
+        () {
       final requested = item(row(approval: 'requested'));
       expect(
         taskDetailActionsFor(requested, user(UserRole.seniorTechnician, 6)),
         containsAll([TaskAction.approve, TaskAction.reject]),
       );
       expect(
-        taskDetailActionsFor(item(row(technician: tech)), user(UserRole.superAdmin, 1)),
-        containsAll([TaskAction.escalate, TaskAction.unassign, TaskAction.status, TaskAction.delete]),
+        taskDetailActionsFor(
+            item(row(technician: tech)), user(UserRole.superAdmin, 1)),
+        containsAll([
+          TaskAction.escalate,
+          TaskAction.unassign,
+          TaskAction.status,
+          TaskAction.delete
+        ]),
       );
-      final done = item(row(status: 'completed', approval: 'completed', technician: tech));
-      expect(taskDetailActionsFor(done, user(UserRole.client, 5)), contains(TaskAction.rate));
+      final done = item(
+          row(status: 'completed', approval: 'completed', technician: tech));
+      expect(taskDetailActionsFor(done, user(UserRole.client, 5)),
+          contains(TaskAction.rate));
     });
 
     test('priority star is editable only for triage roles', () {
       final open = item(row(status: 'in_progress', technician: tech));
-      final closed = item(row(status: 'closed', approval: 'confirmed', technician: tech));
+      final closed =
+          item(row(status: 'closed', approval: 'confirmed', technician: tech));
       expect(canToggleTaskPriority(open, UserRole.manager), isTrue);
       expect(canToggleTaskPriority(open, UserRole.seniorTechnician), isTrue);
       expect(canToggleTaskPriority(open, UserRole.technician), isFalse);
@@ -236,7 +305,8 @@ void main() {
 
     test('card Assign shows only for assigning roles', () {
       final open = item(row(status: 'in_progress', technician: tech));
-      final closed = item(row(status: 'closed', approval: 'confirmed', technician: tech));
+      final closed =
+          item(row(status: 'closed', approval: 'confirmed', technician: tech));
       expect(canAssignFromCard(open, UserRole.manager), isTrue);
       expect(canAssignFromCard(open, UserRole.seniorTechnician), isTrue);
       expect(canAssignFromCard(open, UserRole.technician), isFalse);

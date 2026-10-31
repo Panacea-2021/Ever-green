@@ -78,7 +78,9 @@ void main() {
       expect(sai.daysUntilExpiry(now), 3);
       expect(sai.status(now), AmcStatus.expiringSoon);
       expect(
-        contracts.where((c) => c.status(now) != AmcStatus.active).map((c) => c.id),
+        contracts
+            .where((c) => c.status(now) != AmcStatus.active)
+            .map((c) => c.id),
         ['4'],
       );
     });
@@ -200,14 +202,17 @@ void main() {
 
   group('addMonthsClamped', () {
     test('plain months', () {
-      expect(addMonthsClamped(DateTime(2026, 10, 30), 12), DateTime(2027, 10, 30));
-      expect(addMonthsClamped(DateTime(2026, 10, 30), 24), DateTime(2028, 10, 30));
+      expect(
+          addMonthsClamped(DateTime(2026, 10, 30), 12), DateTime(2027, 10, 30));
+      expect(
+          addMonthsClamped(DateTime(2026, 10, 30), 24), DateTime(2028, 10, 30));
     });
 
     test('clamps to the end of a shorter month', () {
       expect(addMonthsClamped(DateTime(2026, 8, 31), 6), DateTime(2027, 2, 28));
       expect(addMonthsClamped(DateTime(2027, 8, 31), 6), DateTime(2028, 2, 29));
-      expect(addMonthsClamped(DateTime(2028, 2, 29), 12), DateTime(2029, 2, 28));
+      expect(
+          addMonthsClamped(DateTime(2028, 2, 29), 12), DateTime(2029, 2, 28));
     });
   });
 }

@@ -10,7 +10,8 @@ import '../domain/models/task_item.dart';
 /// Tickets from `user/getAllTasks` (already scoped per role by the backend)
 /// as [TaskItem]s, with loading / error state. Screens that need a spinner or
 /// retry watch this; refresh with `ref.invalidate(tasksProvider)`.
-final taskItemsProvider = Provider.autoDispose<AsyncValue<List<TaskItem>>>((ref) {
+final taskItemsProvider =
+    Provider.autoDispose<AsyncValue<List<TaskItem>>>((ref) {
   return ref
       .watch(tasksProvider)
       .whenData((tasks) => tasks.map(TaskItem.fromService).toList());
@@ -125,7 +126,8 @@ class TechnicianStats {
   bool get isOverloaded => active >= 3;
 }
 
-final technicianStatsProvider = Provider.autoDispose<List<TechnicianStats>>((ref) {
+final technicianStatsProvider =
+    Provider.autoDispose<List<TechnicianStats>>((ref) {
   final tasks = ref.watch(taskProvider);
   final byTech = <int, List<TaskItem>>{};
   for (final t in tasks) {
@@ -463,7 +465,8 @@ class TaskActions {
     );
     final encoded = body is Map ? body['pdf_base64']?.toString() : null;
     if (encoded == null || encoded.isEmpty) {
-      throw const RepositoryException('The service report could not be generated');
+      throw const RepositoryException(
+          'The service report could not be generated');
     }
     return base64Decode(encoded);
   }

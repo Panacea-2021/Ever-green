@@ -89,9 +89,24 @@ void main() {
       final h = buildAnalyticsHistory(
         now: now,
         users: [
-          User(id: '1', email: 'a', name: 'A', role: UserRole.client, createdAt: DateTime(2026, 8, 3)),
-          User(id: '2', email: 'b', name: 'B', role: UserRole.clientAdmin, createdAt: DateTime(2026, 10, 1)),
-          User(id: '3', email: 'c', name: 'C', role: UserRole.technician, createdAt: DateTime(2026, 9, 20)),
+          User(
+              id: '1',
+              email: 'a',
+              name: 'A',
+              role: UserRole.client,
+              createdAt: DateTime(2026, 8, 3)),
+          User(
+              id: '2',
+              email: 'b',
+              name: 'B',
+              role: UserRole.clientAdmin,
+              createdAt: DateTime(2026, 10, 1)),
+          User(
+              id: '3',
+              email: 'c',
+              name: 'C',
+              role: UserRole.technician,
+              createdAt: DateTime(2026, 9, 20)),
         ],
       );
       final sep = h[h.length - 2];

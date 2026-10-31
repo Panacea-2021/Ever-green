@@ -63,8 +63,9 @@ class EquipmentPickerScreen extends ConsumerWidget {
       onRetry: () => ref.invalidate(equipmentsProvider(companyId)),
       emptyText: 'No equipment for this company',
       itemBuilder: (context, e) {
-        final makeModel =
-            [e.make ?? '', e.model ?? ''].where((s) => s.isNotEmpty).join(' · ');
+        final makeModel = [e.make ?? '', e.model ?? '']
+            .where((s) => s.isNotEmpty)
+            .join(' · ');
         final serials = [
           if (e.egSerialNumber.isNotEmpty) 'EG ${e.egSerialNumber}',
           if ((e.serialNumber ?? '').isNotEmpty) 'S.No ${e.serialNumber}',

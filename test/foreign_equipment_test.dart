@@ -37,7 +37,9 @@ User user(UserRole role, [List<int> companyIds = const []]) => User(
       email: 'u@x.com',
       name: 'U',
       role: role,
-      companies: [for (final id in companyIds) UserCompany(id: id, name: 'C$id')],
+      companies: [
+        for (final id in companyIds) UserCompany(id: id, name: 'C$id')
+      ],
     );
 
 Map<String, dynamic> equipmentBody(int companyId) => {

@@ -105,10 +105,12 @@ void main() {
 
   group('ScaffoldWithBottomNav widget', () {
     for (final role in UserRole.values) {
-      testWidgets('${role.name}: tabs and center button render without overflow',
+      testWidgets(
+          '${role.name}: tabs and center button render without overflow',
           (tester) async {
         await _pumpShell(tester, role);
-        final expected = ScaffoldWithBottomNav.tabsFor(role).map((t) => t.label);
+        final expected =
+            ScaffoldWithBottomNav.tabsFor(role).map((t) => t.label);
         for (final label in expected) {
           expect(find.text(label), findsOneWidget, reason: '$role $label');
         }

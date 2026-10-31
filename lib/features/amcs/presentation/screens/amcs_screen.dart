@@ -497,8 +497,12 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value,
-      {double size = 14,}) {
+  Widget _infoRow(
+    IconData icon,
+    String label,
+    String value, {
+    double size = 14,
+  }) {
     return Row(
       children: [
         Icon(icon, color: Colors.black54, size: size),

@@ -60,7 +60,8 @@ class AuditLogRepository {
   /// Admins see every row; a Client Admin sees rows by their companies'
   /// users; POCs and service engineers see only their own actions. Newest
   /// first. A backend that still refuses the role (403) yields an empty page.
-  Future<(List<AuditLogEntry>, int)> getPage(int page, {AuditEntity? entity}) async {
+  Future<(List<AuditLogEntry>, int)> getPage(int page,
+      {AuditEntity? entity}) async {
     final result = await _repo.api.post<dynamic>(
       'user/getAuditLogs',
       data: {
@@ -77,7 +78,8 @@ class AuditLogRepository {
     final inner = body is Map && body['data'] is Map ? body['data'] : body;
     final rows = dataList(inner).map(AuditLogEntry.fromBackend).toList();
     final rawTotal = inner is Map ? inner['total'] : null;
-    final total = rawTotal is num ? rawTotal.toInt() : int.tryParse('$rawTotal');
+    final total =
+        rawTotal is num ? rawTotal.toInt() : int.tryParse('$rawTotal');
     return (rows, total ?? rows.length);
   }
 }
@@ -97,7 +99,8 @@ class AuditLogController
       items: items,
       total: total,
       page: 1,
-      hasMore: items.length < total && items.length >= AuditLogRepository.pageSize,
+      hasMore:
+          items.length < total && items.length >= AuditLogRepository.pageSize,
     );
   }
 
@@ -110,14 +113,20 @@ class AuditLogController
           .read(auditLogRepositoryProvider)
           .getPage(feed.page + 1, entity: arg);
       final seen = feed.items.map((e) => e.id).toSet();
-      final merged = [...feed.items, ...items.where((e) => !seen.contains(e.id))];
-      state = AsyncData(feed.copyWith(
-        items: merged,
-        total: total,
-        page: feed.page + 1,
-        hasMore: items.length >= AuditLogRepository.pageSize && merged.length < total,
-        loadingMore: false,
-      ),);
+      final merged = [
+        ...feed.items,
+        ...items.where((e) => !seen.contains(e.id))
+      ];
+      state = AsyncData(
+        feed.copyWith(
+          items: merged,
+          total: total,
+          page: feed.page + 1,
+          hasMore: items.length >= AuditLogRepository.pageSize &&
+              merged.length < total,
+          loadingMore: false,
+        ),
+      );
     } catch (e) {
       state = AsyncData(feed.copyWith(loadingMore: false, loadMoreError: e));
     }
@@ -125,4 +134,5 @@ class AuditLogController
 }
 
 final auditLogProvider = AsyncNotifierProvider.autoDispose
-    .family<AuditLogController, AuditLogFeed, AuditEntity?>(AuditLogController.new);
+    .family<AuditLogController, AuditLogFeed, AuditEntity?>(
+        AuditLogController.new);

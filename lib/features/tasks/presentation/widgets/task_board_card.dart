@@ -54,7 +54,8 @@ class TaskBoardCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
           boxShadow: const [
-            BoxShadow(color: Color(0xFFE0D9EE), blurRadius: 32, offset: Offset(0, 4)),
+            BoxShadow(
+                color: Color(0xFFE0D9EE), blurRadius: 32, offset: Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -97,7 +98,8 @@ class TaskBoardCard extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.location_on, color: _darkGreen, size: 16),
+                              const Icon(Icons.location_on,
+                                  color: _darkGreen, size: 16),
                               const SizedBox(width: 4),
                               ConstrainedBox(
                                 constraints: const BoxConstraints(maxWidth: 70),
@@ -148,7 +150,8 @@ class TaskBoardCard extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: 'Created At : ',
-                    style: TextStyle(color: Colors.black.withValues(alpha: 0.4)),
+                    style:
+                        TextStyle(color: Colors.black.withValues(alpha: 0.4)),
                   ),
                   TextSpan(
                     text: formatDate(t.createdAt),
@@ -161,7 +164,8 @@ class TaskBoardCard extends StatelessWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded, size: 15, color: _red),
+                  const Icon(Icons.warning_amber_rounded,
+                      size: 15, color: _red),
                   const SizedBox(width: 5),
                   Text(
                     'Overdue by ${-t.hoursToSla()}h',
@@ -257,7 +261,8 @@ class TaskBoardCard extends StatelessWidget {
             Container(
               width: 6,
               height: 6,
-              decoration: const BoxDecoration(color: _darkGreen, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                  color: _darkGreen, shape: BoxShape.circle),
             ),
             const SizedBox(width: 4),
           ],
@@ -278,7 +283,8 @@ class TaskBoardCard extends StatelessWidget {
   Widget _infoRow(String label, String value) {
     return Row(
       children: [
-        Icon(Icons.description_outlined, color: Colors.black.withValues(alpha: 0.4), size: 14),
+        Icon(Icons.description_outlined,
+            color: Colors.black.withValues(alpha: 0.4), size: 14),
         const SizedBox(width: 7),
         Expanded(
           child: RichText(
@@ -308,7 +314,8 @@ class TaskBoardCard extends StatelessWidget {
     );
   }
 
-  Widget _button(String label, {required bool filled, required VoidCallback onTap}) {
+  Widget _button(String label,
+      {required bool filled, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

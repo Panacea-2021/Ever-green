@@ -3,8 +3,7 @@ import 'package:evergreen/core/storage/key_value_store.dart';
 /// In-memory [KeyValueStore] for tests — no SharedPreferences / platform.
 /// Lets provider tests seed, mutate and assert persistence deterministically.
 class FakeKeyValueStore implements KeyValueStore {
-  FakeKeyValueStore([Map<String, String>? initial])
-      : _data = {...?initial};
+  FakeKeyValueStore([Map<String, String>? initial]) : _data = {...?initial};
 
   final Map<String, String> _data;
 

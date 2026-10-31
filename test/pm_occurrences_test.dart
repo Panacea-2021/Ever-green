@@ -191,17 +191,26 @@ void main() {
       final anchor = DateTime(2026, 1, 1);
       expect(
         pmLastOccurrenceBefore(
-            anchor, const PmStep.months(1), DateTime(2026, 3, 15),),
+          anchor,
+          const PmStep.months(1),
+          DateTime(2026, 3, 15),
+        ),
         DateTime(2026, 3, 1),
       );
       expect(
         pmLastOccurrenceBefore(
-            anchor, const PmStep.months(1), DateTime(2026, 3, 1),),
+          anchor,
+          const PmStep.months(1),
+          DateTime(2026, 3, 1),
+        ),
         DateTime(2026, 2, 1),
       );
       expect(
         pmLastOccurrenceBefore(
-            anchor, const PmStep.months(1), DateTime(2026, 1, 20),),
+          anchor,
+          const PmStep.months(1),
+          DateTime(2026, 1, 20),
+        ),
         isNull,
       );
     });
@@ -216,17 +225,23 @@ void main() {
       final due = computePmDue(
         equipments: [
           eq(1, installedAt: DateTime(2026, 1, 1)),
-          eq(2,
-              frequency: TmFrequency.monthly,
-              installedAt: DateTime(2026, 1, 1),
-              active: false,),
-          eq(3,
-              frequency: TmFrequency.monthly,
-              installedAt: DateTime(2026, 1, 1),
-              status: EquipmentCondition.retired,),
-          eq(4,
-              frequency: TmFrequency.monthly,
-              installedAt: DateTime(2026, 1, 5),),
+          eq(
+            2,
+            frequency: TmFrequency.monthly,
+            installedAt: DateTime(2026, 1, 1),
+            active: false,
+          ),
+          eq(
+            3,
+            frequency: TmFrequency.monthly,
+            installedAt: DateTime(2026, 1, 1),
+            status: EquipmentCondition.retired,
+          ),
+          eq(
+            4,
+            frequency: TmFrequency.monthly,
+            installedAt: DateTime(2026, 1, 5),
+          ),
         ],
         from: from,
         to: to,
@@ -241,8 +256,10 @@ void main() {
 
     test('anchor falls back from visit to installed, manufacturer, created',
         () {
-      List<DateTime> dates(Equipment e,
-              [Map<int, PmVisit> visits = const {},]) =>
+      List<DateTime> dates(
+        Equipment e, [
+        Map<int, PmVisit> visits = const {},
+      ]) =>
           computePmDue(
             equipments: [e],
             lastVisits: visits,
@@ -263,16 +280,24 @@ void main() {
       ]);
       expect(dates(base), [DateTime(2026, 11, 3)]);
       expect(
-        dates(eq(1,
+        dates(
+          eq(
+            1,
             frequency: TmFrequency.monthly,
             manufacturerDate: DateTime(2025, 1, 4),
-            createdAt: '2025-01-05T00:00:00.000Z',),),
+            createdAt: '2025-01-05T00:00:00.000Z',
+          ),
+        ),
         [DateTime(2026, 11, 4)],
       );
       expect(
-        dates(eq(1,
+        dates(
+          eq(
+            1,
             frequency: TmFrequency.monthly,
-            createdAt: '2025-01-05T12:00:00.000',),),
+            createdAt: '2025-01-05T12:00:00.000',
+          ),
+        ),
         [DateTime(2026, 11, 5)],
       );
       expect(dates(eq(1, frequency: TmFrequency.monthly)), isEmpty);
@@ -289,14 +314,19 @@ void main() {
       );
       final due = computePmDue(
         equipments: [
-          eq(4,
-              frequency: TmFrequency.monthly,
-              installedAt: DateTime(2026, 1, 5),),
+          eq(
+            4,
+            frequency: TmFrequency.monthly,
+            installedAt: DateTime(2026, 1, 5),
+          ),
         ],
         schedules: [
           schedule,
           schedule.copyWith(
-              id: '10', active: false, nextDue: DateTime(2026, 11, 6),),
+            id: '10',
+            active: false,
+            nextDue: DateTime(2026, 11, 6),
+          ),
         ],
         from: from,
         to: to,
@@ -332,11 +362,16 @@ void main() {
     test('overdue needs a recorded visit and lists first', () {
       final due = computePmDue(
         equipments: [
-          eq(1,
-              frequency: TmFrequency.weekly, installedAt: DateTime(2026, 1, 1),),
-          eq(2,
-              frequency: TmFrequency.monthly,
-              installedAt: DateTime(2020, 1, 1),),
+          eq(
+            1,
+            frequency: TmFrequency.weekly,
+            installedAt: DateTime(2026, 1, 1),
+          ),
+          eq(
+            2,
+            frequency: TmFrequency.monthly,
+            installedAt: DateTime(2020, 1, 1),
+          ),
         ],
         lastVisits: {2: PmVisit(DateTime(2026, 8, 20))},
         from: from,
@@ -357,9 +392,11 @@ void main() {
     test('an open PM visit counts itself as due', () {
       final due = computePmDue(
         equipments: [
-          eq(1,
-              frequency: TmFrequency.monthly,
-              installedAt: DateTime(2026, 1, 1),),
+          eq(
+            1,
+            frequency: TmFrequency.monthly,
+            installedAt: DateTime(2026, 1, 1),
+          ),
         ],
         lastVisits: {1: PmVisit(DateTime(2026, 10, 28), done: false)},
         from: from,
@@ -399,8 +436,11 @@ void main() {
     test('today is highlighted', () {
       final due = computePmDue(
         equipments: [
-          eq(1,
-              frequency: TmFrequency.daily, installedAt: DateTime(2026, 10, 1),),
+          eq(
+            1,
+            frequency: TmFrequency.daily,
+            installedAt: DateTime(2026, 10, 1),
+          ),
         ],
         from: from,
         to: from,
@@ -432,15 +472,25 @@ void main() {
         );
 
     test('uses the latest non-rejected PM task per equipment', () {
-      final visits = lastPmVisits(tasks: [
-        task(1, 1, resolved: DateTime(2026, 9, 1)),
-        task(2, 1, resolved: DateTime(2026, 10, 2, 15)),
-        task(3, 1,
-            callType: CallType.breakdown, resolved: DateTime(2026, 10, 20),),
-        task(4, 1,
-            approval: ApprovalStage.rejected, due: DateTime(2026, 10, 21),),
-        task(5, 2, status: TaskStatus.open, due: DateTime(2026, 11, 3)),
-      ],);
+      final visits = lastPmVisits(
+        tasks: [
+          task(1, 1, resolved: DateTime(2026, 9, 1)),
+          task(2, 1, resolved: DateTime(2026, 10, 2, 15)),
+          task(
+            3,
+            1,
+            callType: CallType.breakdown,
+            resolved: DateTime(2026, 10, 20),
+          ),
+          task(
+            4,
+            1,
+            approval: ApprovalStage.rejected,
+            due: DateTime(2026, 10, 21),
+          ),
+          task(5, 2, status: TaskStatus.open, due: DateTime(2026, 11, 3)),
+        ],
+      );
       expect(visits[1]!.date, DateTime(2026, 10, 2));
       expect(visits[1]!.done, isTrue);
       expect(visits[2]!.date, DateTime(2026, 11, 3));
@@ -472,21 +522,33 @@ void main() {
     final now = DateTime(2026, 10, 27, 18);
 
     test('tomorrow, this week (to Sunday) and this month', () {
-      expect(PmWindow.tomorrow.range(now),
-          (DateTime(2026, 10, 28), DateTime(2026, 10, 28)),);
-      expect(PmWindow.week.range(now),
-          (DateTime(2026, 10, 27), DateTime(2026, 11, 1)),);
-      expect(PmWindow.month.range(now),
-          (DateTime(2026, 10, 27), DateTime(2026, 10, 31)),);
+      expect(
+        PmWindow.tomorrow.range(now),
+        (DateTime(2026, 10, 28), DateTime(2026, 10, 28)),
+      );
+      expect(
+        PmWindow.week.range(now),
+        (DateTime(2026, 10, 27), DateTime(2026, 11, 1)),
+      );
+      expect(
+        PmWindow.month.range(now),
+        (DateTime(2026, 10, 27), DateTime(2026, 10, 31)),
+      );
     });
 
     test('Sunday and month/year ends', () {
-      expect(PmWindow.week.range(DateTime(2026, 11, 1)),
-          (DateTime(2026, 11, 1), DateTime(2026, 11, 1)),);
-      expect(PmWindow.tomorrow.range(DateTime(2026, 12, 31)),
-          (DateTime(2027, 1, 1), DateTime(2027, 1, 1)),);
-      expect(PmWindow.month.range(DateTime(2028, 2, 10)).$2,
-          DateTime(2028, 2, 29),);
+      expect(
+        PmWindow.week.range(DateTime(2026, 11, 1)),
+        (DateTime(2026, 11, 1), DateTime(2026, 11, 1)),
+      );
+      expect(
+        PmWindow.tomorrow.range(DateTime(2026, 12, 31)),
+        (DateTime(2027, 1, 1), DateTime(2027, 1, 1)),
+      );
+      expect(
+        PmWindow.month.range(DateTime(2028, 2, 10)).$2,
+        DateTime(2028, 2, 29),
+      );
     });
 
     test('only tomorrow hides overdue', () {

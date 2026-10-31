@@ -134,9 +134,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final loginContent = LoadingOverlay(
       isLoading: authState.isLoading,
-      message: widget.isDialog
-          ? 'Signing in...'
-          : null,
+      message: widget.isDialog ? 'Signing in...' : null,
       child: Container(
         width: double.infinity,
         height: double.infinity,

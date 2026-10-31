@@ -160,8 +160,9 @@ class _BookRepairDialogState extends State<_BookRepairDialog> {
                 borderSide: const BorderSide(color: Color(0xFFD7E6DA)),
               ),
             ),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Phone number is required' : null,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Phone number is required'
+                : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -368,7 +369,9 @@ class _BookRepairDialogState extends State<_BookRepairDialog> {
                     child: Center(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8,),
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF106220),
                           borderRadius: BorderRadius.circular(10),

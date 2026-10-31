@@ -19,7 +19,9 @@ List<Company> companiesFromMe(dynamic body) {
 
 /// Companies the signed-in user is linked to, with every company column
 /// (GST, location, AMC dates, …), read fresh from `auth/me`.
-final myCompaniesProvider = FutureProvider.autoDispose<List<Company>>((ref) async {
-  final body = unwrap(await ref.watch(apiClientProvider).get<dynamic>('auth/me'));
+final myCompaniesProvider =
+    FutureProvider.autoDispose<List<Company>>((ref) async {
+  final body =
+      unwrap(await ref.watch(apiClientProvider).get<dynamic>('auth/me'));
   return companiesFromMe(body);
 });

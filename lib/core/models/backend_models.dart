@@ -3,7 +3,8 @@
 // never breaks a list.
 
 int _int(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
-int? _intOrNull(dynamic v) => v == null ? null : (v is num ? v.toInt() : int.tryParse('$v'));
+int? _intOrNull(dynamic v) =>
+    v == null ? null : (v is num ? v.toInt() : int.tryParse('$v'));
 String _str(dynamic v) => v == null ? '' : '$v';
 String? _strOrNull(dynamic v) {
   if (v == null) return null;
@@ -11,7 +12,8 @@ String? _strOrNull(dynamic v) {
   return s.isEmpty ? null : s;
 }
 
-DateTime? _date(dynamic v) => v == null ? null : DateTime.tryParse('$v')?.toLocal();
+DateTime? _date(dynamic v) =>
+    v == null ? null : DateTime.tryParse('$v')?.toLocal();
 bool? _boolOrNull(dynamic v) => v is bool ? v : null;
 Map<String, dynamic>? _map(dynamic v) => v is Map<String, dynamic> ? v : null;
 
@@ -246,25 +248,25 @@ class Company {
   factory Company.fromJson(Map<String, dynamic> json) {
     final pocUser = _map(_map(json['poc_details'])?['user']);
     return Company(
-        id: _int(json['id']),
-        name: _str(json['name']),
-        branchName: _str(json['branch_name']),
-        email: _str(json['email']),
-        gstNumber: _strOrNull(json['gst_number']),
-        location: _strOrNull(json['location']),
-        serviceType: CompanyServiceType.fromKey(json['service_type']),
-        amcType: AmcType.fromKey(json['amc_type']),
-        startDate: _date(json['start_date']),
-        endDate: _date(json['end_date']),
-        isActive: json['is_active'] != false,
-        equipment: (json['equipment'] as List? ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .map(Equipment.fromJson)
-            .toList(),
-        poc: TaskPerson.fromJson(pocUser),
-        pocEmail: _strOrNull(pocUser?['email']),
-        raw: json,
-      );
+      id: _int(json['id']),
+      name: _str(json['name']),
+      branchName: _str(json['branch_name']),
+      email: _str(json['email']),
+      gstNumber: _strOrNull(json['gst_number']),
+      location: _strOrNull(json['location']),
+      serviceType: CompanyServiceType.fromKey(json['service_type']),
+      amcType: AmcType.fromKey(json['amc_type']),
+      startDate: _date(json['start_date']),
+      endDate: _date(json['end_date']),
+      isActive: json['is_active'] != false,
+      equipment: (json['equipment'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(Equipment.fromJson)
+          .toList(),
+      poc: TaskPerson.fromJson(pocUser),
+      pocEmail: _strOrNull(pocUser?['email']),
+      raw: json,
+    );
   }
 }
 
@@ -328,10 +330,12 @@ class Equipment {
       serialNumber: _strOrNull(json['serial_number']),
       specifications: _strOrNull(json['specifications']),
       imageUrl: _strOrNull(json['image_url']),
-      manufacturerDate: _date(json['manufacturer_date'] ?? json['manufacturerDate']),
+      manufacturerDate:
+          _date(json['manufacturer_date'] ?? json['manufacturerDate']),
       location: _strOrNull(json['location']),
       description: _strOrNull(json['description']),
-      tmFrequency: TmFrequency.fromKey(json['tm_frequency'] ?? json['tmFrequency']),
+      tmFrequency:
+          TmFrequency.fromKey(json['tm_frequency'] ?? json['tmFrequency']),
       companyId: _intOrNull(json['company_link']),
       company: company == null ? null : Company.fromJson(company),
       manual: _strOrNull(json['manual']),
@@ -380,7 +384,11 @@ class TaskPerson {
   final String phone;
   final String? accessLevel;
 
-  const TaskPerson({required this.id, required this.name, this.phone = '', this.accessLevel});
+  const TaskPerson(
+      {required this.id,
+      required this.name,
+      this.phone = '',
+      this.accessLevel});
 
   static TaskPerson? fromJson(dynamic json) {
     if (json is! Map<String, dynamic>) return null;
@@ -573,7 +581,8 @@ class AppNotification {
     this.createdAt,
   });
 
-  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
+  factory AppNotification.fromJson(Map<String, dynamic> json) =>
+      AppNotification(
         id: _int(json['id']),
         title: _str(json['title']),
         description: _str(json['description']),

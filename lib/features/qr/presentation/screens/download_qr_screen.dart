@@ -454,8 +454,7 @@ class _DownloadQrScreenState extends ConsumerState<DownloadQrScreen> {
   Future<void> _downloadQr(Company company) async {
     setState(() => isDownloading = true);
     try {
-      final equipment =
-          await ref.read(equipmentsProvider(company.id).future);
+      final equipment = await ref.read(equipmentsProvider(company.id).future);
       if (equipment.isEmpty) {
         _snack('This branch has no equipment yet', error: true);
         return;

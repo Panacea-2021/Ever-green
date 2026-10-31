@@ -37,7 +37,8 @@ class UsersRepository {
         'location': location,
         'access_level': role.accessLevel,
         if (role.designation != null) 'designation': role.designation,
-        if (!role.isTechnicianLevel && companyIds.isNotEmpty) 'company_link': companyIds,
+        if (!role.isTechnicianLevel && companyIds.isNotEmpty)
+          'company_link': companyIds,
       },
     );
     return result.map((body) => _message(body, 'User created'));
@@ -84,13 +85,15 @@ class UsersRepository {
       data: {'user_link': id, 'is_active': isActive},
     );
     return result.map(
-      (body) => _message(body, isActive ? 'User activated' : 'User deactivated'),
+      (body) =>
+          _message(body, isActive ? 'User activated' : 'User deactivated'),
     );
   }
 
   /// `POST user/deleteUser {user_link}`.
   Future<Either<Failure, String>> deleteUser(int id) async {
-    final result = await _api.post<dynamic>('user/deleteUser', data: {'user_link': id});
+    final result =
+        await _api.post<dynamic>('user/deleteUser', data: {'user_link': id});
     return result.map((body) => _message(body, 'User deleted'));
   }
 
@@ -110,8 +113,10 @@ class UsersRepository {
   /// `POST user/forgetPassword {phone}`. The backend emails the account's
   /// existing password to its registered email address.
   Future<Either<Failure, String>> forgotPassword(String phone) async {
-    final result = await _api.post<dynamic>('user/forgetPassword', data: {'phone': phone});
-    return result.map((body) => _message(body, 'Password sent to your registered email'));
+    final result =
+        await _api.post<dynamic>('user/forgetPassword', data: {'phone': phone});
+    return result.map(
+        (body) => _message(body, 'Password sent to your registered email'));
   }
 
   String _message(dynamic body, String fallback) {

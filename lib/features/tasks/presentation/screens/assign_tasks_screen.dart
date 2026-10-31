@@ -140,8 +140,11 @@ class _AssignTasksScreenState extends ConsumerState<AssignTasksScreen> {
                 color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back,
-                  size: 20, color: Color(0xFF1F1F1F),),
+              child: const Icon(
+                Icons.arrow_back,
+                size: 20,
+                color: Color(0xFF1F1F1F),
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -227,11 +230,17 @@ class _AssignTasksScreenState extends ConsumerState<AssignTasksScreen> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
       child: Row(
         children: [
-          chip('Unassigned', _onlyUnassigned,
-              () => setState(() => _onlyUnassigned = true),),
+          chip(
+            'Unassigned',
+            _onlyUnassigned,
+            () => setState(() => _onlyUnassigned = true),
+          ),
           const SizedBox(width: 8),
-          chip('All open', !_onlyUnassigned,
-              () => setState(() => _onlyUnassigned = false),),
+          chip(
+            'All open',
+            !_onlyUnassigned,
+            () => setState(() => _onlyUnassigned = false),
+          ),
         ],
       ),
     );
@@ -243,8 +252,10 @@ class _AssignTasksScreenState extends ConsumerState<AssignTasksScreen> {
       height: 36,
       child: ElevatedButton.icon(
         onPressed: () => _assignSheet(t),
-        icon: Icon(assigned ? Icons.swap_horiz : Icons.person_add_alt_1,
-            size: 16,),
+        icon: Icon(
+          assigned ? Icons.swap_horiz : Icons.person_add_alt_1,
+          size: 16,
+        ),
         label: Text(
           assigned ? 'Reassign' : 'Assign',
           style: const TextStyle(
@@ -321,62 +332,63 @@ class _AssignTasksScreenState extends ConsumerState<AssignTasksScreen> {
             TechnicianChoices(
               builder: (techs, stats) => Column(
                 children: [
-            for (final tech in techs)
-              Builder(
-                builder: (_) {
-                  final s = statsFor(tech, stats);
-                  final overloaded = s.isOverloaded;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundColor: const Color(0xFFEBF0EA),
-                      child: Text(
-                        tech.name.isNotEmpty ? tech.name[0] : '?',
-                        style: const TextStyle(color: _green),
-                      ),
-                    ),
-                    title: Text(
-                      tech.name,
-                      style: const TextStyle(fontFamily: 'Montserrat'),
-                    ),
-                    subtitle: Text(
-                      '${s.active} active task(s)',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 12,
-                        color: overloaded
-                            ? const Color(0xFFD32F2F)
-                            : const Color(0xFF6B6B6B),
-                      ),
-                    ),
-                    trailing: overloaded
-                        ? const Text(
-                            'Busy',
+                  for (final tech in techs)
+                    Builder(
+                      builder: (_) {
+                        final s = statsFor(tech, stats);
+                        final overloaded = s.isOverloaded;
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: const Color(0xFFEBF0EA),
+                            child: Text(
+                              tech.name.isNotEmpty ? tech.name[0] : '?',
+                              style: const TextStyle(color: _green),
+                            ),
+                          ),
+                          title: Text(
+                            tech.name,
+                            style: const TextStyle(fontFamily: 'Montserrat'),
+                          ),
+                          subtitle: Text(
+                            '${s.active} active task(s)',
                             style: TextStyle(
                               fontFamily: 'Montserrat',
-                              color: Color(0xFFD32F2F),
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              color: overloaded
+                                  ? const Color(0xFFD32F2F)
+                                  : const Color(0xFF6B6B6B),
                             ),
-                          )
-                        : const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      Navigator.pop(sheetContext);
-                      if (overloaded) {
-                        final ok = await _confirmOverload(tech.name, s.active);
-                        if (ok != true || !mounted) return;
-                      }
-                      await runTaskAction(
-                        context,
-                        () => ref
-                            .read(taskActionsProvider)
-                            .assign(t, tech.backendId),
-                        success: 'Assigned to ${tech.name}',
-                      );
-                    },
-                  );
-                },
-              ),
+                          ),
+                          trailing: overloaded
+                              ? const Text(
+                                  'Busy',
+                                  style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    color: Color(0xFFD32F2F),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                )
+                              : const Icon(Icons.chevron_right),
+                          onTap: () async {
+                            Navigator.pop(sheetContext);
+                            if (overloaded) {
+                              final ok =
+                                  await _confirmOverload(tech.name, s.active);
+                              if (ok != true || !mounted) return;
+                            }
+                            await runTaskAction(
+                              context,
+                              () => ref
+                                  .read(taskActionsProvider)
+                                  .assign(t, tech.backendId),
+                              success: 'Assigned to ${tech.name}',
+                            );
+                          },
+                        );
+                      },
+                    ),
                 ],
               ),
             ),

@@ -82,7 +82,8 @@ class EquipmentItem {
 
   factory EquipmentItem.fromEquipment(Equipment e) {
     final makeModel = [e.make, e.model].whereType<String>().join(' ').trim();
-    final created = DateTime.tryParse('${e.raw['created_at'] ?? ''}')?.toLocal();
+    final created =
+        DateTime.tryParse('${e.raw['created_at'] ?? ''}')?.toLocal();
     return EquipmentItem(
       id: '${e.id}',
       name: e.name,

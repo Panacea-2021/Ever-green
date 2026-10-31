@@ -35,7 +35,6 @@ void main() {
       expect(t.slaDeadline, created.add(const Duration(hours: 24)));
     });
 
-
     test('a fresh task is not overdue', () {
       final t = makeTask(priority: TaskPriority.critical);
       expect(t.isOverdue(), isFalse);

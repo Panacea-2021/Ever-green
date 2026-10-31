@@ -298,8 +298,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     // Client roles may only raise tickets for their own companies.
     var companies = ref.watch(companiesProvider);
     final ownIds = user?.companies.map((c) => c.id).toSet() ?? const <int>{};
-    _allowedCompanyIds =
-        role.isClientSide && ownIds.isNotEmpty ? ownIds : null;
+    _allowedCompanyIds = role.isClientSide && ownIds.isNotEmpty ? ownIds : null;
     if (role.isClientSide && ownIds.isNotEmpty) {
       companies = companies.whenData(
         (list) => list.where((c) => ownIds.contains(c.id)).toList(),
@@ -381,7 +380,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                 Expanded(
                   child: waitingForEdit
                       ? const Center(
-                          child: CircularProgressIndicator(color: Color(0xFF106220)),
+                          child: CircularProgressIndicator(
+                              color: Color(0xFF106220)),
                         )
                       : SingleChildScrollView(
                           padding: const EdgeInsets.all(16),
@@ -401,8 +401,11 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                               _buildInlineDropdownField<CallType>(
                                 label: 'Issue Type',
                                 value: _callType,
-                                items: [for (final c in CallType.values) (c, c.label)],
-                                onChanged: (value) => setState(() => _callType = value),
+                                items: [
+                                  for (final c in CallType.values) (c, c.label)
+                                ],
+                                onChanged: (value) =>
+                                    setState(() => _callType = value),
                               ),
 
                               const SizedBox(height: 16),
@@ -451,8 +454,11 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   Widget _companyField(AsyncValue<List<Company>> companies, bool locked) {
     if (!companies.hasValue) {
       return _statusField(
-        companies.hasError ? 'Couldn\'t load companies — tap to retry' : 'Loading companies…',
-        onTap: companies.hasError ? () => ref.invalidate(companiesProvider) : null,
+        companies.hasError
+            ? 'Couldn\'t load companies — tap to retry'
+            : 'Loading companies…',
+        onTap:
+            companies.hasError ? () => ref.invalidate(companiesProvider) : null,
       );
     }
     return _pickerField(
@@ -1062,7 +1068,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                             width: 0.8,
                           ),
                         ),
-                        child: localImageThumb(_selectedImages[index], size: 88),
+                        child:
+                            localImageThumb(_selectedImages[index], size: 88),
                       ),
                       Positioned(
                         top: 0,
@@ -1133,33 +1140,33 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
             const SizedBox(width: 16),
 
-          // Save Button (green gradient pill, matches Figma)
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _saveTask(editing),
-              child: Container(
-                height: 46,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF138A2A), Color(0xFF106220)],
+            // Save Button (green gradient pill, matches Figma)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _saveTask(editing),
+                child: Container(
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF138A2A), Color(0xFF106220)],
+                    ),
+                    borderRadius: BorderRadius.circular(32),
                   ),
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           ],
         ),
       ),

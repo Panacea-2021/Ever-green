@@ -267,8 +267,8 @@ class TaskItem {
     final equipmentImage = mediaUrl(t.equipment?.imageUrl);
     final tech = t.technician;
     final hasTech = tech != null;
-    final finished = t.status == ServiceStatus.completed ||
-        t.status == ServiceStatus.closed;
+    final finished =
+        t.status == ServiceStatus.completed || t.status == ServiceStatus.closed;
     return TaskItem(
       id: '${t.id}',
       title: t.name.isNotEmpty ? t.name : 'Ticket ${t.ticketNo}',
@@ -467,8 +467,7 @@ class TaskItem {
   /// When the current assignment started. Rows assigned before
   /// `assigned_at` was recorded fall back to the assignment row's update
   /// time, then to the ticket's creation.
-  DateTime get assignedSince =>
-      assignedAt ?? source?.updatedAt ?? createdAt;
+  DateTime get assignedSince => assignedAt ?? source?.updatedAt ?? createdAt;
 
   /// Minutes elapsed since assignment while still unaccepted (0 if n/a).
   int pendingAcceptanceMinutes([DateTime? now]) {
@@ -611,8 +610,7 @@ class TaskItem {
       assignee: json['assignee'] as String? ?? '-',
       managerName: json['managerName'] as String? ?? '',
       clientName: json['clientName'] as String? ?? '',
-      createdAt:
-          date('createdAt') ?? DateTime.fromMillisecondsSinceEpoch(0),
+      createdAt: date('createdAt') ?? DateTime.fromMillisecondsSinceEpoch(0),
       assignedAt: date('assignedAt'),
       acceptedAt: date('acceptedAt'),
       dueDate: date('dueDate'),

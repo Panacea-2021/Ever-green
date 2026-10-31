@@ -107,7 +107,8 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
               fit: BoxFit.cover,
               color: Colors.white.withValues(alpha: 0.7),
               colorBlendMode: BlendMode.srcOver,
-              errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.white),
+              errorBuilder: (_, __, ___) =>
+                  const ColoredBox(color: Colors.white),
             ),
           ),
           SafeArea(
@@ -239,7 +240,8 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
             Container(
               width: 24,
               height: 24,
-              decoration: const BoxDecoration(color: _green, shape: BoxShape.circle),
+              decoration:
+                  const BoxDecoration(color: _green, shape: BoxShape.circle),
               child: const Icon(Icons.add, color: Colors.white, size: 16),
             ),
           ],
@@ -349,7 +351,8 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
       padding: padding,
       children: [
         if (notAssigned.isNotEmpty) ...[
-          _sectionHeader('Not Assigned', notAssigned.length, const Color(0xFFD32F2F)),
+          _sectionHeader(
+              'Not Assigned', notAssigned.length, const Color(0xFFD32F2F)),
           for (final t in notAssigned) _taskCard(t, role),
         ],
         if (assigned.isNotEmpty) ...[

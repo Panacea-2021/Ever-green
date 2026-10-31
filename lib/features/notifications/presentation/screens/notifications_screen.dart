@@ -9,7 +9,8 @@ class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
@@ -214,7 +215,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       itemCount: items.length + (showFooter ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= items.length) return _buildFooter(feed);
-        if (index >= items.length - 3 && feed.hasMore && feed.loadMoreError == null) {
+        if (index >= items.length - 3 &&
+            feed.hasMore &&
+            feed.loadMoreError == null) {
           // Prefetch the next page as the end comes into view.
           Future.microtask(
             () => ref.read(notificationsControllerProvider.notifier).loadMore(),
@@ -232,8 +235,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       child: Center(
         child: feed.loadMoreError != null
             ? TextButton(
-                onPressed: () =>
-                    ref.read(notificationsControllerProvider.notifier).loadMore(),
+                onPressed: () => ref
+                    .read(notificationsControllerProvider.notifier)
+                    .loadMore(),
                 child: const Text('Couldn\'t load more. Retry'),
               )
             : const SizedBox(
@@ -246,7 +250,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Widget _buildNotificationCard(
-      NotificationEntry entry, bool isLast, int index,) {
+    NotificationEntry entry,
+    bool isLast,
+    int index,
+  ) {
     final notification = entry.notification;
     return GestureDetector(
       onTap: () => _onNotificationTap(entry),
@@ -258,7 +265,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             // Timeline line (vertical line connecting to next card)
             if (!isLast)
               Positioned(
-                left: 63.5, // Center of the timeline dot area (70 + 18/2 - 16 padding offset)
+                left:
+                    63.5, // Center of the timeline dot area (70 + 18/2 - 16 padding offset)
                 top: 122, // Start from bottom of card content area
                 child: Container(
                   width: 1,
@@ -540,8 +548,10 @@ class NotificationDetailScreen extends StatelessWidget {
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
                                     colors: [
-                                      const Color(0xFFE8D5F0).withValues(alpha: 0.6),
-                                      const Color(0xFFF5EDF8).withValues(alpha: 0.3),
+                                      const Color(0xFFE8D5F0)
+                                          .withValues(alpha: 0.6),
+                                      const Color(0xFFF5EDF8)
+                                          .withValues(alpha: 0.3),
                                       Colors.white,
                                     ],
                                   ),
@@ -556,12 +566,14 @@ class NotificationDetailScreen extends StatelessWidget {
                                         width: 140,
                                         height: 90,
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.9),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: Colors.white
+                                              .withValues(alpha: 0.9),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                           boxShadow: [
                                             BoxShadow(
-                                              color:
-                                                  Colors.black.withValues(alpha: 0.05),
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.05),
                                               blurRadius: 15,
                                               offset: const Offset(0, 8),
                                             ),
@@ -657,7 +669,8 @@ class NotificationDetailScreen extends StatelessWidget {
                                           ),
                                           decoration: BoxDecoration(
                                             color: Colors.white,
-                                            borderRadius: BorderRadius.circular(20),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
                                             border: Border.all(
                                               color: Colors.grey.shade200,
                                             ),
@@ -696,7 +709,8 @@ class NotificationDetailScreen extends StatelessWidget {
                                         fontFamily: 'Montserrat',
                                         fontSize: 14,
                                         fontWeight: FontWeight.w400,
-                                        color: Colors.black.withValues(alpha: 0.6),
+                                        color:
+                                            Colors.black.withValues(alpha: 0.6),
                                         height: 1.6,
                                       ),
                                     ),

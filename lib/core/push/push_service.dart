@@ -10,7 +10,8 @@ import '../network/api_client.dart';
 import '../storage/token_storage.dart';
 
 final pushServiceProvider = Provider<PushService>((ref) {
-  return PushService(ref.watch(apiClientProvider), ref.watch(tokenStorageProvider));
+  return PushService(
+      ref.watch(apiClientProvider), ref.watch(tokenStorageProvider));
 });
 
 /// Firebase Cloud Messaging for the backend's task notifications. The backend
@@ -88,7 +89,8 @@ class PushService {
       if (initial != null) _pendingTaskId = _taskIdOf(initial.data);
       final launch = await _local.getNotificationAppLaunchDetails();
       if (launch?.didNotificationLaunchApp ?? false) {
-        _pendingTaskId ??= int.tryParse(launch!.notificationResponse?.payload ?? '');
+        _pendingTaskId ??=
+            int.tryParse(launch!.notificationResponse?.payload ?? '');
       }
       _ready = true;
     } catch (e) {

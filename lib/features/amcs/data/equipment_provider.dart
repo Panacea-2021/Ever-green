@@ -135,7 +135,8 @@ class EquipmentApi {
 
   /// QR sticker PDF for a whole company or specific equipment ids. Only the
   /// selected key is sent.
-  Future<Uint8List> qrStickerPdf({int? companyId, List<int>? equipmentIds}) async {
+  Future<Uint8List> qrStickerPdf(
+      {int? companyId, List<int>? equipmentIds}) async {
     final result = await api.postBytes(
       'user/qrCodeGenerator',
       data: {
@@ -180,8 +181,10 @@ class EquipmentApi {
     throw RepositoryException(message ?? fallback);
   }
 
-  Future<UploadResult> uploadEquipmentExcel(String filePath, {required int companyId}) {
-    return _uploadExcel('user/uploadEquipmentData', filePath, {'company_link': companyId});
+  Future<UploadResult> uploadEquipmentExcel(String filePath,
+      {required int companyId}) {
+    return _uploadExcel(
+        'user/uploadEquipmentData', filePath, {'company_link': companyId});
   }
 
   Future<UploadResult> uploadTechnicianExcel(String filePath) {
@@ -248,7 +251,8 @@ bool isForeignEquipmentFailure(Failure failure, UserRole role) {
 
 /// Every equipment row the current user can see (admins: all; others: their
 /// companies').
-final allEquipmentsProvider = FutureProvider.autoDispose<List<Equipment>>((ref) {
+final allEquipmentsProvider =
+    FutureProvider.autoDispose<List<Equipment>>((ref) {
   return ref.watch(equipmentsProvider(null).future);
 });
 
@@ -311,7 +315,12 @@ String? parseEquipmentCode(String raw) {
   }
   final uri = Uri.tryParse(value);
   if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
-    for (final key in const ['equipment_link', 'equipmentId', 'equipment_id', 'id']) {
+    for (final key in const [
+      'equipment_link',
+      'equipmentId',
+      'equipment_id',
+      'id'
+    ]) {
       final v = uri.queryParameters[key]?.trim();
       if (v != null && v.isNotEmpty) return v;
     }

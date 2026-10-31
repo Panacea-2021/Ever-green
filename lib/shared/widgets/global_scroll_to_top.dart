@@ -146,7 +146,8 @@ class _GlobalScrollToTopState extends State<GlobalScrollToTop>
                                 child: Center(
                                   child: AnimatedBuilder(
                                     animation: _bobCurve,
-                                    builder: (context, child) => Transform.translate(
+                                    builder: (context, child) =>
+                                        Transform.translate(
                                       offset: Offset(0, -2.5 * _bobCurve.value),
                                       child: child,
                                     ),

@@ -56,8 +56,8 @@ class _VideoHeroState extends State<VideoHero> with WidgetsBindingObserver {
   }
 
   Future<void> _maybeInit() async {
-    final reduceMotion =
-        WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+    final reduceMotion = WidgetsBinding
+        .instance.platformDispatcher.accessibilityFeatures.disableAnimations;
     if (reduceMotion) {
       // Skip playback entirely; the poster image (fallback) stays shown.
       return;
@@ -148,21 +148,21 @@ class _VideoHeroState extends State<VideoHero> with WidgetsBindingObserver {
           // --- Base layer: video or image fallback (square bottom edge) ---
           _buildBackground(),
 
-            // --- Readability gradient so overlay stays legible ---
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x33000000),
-                    Color(0x00000000),
-                    Color(0x73000000),
-                  ],
-                  stops: [0.0, 0.45, 1.0],
-                ),
+          // --- Readability gradient so overlay stays legible ---
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0x33000000),
+                  Color(0x00000000),
+                  Color(0x73000000),
+                ],
+                stops: [0.0, 0.45, 1.0],
               ),
             ),
+          ),
 
           // --- Overlay content (header, greeting) ---
           widget.overlay,

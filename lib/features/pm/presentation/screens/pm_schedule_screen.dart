@@ -348,8 +348,11 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
   Widget _dueCard(PmDue d, DateTime now) {
     final today = d.isToday(now);
     final (String dueText, Color dueBg, Color dueFg) = d.overdue
-        ? ('Overdue · ${_fmt(d.dueDate)}', const Color(0xFFFDE8E8),
-            const Color(0xFFD32F2F))
+        ? (
+            'Overdue · ${_fmt(d.dueDate)}',
+            const Color(0xFFFDE8E8),
+            const Color(0xFFD32F2F)
+          )
         : today
             ? ('Due today', const Color(0xFFFFF3E0), const Color(0xFFE08600))
             : ('Due ${_fmt(d.dueDate)}', const Color(0xFFEBF0EA), _green);

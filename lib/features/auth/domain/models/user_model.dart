@@ -112,7 +112,8 @@ class UserCompany {
   final String name;
   final String branchName;
 
-  const UserCompany({required this.id, required this.name, this.branchName = ''});
+  const UserCompany(
+      {required this.id, required this.name, this.branchName = ''});
 
   factory UserCompany.fromJson(Map<String, dynamic> json) => UserCompany(
         id: (json['id'] as num).toInt(),
@@ -120,7 +121,8 @@ class UserCompany {
         branchName: json['branch_name']?.toString() ?? '',
       );
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'branch_name': branchName};
+  Map<String, dynamic> toJson() =>
+      {'id': id, 'name': name, 'branch_name': branchName};
 }
 
 class User {
@@ -178,7 +180,10 @@ class User {
     final flat = json['companies'];
     if (companies.isEmpty && flat is List) {
       companies.addAll(
-        flat.whereType<Map<String, dynamic>>().where((c) => c['id'] is num).map(UserCompany.fromJson),
+        flat
+            .whereType<Map<String, dynamic>>()
+            .where((c) => c['id'] is num)
+            .map(UserCompany.fromJson),
       );
     }
     final designation = json['designation']?.toString();
@@ -186,7 +191,8 @@ class User {
       id: '${json['id']}',
       email: json['email']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      role: UserRoleX.fromBackend(json['access_level']?.toString(), designation),
+      role:
+          UserRoleX.fromBackend(json['access_level']?.toString(), designation),
       phone: json['phone']?.toString() ?? '',
       location: json['location']?.toString() ?? '',
       designation: designation,

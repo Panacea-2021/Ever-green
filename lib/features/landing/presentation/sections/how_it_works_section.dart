@@ -276,7 +276,11 @@ class _StepCardState extends State<_StepCard>
             height: widget.fillHeight ? double.infinity : null,
             transform: Matrix4.identity()
               ..translateByDouble(
-                  0.0, _hover && !active ? -4.0 : 0.0, 0.0, 1.0,),
+                0.0,
+                _hover && !active ? -4.0 : 0.0,
+                0.0,
+                1.0,
+              ),
             padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
             decoration: BoxDecoration(
               color: bg,

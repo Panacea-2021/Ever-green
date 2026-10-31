@@ -315,8 +315,14 @@ class ServiceReportService {
       child: pw.Column(
         children: [
           if (e != null) ...[
-            row([cell('Name', _dash(t.equipment)), cell('Make', _dash(e.make))]),
-            row([cell('Model', _dash(e.model)), cell('Serial No.', _dash(serial))]),
+            row([
+              cell('Name', _dash(t.equipment)),
+              cell('Make', _dash(e.make))
+            ]),
+            row([
+              cell('Model', _dash(e.model)),
+              cell('Serial No.', _dash(serial))
+            ]),
           ],
           row([
             cell('Call type', _dash(t.callType?.label)),

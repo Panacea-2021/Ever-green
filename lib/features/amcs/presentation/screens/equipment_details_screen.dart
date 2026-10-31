@@ -129,7 +129,8 @@ class _EquipmentDetailsScreenState
       await shareQrStickerPdf(
         ref,
         equipmentIds: [e.id],
-        filename: 'qr_${qrFileSlug(e.egSerialNumber.isEmpty ? e.name : e.egSerialNumber)}.pdf',
+        filename:
+            'qr_${qrFileSlug(e.egSerialNumber.isEmpty ? e.name : e.egSerialNumber)}.pdf',
       );
     } catch (err) {
       if (mounted) {
@@ -740,8 +741,8 @@ class _EquipmentDetailsScreenState
   }
 
   Widget _buildRepairHistoryItem(ServiceTask task, Equipment equipment) {
-    final isOpen = task.status != TaskStatus.completed &&
-        task.status != TaskStatus.closed;
+    final isOpen =
+        task.status != TaskStatus.completed && task.status != TaskStatus.closed;
     final title = task.name.isNotEmpty
         ? task.name
         : (task.description.isNotEmpty ? task.description : task.ticketNo);
@@ -903,8 +904,18 @@ class _EquipmentDetailsScreenState
 
   String _fmtDate(DateTime d) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sept',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${d.day.toString().padLeft(2, '0')} ${months[d.month - 1]} ${d.year}';
   }

@@ -70,7 +70,8 @@ class _EquipmentQrScreenState extends ConsumerState<EquipmentQrScreen> {
             bottom: false,
             child: Column(
               children: [
-                _buildHeader(context, name, id, serial, canDownload: !loading && !error),
+                _buildHeader(context, name, id, serial,
+                    canDownload: !loading && !error),
                 Expanded(
                   child: Center(
                     child: loading
@@ -167,7 +168,8 @@ class _EquipmentQrScreenState extends ConsumerState<EquipmentQrScreen> {
             const SizedBox(
               width: 22,
               height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2, color: _qrBorder),
+              child:
+                  CircularProgressIndicator(strokeWidth: 2, color: _qrBorder),
             )
           else
             GestureDetector(
