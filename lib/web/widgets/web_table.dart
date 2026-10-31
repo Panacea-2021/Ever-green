@@ -157,7 +157,7 @@ class WebCellText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final main = Text(
+    final label = Text(
       text.isEmpty ? '-' : text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -168,6 +168,13 @@ class WebCellText extends StatelessWidget {
         h: 1.3,
       ),
     );
+    final main = text.length > 18
+        ? Tooltip(
+            message: text,
+            waitDuration: const Duration(milliseconds: 400),
+            child: label,
+          )
+        : label;
     if (subtitle == null || subtitle!.isEmpty) return main;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

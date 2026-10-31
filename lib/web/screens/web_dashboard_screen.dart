@@ -132,7 +132,7 @@ class WebDashboardScreen extends ConsumerWidget {
                       renewals: renewals,
                       onViewAll: open(Routes.amcRenewals),
                     );
-                    if (c.maxWidth < 1000) {
+                    if (c.maxWidth < 1280) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [table, const SizedBox(height: 20), panel],
@@ -197,11 +197,11 @@ class _RecentTasks extends StatelessWidget {
       onAction: onViewAll,
       child: WebTable(
         columns: const [
-          WebColumn('Task', flex: 3),
-          WebColumn('Company', flex: 3),
-          WebColumn('Service Engineer', flex: 3),
-          WebColumn('Status', flex: 2),
-          WebColumn('Priority', flex: 2),
+          WebColumn('Task', flex: 4),
+          WebColumn('Company', flex: 5),
+          WebColumn('Service Engineer', flex: 4),
+          WebColumn('Status', flex: 3),
+          WebColumn('Priority', flex: 3),
         ],
         onRowTap: (i) => context.push('${Routes.taskDetails}/${top[i].id}'),
         rows: [

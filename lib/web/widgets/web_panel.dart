@@ -41,35 +41,42 @@ class WebPanel extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 16, 14, 14),
             child: Row(
               children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: WebTokens.heading(16),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: WebTokens.heading(16),
+                        ),
+                      ),
+                      if (count != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: WebTokens.mintSoft,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '$count',
+                            style: WebTokens.bodyText(
+                              11.5,
+                              color: WebTokens.green,
+                              weight: FontWeight.w700,
+                              h: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (count != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: WebTokens.mintSoft,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '$count',
-                      style: WebTokens.bodyText(
-                        11.5,
-                        color: WebTokens.green,
-                        weight: FontWeight.w700,
-                        h: 1.3,
-                      ),
-                    ),
-                  ),
-                ],
-                const Spacer(),
                 if (actionLabel != null && onAction != null)
                   TextButton(
                     onPressed: onAction,
