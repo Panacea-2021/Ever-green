@@ -117,6 +117,13 @@ abstract class WebLoginPopupStyles {
     fontWeight: FontWeight.w600,
   );
 
+  static const message = TextStyle(
+    fontFamily: _font,
+    fontSize: 13.5,
+    height: 1.4,
+    fontWeight: FontWeight.w500,
+  );
+
   static const button = TextStyle(
     fontFamily: _font,
     fontSize: 17,

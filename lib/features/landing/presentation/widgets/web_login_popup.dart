@@ -13,6 +13,7 @@ import '../../../../core/utils/validators.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../users/data/users_repository.dart';
 import 'web_login_popup_styles.dart';
 
 /// Opens the website sign-in popup. On success it closes and goes to the web
@@ -47,6 +48,13 @@ class _WebLoginPopupState extends ConsumerState<WebLoginPopup> {
   final _passwordFocusNode = FocusNode();
   bool _obscurePassword = true;
 
+  final _resetFormKey = GlobalKey<FormState>();
+  final _resetMobileController = TextEditingController();
+  bool _showReset = false;
+  bool _resetLoading = false;
+  String? _resetMessage;
+  bool _resetFailed = false;
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +67,46 @@ class _WebLoginPopupState extends ConsumerState<WebLoginPopup> {
     _passwordController.dispose();
     _mobileFocusNode.dispose();
     _passwordFocusNode.dispose();
+    _resetMobileController.dispose();
     super.dispose();
+  }
+
+  void _toggleReset(bool showReset) {
+    setState(() {
+      _showReset = showReset;
+      _resetMessage = null;
+      _resetFailed = false;
+      if (showReset && _resetMobileController.text.isEmpty) {
+        _resetMobileController.text = _mobileController.text;
+      }
+    });
+  }
+
+  Future<void> _handleReset() async {
+    if (!_resetFormKey.currentState!.validate()) return;
+
+    setState(() {
+      _resetLoading = true;
+      _resetMessage = null;
+    });
+    final result = await ref
+        .read(usersRepositoryProvider)
+        .forgotPassword(_resetMobileController.text.trim());
+    if (!mounted) return;
+
+    setState(() {
+      _resetLoading = false;
+      result.fold(
+        (failure) {
+          _resetFailed = true;
+          _resetMessage = failure.displayMessage;
+        },
+        (message) {
+          _resetFailed = false;
+          _resetMessage = message;
+        },
+      );
+    });
   }
 
   /// The Render backend sleeps when idle and takes ~50s to wake, so ping it
@@ -154,7 +201,12 @@ class _WebLoginPopupState extends ConsumerState<WebLoginPopup> {
                     if (isWide) Expanded(flex: 54, child: _buildBrandPanel()),
                     Expanded(
                       flex: 46,
-                      child: _buildFormPanel(authState, isWide),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        child: _showReset
+                            ? _buildResetPanel(isWide)
+                            : _buildFormPanel(authState, isWide),
+                      ),
                     ),
                   ],
                 ),
@@ -265,6 +317,129 @@ class _WebLoginPopupState extends ConsumerState<WebLoginPopup> {
     );
   }
 
+  Widget _buildResetPanel(bool isWide) {
+    final message = _resetMessage;
+    final messageColor =
+        _resetFailed ? AppColors.error : WebLoginPopupStyles.green;
+
+    return Form(
+      key: _resetFormKey,
+      child: Center(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: isWide ? 40 : 24,
+            vertical: 32,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => _toggleReset(false),
+                  style: TextButton.styleFrom(
+                    foregroundColor: WebLoginPopupStyles.iconMuted,
+                    padding: EdgeInsets.zero,
+                  ),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: const Text(
+                    'Back to Sign In',
+                    style: WebLoginPopupStyles.link,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('Reset Password', style: WebLoginPopupStyles.title),
+              const SizedBox(height: 10),
+              const Text(
+                'Enter your registered mobile number and we will email your password to you.',
+                style: WebLoginPopupStyles.subtitle,
+              ),
+              const SizedBox(height: 36),
+              TextFormField(
+                controller: _resetMobileController,
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.done,
+                validator: Validators.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                onFieldSubmitted: (_) => _handleReset(),
+                cursorColor: WebLoginPopupStyles.green,
+                style: WebLoginPopupStyles.fieldText,
+                decoration: WebLoginPopupStyles.fieldDecoration(
+                  hintText: 'Mobile Number',
+                  icon: Icons.phone_outlined,
+                ),
+              ),
+              if (message != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: messageColor.withValues(alpha: 0.08),
+                    borderRadius:
+                        BorderRadius.circular(WebLoginPopupStyles.fieldRadius),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        _resetFailed
+                            ? Icons.error_outline_rounded
+                            : Icons.check_circle_outline_rounded,
+                        color: messageColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          message,
+                          style: WebLoginPopupStyles.message
+                              .copyWith(color: messageColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 32),
+              SizedBox(
+                height: WebLoginPopupStyles.buttonHeight,
+                child: ElevatedButton(
+                  onPressed: _resetLoading ? null : _handleReset,
+                  style: WebLoginPopupStyles.primaryButton,
+                  child: _resetLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Send Password',
+                              style: WebLoginPopupStyles.button,
+                            ),
+                            SizedBox(width: 10),
+                            Icon(Icons.arrow_forward_rounded, size: 20),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFormPanel(AuthState authState, bool isWide) {
     return Form(
       key: _formKey,
@@ -332,11 +507,7 @@ class _WebLoginPopupState extends ConsumerState<WebLoginPopup> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {
-                    final router = GoRouter.of(context);
-                    Navigator.of(context).pop();
-                    router.go(Routes.forgotPassword);
-                  },
+                  onPressed: () => _toggleReset(true),
                   style: TextButton.styleFrom(
                     foregroundColor: WebLoginPopupStyles.green,
                     padding: const EdgeInsets.symmetric(horizontal: 4),
