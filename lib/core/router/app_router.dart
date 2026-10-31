@@ -11,6 +11,7 @@ import '../../features/landing/presentation/screens/services_page.dart';
 import '../../features/landing/presentation/screens/technicians_page.dart';
 import '../../features/landing/presentation/screens/website_info_page.dart';
 import '../../web/screens/web_dashboard_screen.dart';
+import '../../web/screens/web_task_board_screen.dart';
 import '../../features/amcs/presentation/screens/add_equipment_screen.dart';
 import '../../features/amcs/presentation/screens/add_task_screen.dart';
 import '../../features/amcs/presentation/screens/amcs_screen.dart';
@@ -539,7 +540,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: Routes.tasks,
             name: 'tasks',
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: TaskBoardScreen(isRootTab: true),
+              child: kIsWeb
+                  ? WebTaskBoardScreen()
+                  : TaskBoardScreen(isRootTab: true),
             ),
           ),
           GoRoute(

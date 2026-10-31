@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import 'core/router/routes.dart';
 import 'core/theme/app_theme.dart';
 import 'shared/providers/auth_state_provider.dart';
 import 'shared/widgets/global_scroll_to_top.dart';
+import 'web/widgets/web_module_frame.dart';
 
 class EverGreenApp extends ConsumerStatefulWidget {
   const EverGreenApp({super.key});
@@ -97,7 +99,12 @@ class _EverGreenAppState extends ConsumerState<EverGreenApp> {
         themeMode: ThemeMode.light,
         routerConfig: router,
         builder: (context, child) => GlobalScrollToTop(
-          child: child ?? const SizedBox.shrink(),
+          child: kIsWeb
+              ? WebModuleFrame(
+                  router: router,
+                  child: child ?? const SizedBox.shrink(),
+                )
+              : child ?? const SizedBox.shrink(),
         ),
       ),
     );
