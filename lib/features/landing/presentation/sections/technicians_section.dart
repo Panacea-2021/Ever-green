@@ -116,9 +116,9 @@ class _TechniciansSectionState extends State<TechniciansSection> {
         final contentWidth = (width - horizontalPadding * 2)
             .clamp(0.0, LandingSpacing.maxContentWidth);
         final wideHeader = contentWidth >= 1400;
-        final cardWidth = compact
-            ? 280.0
-            : ((contentWidth - _cardGap * 4) / 5).clamp(220.0, 280.0);
+        // Fixed card width so the carousel looks identical on every laptop/desktop
+        // instead of stretching/shrinking with the viewport.
+        final cardWidth = compact ? 260.0 : 270.0;
         final cardExtent = cardWidth + _cardGap;
         final imageHeight = cardWidth * 0.68;
         final cardHeight = imageHeight + 250;
