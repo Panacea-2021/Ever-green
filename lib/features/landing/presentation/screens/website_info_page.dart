@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
+import '../widgets/web_login_popup.dart';
 import '../sections/landing_site_header.dart';
 import '../sections/services/services_bottom_sections.dart';
 import '../sections/services/services_common.dart';
@@ -87,7 +87,7 @@ class WebsiteInfoPage extends StatelessWidget {
             onContact: () => go(Routes.contact),
             onPrivacy: () => go(Routes.privacy),
             onBookRepair: () => showBookRepairDialog(context),
-            onSignIn: () => showWebsiteLoginDialog(context),
+            onSignIn: () => showWebLoginPopup(context),
             activeNav: _activeNav,
           ),
           Expanded(
@@ -104,11 +104,11 @@ class WebsiteInfoPage extends StatelessWidget {
                   ),
                   _content,
                   ServicesCtaSection(
-                    onAssessment: () => showWebsiteLoginDialog(context),
+                    onAssessment: () => showWebLoginPopup(context),
                     onContact: () => go(Routes.contact),
                   ),
                   ServicesFooter(
-                    onBook: () => showWebsiteLoginDialog(context),
+                    onBook: () => showWebLoginPopup(context),
                   ),
                 ],
               ),

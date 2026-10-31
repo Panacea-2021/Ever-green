@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
+import '../widgets/web_login_popup.dart';
 import '../landing_theme.dart';
 import '../widgets/book_repair_dialog.dart';
 import '../sections/hero_section.dart';
@@ -61,8 +61,8 @@ class _LandingPageState extends State<LandingPage> {
                       onContactUs: () => context.push(Routes.contact),
                       onPrivacy: () => context.go(Routes.privacy),
                       onBookRepair: () => showBookRepairDialog(context),
-                      onSignIn: () => showWebsiteLoginDialog(context),
-                      onGetEstimate: () => showWebsiteLoginDialog(context),
+                      onSignIn: () => showWebLoginPopup(context),
+                      onGetEstimate: () => showWebLoginPopup(context),
                       onSearch: () => _scrollTo(_faqKey),
                     ),
                   ),
@@ -96,7 +96,7 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                   const DownloadAppSection(),
                   ServicesCtaSection(
-                    onAssessment: () => showWebsiteLoginDialog(context),
+                    onAssessment: () => showWebLoginPopup(context),
                     onContact: () => context.go(Routes.contact),
                   ),
                   ServicesFooter(

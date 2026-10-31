@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
+import '../widgets/web_login_popup.dart';
 import '../landing_theme.dart';
 import '../sections/landing_site_header.dart';
 import '../sections/services/services_bottom_sections.dart';
@@ -106,7 +106,7 @@ class TechniciansPage extends StatelessWidget {
             onContact: () => context.go(Routes.contact),
             onPrivacy: () => context.go(Routes.privacy),
             onBookRepair: bookRepair,
-            onSignIn: () => showWebsiteLoginDialog(context),
+            onSignIn: () => showWebLoginPopup(context),
           ),
           Expanded(
             child: SingleChildScrollView(

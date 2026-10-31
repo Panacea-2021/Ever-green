@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
+import '../widgets/web_login_popup.dart';
 import '../sections/landing_site_header.dart';
 import '../sections/services/services_bottom_sections.dart';
 import '../sections/services/services_top_sections.dart';
@@ -69,7 +69,7 @@ class _ServicesPageState extends State<ServicesPage> {
             onContact: () => context.push(Routes.contact),
             onPrivacy: () => context.go(Routes.privacy),
             onBookRepair: () => showBookRepairDialog(context),
-            onSignIn: () => showWebsiteLoginDialog(context),
+            onSignIn: () => showWebLoginPopup(context),
             onSearch: () => _scrollTo(_faqKey),
             activeNav: 'Services',
           ),
@@ -80,7 +80,7 @@ class _ServicesPageState extends State<ServicesPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ServicesHero(
-                    onBook: () => showWebsiteLoginDialog(context),
+                    onBook: () => showWebLoginPopup(context),
                     onAssess: toContact,
                   ),
                   ServicesGridSection(
@@ -97,11 +97,11 @@ class _ServicesPageState extends State<ServicesPage> {
                   ServicesFaqSection(key: _faqKey),
                   ServicesCtaSection(
                     key: _contactKey,
-                    onAssessment: () => showWebsiteLoginDialog(context),
+                    onAssessment: () => showWebLoginPopup(context),
                     onContact: () => context.go(Routes.contact),
                   ),
                   ServicesFooter(
-                    onBook: () => showWebsiteLoginDialog(context),
+                    onBook: () => showWebLoginPopup(context),
                   ),
                 ],
               ),

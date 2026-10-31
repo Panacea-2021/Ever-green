@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
+import '../widgets/web_login_popup.dart';
 import '../landing_theme.dart';
 import '../sections/services/services_bottom_sections.dart';
 
@@ -54,7 +54,7 @@ class _ContactPageState extends State<ContactPage> {
               _ContactHero(onClose: _close),
               const _ContactCities(),
               ServicesCtaSection(
-                onAssessment: () => showWebsiteLoginDialog(context),
+                onAssessment: () => showWebLoginPopup(context),
                 onContact: () {
                   if (_scroll.hasClients) {
                     _scroll.animateTo(
@@ -66,7 +66,7 @@ class _ContactPageState extends State<ContactPage> {
                 },
               ),
               ServicesFooter(
-                onBook: () => showWebsiteLoginDialog(context),
+                onBook: () => showWebLoginPopup(context),
               ),
             ],
           ),
