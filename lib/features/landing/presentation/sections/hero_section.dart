@@ -196,7 +196,8 @@ class _HeroButtonState extends State<_HeroButton> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
+    return SelectionContainer.disabled(
+      child: MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       cursor: SystemMouseCursors.click,
@@ -221,6 +222,7 @@ class _HeroButtonState extends State<_HeroButton> {
           ),
         ),
       ),
+    ),
     );
   }
 }

@@ -6,6 +6,7 @@ import '../../../auth/presentation/screens/login_screen.dart';
 import '../landing_theme.dart';
 import '../sections/landing_site_header.dart';
 import '../sections/services/services_bottom_sections.dart';
+import '../widgets/book_repair_dialog.dart';
 
 /// Public "Meet our technicians" page, opened from the landing page's
 /// "View all technicians" button.
@@ -21,6 +22,7 @@ class TechniciansPage extends StatelessWidget {
       reviews: '320',
       experience: '8 years',
       location: 'Hyderabad',
+      phone: '+91 98490 12345',
       tags: ['Ovens', 'Hobs', 'Cookers'],
       description:
           'Heat-appliance expert for range and oven calibration, burner '
@@ -34,6 +36,7 @@ class TechniciansPage extends StatelessWidget {
       reviews: '280',
       experience: '9 years',
       location: 'Bengaluru',
+      phone: '+91 98490 23456',
       tags: ['Fridges', 'Freezers', 'Cold Rooms'],
       description:
           'Keeps walk-ins, chillers and display fridges at temperature with '
@@ -47,6 +50,7 @@ class TechniciansPage extends StatelessWidget {
       reviews: '310',
       experience: '7 years',
       location: 'Hyderabad',
+      phone: '+91 98490 34567',
       tags: ['Hoods', 'Ducting', 'Filters'],
       description:
           'Hood, ducting and exhaust specialist focused on airflow, filter '
@@ -60,6 +64,7 @@ class TechniciansPage extends StatelessWidget {
       reviews: '260',
       experience: '6 years',
       location: 'Bengaluru',
+      phone: '+91 98490 45678',
       tags: ['Microwaves', 'Dishwashers', 'Mixers'],
       description:
           'Handles microwaves, dishwashers and small kitchen appliances, '
@@ -73,6 +78,7 @@ class TechniciansPage extends StatelessWidget {
       reviews: '190',
       experience: '5 years',
       location: 'Hyderabad',
+      phone: '+91 98490 56789',
       tags: ['Washers', 'Dryers', 'Ice Machines'],
       description:
           'Washing machines, dryers and ice machines kept running with '
@@ -85,7 +91,7 @@ class TechniciansPage extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
     final compact = width < 700;
 
-    void bookRepair() => showWebsiteLoginDialog(context);
+    void bookRepair() => showBookRepairDialog(context);
 
     return Scaffold(
       backgroundColor: LandingColors.bgMain,
@@ -100,7 +106,7 @@ class TechniciansPage extends StatelessWidget {
             onContact: () => context.go(Routes.contact),
             onPrivacy: () => context.go(Routes.privacy),
             onBookRepair: bookRepair,
-            onSignIn: bookRepair,
+            onSignIn: () => showWebsiteLoginDialog(context),
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -115,7 +121,7 @@ class TechniciansPage extends StatelessWidget {
                   const _AssuranceNote(),
                   ServicesCtaSection(
                     onAssessment: bookRepair,
-                    onContact: bookRepair,
+                    onContact: () => context.go(Routes.contact),
                   ),
                   ServicesFooter(onBook: bookRepair),
                 ],
@@ -530,7 +536,9 @@ class _TechnicianCardState extends State<_TechnicianCard> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      _BookButton(onTap: widget.onBook),
+                      _BookButton(
+                        onTap: () => showBookRepairDialog(context),
+                      ),
                     ],
                   ),
                 ],
@@ -712,6 +720,7 @@ class _Technician {
     required this.reviews,
     required this.experience,
     required this.location,
+    required this.phone,
     required this.tags,
     required this.description,
   });
@@ -723,6 +732,7 @@ class _Technician {
   final String reviews;
   final String experience;
   final String location;
+  final String phone;
   final List<String> tags;
   final String description;
 }

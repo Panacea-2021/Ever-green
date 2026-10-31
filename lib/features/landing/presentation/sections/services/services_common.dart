@@ -329,8 +329,9 @@ class _SvcButtonState extends State<SvcButton> {
         border = Colors.white.withOpacity(0.6);
     }
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
+    return SelectionContainer.disabled(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
@@ -365,6 +366,7 @@ class _SvcButtonState extends State<SvcButton> {
           ),
         ),
       ),
+    ),
     );
   }
 }

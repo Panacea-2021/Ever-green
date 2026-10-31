@@ -163,6 +163,7 @@ class _HowItWorksSectionState extends State<HowItWorksSection> {
               child: _StepCard(
                 data: _steps[index],
                 isActive: index == _activeIndex,
+                index: index,
                 fillHeight: true,
                 onTap: () => setState(() => _activeIndex = index),
               ),
@@ -183,6 +184,7 @@ class _HowItWorksSectionState extends State<HowItWorksSection> {
           child: _StepCard(
             data: _steps[index],
             isActive: index == _activeIndex,
+            index: index,
             fillHeight: false,
             onTap: () => setState(() => _activeIndex = index),
           ),
@@ -197,107 +199,155 @@ class _StepCard extends StatefulWidget {
     required this.data,
     required this.isActive,
     required this.onTap,
+    this.index = 0,
     this.fillHeight = false,
   });
 
   final StepCardData data;
   final bool isActive;
   final VoidCallback onTap;
+  final int index;
   final bool fillHeight;
 
   @override
   State<_StepCard> createState() => _StepCardState();
 }
 
-class _StepCardState extends State<_StepCard> {
+class _StepCardState extends State<_StepCard>
+    with SingleTickerProviderStateMixin {
   bool _hover = false;
+  late final AnimationController _bobController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  );
+  late final Animation<double> _bob =
+      Tween<double>(begin: 0.0, end: 1.0).animate(
+    CurvedAnimation(
+      parent: _bobController,
+      curve: Interval(
+        (widget.index * 0.15).clamp(0.0, 0.6),
+        1.0,
+        curve: Curves.easeInOut,
+      ),
+    ),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _bobController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _bobController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final active = widget.isActive;
     final bg = active ? LandingColors.primary : Colors.white;
     final titleColor = active ? Colors.white : LandingColors.textDark;
-    final bodyColor = active ? const Color(0xE6FFFFFF) : const Color(0xFF6B746E);
-    final numberColor = active ? const Color(0xB3FFFFFF) : const Color(0xFF9AA39C);
+    final bodyColor =
+        active ? const Color(0xE6FFFFFF) : const Color(0xFF6B746E);
+    final numberColor =
+        active ? const Color(0xB3FFFFFF) : const Color(0xFF9AA39C);
     final iconColor = active ? Colors.white : LandingColors.primary;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 240),
-          curve: Curves.easeOutCubic,
-          height: widget.fillHeight ? double.infinity : null,
-          transform: Matrix4.identity()
-            ..translate(0.0, _hover && !active ? -4.0 : 0.0),
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              if (!active)
-                BoxShadow(
-                  color: const Color(0x14000000),
-                  blurRadius: _hover ? 22 : 14,
-                  offset: const Offset(0, 8),
+    return AnimatedBuilder(
+      animation: _bob,
+      builder: (context, child) {
+        final offset = (_bob.value - 0.5) * 8;
+        return Transform.translate(
+          offset: Offset(0, offset),
+          child: child,
+        );
+      },
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            height: widget.fillHeight ? double.infinity : null,
+            transform: Matrix4.identity()
+              ..translateByDouble(
+                  0.0, _hover && !active ? -4.0 : 0.0, 0.0, 1.0,),
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(20),
+              border:
+                  Border.all(color: const Color.fromRGBO(121, 157, 135, 0.35)),
+              boxShadow: [
+                if (!active)
+                  BoxShadow(
+                    color: const Color(0x14000000),
+                    blurRadius: _hover ? 22 : 14,
+                    offset: const Offset(0, 8),
+                  ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.data.number,
+                  style: TextStyle(
+                    fontFamily: LandingTypography.fontFamily,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6,
+                    color: numberColor,
+                  ),
                 ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.data.number,
-                style: TextStyle(
-                  fontFamily: LandingTypography.fontFamily,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.6,
-                  color: numberColor,
+                const SizedBox(height: 18),
+                Icon(widget.data.icon, size: 28, color: iconColor),
+                const SizedBox(height: 22),
+                Text(
+                  widget.data.title,
+                  style: TextStyle(
+                    fontFamily: LandingTypography.fontFamily,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                    color: titleColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              Icon(widget.data.icon, size: 28, color: iconColor),
-              const SizedBox(height: 22),
-              Text(
-                widget.data.title,
-                style: TextStyle(
-                  fontFamily: LandingTypography.fontFamily,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
-                  color: titleColor,
+                const SizedBox(height: 10),
+                Text(
+                  widget.data.description,
+                  style: TextStyle(
+                    fontFamily: LandingTypography.fontFamily,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    height: 1.5,
+                    color: bodyColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                widget.data.description,
-                style: TextStyle(
-                  fontFamily: LandingTypography.fontFamily,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                  height: 1.5,
-                  color: bodyColor,
+                if (widget.fillHeight)
+                  const Spacer()
+                else
+                  const SizedBox(height: 28),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: active ? Colors.white : const Color(0xFFF3F6F1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward,
+                    size: 16,
+                    color: LandingColors.primary,
+                  ),
                 ),
-              ),
-              if (widget.fillHeight) const Spacer() else const SizedBox(height: 28),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: active ? Colors.white : const Color(0xFFF3F6F1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.arrow_forward,
-                  size: 16,
-                  color: LandingColors.primary,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

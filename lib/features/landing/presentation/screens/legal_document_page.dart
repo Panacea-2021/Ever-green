@@ -71,7 +71,7 @@ class LegalDocumentPage extends StatelessWidget {
               ),
               ServicesCtaSection(
                 onAssessment: () => context.go(Routes.login),
-                onContact: () => context.go(Routes.login),
+                onContact: () => context.go(Routes.contact),
               ),
               ServicesFooter(onBook: () => context.go(Routes.login)),
             ],

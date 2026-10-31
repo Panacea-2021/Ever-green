@@ -121,7 +121,7 @@ class _TechniciansSectionState extends State<TechniciansSection> {
         final cardWidth = compact ? 260.0 : 270.0;
         final cardExtent = cardWidth + _cardGap;
         final imageHeight = cardWidth * 0.68;
-        final cardHeight = imageHeight + 250;
+        final cardHeight = imageHeight + 235;
 
         return Container(
           width: double.infinity,
@@ -334,7 +334,7 @@ class _TechniciansSectionState extends State<TechniciansSection> {
   }
 }
 
-class _TechnicianCard extends StatelessWidget {
+class _TechnicianCard extends StatefulWidget {
   const _TechnicianCard({
     required this.name,
     required this.specialty,
@@ -360,143 +360,175 @@ class _TechnicianCard extends StatelessWidget {
   static const _detailColor = Color(0xFF1F2D25);
 
   @override
+  State<_TechnicianCard> createState() => _TechnicianCardState();
+}
+
+class _TechnicianCardState extends State<_TechnicianCard> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: selected ? LandingColors.primary : const Color(0xFFE4EAE4),
-          width: selected ? 2 : 1,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x120D2917),
-            blurRadius: 18,
-            offset: Offset(0, 7),
+    final technician = widget;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - value) * 26),
+            child: child,
           ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: imageHeight,
-            width: double.infinity,
-            child: Image.asset(
-              image,
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-              filterQuality: FilterQuality.high,
+        );
+      },
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: AnimatedScale(
+          scale: _hover ? 1.03 : 1.0,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            transform: Matrix4.translationValues(0, _hover ? -8 : 0, 0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: _hover
+                    ? const Color(0xFFCDE5D3)
+                    : (technician.selected
+                        ? LandingColors.primary
+                        : const Color(0xFFE4EAE4)),
+                width: technician.selected ? 2 : 1,
+              ),
+              boxShadow: _hover
+                  ? LandingShadows.cardShadow
+                  : LandingShadows.smallCardShadow,
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: LandingTypography.fontFamily,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: LandingColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    const Icon(Icons.star, size: 15, color: Color(0xFFFFAC18)),
-                    const SizedBox(width: 3),
-                    Text(
-                      '$rating ',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: LandingColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      '($reviews)',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: _detailColor,
-                      ),
-                    ),
-                  ],
+                SizedBox(
+                  height: technician.imageHeight,
+                  width: double.infinity,
+                  child: Image.asset(
+                    technician.image,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    filterQuality: FilterQuality.high,
+                  ),
                 ),
-                const SizedBox(height: 7),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.calendar_month_outlined,
-                      size: 14,
-                      color: LandingColors.primary,
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: SizedBox(
-                        height: 34,
-                        child: Text(
-                          specialty,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            height: 1.3,
-                            fontWeight: FontWeight.w600,
-                            color: _detailColor,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              technician.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: LandingTypography.fontFamily,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: LandingColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.star,
+                              size: 15, color: Color(0xFFFFAC18),),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${technician.rating} ',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: LandingColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            '(${technician.reviews})',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1F2D25),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.calendar_month_outlined,
+                            size: 14,
+                            color: LandingColors.primary,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: SizedBox(
+                              height: 34,
+                              child: Text(
+                                technician.specialty,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  height: 1.3,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1F2D25),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 9),
+                      SizedBox(
+                        height: 61,
+                        width: double.infinity,
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 5,
+                            children: [
+                              for (final tag in technician.tags)
+                                _TagChip(label: tag),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 9),
-                // Skill chips keep their natural (readable) size and may wrap
-                // onto a second row. The area is a fixed two-row height so every
-                // card stays exactly the same size.
-                SizedBox(
-                  height: 61,
-                  width: double.infinity,
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Wrap(
-                      spacing: 6,
-                      runSpacing: 5,
-                      children: [
-                        for (final tag in tags) _TagChip(label: tag),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 9),
-                SizedBox(
-                  height: 54,
-                  child: Text(
-                    description,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      height: 1.35,
-                      fontWeight: FontWeight.w500,
-                      color: _detailColor,
-                    ),
+                      const SizedBox(height: 9),
+                      SizedBox(
+                        height: 54,
+                        child: Text(
+                          technician.description,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            height: 1.35,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF1F2D25),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

@@ -6,6 +6,7 @@ import '../../../auth/presentation/screens/login_screen.dart';
 import '../sections/landing_site_header.dart';
 import '../sections/services/services_bottom_sections.dart';
 import '../sections/services/services_top_sections.dart';
+import '../widgets/book_repair_dialog.dart';
 
 /// Evergreen Services page - commercial kitchen services for businesses.
 ///
@@ -55,14 +56,19 @@ class _ServicesPageState extends State<ServicesPage> {
       body: Column(
         children: [
           LandingSiteHeader(
-            onHome: () => context.go(Routes.home),
+            onHome: () {
+              while (context.canPop()) {
+                context.pop();
+              }
+              context.go(Routes.home);
+            },
             onServices: () => _scrollTo(_servicesKey),
-            onIndustries: () => context.go(Routes.industries),
-            onAbout: () => context.go(Routes.about),
-            onHowItWorks: () => context.go(Routes.howItWorks),
-            onContact: () => context.go(Routes.contact),
+            onIndustries: () => context.push(Routes.industries),
+            onAbout: () => context.push(Routes.about),
+            onHowItWorks: () => context.push(Routes.howItWorks),
+            onContact: () => context.push(Routes.contact),
             onPrivacy: () => context.go(Routes.privacy),
-            onBookRepair: () => showWebsiteLoginDialog(context),
+            onBookRepair: () => showBookRepairDialog(context),
             onSignIn: () => showWebsiteLoginDialog(context),
             onSearch: () => _scrollTo(_faqKey),
             activeNav: 'Services',
@@ -92,7 +98,7 @@ class _ServicesPageState extends State<ServicesPage> {
                   ServicesCtaSection(
                     key: _contactKey,
                     onAssessment: () => showWebsiteLoginDialog(context),
-                    onContact: () => showWebsiteLoginDialog(context),
+                    onContact: () => context.go(Routes.contact),
                   ),
                   ServicesFooter(
                     onBook: () => showWebsiteLoginDialog(context),

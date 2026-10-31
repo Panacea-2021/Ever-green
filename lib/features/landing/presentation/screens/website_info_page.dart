@@ -7,6 +7,7 @@ import '../sections/landing_site_header.dart';
 import '../sections/services/services_bottom_sections.dart';
 import '../sections/services/services_common.dart';
 import '../sections/services/services_top_sections.dart';
+import '../widgets/book_repair_dialog.dart';
 
 enum WebsiteInfoKind { industries, about, howItWorks }
 
@@ -66,21 +67,26 @@ class WebsiteInfoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void go(String route) => context.go(route);
+    void go(String route) => context.push(route);
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
           LandingSiteHeader(
-            onHome: () => go(Routes.home),
+            onHome: () {
+              while (context.canPop()) {
+                context.pop();
+              }
+              context.go(Routes.home);
+            },
             onServices: () => go(Routes.services),
             onIndustries: () => go(Routes.industries),
             onAbout: () => go(Routes.about),
             onHowItWorks: () => go(Routes.howItWorks),
             onContact: () => go(Routes.contact),
             onPrivacy: () => go(Routes.privacy),
-            onBookRepair: () => showWebsiteLoginDialog(context),
+            onBookRepair: () => showBookRepairDialog(context),
             onSignIn: () => showWebsiteLoginDialog(context),
             activeNav: _activeNav,
           ),

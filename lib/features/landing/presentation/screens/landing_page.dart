@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import '../landing_theme.dart';
+import '../widgets/book_repair_dialog.dart';
 import '../sections/hero_section.dart';
 import '../sections/home_intro_artwork.dart';
 import '../sections/services/services_bottom_sections.dart';
@@ -54,12 +55,12 @@ class _LandingPageState extends State<LandingPage> {
                     child: HeroSection(
                       onHome: () => _scrollTo(_topKey),
                       onServices: () => context.push(Routes.services),
-                      onIndustries: () => context.go(Routes.industries),
-                      onAbout: () => context.go(Routes.about),
-                      onHowItWorks: () => context.go(Routes.howItWorks),
-                      onContactUs: () => context.go(Routes.contact),
+                      onIndustries: () => context.push(Routes.industries),
+                      onAbout: () => context.push(Routes.about),
+                      onHowItWorks: () => context.push(Routes.howItWorks),
+                      onContactUs: () => context.push(Routes.contact),
                       onPrivacy: () => context.go(Routes.privacy),
-                      onBookRepair: () => showWebsiteLoginDialog(context),
+                      onBookRepair: () => showBookRepairDialog(context),
                       onSignIn: () => showWebsiteLoginDialog(context),
                       onGetEstimate: () => showWebsiteLoginDialog(context),
                       onSearch: () => _scrollTo(_faqKey),
@@ -69,7 +70,7 @@ class _LandingPageState extends State<LandingPage> {
                     key: _trustedKey,
                     child: HomeIntroArtwork(
                       stepsKey: _howItWorksKey,
-                      onBookRepair: () => showWebsiteLoginDialog(context),
+                      onBookRepair: () => showBookRepairDialog(context),
                       onLearnMore: () => _scrollTo(_howItWorksKey),
                     ),
                   ),
@@ -96,10 +97,10 @@ class _LandingPageState extends State<LandingPage> {
                   const DownloadAppSection(),
                   ServicesCtaSection(
                     onAssessment: () => showWebsiteLoginDialog(context),
-                    onContact: () => showWebsiteLoginDialog(context),
+                    onContact: () => context.go(Routes.contact),
                   ),
                   ServicesFooter(
-                    onBook: () => showWebsiteLoginDialog(context),
+                    onBook: () => showBookRepairDialog(context),
                   ),
                 ],
               ),

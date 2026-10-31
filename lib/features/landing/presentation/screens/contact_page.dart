@@ -55,7 +55,15 @@ class _ContactPageState extends State<ContactPage> {
               const _ContactCities(),
               ServicesCtaSection(
                 onAssessment: () => showWebsiteLoginDialog(context),
-                onContact: () => showWebsiteLoginDialog(context),
+                onContact: () {
+                  if (_scroll.hasClients) {
+                    _scroll.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOutCubic,
+                    );
+                  }
+                },
               ),
               ServicesFooter(
                 onBook: () => showWebsiteLoginDialog(context),

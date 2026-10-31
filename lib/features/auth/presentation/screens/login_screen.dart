@@ -135,9 +135,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final loginContent = LoadingOverlay(
       isLoading: authState.isLoading,
       message: widget.isDialog
-          ? _showSlowLoginNotice
-              ? 'Connecting to the sign-in server. The first request after inactivity may take longer.'
-              : 'Signing in...'
+          ? 'Signing in...'
           : null,
       child: Container(
         width: double.infinity,
