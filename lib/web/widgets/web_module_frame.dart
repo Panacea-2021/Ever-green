@@ -79,8 +79,8 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.pmSchedule,
   };
 
-  /// Module pages shown under a green title banner, with the page in a card
-  /// overlapping it (matched by prefix, so `/add-task/new` counts).
+  /// Module pages shown in a card with their own icon-and-title header
+  /// (matched by prefix, so `/add-task/new` counts).
   static const _bannerPaths = [
     Routes.addTask,
     Routes.createIndividualTask,
@@ -289,7 +289,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                           .clamp(0.0, _contentWidthFor(_location));
 
                       if (bannered) {
-                        return _BannerShell(
+                        return _HeaderCardShell(
                           title: title,
                           entry: _entryFor(role),
                           width: width,
@@ -334,10 +334,10 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   }
 }
 
-/// Green gradient title banner with the module icon and title, and the page
-/// in a white card that overlaps the banner's lower edge.
-class _BannerShell extends StatelessWidget {
-  const _BannerShell({
+/// The page in a white card whose header shows the module icon and title on
+/// a soft mint wash.
+class _HeaderCardShell extends StatelessWidget {
+  const _HeaderCardShell({
     required this.title,
     required this.entry,
     required this.width,
@@ -353,151 +353,100 @@ class _BannerShell extends StatelessWidget {
   final BoxConstraints constraints;
   final Widget child;
 
-  static const _bannerHeight = 176.0;
-  static const _cardTop = 108.0;
+  static const _headerHeight = 78.0;
 
   @override
   Widget build(BuildContext context) {
-    final height = (constraints.maxHeight - _cardTop - 28)
-        .clamp(0.0, double.infinity);
+    final height = (constraints.maxHeight - 48).clamp(0.0, double.infinity);
+    final bodyHeight = (height - _headerHeight - 1).clamp(0.0, double.infinity);
     final e = entry;
     final icon = e?.svgIcon != null
         ? SvgPicture.asset(
             e!.svgIcon!,
-            width: 24,
-            height: 24,
+            width: 21,
+            height: 21,
             colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           )
         : Icon(
             e?.icon ?? Icons.dashboard_outlined,
-            size: 24,
+            size: 21,
             color: Colors.white,
           );
 
-    return Stack(
-      children: [
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          height: _bannerHeight,
-          child: Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF106220), Color(0xFF0A3F15)],
-              ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -60,
-                  top: -90,
-                  child: _circle(260, 0.07),
-                ),
-                Positioned(
-                  right: 180,
-                  bottom: -70,
-                  child: _circle(150, 0.05),
-                ),
-                Positioned(
-                  left: -40,
-                  bottom: -60,
-                  child: _circle(140, 0.04),
-                ),
-              ],
-            ),
-          ),
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Container(
+        width: width,
+        height: height,
+        margin: const EdgeInsets.only(top: 24),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: WebTokens.line),
+          boxShadow: WebTokens.softShadow,
         ),
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          height: _cardTop,
-          child: Center(
-            child: SizedBox(
-              width: width,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: _headerHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [Color(0xFFEAF4EC), Colors.white],
+                ),
+              ),
               child: Row(
                 children: [
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: 44,
+                    height: 44,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.22),
-                      ),
+                      color: WebTokens.green,
+                      borderRadius: BorderRadius.circular(13),
+                      boxShadow: [
+                        BoxShadow(
+                          color: WebTokens.green.withValues(alpha: 0.25),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: icon,
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Text(
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: WebTokens.fontFamily,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: -0.2,
-                      ),
+                      style: WebTokens.heading(19),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ),
-        Positioned(
-          top: _cardTop,
-          left: 0,
-          right: 0,
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Container(
-              width: width,
-              height: height,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0A3F15).withValues(alpha: 0.14),
-                    blurRadius: 36,
-                    offset: const Offset(0, 14),
-                  ),
-                ],
-              ),
+            const Divider(height: 1, thickness: 1, color: WebTokens.line),
+            SizedBox(
+              height: bodyHeight,
               child: MediaQuery(
                 data: mq.copyWith(
-                  size: Size(width, height),
+                  size: Size(width, bodyHeight),
                   padding: EdgeInsets.zero,
                   viewPadding: EdgeInsets.zero,
                 ),
                 child: child,
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
-
-  Widget _circle(double size, double alpha) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: alpha),
-        ),
-      );
 }
 
 class _WebTopBar extends StatelessWidget {
