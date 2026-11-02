@@ -436,7 +436,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
     );
   }
 
-  static const double _webMaxWidth = 820;
+  static const double _webMaxWidth = double.infinity;
   static const Color _webLine = Color(0xFFE2E8E3);
   static const Color _webFieldBorder = Color(0xFFD9E2DB);
   static const Color _webInk = Color(0xFF14201A);
@@ -461,7 +461,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
             Form(
               key: _formKey,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: _webMaxWidth),
