@@ -134,14 +134,13 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     return config.last.matchedLocation;
   }
 
+  /// Route notifications can arrive mid-build (including the initial attach,
+  /// when the scheduler still reports idle), so the update always waits for
+  /// the end of the frame.
   void _onRouteChanged() {
-    final phase = SchedulerBinding.instance.schedulerPhase;
-    if (phase == SchedulerPhase.idle ||
-        phase == SchedulerPhase.postFrameCallbacks) {
-      _syncLocation();
-    } else {
-      SchedulerBinding.instance.addPostFrameCallback((_) => _syncLocation());
-    }
+    SchedulerBinding.instance
+      ..addPostFrameCallback((_) => _syncLocation())
+      ..ensureVisualUpdate();
   }
 
   void _syncLocation() {
