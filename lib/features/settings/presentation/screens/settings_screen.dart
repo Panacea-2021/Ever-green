@@ -212,14 +212,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Widget _webBody(UserRole role, SettingsPreferences prefs, bool canAnalytics) {
-    Widget group(String label, Widget card) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [_sectionLabel(label), card],
-        );
-    final preferences = group('Preferences', _preferencesCard(prefs));
-    final account = group('Account', _accountCard(role));
-    final reports = canAnalytics ? group('Reports', _reportsCard()) : null;
-    final support = group('Support', _supportCard());
+    final preferences = _webSection(
+      'Preferences',
+      Icons.tune_rounded,
+      const Color(0xFF106220),
+      _preferencesCard(prefs),
+    );
+    final account = _webSection(
+      'Account',
+      Icons.manage_accounts_outlined,
+      const Color(0xFF2563EB),
+      _accountCard(role),
+    );
+    final reports = canAnalytics
+        ? _webSection(
+            'Reports',
+            Icons.insert_chart_outlined_rounded,
+            const Color(0xFF7C3AED),
+            _reportsCard(),
+          )
+        : null;
+    final support = _webSection(
+      'Support',
+      Icons.support_agent_rounded,
+      const Color(0xFFD97706),
+      _supportCard(),
+    );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -288,6 +306,78 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _webSection(String label, IconData icon, Color color, Widget body) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE3ECE5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.10),
+                  color.withValues(alpha: 0.02),
+                ],
+              ),
+              border: Border(
+                bottom: BorderSide(color: color.withValues(alpha: 0.12)),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [color, Color.lerp(color, Colors.black, 0.25)!],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.30),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, size: 20, color: Colors.white),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1C2B20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          body,
+        ],
       ),
     );
   }
@@ -424,6 +514,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Widget _card(List<Widget> children) {
+    if (kIsWeb) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Column(children: children),
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -451,6 +547,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       );
 
   Widget _iconChip(IconData icon) {
+    if (kIsWeb) {
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F7F3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE3ECE5)),
+        ),
+        child: Icon(icon, size: 20, color: _green),
+      );
+    }
     return Container(
       width: 38,
       height: 38,
@@ -534,6 +642,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             onChanged: onChanged,
             activeThumbColor: Colors.white,
             activeTrackColor: _green,
+            inactiveThumbColor: kIsWeb ? Colors.white : null,
+            inactiveTrackColor: kIsWeb ? const Color(0xFFD5DED7) : null,
+            trackOutlineColor: kIsWeb
+                ? const WidgetStatePropertyAll(Colors.transparent)
+                : null,
           ),
         ],
       ),

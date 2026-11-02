@@ -111,11 +111,18 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 24),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F9F6),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0xFFE3ECE5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -158,21 +165,49 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Material(
-        color: selected ? _green : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          gradient: selected
+              ? const LinearGradient(
+                  colors: [Color(0xFF106220), Color(0xFF1A801A)],
+                )
+              : null,
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: _green.withValues(alpha: 0.28),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           hoverColor: _green.withValues(alpha: 0.06),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  size: 18,
-                  color: selected ? Colors.white : _green,
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: selected
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : const Color(0xFFF2F7F3),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 17,
+                    color: selected ? Colors.white : _green,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -194,6 +229,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
             ),
           ),
         ),
+        ),
       ),
     );
   }
@@ -212,35 +248,98 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
   }
 
   Widget _webListHeader(int count, int total) {
+    final rangeLabel = _dateRange == null ? 'All time' : _dateRange!.summary;
+    final filtered =
+        _dateRange != null || _entityFilter != null || _query.isNotEmpty;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE3ECE5)),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0A3F15), Color(0xFF1A801A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: _green.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Expanded(child: _buildResultSummary(count)),
-          const SizedBox(width: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: _green,
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.event_note_outlined,
+              size: 19,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '$count ${count == 1 ? 'entry' : 'entries'} • $rangeLabel',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          if (filtered) ...[
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _dateRange = null;
+                  _entityFilter = null;
+                  _query = '';
+                  _searchController.clear();
+                }),
+                child: Text(
+                  'Clear',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.9),
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+          ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              color: Colors.white,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.history, size: 14, color: Colors.white),
-                const SizedBox(width: 5),
+                const Icon(Icons.history, size: 15, color: _green),
+                const SizedBox(width: 6),
                 Text(
                   '$total',
                   style: const TextStyle(
                     fontFamily: 'Montserrat',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: _green,
                   ),
                 ),
               ],
@@ -344,21 +443,29 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Colors.white,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: color.withValues(alpha: 0.35),
-                        width: 1.5,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          color,
+                          Color.lerp(color, Colors.black, 0.25)!,
+                        ],
                       ),
+                      border: Border.all(color: Colors.white, width: 3),
                       boxShadow: [
                         BoxShadow(
-                          color: color.withValues(alpha: 0.15),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
+                          color: color.withValues(alpha: 0.30),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    child: Icon(_actionIcon(e.action), color: color, size: 19),
+                    child: Icon(
+                      _actionIcon(e.action),
+                      color: Colors.white,
+                      size: 18,
+                    ),
                   ),
                 ),
               ],
@@ -1237,6 +1344,7 @@ class _WebHoverCardState extends State<_WebHoverCard> {
       onExit: (_) => setState(() => _hover = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
+        transform: Matrix4.translationValues(0, _hover ? -2 : 0, 0),
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Colors.white,
@@ -1248,7 +1356,8 @@ class _WebHoverCardState extends State<_WebHoverCard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: _hover ? 0.08 : 0.04),
+              color: (_hover ? widget.accent : Colors.black)
+                  .withValues(alpha: _hover ? 0.12 : 0.04),
               blurRadius: _hover ? 22 : 12,
               offset: const Offset(0, 6),
             ),

@@ -186,18 +186,92 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   }
 
   Widget _webBody() {
+    Widget bubble(double size, double alpha) => Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withValues(alpha: alpha),
+          ),
+        );
     final intro = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFE6F2E8), Color(0xFFF6FBF7)],
+          colors: [Color(0xFF0A3F15), Color(0xFF1A801A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFDCEBDF)),
+        boxShadow: [
+          BoxShadow(
+            color: _green.withValues(alpha: 0.28),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
-      child: _buildIntro(),
+      child: Stack(
+        children: [
+          Positioned(right: -40, top: -50, child: bubble(160, 0.08)),
+          Positioned(left: -30, bottom: -60, child: bubble(140, 0.06)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 44),
+            child: Column(
+              children: [
+                Container(
+                  width: 104,
+                  height: 104,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.18),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child:
+                        const Icon(Icons.lock_outline, color: _green, size: 34),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Update your password',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Enter your current password, then choose a new one.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 13.5,
+                    height: 1.5,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
     final form = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -389,6 +463,18 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         fillColor: const Color(0xFFF2F7F3),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        prefixIcon: kIsWeb
+            ? const Icon(Icons.lock_outline, size: 19, color: _green)
+            : null,
+        enabledBorder: kIsWeb
+            ? OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE3ECE5)),
+              )
+            : OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
         suffixIcon: IconButton(
           tooltip: hide ? 'Show password' : 'Hide password',
           icon: Icon(
@@ -399,10 +485,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           onPressed: toggle,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
