@@ -353,14 +353,12 @@ class _HeaderCardShell extends StatelessWidget {
   final BoxConstraints constraints;
   final Widget child;
 
-  static const _headerHeight = 104.0;
+  static const _headerHeight = 88.0;
   static const _accentHeight = 4.0;
 
   @override
   Widget build(BuildContext context) {
-    final height = (constraints.maxHeight - 48).clamp(0.0, double.infinity);
-    final bodyHeight = (height - _accentHeight - _headerHeight - 1)
-        .clamp(0.0, double.infinity);
+    final height = (constraints.maxHeight - 40).clamp(0.0, double.infinity);
     final e = entry;
     final icon = e?.svgIcon != null
         ? SvgPicture.asset(
@@ -385,7 +383,7 @@ class _HeaderCardShell extends StatelessWidget {
           child: Container(
             width: width,
             height: height,
-            margin: const EdgeInsets.only(top: 24),
+            margin: const EdgeInsets.only(top: 20),
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: Colors.white,
@@ -430,10 +428,10 @@ class _HeaderCardShell extends StatelessWidget {
                         ),
                       ),
                       Positioned(right: -40, top: -70, child: _ring(200)),
-                      Positioned(right: 70, top: 30, child: _ring(110)),
+                      Positioned(right: 70, top: 24, child: _ring(110)),
                       const Positioned(
                         right: 210,
-                        top: 22,
+                        top: 16,
                         child: _DotGrid(),
                       ),
                       Padding(
@@ -441,8 +439,8 @@ class _HeaderCardShell extends StatelessWidget {
                         child: Row(
                           children: [
                             Container(
-                              width: 56,
-                              height: 56,
+                              width: 50,
+                              height: 50,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
@@ -475,9 +473,9 @@ class _HeaderCardShell extends StatelessWidget {
                                     title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: WebTokens.heading(23),
+                                    style: WebTokens.heading(21),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 7),
                                   Container(
                                     width: 44,
                                     height: 4,
@@ -501,15 +499,16 @@ class _HeaderCardShell extends StatelessWidget {
                   ),
                 ),
                 const Divider(height: 1, thickness: 1, color: WebTokens.line),
-                SizedBox(
-                  height: bodyHeight,
-                  child: MediaQuery(
-                    data: mq.copyWith(
-                      size: Size(width, bodyHeight),
-                      padding: EdgeInsets.zero,
-                      viewPadding: EdgeInsets.zero,
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, body) => MediaQuery(
+                      data: mq.copyWith(
+                        size: body.biggest,
+                        padding: EdgeInsets.zero,
+                        viewPadding: EdgeInsets.zero,
+                      ),
+                      child: child,
                     ),
-                    child: child,
                   ),
                 ),
               ],
