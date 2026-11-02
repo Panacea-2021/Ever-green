@@ -592,7 +592,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               builder: (context, c) {
                 const gap = 14.0;
                 final perRow = c.maxWidth >= 760 ? tabs.length : 2;
-                final w = (c.maxWidth - gap * (perRow - 1)) / perRow;
+                final w = ((c.maxWidth - gap * (perRow - 1)) / perRow)
+                    .clamp(0.0, 230.0);
                 return Wrap(
                   spacing: gap,
                   runSpacing: gap,
@@ -826,7 +827,7 @@ class _WebTabTileState extends State<_WebTabTile> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          height: 96,
+          height: 74,
           clipBehavior: Clip.antiAlias,
           transform: Matrix4.translationValues(0, _hover && !on ? -2 : 0, 0),
           decoration: BoxDecoration(
@@ -838,7 +839,7 @@ class _WebTabTileState extends State<_WebTabTile> {
                     colors: [a, Color.lerp(a, Colors.black, 0.25)!],
                   )
                 : null,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(15),
             border: Border.all(
               color: on
                   ? Colors.transparent
@@ -851,19 +852,19 @@ class _WebTabTileState extends State<_WebTabTile> {
                 color: on
                     ? a.withValues(alpha: 0.30)
                     : Colors.black.withValues(alpha: 0.04),
-                blurRadius: on ? 20 : 10,
-                offset: const Offset(0, 6),
+                blurRadius: on ? 14 : 8,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Stack(
             children: [
               Positioned(
-                right: -26,
-                top: -26,
+                right: -20,
+                top: -20,
                 child: Container(
-                  width: 96,
-                  height: 96,
+                  width: 72,
+                  height: 72,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: on
@@ -873,25 +874,25 @@ class _WebTabTileState extends State<_WebTabTile> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Row(
                   children: [
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         color: on
                             ? Colors.white.withValues(alpha: 0.18)
                             : a.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(11),
                       ),
                       child: Icon(
                         widget.icon,
                         color: on ? Colors.white : a,
-                        size: 24,
+                        size: 19,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 11),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -910,20 +911,20 @@ class _WebTabTileState extends State<_WebTabTile> {
                                   '${widget.count}',
                                   style: TextStyle(
                                     fontFamily: 'Montserrat',
-                                    fontSize: 24,
+                                    fontSize: 19,
                                     fontWeight: FontWeight.w800,
                                     height: 1.1,
                                     color: fg,
                                   ),
                                 ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             widget.label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'Montserrat',
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: on
                                   ? Colors.white.withValues(alpha: 0.88)
