@@ -187,7 +187,9 @@ class _TechnicianPerformanceScreenState
           onTap: () => setState(() => _tab = index),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            height: 48,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             decoration: BoxDecoration(
               color: sel ? _green : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
@@ -206,15 +208,15 @@ class _TechnicianPerformanceScreenState
               children: [
                 Icon(
                   icon,
-                  size: 17,
+                  size: 19,
                   color: sel ? Colors.white : const Color(0xFF4B5A50),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 9),
                 Text(
                   label,
                   style: TextStyle(
                     fontFamily: 'Montserrat',
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: sel ? Colors.white : const Color(0xFF4B5A50),
                   ),
@@ -242,13 +244,9 @@ class _TechnicianPerformanceScreenState
             ),
           ],
         ),
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          runSpacing: 8,
-          spacing: 12,
-          children: [
-            Container(
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final segment = Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: const Color(0xFFF2F6F3),
@@ -257,20 +255,55 @@ class _TechnicianPerformanceScreenState
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  roleTab('Service Engineers', Icons.engineering_outlined, 0),
+                  Flexible(
+                    fit: FlexFit.tight,
+                    child: roleTab(
+                      'Service Engineers',
+                      Icons.engineering_outlined,
+                      0,
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  roleTab('Managers', Icons.manage_accounts_outlined, 1),
+                  Flexible(
+                    fit: FlexFit.tight,
+                    child: roleTab(
+                      'Managers',
+                      Icons.manage_accounts_outlined,
+                      1,
+                    ),
+                  ),
                 ],
               ),
-            ),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            );
+            if (c.maxWidth < 900) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  segment,
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      for (final p in RangePreset.values) ...[
+                        if (p != RangePreset.values.first)
+                          const SizedBox(width: 8),
+                        Expanded(child: _webRangeChip(p, range)),
+                      ],
+                    ],
+                  ),
+                ],
+              );
+            }
+            return Row(
               children: [
-                for (final p in RangePreset.values) _webRangeChip(p, range),
+                Expanded(flex: 9, child: segment),
+                const SizedBox(width: 12),
+                for (final p in RangePreset.values) ...[
+                  if (p != RangePreset.values.first) const SizedBox(width: 10),
+                  Expanded(flex: 3, child: _webRangeChip(p, range)),
+                ],
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -286,11 +319,12 @@ class _TechnicianPerformanceScreenState
         onTap: () => _selectRange(p, range),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 56,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: selected ? _green.withValues(alpha: 0.1) : Colors.white,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected ? _green : _webLine,
               width: selected ? 1.4 : 1,
@@ -303,17 +337,21 @@ class _TechnicianPerformanceScreenState
                 p == RangePreset.custom
                     ? Icons.calendar_month_outlined
                     : Icons.schedule_outlined,
-                size: 15,
+                size: 18,
                 color: fg,
               ),
-              const SizedBox(width: 7),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: fg,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                  ),
                 ),
               ),
             ],
