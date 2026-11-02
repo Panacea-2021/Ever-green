@@ -215,7 +215,8 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
 
     final user = ref.watch(currentUserProvider);
     final role = ref.watch(currentUserRoleProvider);
-    final webDesigned = WebModuleFrame._webDesignedPaths.contains(_location);
+    final webDesigned = WebModuleFrame._webDesignedPaths.contains(_location) ||
+        _location.startsWith('${Routes.companyDetails}/');
 
     return Material(
       color: WebTokens.cream,

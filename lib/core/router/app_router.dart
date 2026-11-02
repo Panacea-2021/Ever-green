@@ -12,6 +12,7 @@ import '../../features/landing/presentation/screens/technicians_page.dart';
 import '../../features/landing/presentation/screens/website_info_page.dart';
 import '../../web/screens/web_dashboard_screen.dart';
 import '../../web/screens/web_companies_screen.dart';
+import '../../web/screens/web_company_details_screen.dart';
 import '../../web/screens/web_task_board_screen.dart';
 import '../../features/amcs/presentation/screens/add_equipment_screen.dart';
 import '../../features/amcs/presentation/screens/add_task_screen.dart';
@@ -394,6 +395,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final companyId = state.pathParameters['companyId'] ?? '';
           final extra = state.extra as Map<String, dynamic>?;
+          if (kIsWeb) {
+            return WebCompanyDetailsScreen(
+              companyId: companyId,
+              companyName: extra?['companyName'],
+              location: extra?['location'],
+            );
+          }
           return CompanyDetailsScreen(
             companyId: companyId,
             companyName: extra?['companyName'],
