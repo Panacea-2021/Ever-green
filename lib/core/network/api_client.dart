@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -38,7 +39,9 @@ class ApiClient {
   void _setupInterceptors() {
     _dio.interceptors.addAll([
       AuthInterceptor(_ref),
-      if (EnvironmentConfig.instance.enableLogging) LoggingInterceptor(),
+      // Stringifying whole list responses for the log stalls the browser.
+      if (EnvironmentConfig.instance.enableLogging && !kIsWeb)
+        LoggingInterceptor(),
     ]);
   }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import '../../../../core/router/routes.dart';
 import '../../data/pm_provider.dart';
 import '../../domain/models/pm_schedule.dart';
 import '../../domain/pm_occurrences.dart';
+import '../../../../web/widgets/web_filter_tiles.dart';
 
 /// Upcoming preventive maintenance for all equipment (from each equipment's
 /// PM frequency and the PM schedules), plus schedule management: recurring
@@ -28,7 +30,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
   ];
 
   /// Index into [PmWindow.values]; the last index is the Schedules view.
-  int _view = PmWindow.week.index;
+  int _view = kIsWeb ? PmWindow.tomorrow.index : PmWindow.week.index;
   DateTimeRange? _range;
   int _tab = 0; // Schedules view: 0 = Schedules, 1 = Generated visits
   bool _generating = false;
@@ -39,7 +41,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: kIsWeb ? Colors.transparent : Colors.white,
       floatingActionButton: _schedulesView && _tab == 0
           ? FloatingActionButton.extended(
               backgroundColor: _green,
@@ -59,9 +61,15 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
         bottom: false,
         child: Column(
           children: [
-            _header(),
-            _viewTabs(),
-            const SizedBox(height: 8),
+            if (!kIsWeb) _header(),
+            if (kIsWeb) ...[
+              const SizedBox(height: 22),
+              _webViewTabs(),
+              const SizedBox(height: 18),
+            ] else ...[
+              _viewTabs(),
+              const SizedBox(height: 8),
+            ],
             Expanded(
               child: _schedulesView ? _schedulesSection() : _upcomingSection(),
             ),
@@ -78,7 +86,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
       height: 44,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: kIsWeb ? 28 : 16),
         itemCount: labels.length,
         separatorBuilder: (_, __) => const SizedBox(width: 22),
         itemBuilder: (_, i) {
@@ -114,6 +122,151 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  static const _webTileMeta = [
+    (Icons.event_outlined, Color(0xFF106220)),
+    (Icons.date_range_outlined, Color(0xFF1565C0)),
+    (Icons.calendar_month_outlined, Color(0xFF6A4BC4)),
+    (Icons.event_repeat_outlined, Color(0xFFE08600)),
+  ];
+
+  /// View selector as filter tiles with the number due in each (web).
+  Widget _webViewTabs() {
+    final labels = [for (final w in PmWindow.values) w.label, 'Schedules'];
+    final sources = ref.watch(pmDueSourcesProvider).valueOrNull;
+    final schedules = ref.watch(pmProvider).valueOrNull?.schedules;
+    final now = DateTime.now();
+    int? countFor(int i) {
+      if (i == PmWindow.values.length) return schedules?.length;
+      if (sources == null) return null;
+      final w = PmWindow.values[i];
+      final (from, to) = w.range(now);
+      return computePmDue(
+        equipments: sources.equipments,
+        schedules: sources.schedules,
+        lastVisits: sources.lastVisits,
+        from: from,
+        to: to,
+        today: now,
+        includeOverdue: w.includesOverdue,
+      ).length;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: WebFilterTiles(
+        options: [
+          for (var i = 0; i < labels.length; i++)
+            WebFilterOption(
+              label: labels[i],
+              icon: _webTileMeta[i].$1,
+              color: _webTileMeta[i].$2,
+              selected:
+                  _view == i && (_range == null || i == labels.length - 1),
+              count: countFor(i),
+              onTap: () => setState(() {
+                _view = i;
+                if (i < PmWindow.values.length) _range = null;
+              }),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static const _webLine = Color(0xFFE2E8E3);
+
+  /// Day heading above a group of due cards (web).
+  Widget _webSectionHeader(String text) {
+    final color = text == 'Overdue'
+        ? const Color(0xFFD32F2F)
+        : text == 'Today'
+            ? const Color(0xFFE08600)
+            : _green;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 14),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(10, 6, 14, 6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: color.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  text == 'Overdue'
+                      ? Icons.error_outline
+                      : Icons.event_note_outlined,
+                  size: 15,
+                  color: color,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  text,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(child: Divider(color: _webLine, height: 1)),
+        ],
+      ),
+    );
+  }
+
+  /// Lays [cards] out in rows of equal-height columns (web).
+  Widget _webGrid(double width, List<Widget> cards) {
+    const gap = 16.0;
+    final cols = width >= 1050
+        ? 3
+        : width >= 680
+            ? 2
+            : 1;
+    return Column(
+      children: [
+        for (var i = 0; i < cards.length; i += cols)
+          Padding(
+            padding: const EdgeInsets.only(bottom: gap),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var j = i; j < i + cols; j++) ...[
+                    if (j > i) const SizedBox(width: gap),
+                    Expanded(
+                      child: j < cards.length
+                          ? _WebLift(child: cards[j])
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// A scrollable grid of [cards] filling the available width (web).
+  Widget _webGridList(List<Widget> cards, {double bottom = 24}) {
+    return LayoutBuilder(
+      builder: (context, c) => ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(28, 6, 28, bottom),
+        children: [_webGrid(c.maxWidth - 56, cards)],
       ),
     );
   }
@@ -202,10 +355,11 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
 
   /// Date-range chip (same outlined chip style as the audit log filters).
   Widget _rangeRow(int count, bool loaded) {
+    if (kIsWeb) return _webRangeRow(count, loaded);
     final range = _range;
     final selected = range != null;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: kIsWeb ? 28 : 16),
       child: Row(
         children: [
           GestureDetector(
@@ -270,6 +424,110 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     );
   }
 
+  Widget _webRangeRow(int count, bool loaded) {
+    final range = _range;
+    final selected = range != null;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 2, 28, 6),
+      child: Row(
+        children: [
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _pickRange,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                height: 40,
+                padding: EdgeInsets.only(left: 14, right: selected ? 8 : 16),
+                decoration: BoxDecoration(
+                  color: selected ? _green : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: selected ? _green : _webLine),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calendar_month_outlined,
+                      size: 17,
+                      color: selected ? Colors.white : _green,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      selected
+                          ? '${_short(range.start)} – ${_short(range.end)}'
+                          : 'Pick dates',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            selected ? Colors.white : const Color(0xFF14201A),
+                      ),
+                    ),
+                    if (selected) ...[
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => setState(() => _range = null),
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 13,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+          if (loaded)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: _green.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _green.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.build_outlined, size: 14, color: _green),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$count due',
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: _green,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _pickRange() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -305,6 +563,29 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
           _range == null
               ? 'Nothing is scheduled in this period.'
               : 'Nothing is scheduled between these dates.',
+        ),
+      );
+    }
+    if (kIsWeb) {
+      final groups = <String, List<PmDue>>{};
+      for (final item in items) {
+        final header =
+            item.overdue ? 'Overdue' : _dayHeader(item.dueDate, now);
+        groups.putIfAbsent(header, () => []).add(item);
+      }
+      return LayoutBuilder(
+        builder: (context, c) => ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(28, 4, 28, 24),
+          children: [
+            for (final g in groups.entries) ...[
+              _webSectionHeader(g.key),
+              _webGrid(
+                c.maxWidth - 56,
+                [for (final d in g.value) _webDueCard(d, now)],
+              ),
+            ],
+          ],
         ),
       );
     }
@@ -359,14 +640,16 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     return GestureDetector(
       onTap: d.equipmentId == null ? null : () => _openEquipment(d),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
+        margin: kIsWeb ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(kIsWeb ? 18 : 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: d.overdue || today
               ? Border.all(color: dueFg.withValues(alpha: 0.35))
-              : null,
+              : kIsWeb
+                  ? Border.all(color: _webLine)
+                  : null,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -435,6 +718,139 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
             if (d.equipmentId != null)
               const Icon(Icons.chevron_right, color: Color(0xFFB0B0B0)),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webDueCard(PmDue d, DateTime now) {
+    final today = d.isToday(now);
+    final (String dueText, Color dueBg, Color dueFg) = d.overdue
+        ? ('Overdue · ${_fmt(d.dueDate)}', const Color(0xFFFDE8E8),
+            const Color(0xFFD32F2F))
+        : today
+            ? ('Due today', const Color(0xFFFFF3E0), const Color(0xFFE08600))
+            : ('Due ${_fmt(d.dueDate)}', const Color(0xFFEBF0EA), _green);
+    final subtitle = [d.companyName, d.location]
+        .where((v) => v.trim().isNotEmpty)
+        .join(' · ');
+    final canOpen = d.equipmentId != null;
+    return MouseRegion(
+      cursor: canOpen ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: canOpen ? () => _openEquipment(d) : null,
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _webLine),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(width: 4, color: dueFg),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: dueBg,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.build_outlined, color: dueFg, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              d.equipmentName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF14201A),
+                              ),
+                            ),
+                            if (subtitle.isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on_outlined,
+                                    size: 13,
+                                    color: Colors.black.withValues(alpha: 0.4),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      subtitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontSize: 12,
+                                        color: Color(0xFF6B6B6B),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 7),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: [
+                                _pill(
+                                  d.frequencyLabel,
+                                  const Color(0xFFEAF2FF),
+                                  const Color(0xFF1565C0),
+                                ),
+                                _pill(dueText, dueBg, dueFg),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (canOpen) ...[
+                        const SizedBox(width: 10),
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: dueFg.withValues(alpha: 0.08),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: dueFg,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -511,12 +927,26 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
   Widget _generateBar(List<PmSchedule> schedules) {
     final dueCount = schedules.where((s) => s.isDue()).length;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: kIsWeb
+          ? const EdgeInsets.fromLTRB(28, 0, 28, 14)
+          : const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: kIsWeb
+            ? const EdgeInsets.symmetric(horizontal: 18, vertical: 14)
+            : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFEBF0EA),
-          borderRadius: BorderRadius.circular(14),
+          color: kIsWeb ? Colors.white : const Color(0xFFEBF0EA),
+          borderRadius: BorderRadius.circular(kIsWeb ? 16 : 14),
+          border: kIsWeb ? Border.all(color: _webLine) : null,
+          boxShadow: kIsWeb
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
@@ -589,15 +1019,21 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
       );
     }
 
+    final row = Row(
+      children: [
+        tab('Schedules ($schedules)', 0),
+        const SizedBox(width: 10),
+        tab('Visits ($generated)', 1),
+      ],
+    );
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          tab('Schedules ($schedules)', 0),
-          const SizedBox(width: 10),
-          tab('Visits ($generated)', 1),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: kIsWeb ? 28 : 16),
+      child: kIsWeb
+          ? Align(
+              alignment: Alignment.centerLeft,
+              child: SizedBox(width: 380, child: row),
+            )
+          : row,
     );
   }
 
@@ -609,6 +1045,12 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     }
     final sorted = [...schedules]
       ..sort((a, b) => a.nextDue.compareTo(b.nextDue));
+    if (kIsWeb) {
+      return _webGridList(
+        [for (final s in sorted) _scheduleCard(s)],
+        bottom: 90,
+      );
+    }
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
@@ -622,11 +1064,12 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     return GestureDetector(
       onLongPress: _busy.contains(s.id) ? null : () => _confirmDelete(s),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
+        margin: kIsWeb ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(kIsWeb ? 18 : 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: kIsWeb ? Border.all(color: _webLine) : null,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -782,61 +1225,64 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
         ),
       );
     }
+    if (kIsWeb) {
+      return _webGridList([for (final t in tasks) _generatedCard(t)]);
+    }
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       itemCount: tasks.length,
-      itemBuilder: (_, i) {
-        final t = tasks[i];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade200),
+      itemBuilder: (_, i) => _generatedCard(tasks[i]),
+    );
+  }
+
+  Widget _generatedCard(PmGeneratedTask t) {
+    return Container(
+      margin: kIsWeb ? EdgeInsets.zero : const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(kIsWeb ? 18 : 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(kIsWeb ? 16 : 14),
+        border: Border.all(color: kIsWeb ? _webLine : Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFFEBF0EA),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.event_available, color: _green, size: 20),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEBF0EA),
-                  shape: BoxShape.circle,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${t.equipmentName} — ${t.companyName}',
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1F1F1F),
+                  ),
                 ),
-                child:
-                    const Icon(Icons.event_available, color: _green, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${t.equipmentName} — ${t.companyName}',
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F1F1F),
-                      ),
-                    ),
-                    Text(
-                      'Due ${_fmt(t.dueDate)}',
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 12,
-                        color: Color(0xFF6B6B6B),
-                      ),
-                    ),
-                  ],
+                Text(
+                  'Due ${_fmt(t.dueDate)}',
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 12,
+                    color: Color(0xFF6B6B6B),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -1335,4 +1781,30 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
 
   String _fmt(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${d.year}';
+}
+
+/// Lifts its child slightly while hovered (web cards).
+class _WebLift extends StatefulWidget {
+  const _WebLift({required this.child});
+  final Widget child;
+
+  @override
+  State<_WebLift> createState() => _WebLiftState();
+}
+
+class _WebLiftState extends State<_WebLift> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
+        child: widget.child,
+      ),
+    );
+  }
 }

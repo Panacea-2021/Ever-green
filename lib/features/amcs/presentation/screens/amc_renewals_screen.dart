@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../../core/models/backend_models.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../data/amc_provider.dart';
 import '../../domain/models/amc_contract.dart';
+import '../../../../web/widgets/web_filter_tiles.dart';
 import '../widgets/amc_async_states.dart';
 
 /// Super Admin / Manager view of AMC contracts that need attention —
@@ -44,6 +46,17 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
         : flagged.where((c) => c.status() == _filter).toList();
     final canRenew =
         Permissions.canManageAmcs(ref.watch(currentUserRoleProvider));
+
+    if (kIsWeb) {
+      return _webBuild(
+        companiesAsync,
+        flagged.length,
+        expiringCount,
+        expiredCount,
+        visible,
+        canRenew,
+      );
+    }
 
     Widget list;
     if (companiesAsync.hasError && !companiesAsync.hasValue) {
@@ -103,39 +116,503 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Web layout: summary tiles, a segmented filter and a grid of renewal cards.
+  // ---------------------------------------------------------------------------
+
+  Widget _webBuild(
+    AsyncValue<List<Company>> companiesAsync,
+    int dueCount,
+    int expiring,
+    int expired,
+    List<AmcContract> visible,
+    bool canRenew,
+  ) {
+    Widget body;
+    if (companiesAsync.hasError && !companiesAsync.hasValue) {
+      body = SizedBox(
+        height: 360,
+        child: AmcErrorState(
+          error: companiesAsync.error!,
+          onRetry: () => ref.invalidate(companiesProvider),
+        ),
+      );
+    } else if (!companiesAsync.hasValue) {
+      body = const SizedBox(height: 360, child: AmcLoadingState());
+    } else if (visible.isEmpty) {
+      body = Container(
+        height: 320,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8E3)),
+        ),
+        child: _buildEmpty(),
+      );
+    } else {
+      body = LayoutBuilder(
+        builder: (context, c) => _webGrid(
+          c.maxWidth,
+          [for (final a in visible) _webCard(a, canRenew)],
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: RefreshIndicator(
+        color: _green,
+        onRefresh: () => ref.refresh(companiesProvider.future),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(28, 26, 28, 32),
+          children: [
+            LayoutBuilder(
+              builder: (context, c) {
+                final filters = WebFilterTiles(
+                  options: [
+                    for (final f in <(String, AmcStatus?, int, IconData, Color)>[
+                      ('All', null, dueCount, Icons.dashboard_outlined, _green),
+                      (
+                        'Expiring Soon',
+                        AmcStatus.expiringSoon,
+                        expiring,
+                        Icons.schedule,
+                        const Color(0xFFE08600),
+                      ),
+                      (
+                        'Expired',
+                        AmcStatus.expired,
+                        expired,
+                        Icons.error_outline,
+                        const Color(0xFFD32F2F),
+                      ),
+                    ])
+                      WebFilterOption(
+                        label: f.$1,
+                        count: f.$3,
+                        icon: f.$4,
+                        color: f.$5,
+                        selected: _filter == f.$2,
+                        onTap: () => setState(() => _filter = f.$2),
+                      ),
+                  ],
+                );
+                if (c.maxWidth < 900) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _webDueTile(dueCount),
+                      const SizedBox(height: 14),
+                      filters,
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    SizedBox(width: 280, child: _webDueTile(dueCount)),
+                    const SizedBox(width: 16),
+                    Expanded(child: filters),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            body,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webDueTile(int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF106220), Color(0xFF0B4517)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _green.withValues(alpha: 0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const Icon(Icons.autorenew, color: Colors.white, size: 26),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              '$count due',
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const _webMonths = [
+    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+  ];
+
+  /// Tear-off calendar block showing the contract end date.
+  Widget _webCalendarTile(DateTime d, Color accent) {
+    return Container(
+      width: 58,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            color: accent,
+            alignment: Alignment.center,
+            child: Text(
+              _webMonths[d.month - 1],
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Text(
+              '${d.day}',
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 21,
+                height: 1.1,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF14201A),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: Text(
+              '${d.year}',
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF8A988E),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _webGrid(double width, List<Widget> cards) {
+    const gap = 18.0;
+    final cols = width >= 1050
+        ? 3
+        : width >= 680
+            ? 2
+            : 1;
+    return Column(
+      children: [
+        for (var i = 0; i < cards.length; i += cols)
+          Padding(
+            padding: const EdgeInsets.only(bottom: gap),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var j = i; j < i + cols; j++) ...[
+                    if (j > i) const SizedBox(width: gap),
+                    Expanded(
+                      child: j < cards.length
+                          ? cards[j]
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _webCard(AmcContract c, bool canRenew) {
+    final status = c.status();
+    final days = c.daysUntilExpiry();
+    final (Color accent, Color bg) = switch (status) {
+      AmcStatus.expired => (const Color(0xFFD32F2F), const Color(0xFFFDE8E8)),
+      AmcStatus.expiringSoon => (
+          const Color(0xFFE08600),
+          const Color(0xFFFFF4E5)
+        ),
+      AmcStatus.active => (_green, const Color(0xFFEBF0EA)),
+    };
+    final expiryText = days < 0
+        ? 'Expired ${-days} day${days == -1 ? '' : 's'} ago'
+        : days == 0
+            ? 'Expires today'
+            : 'Expires in $days day${days == 1 ? '' : 's'}';
+
+    return _WebLift(
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8E3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(height: 4, color: accent),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _webCalendarTile(c.endDate, accent),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                c.companyName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.3,
+                                  color: Color(0xFF14201A),
+                                ),
+                              ),
+                              if (c.branchName.isNotEmpty) ...[
+                                const SizedBox(height: 3),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_outlined,
+                                      size: 13,
+                                      color: Color(0xFF8A8A8A),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Expanded(
+                                      child: Text(
+                                        c.branchName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF6B6B6B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: bg,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            status.label,
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: accent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: bg.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            status == AmcStatus.expired
+                                ? Icons.event_busy_outlined
+                                : Icons.event_outlined,
+                            size: 20,
+                            color: accent,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              expiryText,
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: accent,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _metaRow(
+                      Icons.calendar_today_outlined,
+                      'Ends ${_fmt(c.endDate)}',
+                    ),
+                    const SizedBox(height: 8),
+                    _metaRow(
+                      Icons.person_outline,
+                      'POC ${c.pocName.isEmpty ? '—' : c.pocName}',
+                    ),
+                    if (canRenew) ...[
+                      const Spacer(),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _confirmRenew(c),
+                          icon: const Icon(
+                            Icons.autorenew,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'Renew',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _green,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeader(int count) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.arrow_back,
-                size: 20,
-                color: Color(0xFF1F1F1F),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Text(
-              'AMC Renewals',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1F1F1F),
+          if (kIsWeb)
+            const Spacer()
+          else ...[
+            GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  size: 20,
+                  color: Color(0xFF1F1F1F),
+                ),
               ),
             ),
-          ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Text(
+                'AMC Renewals',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F1F1F),
+                ),
+              ),
+            ),
+          ],
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -619,6 +1096,32 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
 
   String _fmt(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${d.year}';
+}
+
+/// Lifts its child slightly while hovered (web cards).
+class _WebLift extends StatefulWidget {
+  const _WebLift({required this.child});
+  final Widget child;
+
+  @override
+  State<_WebLift> createState() => _WebLiftState();
+}
+
+class _WebLiftState extends State<_WebLift> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
+        child: widget.child,
+      ),
+    );
+  }
 }
 
 /// The user's chosen renewal term, returned from [_RenewAmcDialog].

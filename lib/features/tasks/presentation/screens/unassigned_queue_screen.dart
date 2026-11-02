@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/router/routes.dart';
+import '../../../../web/widgets/web_filter_tiles.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
@@ -113,6 +115,8 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                                         ),
                                       ),
                                     )
+                                  : kIsWeb
+                                  ? _webGrid(list)
                                   : ListView.builder(
                                       physics:
                                           const AlwaysScrollableScrollPhysics(),
@@ -141,22 +145,26 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
       padding: const EdgeInsets.fromLTRB(12, 12, 16, 8),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: const Icon(Icons.arrow_back, color: Color(0xFF1C2B20)),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Text(
-              'Ticket Queue',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1C2B20),
+          if (kIsWeb)
+            const Spacer()
+          else ...[
+            GestureDetector(
+              onTap: () => context.pop(),
+              child: const Icon(Icons.arrow_back, color: Color(0xFF1C2B20)),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Text(
+                'Ticket Queue',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1C2B20),
+                ),
               ),
             ),
-          ),
+          ],
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -209,7 +217,50 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
     );
   }
 
+  static const _webTabMeta = <QueueTab, (String, IconData, Color)>{
+    QueueTab.unassigned: (
+      'Unassigned',
+      Icons.person_off_outlined,
+      Color(0xFFD32F2F),
+    ),
+    QueueTab.awaiting: (
+      'Awaiting',
+      Icons.hourglass_top_rounded,
+      Color(0xFFE08600),
+    ),
+    QueueTab.assigned: (
+      'Assigned',
+      Icons.assignment_ind_outlined,
+      Color(0xFF106220),
+    ),
+    QueueTab.escalation: (
+      'Escalation',
+      Icons.trending_up,
+      Color(0xFF6A1B9A),
+    ),
+  };
+
+  Widget _webTabs(Map<QueueTab, List<TaskItem>> tabs) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: WebFilterTiles(
+        options: [
+          for (final tab in QueueTab.values)
+            WebFilterOption(
+              label: _webTabMeta[tab]!.$1,
+              icon: _webTabMeta[tab]!.$2,
+              color: _webTabMeta[tab]!.$3,
+              count: tabs[tab]!.length,
+              selected: _tab == tab,
+              onTap: () => setState(() => _tab = tab),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _tabs(Map<QueueTab, List<TaskItem>> tabs) {
+    if (kIsWeb) return _webTabs(tabs);
     Widget tab(String label, QueueTab value) {
       final sel = _tab == value;
       return Expanded(
@@ -393,6 +444,249 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
     );
   }
 
+  Widget _webGrid(List<TaskItem> list) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
+        const gap = 18.0;
+        final rows = (list.length + cols - 1) ~/ cols;
+        return ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
+          itemCount: rows,
+          itemBuilder: (context, r) {
+            final cells = <Widget>[];
+            for (var j = 0; j < cols; j++) {
+              if (j > 0) cells.add(const SizedBox(width: gap));
+              final k = r * cols + j;
+              cells.add(
+                Expanded(
+                  child: k < list.length
+                      ? _WebQueueHover(child: _webCard(list[k]))
+                      : const SizedBox.shrink(),
+                ),
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: gap),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: cells,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _webCard(TaskItem t) {
+    final overdue = t.isOverdue();
+    final alert =
+        _tab == QueueTab.awaiting || _tab == QueueTab.escalation || overdue;
+    final canAct = t.serviceStatus == ServiceStatus.open ||
+        t.serviceStatus == ServiceStatus.inProgress ||
+        t.serviceStatus == ServiceStatus.hold;
+    final accent = _webTabMeta[_tab]!.$3;
+    const red = Color(0xFFD32F2F);
+
+    Widget infoRow(IconData icon, String value) => Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            children: [
+              Icon(icon, size: 15, color: Colors.black.withValues(alpha: 0.4)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4B5A50),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+    final infos = <(IconData, String)>[
+      if (t.isIndividual) ...[
+        (Icons.person_outline, t.contactName),
+        (Icons.place_outlined, t.address),
+      ] else ...[
+        (Icons.precision_manufacturing_outlined, t.equipment),
+        (Icons.apartment_outlined, t.companyName),
+      ],
+    ].where((e) => e.$2.isNotEmpty).toList();
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => context.push('${Routes.taskDetails}/${t.id}'),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: alert ? red.withValues(alpha: 0.6) : const Color(0xFFE2E8E3),
+            width: alert ? 1.4 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    accent.withValues(alpha: 0.12),
+                    accent.withValues(alpha: 0.03),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                border: Border(
+                  bottom: BorderSide(color: accent.withValues(alpha: 0.12)),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accent.withValues(alpha: 0.18),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      t.isIndividual
+                          ? Icons.person_pin_circle_outlined
+                          : Icons.confirmation_number_outlined,
+                      size: 18,
+                      color: accent,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Ticket #${t.ticketNo}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color.lerp(accent, Colors.black, 0.25),
+                      ),
+                    ),
+                  ),
+                  _priorityPill(t.priority),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF14201A),
+                      ),
+                    ),
+                    for (final info in infos) infoRow(info.$1, info.$2),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _tag(_statusLabel(t), const Color(0xFFF1F1F1),
+                            const Color(0xFF545454),),
+                        if (t.isIndividual)
+                          _tag('Individual', const Color(0xFFEBF0EA), _green),
+                        if (t.escalated)
+                          _tag('Escalated', const Color(0xFFFDE8E8), red),
+                        if (t.clientName.isNotEmpty)
+                          _tag(
+                            'Raised by ${t.clientName}',
+                            const Color(0xFFEAF2FF),
+                            const Color(0xFF1565C0),
+                          ),
+                        if (t.hasAssignee)
+                          _tag(
+                            '@${t.assignee}',
+                            const Color(0xFFF3EAFE),
+                            const Color(0xFF6A1B9A),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: alert
+                            ? red.withValues(alpha: 0.07)
+                            : const Color(0xFFF6F9F6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: _timeRow(t),
+                    ),
+                    const Spacer(),
+                    if (canAct) ...[
+                      const SizedBox(height: 14),
+                      if (!t.hasAssignee)
+                        _primaryButton(
+                          'Assign to Service Engineer',
+                          () => _assignSheet(t),
+                        )
+                      else
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _primaryButton(
+                                'Reassign',
+                                () => _assignSheet(t),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            _outlineButton('Unassign', () => _unassign(t)),
+                          ],
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Awaiting: time with no engineer. Escalation: time in the current
   /// status. Otherwise: age, flagged when past SLA.
   Widget _timeRow(TaskItem t) {
@@ -473,6 +767,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
+          minimumSize: kIsWeb ? const Size(0, 40) : null,
           side: const BorderSide(color: Color(0xFFD32F2F)),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -759,6 +1054,42 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WebQueueHover extends StatefulWidget {
+  const _WebQueueHover({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_WebQueueHover> createState() => _WebQueueHoverState();
+}
+
+class _WebQueueHoverState extends State<_WebQueueHover> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: _hover ? 0.09 : 0.04),
+              blurRadius: _hover ? 24 : 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: widget.child,
       ),
     );
   }

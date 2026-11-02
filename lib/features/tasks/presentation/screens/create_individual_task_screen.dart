@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart' show IssueType;
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
+import '../../../../web/widgets/web_form_kit.dart';
 import '../widgets/task_workflow.dart';
 
 /// Raise a ticket for a person rather than a company's equipment
@@ -108,8 +110,118 @@ class _CreateIndividualTaskScreenState
     if (path != null && mounted) setState(() => _selectedImages.add(path));
   }
 
+  Widget _issueTypeField() => _buildDropdownField<int>(
+        label: 'Issue Type',
+        value: _issueTypeId,
+        items: [
+          for (final it in ref.watch(issueTypesProvider).valueOrNull ??
+              const <IssueType>[])
+            (it.id, it.name),
+        ],
+        onChanged: (v) => setState(() => _issueTypeId = v),
+      );
+
+  Widget _priorityField() => _buildDropdownField<TaskPriority>(
+        label: 'Priority',
+        value: _priority,
+        items: [for (final p in TaskPriority.values) (p, p.label)],
+        onChanged: (v) => setState(() => _priority = v),
+      );
+
+  Widget _nameField() => _buildTextField(
+        controller: _nameController,
+        hintText: 'Person name *',
+        textCapitalization: TextCapitalization.words,
+      );
+
+  Widget _phoneField() => _buildTextField(
+        controller: _phoneController,
+        hintText: 'Mobile number *',
+        keyboardType: TextInputType.phone,
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s-]')),
+          LengthLimitingTextInputFormatter(20),
+        ],
+      );
+
+  Widget _addressField() => _buildTextField(
+        controller: _addressController,
+        hintText: 'Address *',
+        maxLines: 3,
+        textCapitalization: TextCapitalization.sentences,
+      );
+
+  /// Web layout: two section cards with paired fields and right-aligned
+  /// actions.
+  Widget _webBuild() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9F7),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.25,
+              child: Image.asset(
+                'assets/images/home_bg.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              Expanded(
+                child: WebForm.page(
+                  maxWidth: double.infinity,
+                  [
+                    WebForm.split(
+                      WebForm.section(
+                        icon: Icons.person_outline,
+                        title: 'Contact Information',
+                        subtitle: 'Who and where the work is for',
+                        children: [
+                          _nameField(),
+                          const SizedBox(height: WebForm.gap),
+                          _phoneField(),
+                          const SizedBox(height: WebForm.gap),
+                          _addressField(),
+                        ],
+                      ),
+                      WebForm.section(
+                        children: [
+                          WebForm.row(_issueTypeField(), _priorityField()),
+                          const SizedBox(height: WebForm.gap),
+                          _buildTextField(
+                            controller: _titleController,
+                            hintText: 'Task title *',
+                          ),
+                          const SizedBox(height: WebForm.gap),
+                          _buildTextField(
+                            controller: _descriptionController,
+                            hintText: 'Enter description',
+                            maxLines: 4,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildImageUploadSection(),
+                        ],
+                      ),
+                      leftFlex: 2,
+                      rightFlex: 3,
+                    ),
+                  ],
+                ),
+              ),
+              _buildBottomButtons(),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) return _webBuild();
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F7),
       body: Stack(
@@ -127,7 +239,7 @@ class _CreateIndividualTaskScreenState
           SafeArea(
             child: Column(
               children: [
-                _buildHeader(),
+                if (!kIsWeb) _buildHeader(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
@@ -292,9 +404,9 @@ class _CreateIndividualTaskScreenState
   }) {
     return Material(
       color: Colors.white,
-      elevation: 2,
+      elevation: kIsWeb ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(32),
+      shape: WebForm.fieldShape(32),
       child: Container(
         height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -344,12 +456,12 @@ class _CreateIndividualTaskScreenState
     List<TextInputFormatter>? inputFormatters,
     TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
-    final radius = maxLines > 1 ? 24.0 : 32.0;
+    final radius = WebForm.radius(maxLines > 1 ? 24.0 : 32.0);
     return Material(
       color: Colors.white,
-      elevation: 2,
+      elevation: kIsWeb ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(radius),
+      shape: WebForm.fieldShape(radius),
       child: TextField(
         controller: controller,
         maxLines: maxLines,
@@ -481,17 +593,19 @@ class _CreateIndividualTaskScreenState
           child: Container(
             width: double.infinity,
             height: 169,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEBEDFF),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+            decoration: kIsWeb
+                ? WebForm.uploadDecoration()
+                : BoxDecoration(
+                    color: const Color(0xFFEBEDFF),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -588,11 +702,15 @@ class _CreateIndividualTaskScreenState
 
   Widget _buildBottomButtons() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      decoration: const BoxDecoration(color: Colors.white),
+      padding: kIsWeb
+          ? WebForm.barPadding
+          : const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: kIsWeb
+          ? WebForm.barDecoration
+          : const BoxDecoration(color: Colors.white),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: WebForm.actions(Row(
           children: [
             Expanded(
               child: GestureDetector(
@@ -645,7 +763,7 @@ class _CreateIndividualTaskScreenState
               ),
             ),
           ],
-        ),
+        ),),
       ),
     );
   }
