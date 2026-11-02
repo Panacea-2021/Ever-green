@@ -12,6 +12,7 @@ import '../../features/tasks/presentation/widgets/task_action_handler.dart';
 import '../../features/tasks/presentation/widgets/task_workflow.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
+import '../widgets/web_table.dart';
 
 /// Web layout of the Task Board: same scoping, filters, sorting, texts and
 /// actions as the mobile board, laid out as a desktop toolbar + card grid.
@@ -97,7 +98,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: _filters()),
+                      Expanded(child: _filters(scoped.toList())),
                       const SizedBox(width: 12),
                       _addButton(role),
                     ],
@@ -140,7 +141,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     );
   }
 
-  Widget _filters() {
+  Widget _filters(List<TaskItem> scoped) {
     final chips = <MapEntry<String, TaskStatus?>>[
       const MapEntry('All', null),
       const MapEntry('Open', TaskStatus.open),
@@ -164,6 +165,11 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
             for (final chip in chips)
               _FilterTab(
                 label: chip.key,
+                count: scoped.isEmpty
+                    ? null
+                    : chip.value == null
+                        ? scoped.length
+                        : scoped.where((t) => t.status == chip.value).length,
                 selected: _statusFilter == chip.value,
                 onTap: () => setState(() => _statusFilter = chip.value),
               ),
@@ -195,9 +201,96 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     );
   }
 
+  Color _statusColor(TaskItem t) {
+    if (t.isClosed) return _green;
+    switch (t.status) {
+      case TaskStatus.hold:
+        return _orange;
+      case TaskStatus.inProgress:
+        return const Color(0xFF1565C0);
+      case TaskStatus.open:
+        return t.hasAssignee ? _orange : _red;
+      case TaskStatus.closed:
+        return _green;
+    }
+  }
+
+  Widget _taskTable(List<TaskItem> tasks, UserRole role) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: WebTokens.line),
+        boxShadow: WebTokens.softShadow,
+      ),
+      child: WebTable(
+        columns: const [
+          WebColumn('Task', flex: 5),
+          WebColumn('Company / Contact', flex: 4),
+          WebColumn('Status', flex: 3),
+          WebColumn('Created', flex: 3),
+          WebColumn('', flex: 1),
+          WebColumn('Actions', flex: 4),
+        ],
+        onRowTap: (i) => context.push('${Routes.taskDetails}/${tasks[i].id}'),
+        rows: [
+          for (final t in tasks)
+            [
+              _TaskCell(task: t),
+              WebCellText(
+                t.isIndividual ? t.contactName : t.companyName,
+                subtitle: t.isIndividual ? t.address : t.equipment,
+              ),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  if (t.isIndividual)
+                    const WebCellPill('Individual', Color(0xFF6B6B6B)),
+                  WebCellPill(t.lifecycleLabel, _statusColor(t)),
+                ],
+              ),
+              _CreatedCell(task: t),
+              _StarButton(
+                filled: t.priority == TaskPriority.high ||
+                    t.priority == TaskPriority.critical,
+                onTap: canToggleTaskPriority(t, role)
+                    ? () => _handler.togglePriority(t)
+                    : null,
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SmallButton(
+                      label: 'Report',
+                      filled: true,
+                      onTap: () => _handler.serviceReport(t),
+                    ),
+                  ),
+                  if (canAssignFromCard(t, role)) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _SmallButton(
+                        label: t.hasAssignee ? 'Reassign' : 'Assign',
+                        filled: false,
+                        onTap: () =>
+                            _handler.assign(t, reassign: t.hasAssignee),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+
   Widget _cardGrid(List<TaskItem> tasks, UserRole role) {
     return LayoutBuilder(
       builder: (context, c) {
+        if (c.maxWidth >= 900) return _taskTable(tasks, role);
         const gap = 18.0;
         final cols = c.maxWidth >= 1150
             ? 3
@@ -299,16 +392,178 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
   }
 }
 
+class _TaskCell extends StatelessWidget {
+  const _TaskCell({required this.task});
+  final TaskItem task;
+
+  static const String _fallbackImage = 'assets/images/task_img_1.png';
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Image.asset(
+      _fallbackImage,
+      width: 40,
+      height: 40,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        color: Colors.grey.shade200,
+        child: Icon(Icons.build, size: 18, color: Colors.grey.shade400),
+      ),
+    );
+    final url = task.imageUrl;
+    final isPhoto = url.startsWith('http://') || url.startsWith('https://');
+    return Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: isPhoto ? taskImage(url, fallback: fallback) : fallback,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: WebCellText(
+            task.title,
+            bold: true,
+            subtitle: task.ticketNo.isEmpty ? null : 'S.No ${task.ticketNo}',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CreatedCell extends StatelessWidget {
+  const _CreatedCell({required this.task});
+  final TaskItem task;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = task.createdAt.toLocal();
+    final date = '${d.day.toString().padLeft(2, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-${d.year}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        WebCellText(date),
+        if (task.isOverdue()) ...[
+          const SizedBox(height: 2),
+          Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 13,
+                color: Color(0xFFD32F2F),
+              ),
+              const SizedBox(width: 3),
+              Flexible(
+                child: Text(
+                  'Overdue by ${-task.hoursToSla()}h',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: WebTokens.bodyText(
+                    11.5,
+                    color: const Color(0xFFD32F2F),
+                    weight: FontWeight.w600,
+                    h: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StarButton extends StatelessWidget {
+  const _StarButton({required this.filled, this.onTap});
+  final bool filled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(
+      filled ? Icons.star : Icons.star_border,
+      color: filled ? Colors.amber : Colors.grey,
+      size: 21,
+    );
+    if (onTap == null) return Align(alignment: Alignment.centerLeft, child: icon);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: icon,
+        ),
+      ),
+    );
+  }
+}
+
+class _SmallButton extends StatelessWidget {
+  const _SmallButton({
+    required this.label,
+    required this.filled,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool filled;
+  final VoidCallback onTap;
+
+  static const Color _green = Color(0xFF106220);
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: filled ? _green : Colors.white,
+            borderRadius: BorderRadius.circular(9),
+            border: filled ? null : Border.all(color: _green, width: 1.3),
+          ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: WebTokens.fontFamily,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: filled ? Colors.white : _green,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _FilterTab extends StatelessWidget {
   const _FilterTab({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.count,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final int? count;
 
   static const Color _green = Color(0xFF106220);
 
@@ -320,19 +575,46 @@ class _FilterTab extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
           decoration: BoxDecoration(
             color: selected ? _green : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: WebTokens.fontFamily,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : const Color(0xFF1F1F1F),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: WebTokens.fontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? Colors.white : const Color(0xFF1F1F1F),
+                ),
+              ),
+              if (count != null) ...[
+                const SizedBox(width: 7),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Colors.white.withValues(alpha: 0.22)
+                        : WebTokens.cream,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      fontFamily: WebTokens.fontFamily,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? Colors.white : WebTokens.body,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),

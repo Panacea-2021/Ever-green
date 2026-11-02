@@ -11,6 +11,7 @@ import '../../features/amcs/domain/models/amc_contract.dart';
 import '../../features/amcs/presentation/widgets/amc_async_states.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
+import '../widgets/web_table.dart';
 
 enum _TypeFilter {
   all('All'),
@@ -77,9 +78,14 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
             ),
           );
         }
-        return _grid(visible, canManage);
+        return LayoutBuilder(
+          builder: (context, c) => c.maxWidth >= 900
+              ? _table(visible, canManage)
+              : _grid(visible, canManage),
+        );
       },
     );
+    final all = companiesAsync.valueOrNull ?? const <Company>[];
 
     return Scaffold(
       backgroundColor: WebTokens.cream,
@@ -95,8 +101,8 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _toolbar(),
-                  const SizedBox(height: 22),
+                  _toolbar(all),
+                  const SizedBox(height: 18),
                   body,
                 ],
               ),
@@ -107,7 +113,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
     );
   }
 
-  Widget _toolbar() {
+  Widget _toolbar(List<Company> all) {
     final filters = Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -122,6 +128,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
           for (final type in _TypeFilter.values)
             _FilterTab(
               label: type.label,
+              count: all.isEmpty ? null : all.where(type.matches).length,
               selected: _typeFilter == type,
               onTap: () => setState(() => _typeFilter = type),
             ),
@@ -130,6 +137,66 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
     );
 
     return Align(alignment: Alignment.centerLeft, child: filters);
+  }
+
+  Widget _table(List<Company> companies, bool canManage) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: WebTokens.line),
+        boxShadow: WebTokens.softShadow,
+      ),
+      child: WebTable(
+        columns: [
+          const WebColumn('Company', flex: 5),
+          const WebColumn('Service', flex: 2),
+          const WebColumn('POC', flex: 3),
+          const WebColumn('Email', flex: 4),
+          const WebColumn('Contract', flex: 3),
+          const WebColumn('Status', flex: 2),
+          if (canManage) const WebColumn('', flex: 1),
+        ],
+        onRowTap: (i) => _openCompany(companies[i]),
+        rows: [
+          for (final c in companies)
+            [
+              _CompanyCell(company: c),
+              WebCellText(c.serviceLabel),
+              WebCellText(
+                c.poc?.name ?? '',
+                subtitle: c.poc?.phone,
+              ),
+              WebCellText(c.pocEmail ?? c.email),
+              _contractCell(c),
+              WebCellPill(
+                c.isActive ? 'Active' : 'Inactive',
+                c.isActive ? const Color(0xFF125420) : const Color(0xFF8A8A8A),
+              ),
+              if (canManage)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _RowMenuButton(
+                    onTap: (at) => _showCompanyMenu(c, at),
+                  ),
+                ),
+            ],
+        ],
+      ),
+    );
+  }
+
+  Widget _contractCell(Company c) {
+    final start = c.amcStartDay;
+    final end = c.amcEndDay;
+    if (!c.isAmc || (start == null && end == null)) {
+      return const WebCellText('—');
+    }
+    return WebCellText(
+      end != null ? longDate(end) : '—',
+      subtitle: start != null ? 'From ${displayDate(start)}' : null,
+    );
   }
 
   Widget _grid(List<Company> companies, bool canManage) {
@@ -285,16 +352,64 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
   }
 }
 
+class _CompanyCell extends StatelessWidget {
+  const _CompanyCell({required this.company});
+  final Company company;
+
+  @override
+  Widget build(BuildContext context) {
+    final place = company.branchName.isNotEmpty
+        ? company.branchName
+        : (company.location ?? '');
+    return Row(
+      children: [
+        CompanyLogo(
+          url: mediaUrl(company.logo),
+          width: 40,
+          height: 40,
+          radius: 10,
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: WebCellText(company.name, bold: true, subtitle: place)),
+      ],
+    );
+  }
+}
+
+class _RowMenuButton extends StatelessWidget {
+  const _RowMenuButton({required this.onTap});
+  final void Function(Offset at) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    Offset tapPos = Offset.zero;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (d) => tapPos = d.globalPosition,
+        onTap: () => onTap(tapPos),
+        child: const Padding(
+          padding: EdgeInsets.all(6),
+          child: Icon(Icons.more_vert, color: Colors.black54, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
 class _FilterTab extends StatelessWidget {
   const _FilterTab({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.count,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final int? count;
 
   static const Color _green = Color(0xFF106220);
 
@@ -306,19 +421,46 @@ class _FilterTab extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
           decoration: BoxDecoration(
             color: selected ? _green : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: WebTokens.fontFamily,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : const Color(0xFF1F1F1F),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: WebTokens.fontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? Colors.white : const Color(0xFF1F1F1F),
+                ),
+              ),
+              if (count != null) ...[
+                const SizedBox(width: 7),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Colors.white.withValues(alpha: 0.22)
+                        : WebTokens.cream,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      fontFamily: WebTokens.fontFamily,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? Colors.white : WebTokens.body,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
