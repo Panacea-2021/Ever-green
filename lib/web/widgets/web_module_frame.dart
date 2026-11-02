@@ -38,13 +38,10 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.createIndividualTask,
     Routes.addUser,
     Routes.editProfile,
-    Routes.changePassword,
     Routes.uploadEquipments,
     Routes.uploadTechnicians,
     Routes.uploadAmc,
     Routes.downloadQr,
-    Routes.profile,
-    Routes.settings,
   ];
 
   /// Shared lists are refreshed in the background at most this often.

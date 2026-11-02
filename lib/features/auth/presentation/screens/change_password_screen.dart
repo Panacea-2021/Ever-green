@@ -130,17 +130,24 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   if (!kIsWeb) _buildHeader(),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildIntro(),
-                          const SizedBox(height: 20),
-                          _buildFormCard(),
-                          const SizedBox(height: 24),
-                          _buildSubmitButton(),
-                        ],
+                      padding: const EdgeInsets.fromLTRB(
+                        kIsWeb ? 28 : 20,
+                        kIsWeb ? 24 : 8,
+                        kIsWeb ? 28 : 20,
+                        24,
                       ),
+                      child: kIsWeb
+                          ? _webBody()
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildIntro(),
+                                const SizedBox(height: 20),
+                                _buildFormCard(),
+                                const SizedBox(height: 24),
+                                _buildSubmitButton(),
+                              ],
+                            ),
                     ),
                   ),
                 ],
@@ -175,6 +182,51 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _webBody() {
+    final intro = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE6F2E8), Color(0xFFF6FBF7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFDCEBDF)),
+      ),
+      child: _buildIntro(),
+    );
+    final form = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildFormCard(),
+        const SizedBox(height: 24),
+        Align(
+          alignment: Alignment.centerRight,
+          child: SizedBox(width: 320, child: _buildSubmitButton()),
+        ),
+      ],
+    );
+    return LayoutBuilder(
+      builder: (context, c) {
+        if (c.maxWidth < 760) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [intro, const SizedBox(height: 24), form],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: 340, child: intro),
+            const SizedBox(width: 28),
+            Expanded(child: form),
+          ],
+        );
+      },
     );
   }
 
@@ -217,10 +269,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
   Widget _buildFormCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(kIsWeb ? 26 : 18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(kIsWeb ? 22 : 20),
+        border: kIsWeb ? Border.all(color: const Color(0xFFE3ECE5)) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),

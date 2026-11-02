@@ -25,6 +25,8 @@ class ProfileScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final role = ref.watch(currentUserRoleProvider);
 
+    if (kIsWeb) return _webBuild(context, ref, user, role);
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -116,6 +118,95 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webBuild(
+    BuildContext context,
+    WidgetRef ref,
+    User? user,
+    UserRole role,
+  ) {
+    final identity = Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE3ECE5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Container(
+            height: 96,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFE6F2E8), Color(0xFFF6FBF7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 36, 24, 24),
+            child: Column(
+              children: [
+                _buildAvatar(user),
+                const SizedBox(height: 14),
+                Text(
+                  user?.name ?? 'User',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1C2B20),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildRoleBadge(role),
+                const SizedBox(height: 24),
+                _buildEditProfileButton(context),
+                const SizedBox(height: 12),
+                _buildLogoutButton(context, ref),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            if (c.maxWidth < 760) {
+              return Column(
+                children: [
+                  identity,
+                  const SizedBox(height: 24),
+                  _buildMenuCard(context, role),
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: 340, child: identity),
+                const SizedBox(width: 28),
+                Expanded(child: _buildMenuCard(context, role)),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -248,7 +339,8 @@ class ProfileScreen extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(kIsWeb ? 22 : 20),
+        border: kIsWeb ? Border.all(color: const Color(0xFFE3ECE5)) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -257,7 +349,10 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: kIsWeb ? 22 : 16,
+        vertical: kIsWeb ? 10 : 6,
+      ),
       child: Column(
         children: items.asMap().entries.map((entry) {
           final index = entry.key;
