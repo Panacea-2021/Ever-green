@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -59,7 +60,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
         bottom: false,
         child: Column(
           children: [
-            _header(),
+            if (!kIsWeb) _header(),
             _viewTabs(),
             const SizedBox(height: 8),
             Expanded(

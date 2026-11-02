@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -126,7 +127,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             SafeArea(
               child: Column(
                 children: [
-                  _buildHeader(),
+                  if (!kIsWeb) _buildHeader(),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),

@@ -29,7 +29,6 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
   static const Color _red = Color(0xFFD32F2F);
   static const Color _orange = Color(0xFFE08600);
 
-  String _query = '';
   late TaskStatus? _statusFilter = widget.initialStatus;
 
   TaskActionHandler get _handler => TaskActionHandler(context, ref);
@@ -52,10 +51,9 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
       );
     }
 
-    final visible = scoped.where((t) {
-      if (_statusFilter != null && t.status != _statusFilter) return false;
-      return t.matchesQuery(_query);
-    }).toList()
+    final visible = scoped
+        .where((t) => _statusFilter == null || t.status == _statusFilter)
+        .toList()
       ..sort((a, b) {
         final ao = a.isOverdue() ? 1 : 0;
         final bo = b.isOverdue() ? 1 : 0;
@@ -65,14 +63,6 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
         }
         return b.createdAt.compareTo(a.createdAt);
       });
-
-    final title = role == UserRole.technician
-        ? 'My Tasks'
-        : role.isClientSide
-            ? 'My Service Tasks'
-            : role == UserRole.seniorTechnician
-                ? 'Team Tasks'
-                : 'Task Board';
 
     Widget body;
     if (all.isEmpty && async.isLoading) {
@@ -105,9 +95,13 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _toolbar(title, visible.length, role),
-                  const SizedBox(height: 18),
-                  _filters(),
+                  Row(
+                    children: [
+                      Expanded(child: _filters()),
+                      const SizedBox(width: 12),
+                      _addButton(role),
+                    ],
+                  ),
                   const SizedBox(height: 22),
                   body,
                 ],
@@ -119,115 +113,30 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     );
   }
 
-  Widget _toolbar(String title, int count, UserRole role) {
-    final canCreate = Permissions.canRaiseTasks(role);
-    final search = SizedBox(
+  Widget _addButton(UserRole role) {
+    if (!Permissions.canRaiseTasks(role)) return const SizedBox.shrink();
+    return SizedBox(
       height: 46,
-      child: TextField(
-        onChanged: (v) => setState(() => _query = v),
-        style: WebTokens.bodyText(14, color: WebTokens.ink, h: 1.2),
-        decoration: InputDecoration(
-          hintText: 'Search Tasks',
-          hintStyle: WebTokens.bodyText(14, color: WebTokens.faint, h: 1.2),
-          prefixIcon:
-              const Icon(Icons.search, color: Color(0xFF9B9B9B), size: 20),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          enabledBorder: OutlineInputBorder(
+      child: ElevatedButton.icon(
+        onPressed: () => context.push('${Routes.addTask}/new'),
+        icon: const Icon(Icons.add, size: 18),
+        label: const Text('Add'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _green,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          minimumSize: const Size(0, 46),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: WebTokens.line),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _green, width: 1.4),
+          textStyle: const TextStyle(
+            fontFamily: WebTokens.fontFamily,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
-    );
-
-    final trailing = canCreate
-        ? SizedBox(
-            height: 46,
-            child: ElevatedButton.icon(
-              onPressed: () => context.push('${Routes.addTask}/new'),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _green,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                minimumSize: const Size(0, 46),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontFamily: WebTokens.fontFamily,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          )
-        : null;
-
-    final heading = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(title, style: WebTokens.heading(22)),
-        const SizedBox(width: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-          decoration: BoxDecoration(
-            color: _green,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            '$count',
-            style: const TextStyle(
-              fontFamily: WebTokens.fontFamily,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-
-    return LayoutBuilder(
-      builder: (context, c) {
-        if (c.maxWidth < 760) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              heading,
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(child: search),
-                  if (trailing != null) ...[
-                    const SizedBox(width: 12),
-                    trailing,
-                  ],
-                ],
-              ),
-            ],
-          );
-        }
-        return Row(
-          children: [
-            heading,
-            const Spacer(),
-            SizedBox(width: 340, child: search),
-            if (trailing != null) ...[
-              const SizedBox(width: 12),
-              trailing,
-            ],
-          ],
-        );
-      },
     );
   }
 

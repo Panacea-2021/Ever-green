@@ -45,6 +45,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
   static const _webDesignedPaths = {
     Routes.webDashboard,
     Routes.tasks,
+    Routes.amcs,
   };
 
   /// Titles for pages that are not sidebar destinations.

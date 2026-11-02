@@ -93,13 +93,6 @@ class WebDashboardScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Overview', style: WebTokens.heading(22)),
-                const SizedBox(height: 4),
-                Text(
-                  "Here's what's happening across your service operations.",
-                  style: WebTokens.bodyText(14),
-                ),
-                const SizedBox(height: 22),
                 LayoutBuilder(
                   builder: (context, c) {
                     const gap = 16.0;
