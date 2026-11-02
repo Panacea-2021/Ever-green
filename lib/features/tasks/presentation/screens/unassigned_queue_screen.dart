@@ -113,6 +113,8 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                                         ),
                                       ),
                                     )
+                                  : kIsWeb
+                                  ? _webGrid(list)
                                   : ListView.builder(
                                       physics:
                                           const AlwaysScrollableScrollPhysics(),
@@ -413,6 +415,274 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                 _outlineButton('Unassign', () => _unassign(t)),
               ],
             ),
+        ],
+      ),
+    );
+  }
+
+  Color get _webTabAccent => switch (_tab) {
+        0 => const Color(0xFFD32F2F),
+        1 => const Color(0xFFE08600),
+        _ => _green,
+      };
+
+  Widget _webGrid(List<TaskItem> list) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
+        const gap = 18.0;
+        final rows = (list.length + cols - 1) ~/ cols;
+        return ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
+          itemCount: rows,
+          itemBuilder: (context, r) {
+            final cells = <Widget>[];
+            for (var j = 0; j < cols; j++) {
+              if (j > 0) cells.add(const SizedBox(width: gap));
+              final k = r * cols + j;
+              cells.add(
+                Expanded(
+                  child: k < list.length
+                      ? _WebQueueHover(child: _webCard(list[k]))
+                      : const SizedBox.shrink(),
+                ),
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: gap),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: cells,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _webCard(TaskItem t) {
+    final overdue = t.isOverdue();
+    final waiting = DateTime.now().difference(t.createdAt);
+    final waitedText = waiting.inHours < 24
+        ? '${waiting.inHours}h waiting'
+        : '${waiting.inDays}d waiting';
+    final accent = _webTabAccent;
+    const red = Color(0xFFD32F2F);
+
+    Widget infoRow(IconData icon, String value) => Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            children: [
+              Icon(icon, size: 15, color: Colors.black.withValues(alpha: 0.4)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4B5A50),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+    final infos = <(IconData, String)>[
+      if (t.isIndividual) ...[
+        (Icons.person_outline, t.contactName),
+        (Icons.place_outlined, t.address),
+      ] else ...[
+        (Icons.precision_manufacturing_outlined, t.equipment),
+        (Icons.apartment_outlined, t.companyName),
+      ],
+    ].where((e) => e.$2.isNotEmpty).toList();
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: overdue ? red.withValues(alpha: 0.6) : const Color(0xFFE2E8E3),
+          width: overdue ? 1.4 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  accent.withValues(alpha: 0.12),
+                  accent.withValues(alpha: 0.03),
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              border: Border(
+                bottom: BorderSide(color: accent.withValues(alpha: 0.12)),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.18),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    t.isIndividual
+                        ? Icons.person_pin_circle_outlined
+                        : Icons.confirmation_number_outlined,
+                    size: 18,
+                    color: accent,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Ticket #${t.ticketNo}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color.lerp(accent, Colors.black, 0.25),
+                    ),
+                  ),
+                ),
+                _priorityPill(t.priority),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF14201A),
+                    ),
+                  ),
+                  for (final info in infos) infoRow(info.$1, info.$2),
+                  if (t.isIndividual ||
+                      t.clientName.isNotEmpty ||
+                      (_tab != 0 && t.assignee != '-')) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        if (t.isIndividual)
+                          _tag('Individual', const Color(0xFFEBF0EA), _green),
+                        if (t.clientName.isNotEmpty)
+                          _tag(
+                            'Raised by ${t.clientName}',
+                            const Color(0xFFEAF2FF),
+                            const Color(0xFF1565C0),
+                          ),
+                        if (_tab != 0 && t.assignee != '-')
+                          _tag(
+                            '@${t.assignee}',
+                            const Color(0xFFF3EAFE),
+                            const Color(0xFF6A1B9A),
+                          ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: overdue && _tab != 1
+                          ? red.withValues(alpha: 0.07)
+                          : const Color(0xFFF6F9F6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: _tab == 1
+                        ? _acceptanceRow(t)
+                        : Row(
+                            children: [
+                              Icon(
+                                overdue
+                                    ? Icons.warning_amber_rounded
+                                    : Icons.schedule,
+                                size: 15,
+                                color: overdue ? red : const Color(0xFF6B6B6B),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  overdue ? 'Overdue • $waitedText' : waitedText,
+                                  style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: overdue
+                                        ? red
+                                        : const Color(0xFF6B6B6B),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                  const Spacer(),
+                  const SizedBox(height: 14),
+                  if (_tab == 0)
+                    _primaryButton(
+                      'Assign to Service Engineer',
+                      () => _assignSheet(t),
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _primaryButton(
+                            'Reassign',
+                            () => _assignSheet(t),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        _outlineButton('Unassign', () => _unassign(t)),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -760,6 +1030,42 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WebQueueHover extends StatefulWidget {
+  const _WebQueueHover({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_WebQueueHover> createState() => _WebQueueHoverState();
+}
+
+class _WebQueueHoverState extends State<_WebQueueHover> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: _hover ? 0.09 : 0.04),
+              blurRadius: _hover ? 24 : 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: widget.child,
       ),
     );
   }
