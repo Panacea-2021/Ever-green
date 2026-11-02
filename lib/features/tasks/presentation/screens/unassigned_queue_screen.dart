@@ -444,6 +444,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
+          minimumSize: kIsWeb ? const Size(0, 40) : null,
           side: const BorderSide(color: Color(0xFFD32F2F)),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
