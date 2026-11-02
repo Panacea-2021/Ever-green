@@ -112,13 +112,16 @@ class _Intro extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(56, 48, 80, 20),
+      padding: const EdgeInsets.fromLTRB(56, 48, 56, 20),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(child: copy),
           const SizedBox(width: 36),
-          const SizedBox(width: 520, child: photo),
+          const Padding(
+            padding: EdgeInsets.only(top: 56),
+            child: SizedBox(width: 480, child: photo),
+          ),
         ],
       ),
     );
