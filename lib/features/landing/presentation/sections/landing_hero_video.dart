@@ -81,15 +81,12 @@ class _LandingHeroVideoState extends State<LandingHeroVideo>
     super.dispose();
   }
 
-  static const _alignment = Alignment.topCenter;
-
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
     if (_ready && controller != null && controller.value.isInitialized) {
       return FittedBox(
         fit: BoxFit.cover,
-        alignment: _alignment,
         clipBehavior: Clip.hardEdge,
         child: SizedBox(
           width: controller.value.size.width,
@@ -102,7 +99,6 @@ class _LandingHeroVideoState extends State<LandingHeroVideo>
     return Image.asset(
       LandingAssets.heroBg,
       fit: BoxFit.cover,
-      alignment: _alignment,
       width: double.infinity,
       height: double.infinity,
       errorBuilder: (_, __, ___) => const ColoredBox(
