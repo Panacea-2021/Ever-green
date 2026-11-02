@@ -774,74 +774,81 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
 
   /// Web layout: both cards with their fields paired in two columns.
   Widget _webCards() {
-    return WebForm.page([
-      WebForm.section(
-        icon: Icons.apartment,
-        title: 'Company Information',
-        subtitle: 'Provide basic details of the company',
-        children: [
-          ...WebForm.pairs([
-            _pillField(controller: _companyController, hint: 'Company Name'),
-            _pillField(controller: _branchNameController, hint: 'Branch Name'),
-            _pillField(
-              controller: _companyEmailController,
-              hint: 'Company Email',
-              keyboardType: TextInputType.emailAddress,
-            ),
-            _pillField(
-              controller: _gstController,
-              hint: 'GST Number',
-              capitalization: TextCapitalization.characters,
-            ),
-            _pillField(
-              controller: _addressController,
-              hint: 'Company Address',
-              keyboardType: TextInputType.streetAddress,
-            ),
-            _serviceTypeField(),
-            if (_isAmc) ...[
-              _amcTypeField(),
-              _pillDateField(
-                hint: 'Start Date',
-                value: _formatDate(_startDate),
-                onTap: () => _selectDate(context, true),
-              ),
-              _pillDateField(
-                hint: 'End Date',
-                value: _formatDate(_endDate),
-                onTap: () => _selectDate(context, false),
-              ),
-            ],
-          ]),
-          const SizedBox(height: 20),
-          _buildImageUploadArea(),
-        ],
-      ),
-      const SizedBox(height: 20),
-      WebForm.section(
-        icon: Icons.person_outline,
-        title: 'Client Details',
-        subtitle: 'Enter primary contact details',
-        children: WebForm.pairs([
-          _pillField(controller: _nameController, hint: 'Name'),
+    final company = WebForm.section(
+      icon: Icons.apartment,
+      title: 'Company Information',
+      subtitle: 'Provide basic details of the company',
+      children: [
+        ...WebForm.pairs([
+          _pillField(controller: _companyController, hint: 'Company Name'),
+          _pillField(controller: _branchNameController, hint: 'Branch Name'),
           _pillField(
-            controller: _mobileController,
-            hint: 'Mobile Number',
-            keyboardType: TextInputType.phone,
-          ),
-          _pillField(
-            controller: _emailController,
-            hint: 'Email',
+            controller: _companyEmailController,
+            hint: 'Company Email',
             keyboardType: TextInputType.emailAddress,
           ),
           _pillField(
-            controller: _passwordController,
-            hint: 'Password',
-            isPassword: true,
+            controller: _gstController,
+            hint: 'GST Number',
+            capitalization: TextCapitalization.characters,
           ),
+          _pillField(
+            controller: _addressController,
+            hint: 'Company Address',
+            keyboardType: TextInputType.streetAddress,
+          ),
+          _serviceTypeField(),
+          if (_isAmc) ...[
+            _amcTypeField(),
+            _pillDateField(
+              hint: 'Start Date',
+              value: _formatDate(_startDate),
+              onTap: () => _selectDate(context, true),
+            ),
+            _pillDateField(
+              hint: 'End Date',
+              value: _formatDate(_endDate),
+              onTap: () => _selectDate(context, false),
+            ),
+          ],
         ]),
+        const SizedBox(height: 20),
+        _buildImageUploadArea(),
+      ],
+    );
+    final clientFields = [
+      _pillField(controller: _nameController, hint: 'Name'),
+      _pillField(
+        controller: _mobileController,
+        hint: 'Mobile Number',
+        keyboardType: TextInputType.phone,
       ),
-    ]);
+      _pillField(
+        controller: _emailController,
+        hint: 'Email',
+        keyboardType: TextInputType.emailAddress,
+      ),
+      _pillField(
+        controller: _passwordController,
+        hint: 'Password',
+        isPassword: true,
+      ),
+    ];
+    final client = WebForm.section(
+      icon: Icons.person_outline,
+      title: 'Client Details',
+      subtitle: 'Enter primary contact details',
+      children: [
+        for (var i = 0; i < clientFields.length; i++) ...[
+          if (i > 0) const SizedBox(height: WebForm.gap),
+          clientFields[i],
+        ],
+      ],
+    );
+    return WebForm.page(
+      maxWidth: double.infinity,
+      [WebForm.split(company, client, leftFlex: 3, rightFlex: 2)],
+    );
   }
 
   Widget _buildClientDetailsCard() {

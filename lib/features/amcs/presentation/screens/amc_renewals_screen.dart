@@ -11,6 +11,7 @@ import '../../../../core/models/backend_models.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../data/amc_provider.dart';
 import '../../domain/models/amc_contract.dart';
+import '../../../../web/widgets/web_filter_tiles.dart';
 import '../widgets/amc_async_states.dart';
 
 /// Super Admin / Manager view of AMC contracts that need attention —
@@ -168,48 +169,55 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
           children: [
             LayoutBuilder(
               builder: (context, c) {
-                final tiles = [
-                  _webDueTile(dueCount),
-                  _webStatTile(
-                    'Expiring Soon',
-                    expiring,
-                    const Color(0xFFE08600),
-                    Icons.schedule,
-                  ),
-                  _webStatTile(
-                    'Expired',
-                    expired,
-                    const Color(0xFFD32F2F),
-                    Icons.error_outline,
-                  ),
-                ];
-                if (c.maxWidth < 720) {
+                final filters = WebFilterTiles(
+                  options: [
+                    for (final f in <(String, AmcStatus?, int, IconData, Color)>[
+                      ('All', null, dueCount, Icons.dashboard_outlined, _green),
+                      (
+                        'Expiring Soon',
+                        AmcStatus.expiringSoon,
+                        expiring,
+                        Icons.schedule,
+                        const Color(0xFFE08600),
+                      ),
+                      (
+                        'Expired',
+                        AmcStatus.expired,
+                        expired,
+                        Icons.error_outline,
+                        const Color(0xFFD32F2F),
+                      ),
+                    ])
+                      WebFilterOption(
+                        label: f.$1,
+                        count: f.$3,
+                        icon: f.$4,
+                        color: f.$5,
+                        selected: _filter == f.$2,
+                        onTap: () => setState(() => _filter = f.$2),
+                      ),
+                  ],
+                );
+                if (c.maxWidth < 900) {
                   return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (final t in tiles)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: t,
-                        ),
+                      _webDueTile(dueCount),
+                      const SizedBox(height: 14),
+                      filters,
                     ],
                   );
                 }
-                return IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (var i = 0; i < tiles.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 16),
-                        Expanded(child: tiles[i]),
-                      ],
-                    ],
-                  ),
+                return Row(
+                  children: [
+                    SizedBox(width: 280, child: _webDueTile(dueCount)),
+                    const SizedBox(width: 16),
+                    Expanded(child: filters),
+                  ],
                 );
               },
             ),
-            const SizedBox(height: 26),
-            Align(alignment: Alignment.centerLeft, child: _webFilters()),
-            const SizedBox(height: 18),
+            const SizedBox(height: 24),
             body,
           ],
         ),
@@ -219,7 +227,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
 
   Widget _webDueTile(int count) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -264,108 +272,72 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
     );
   }
 
-  Widget _webStatTile(String label, int value, Color fg, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8E3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: fg.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Icon(icon, color: fg, size: 26),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$value',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    height: 1.1,
-                    color: fg,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF4B5A50),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  static const _webMonths = [
+    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+  ];
 
-  Widget _webFilters() {
-    const chips = <MapEntry<String, AmcStatus?>>[
-      MapEntry('All', null),
-      MapEntry('Expiring Soon', AmcStatus.expiringSoon),
-      MapEntry('Expired', AmcStatus.expired),
-    ];
+  /// Tear-off calendar block showing the contract end date.
+  Widget _webCalendarTile(DateTime d, Color accent) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      width: 58,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8E3)),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (final chip in chips)
-            MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () => setState(() => _filter = chip.value),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _filter == chip.value ? _green : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    chip.key,
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: _filter == chip.value
-                          ? Colors.white
-                          : const Color(0xFF4B5A50),
-                    ),
-                  ),
-                ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            color: accent,
+            alignment: Alignment.center,
+            child: Text(
+              _webMonths[d.month - 1],
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+                color: Colors.white,
               ),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Text(
+              '${d.day}',
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 21,
+                height: 1.1,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF14201A),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: Text(
+              '${d.year}',
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF8A988E),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -448,20 +420,8 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: _green.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(13),
-                          ),
-                          child: const Icon(
-                            Icons.business_outlined,
-                            color: _green,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
+                        _webCalendarTile(c.endDate, accent),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
