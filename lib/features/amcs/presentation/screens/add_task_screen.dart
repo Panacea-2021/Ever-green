@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart' hide TaskStatus;
 import '../../../../shared/providers/auth_state_provider.dart';
+import '../../../../web/widgets/web_form_kit.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../pickers/presentation/screens/company_picker_screen.dart';
 import '../../../pickers/presentation/screens/equipment_picker_screen.dart';
@@ -497,10 +498,10 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
                         child: Center(
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 860),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
+                            constraints: const BoxConstraints(
+                              maxWidth: double.infinity,
+                            ),
+                            child: WebForm.split(
                                 _webSection(
                                   header: true,
                                   children: [
@@ -545,7 +546,6 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                                     ],
                                   ],
                                 ),
-                                const SizedBox(height: 20),
                                 _webSection(
                                   children: [
                                     _webRow(
@@ -585,7 +585,6 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                                     _buildImageUploadSection(),
                                   ],
                                 ),
-                              ],
                             ),
                           ),
                         ),

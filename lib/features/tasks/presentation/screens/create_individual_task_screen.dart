@@ -162,37 +162,45 @@ class _CreateIndividualTaskScreenState
           Column(
             children: [
               Expanded(
-                child: WebForm.page([
-                  WebForm.section(
-                    icon: Icons.person_outline,
-                    title: 'Contact Information',
-                    subtitle: 'Who and where the work is for',
-                    children: [
-                      WebForm.row(_nameField(), _phoneField()),
-                      const SizedBox(height: WebForm.gap),
-                      _addressField(),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  WebForm.section(
-                    children: [
-                      WebForm.row(_issueTypeField(), _priorityField()),
-                      const SizedBox(height: WebForm.gap),
-                      _buildTextField(
-                        controller: _titleController,
-                        hintText: 'Task title *',
+                child: WebForm.page(
+                  maxWidth: double.infinity,
+                  [
+                    WebForm.split(
+                      WebForm.section(
+                        icon: Icons.person_outline,
+                        title: 'Contact Information',
+                        subtitle: 'Who and where the work is for',
+                        children: [
+                          _nameField(),
+                          const SizedBox(height: WebForm.gap),
+                          _phoneField(),
+                          const SizedBox(height: WebForm.gap),
+                          _addressField(),
+                        ],
                       ),
-                      const SizedBox(height: WebForm.gap),
-                      _buildTextField(
-                        controller: _descriptionController,
-                        hintText: 'Enter description',
-                        maxLines: 4,
+                      WebForm.section(
+                        children: [
+                          WebForm.row(_issueTypeField(), _priorityField()),
+                          const SizedBox(height: WebForm.gap),
+                          _buildTextField(
+                            controller: _titleController,
+                            hintText: 'Task title *',
+                          ),
+                          const SizedBox(height: WebForm.gap),
+                          _buildTextField(
+                            controller: _descriptionController,
+                            hintText: 'Enter description',
+                            maxLines: 4,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildImageUploadSection(),
+                        ],
                       ),
-                      const SizedBox(height: 20),
-                      _buildImageUploadSection(),
-                    ],
-                  ),
-                ]),
+                      leftFlex: 2,
+                      rightFlex: 3,
+                    ),
+                  ],
+                ),
               ),
               _buildBottomButtons(),
             ],

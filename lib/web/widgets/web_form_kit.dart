@@ -27,13 +27,13 @@ class WebForm {
         border: Border.all(color: const Color(0xFFB9D5BF), width: 1.2),
       );
 
-  /// Scrolling page with the form centred at a comfortable width.
-  static Widget page(List<Widget> children) {
+  /// Scrolling page with the form centred, at most [maxWidth] wide.
+  static Widget page(List<Widget> children, {double maxWidth = 860}) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 860),
+          constraints: BoxConstraints(maxWidth: maxWidth),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children,
@@ -134,6 +134,33 @@ class WebForm {
             Expanded(child: a),
             const SizedBox(width: gap),
             Expanded(child: b),
+          ],
+        );
+      },
+    );
+  }
+
+  /// [left] and [right] side by side on wide pages, stacked otherwise.
+  static Widget split(
+    Widget left,
+    Widget right, {
+    int leftFlex = 1,
+    int rightFlex = 1,
+  }) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        if (c.maxWidth < 900) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [left, const SizedBox(height: 20), right],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: leftFlex, child: left),
+            const SizedBox(width: 22),
+            Expanded(flex: rightFlex, child: right),
           ],
         );
       },

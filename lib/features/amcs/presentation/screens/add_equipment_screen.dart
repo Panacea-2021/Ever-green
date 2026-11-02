@@ -165,7 +165,10 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
                   if (!kIsWeb) _buildHeader(context),
                   Expanded(
                     child: kIsWeb
-                        ? WebForm.page([_webFormCard()])
+                        ? WebForm.page(
+                            maxWidth: double.infinity,
+                            [_webFormCard()],
+                          )
                         : SingleChildScrollView(
                             padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
                             child: _buildFormCard(),
@@ -318,30 +321,41 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
       title: 'Equipment Information',
       subtitle: 'Provide basic details of the Equipment',
       children: [
-        ...WebForm.pairs([
-          if (_needsCompany) _buildCompanyPicker(),
-          _pillField(_equipmentNameController, 'Fridge'),
-          _pillField(_makeController, 'Make'),
-          _pillField(_modelController, 'Model Number'),
-          _pillField(_serialNumberController, 'Serial Number'),
-          _pillField(_locationController, 'Hyderabad'),
-          _dropdownField(
-            'Manufacturer Year',
-            _selectedYear,
-            _years,
-            (v) => setState(() => _selectedYear = v),
+        WebForm.split(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: WebForm.pairs([
+              if (_needsCompany) _buildCompanyPicker(),
+              _pillField(_equipmentNameController, 'Fridge'),
+              _pillField(_makeController, 'Make'),
+              _pillField(_modelController, 'Model Number'),
+              _pillField(_serialNumberController, 'Serial Number'),
+              _pillField(_locationController, 'Hyderabad'),
+              _dropdownField(
+                'Manufacturer Year',
+                _selectedYear,
+                _years,
+                (v) => setState(() => _selectedYear = v),
+              ),
+              _dropdownField(
+                'PM Frequency',
+                _selectedFrequency,
+                _frequencies,
+                (v) => setState(() => _selectedFrequency = v),
+              ),
+            ]),
           ),
-          _dropdownField(
-            'PM Frequency',
-            _selectedFrequency,
-            _frequencies,
-            (v) => setState(() => _selectedFrequency = v),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildDescriptionField(),
+              const SizedBox(height: 20),
+              _buildUploadBox(),
+            ],
           ),
-        ]),
-        const SizedBox(height: WebForm.gap),
-        _buildDescriptionField(),
-        const SizedBox(height: 20),
-        _buildUploadBox(),
+          leftFlex: 3,
+          rightFlex: 2,
+        ),
       ],
     );
   }

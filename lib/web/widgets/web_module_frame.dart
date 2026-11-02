@@ -32,10 +32,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
 
   /// Form and settings pages (matched by prefix, so `/add-task/new` counts).
   static const _formPaths = [
-    Routes.addTask,
-    Routes.addEquipment,
     Routes.createAmc,
-    Routes.createIndividualTask,
     Routes.addUser,
     Routes.editProfile,
     Routes.uploadEquipments,
