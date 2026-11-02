@@ -119,7 +119,7 @@ class _Intro extends StatelessWidget {
           Expanded(child: copy),
           const SizedBox(width: 36),
           const Padding(
-            padding: EdgeInsets.only(top: 56),
+            padding: EdgeInsets.only(top: 100),
             child: SizedBox(width: 480, child: photo),
           ),
         ],
