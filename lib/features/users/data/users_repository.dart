@@ -17,7 +17,9 @@ class UsersRepository {
   UsersRepository(this._api);
 
   /// `POST user/createUser`. Technicians are never linked to companies on the
-  /// backend, so [companyIds] is dropped for technician roles.
+  /// backend, so [companyIds] is dropped for technician roles. With
+  /// [sendCredentials] the backend emails the login details; the returned
+  /// message says so when that email could not be sent.
   Future<Either<Failure, String>> createUser({
     required String name,
     required String phone,
@@ -26,6 +28,7 @@ class UsersRepository {
     required UserRole role,
     String location = '',
     List<int> companyIds = const [],
+    bool sendCredentials = true,
   }) async {
     final result = await _api.post<dynamic>(
       'user/createUser',
@@ -37,10 +40,17 @@ class UsersRepository {
         'location': location,
         'access_level': role.accessLevel,
         if (role.designation != null) 'designation': role.designation,
-        if (!role.isTechnicianLevel && companyIds.isNotEmpty) 'company_link': companyIds,
+        if (!role.isTechnicianLevel && companyIds.isNotEmpty)
+          'company_link': companyIds,
+        'send_credentials': sendCredentials,
       },
     );
-    return result.map((body) => _message(body, 'User created'));
+    return result.map((body) {
+      final message = _message(body, 'User created');
+      return sendCredentials && !emailSent(body)
+          ? '$message, but the login email could not be sent'
+          : message;
+    });
   }
 
   /// `PUT user/updateUser/:id`. Self-updates may change name, email,
@@ -84,13 +94,15 @@ class UsersRepository {
       data: {'user_link': id, 'is_active': isActive},
     );
     return result.map(
-      (body) => _message(body, isActive ? 'User activated' : 'User deactivated'),
+      (body) =>
+          _message(body, isActive ? 'User activated' : 'User deactivated'),
     );
   }
 
   /// `POST user/deleteUser {user_link}`.
   Future<Either<Failure, String>> deleteUser(int id) async {
-    final result = await _api.post<dynamic>('user/deleteUser', data: {'user_link': id});
+    final result =
+        await _api.post<dynamic>('user/deleteUser', data: {'user_link': id});
     return result.map((body) => _message(body, 'User deleted'));
   }
 
@@ -110,8 +122,18 @@ class UsersRepository {
   /// `POST user/forgetPassword {phone}`. The backend emails the account's
   /// existing password to its registered email address.
   Future<Either<Failure, String>> forgotPassword(String phone) async {
-    final result = await _api.post<dynamic>('user/forgetPassword', data: {'phone': phone});
-    return result.map((body) => _message(body, 'Password sent to your registered email'));
+    final result =
+        await _api.post<dynamic>('user/forgetPassword', data: {'phone': phone});
+    return result.map(
+        (body) => _message(body, 'Password sent to your registered email'));
+  }
+
+  /// Whether the backend reported the credentials email as sent.
+  static bool emailSent(dynamic body) {
+    if (body is! Map) return false;
+    final sent = body['email_sent'] ??
+        (body['data'] is Map ? body['data']['email_sent'] : null);
+    return sent == true || sent == 'true';
   }
 
   String _message(dynamic body, String fallback) {

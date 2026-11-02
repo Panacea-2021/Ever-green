@@ -53,6 +53,7 @@ import '../../features/technicians/presentation/screens/technician_tasks_screen.
 import '../../features/scanner/presentation/screens/verified_equipments_screen.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/audit/presentation/screens/audit_log_screen.dart';
+import '../../features/issue_types/presentation/screens/issue_types_screen.dart';
 import '../../features/amcs/presentation/screens/amc_renewals_screen.dart';
 import '../../features/pm/presentation/screens/pm_schedule_screen.dart';
 import '../../shared/providers/auth_state_provider.dart';
@@ -329,6 +330,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const VerifiedEquipmentsScreen(),
       ),
       GoRoute(
+        path: Routes.issueTypes,
+        name: 'issueTypes',
+        builder: (context, state) => const IssueTypesScreen(),
+      ),
+      GoRoute(
+        path: Routes.serviceTypes,
+        name: 'serviceTypes',
+        builder: (context, state) => const ServiceTypesScreen(),
+      ),
+      GoRoute(
         path: Routes.auditLog,
         name: 'auditLog',
         builder: (context, state) => const AuditLogScreen(),
@@ -538,9 +549,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.tasks,
             name: 'tasks',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: TaskBoardScreen(isRootTab: true),
-            ),
+            pageBuilder: (context, state) {
+              final status =
+                  state.extra is TaskStatus ? state.extra! as TaskStatus : null;
+              return NoTransitionPage(
+                child: TaskBoardScreen(
+                  key: ValueKey(status),
+                  isRootTab: true,
+                  initialStatus: status,
+                ),
+              );
+            },
           ),
           GoRoute(
             path: Routes.profile,

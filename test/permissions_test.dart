@@ -328,7 +328,16 @@ void main() {
       expect(UserRole.superAdmin.label, 'Super Admin');
       expect(UserRole.manager.label, 'Manager');
       expect(UserRole.seniorTechnician.label, 'Senior Service Engineer');
-      expect(UserRole.technician.label, 'Junior Service Engineer');
+      expect(UserRole.technician.label, 'Service Engineer');
+      expect(UserRole.clientAdmin.label, 'Company Manager');
+      expect(UserRole.client.label, 'POC');
+    });
+
+    test('no role label says "Junior" or "Client"', () {
+      for (final role in UserRole.values) {
+        expect(role.label.toLowerCase(), isNot(contains('junior')));
+        expect(role.label.toLowerCase(), isNot(contains('client')));
+      }
     });
 
     test('no role label says "Technician"', () {
@@ -337,9 +346,13 @@ void main() {
       }
     });
 
-    test('junior designation is the new value; legacy value still parses', () {
-      expect(UserRoleX.juniorDesignation, 'Junior Service Engineer');
-      expect(UserRole.technician.designation, 'Junior Service Engineer');
+    test('Service Engineer designation; legacy junior values still parse', () {
+      expect(UserRoleX.juniorDesignation, 'Service Engineer');
+      expect(UserRole.technician.designation, 'Service Engineer');
+      expect(
+        UserRoleX.fromBackend('technician', 'Service Engineer'),
+        UserRole.technician,
+      );
       expect(
         UserRoleX.fromBackend('technician', 'Junior Service Engineer'),
         UserRole.technician,
@@ -350,6 +363,7 @@ void main() {
       );
       expect(UserRoleX.isJuniorDesignation('Junior Technician'), isTrue);
       expect(UserRoleX.isJuniorDesignation('Junior Service Engineer'), isTrue);
+      expect(UserRoleX.isJuniorDesignation('Service Engineer'), isTrue);
       expect(UserRoleX.isJuniorDesignation('Senior Service Engineer'), isFalse);
     });
   });

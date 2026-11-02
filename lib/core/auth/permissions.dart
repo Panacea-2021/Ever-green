@@ -46,6 +46,8 @@ class Permissions {
       Routes.uploadEquipments,
       Routes.uploadTechnicians,
       Routes.uploadAmc,
+      Routes.issueTypes,
+      Routes.serviceTypes,
     ],
     // Senior Technician: a field lead — their own tasks plus the ability to
     // assign/reassign to junior technicians and see technician performance.
@@ -154,6 +156,8 @@ class Permissions {
 
   static bool canManagePmSchedule(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
+
+  static bool canManageIssueTypes(UserRole role) => _isAdmin(role);
 
   static bool canViewAnalytics(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
