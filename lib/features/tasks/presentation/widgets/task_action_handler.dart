@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -108,7 +109,13 @@ class TaskActionHandler {
   /// "Service Report" dialog: Share opens the share sheet, Print the system
   /// print / preview dialog.
   Future<void> serviceReport(TaskItem t) async {
-    final choice = await showDialog<bool>(
+    final choice = kIsWeb
+        ? await showDialog<bool>(
+            context: context,
+            barrierColor: Colors.black.withValues(alpha: 0.4),
+            builder: (_) => _WebReportDialog(title: t.title),
+          )
+        : await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -740,6 +747,174 @@ class TaskActionHandler {
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: _green),
+    );
+  }
+}
+
+/// Web layout of the "Service Report" dialog: same texts and choices, with
+/// Share / Print as two large option tiles. Pops true for Share, false for
+/// Print, null for Cancel.
+class _WebReportDialog extends StatelessWidget {
+  const _WebReportDialog({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 460),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(26, 24, 26, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: _green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.description_outlined,
+                      color: _green,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Text(
+                      'Service Report',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 19,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF14201A),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Cancel',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Color(0xFF8A988E)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Generate service report for "$title"?',
+                style: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 14,
+                  height: 1.5,
+                  color: Color(0xFF4B5A50),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ReportOption(
+                      icon: Icons.share,
+                      label: 'Share',
+                      onTap: () => Navigator.pop(context, true),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ReportOption(
+                      icon: Icons.print,
+                      label: 'Print',
+                      onTap: () => Navigator.pop(context, false),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF4B5A50),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportOption extends StatefulWidget {
+  const _ReportOption({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_ReportOption> createState() => _ReportOptionState();
+}
+
+class _ReportOptionState extends State<_ReportOption> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          decoration: BoxDecoration(
+            color: _hover ? _green : const Color(0xFFF4F7F2),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _hover ? _green : const Color(0xFFE2E8E3),
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                widget.icon,
+                size: 24,
+                color: _hover ? Colors.white : _green,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: _hover ? Colors.white : const Color(0xFF14201A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

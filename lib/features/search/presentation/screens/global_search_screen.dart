@@ -270,6 +270,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     final selected = tabs.contains(_selected) ? _selected! : tabs.first;
     final results = {for (final t in tabs) t: _results(t, tabs)};
 
+    if (kIsWeb) return _webLayout(tabs, selected, results);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F7),
       body: Stack(
@@ -556,6 +558,154 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Web layout: segmented tabs with counts and a bordered result list.
+  // ---------------------------------------------------------------------------
+
+  static const _webLine = Color(0xFFE2E8E3);
+  static const _webInk = Color(0xFF14201A);
+  static const _webBody = Color(0xFF4B5A50);
+
+  Widget _webLayout(
+    List<SearchTab> tabs,
+    SearchTab selected,
+    Map<SearchTab, _TabResult> results,
+  ) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4F7F2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _webLine),
+                ),
+                child: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    for (final tab in tabs)
+                      _webTab(tab, tab == selected, results[tab]!),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Expanded(child: _webTabBody(selected, results[selected]!)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webTab(SearchTab tab, bool active, _TabResult result) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => setState(() => _selected = tab),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          decoration: BoxDecoration(
+            color: active ? _green : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                tab.label,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: active ? Colors.white : _webInk,
+                ),
+              ),
+              if (!result.loading && !result.failed) ...[
+                const SizedBox(width: 7),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: active
+                        ? Colors.white.withValues(alpha: 0.22)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${result.hits.length}',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: active ? Colors.white : _webBody,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webTabBody(SearchTab tab, _TabResult r) {
+    if (r.loading) {
+      return const Center(child: CircularProgressIndicator(color: _green));
+    }
+    if (r.failed) {
+      return _centerMsg(
+        Icons.cloud_off_outlined,
+        "Couldn't load ${tab.label.toLowerCase()}",
+        'Check your connection and try again.',
+        onRetry: r.retry,
+      );
+    }
+    final noun = tab.label.toLowerCase();
+    if (r.hits.isEmpty) {
+      return _query.isEmpty
+          ? _centerMsg(Icons.inbox_outlined, 'No $noun yet', 'Nothing to show here.')
+          : _centerMsg(
+              Icons.search_off,
+              'No matching $noun',
+              'Try a different term.',
+            );
+    }
+    return RefreshIndicator(
+      color: _green,
+      onRefresh: r.refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _webLine),
+            ),
+            child: Column(
+              children: [
+                for (var i = 0; i < r.hits.length; i++)
+                  _WebHitRow(hit: r.hits[i], last: i == r.hits.length - 1),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _centerMsg(
     IconData icon,
     String title,
@@ -643,6 +793,113 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One result as a full-width list row (web): icon chip, title and subtitle,
+/// optional badge and a chevron, highlighted on hover.
+class _WebHitRow extends StatefulWidget {
+  const _WebHitRow({required this.hit, required this.last});
+  final _Hit hit;
+  final bool last;
+
+  @override
+  State<_WebHitRow> createState() => _WebHitRowState();
+}
+
+class _WebHitRowState extends State<_WebHitRow> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final h = widget.hit;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: h.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: BoxDecoration(
+            color: _hover ? const Color(0xFFE8F3EA) : Colors.white,
+            border: widget.last
+                ? null
+                : const Border(bottom: BorderSide(color: Color(0xFFE2E8E3))),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: _green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(h.icon, color: _green, size: 21),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      h.title,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF14201A),
+                      ),
+                    ),
+                    if (h.subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        h.subtitle,
+                        style: const TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 12.5,
+                          height: 1.4,
+                          color: Color(0xFF4B5A50),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (h.badge != null) ...[
+                const SizedBox(width: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: h.badgeColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    h.badge!,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: h.badgeColor,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 10),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: _hover ? _green : const Color(0xFFB0B0B0),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
