@@ -151,7 +151,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
       child: WebTable(
         columns: [
           const WebColumn('Company', flex: 5),
-          const WebColumn('Service', flex: 2),
+          const WebColumn('Service', flex: 3),
           const WebColumn('POC', flex: 3),
           const WebColumn('Email', flex: 4),
           const WebColumn('Contract', flex: 3),
@@ -163,7 +163,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
           for (final c in companies)
             [
               _CompanyCell(company: c),
-              WebCellText(c.serviceLabel),
+              _ServiceCell(label: c.serviceLabel),
               WebCellText(
                 c.poc?.name ?? '',
                 subtitle: c.poc?.phone,
@@ -371,6 +371,45 @@ class _CompanyCell extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(child: WebCellText(company.name, bold: true, subtitle: place)),
+      ],
+    );
+  }
+}
+
+/// Service type as wrapping chips ("AMC · C AMC" -> [AMC] [C AMC]) so the
+/// full label stays visible in a narrow column.
+class _ServiceCell extends StatelessWidget {
+  const _ServiceCell({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    if (label.isEmpty) return const WebCellText('—');
+    final parts = label.split(' · ');
+    return Wrap(
+      spacing: 5,
+      runSpacing: 5,
+      children: [
+        for (var i = 0; i < parts.length; i++)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: i == 0 ? WebTokens.mintSoft : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: i == 0 ? WebTokens.mint : WebTokens.line,
+              ),
+            ),
+            child: Text(
+              parts[i],
+              style: WebTokens.bodyText(
+                11.5,
+                color: i == 0 ? WebTokens.green : WebTokens.ink,
+                weight: FontWeight.w700,
+                h: 1.2,
+              ),
+            ),
+          ),
       ],
     );
   }

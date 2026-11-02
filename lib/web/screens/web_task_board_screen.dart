@@ -227,7 +227,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
       child: WebTable(
         columns: const [
           WebColumn('Task', flex: 5),
-          WebColumn('Company / Contact', flex: 4),
+          WebColumn('Company / Contact', flex: 5),
           WebColumn('Status', flex: 3),
           WebColumn('Created', flex: 3),
           WebColumn('', flex: 1),
@@ -238,10 +238,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
           for (final t in tasks)
             [
               _TaskCell(task: t),
-              WebCellText(
-                t.isIndividual ? t.contactName : t.companyName,
-                subtitle: t.isIndividual ? t.address : t.equipment,
-              ),
+              _PartyCell(task: t),
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
@@ -428,6 +425,73 @@ class _TaskCell extends StatelessWidget {
             task.title,
             bold: true,
             subtitle: task.ticketNo.isEmpty ? null : 'S.No ${task.ticketNo}',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Company (or contact for Individual tasks) with the equipment (or address)
+/// beneath, each with an icon and up to two lines so names are not cut off.
+class _PartyCell extends StatelessWidget {
+  const _PartyCell({required this.task});
+  final TaskItem task;
+
+  static const Color _darkGreen = Color(0xFF125420);
+
+  @override
+  Widget build(BuildContext context) {
+    final t = task;
+    final name = t.isIndividual ? t.contactName : t.companyName;
+    final detail = t.isIndividual ? t.address : t.equipment;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _line(
+          t.isIndividual ? Icons.person_outline : Icons.business_outlined,
+          name.isEmpty ? '-' : name,
+          WebTokens.bodyText(
+            13.5,
+            color: _darkGreen,
+            weight: FontWeight.w700,
+            h: 1.3,
+          ),
+          _darkGreen,
+        ),
+        if (detail.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          _line(
+            t.isIndividual ? Icons.location_on_outlined : Icons.build_outlined,
+            detail,
+            WebTokens.bodyText(12, color: WebTokens.body, h: 1.35),
+            WebTokens.faint,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _line(IconData icon, String text, TextStyle style, Color iconColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(icon, size: 15, color: iconColor),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Tooltip(
+            message: text,
+            waitDuration: const Duration(milliseconds: 400),
+            child: Text(
+              text,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: style,
+            ),
           ),
         ),
       ],
