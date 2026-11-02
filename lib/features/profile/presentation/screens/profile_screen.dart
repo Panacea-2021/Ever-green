@@ -146,17 +146,32 @@ class ProfileScreen extends ConsumerWidget {
       child: Stack(
         children: [
           Container(
-            height: 96,
+            height: 116,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFE6F2E8), Color(0xFFF6FBF7)],
+                colors: [Color(0xFF0A3F15), Color(0xFF1A801A)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                Positioned(
+                  right: -30,
+                  top: -40,
+                  child: _webBubble(130, 0.10),
+                ),
+                Positioned(
+                  left: -24,
+                  bottom: -50,
+                  child: _webBubble(110, 0.07),
+                ),
+              ],
+            ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 36, 24, 24),
+            padding: const EdgeInsets.fromLTRB(24, 56, 24, 26),
             child: Column(
               children: [
                 _buildAvatar(user),
@@ -194,21 +209,101 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   identity,
                   const SizedBox(height: 24),
-                  _buildMenuCard(context, role),
+                  _webMenuGrid(context, role, 1),
                 ],
               );
             }
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(width: 340, child: identity),
+                SizedBox(width: 360, child: identity),
                 const SizedBox(width: 28),
-                Expanded(child: _buildMenuCard(context, role)),
+                Expanded(
+                  child: _webMenuGrid(
+                    context,
+                    role,
+                    c.maxWidth >= 1000 ? 2 : 1,
+                  ),
+                ),
               ],
             );
           },
         ),
       ),
+    );
+  }
+
+  Widget _webBubble(double size, double alpha) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: alpha),
+        ),
+      );
+
+  Widget _webMenuGrid(BuildContext context, UserRole role, int columns) {
+    final items = <(_MenuEntry, Color)>[
+      (
+        _MenuEntry(
+          icon: Icons.business_outlined,
+          label: 'Company Profile',
+          onTap: () => _showCompanySheet(context),
+        ),
+        const Color(0xFF106220),
+      ),
+      (
+        _MenuEntry(
+          icon: Icons.assignment_outlined,
+          label: role.isClientSide ? 'My Service History' : 'My Tasks History',
+          onTap: () => context.push(Routes.taskBoard),
+        ),
+        const Color(0xFF2563EB),
+      ),
+      if (Permissions.canViewAuditLog(role))
+        (
+          _MenuEntry(
+            icon: Icons.history,
+            label: 'Activity History',
+            onTap: () => context.push(Routes.auditLog),
+          ),
+          const Color(0xFF7C3AED),
+        ),
+      if (Permissions.canManageUsers(role))
+        (
+          _MenuEntry(
+            icon: Icons.groups_outlined,
+            label: 'Manage Employees',
+            onTap: () => context.push(Routes.usersList),
+          ),
+          const Color(0xFF0D9488),
+        ),
+      (
+        _MenuEntry(
+          icon: Icons.settings_outlined,
+          label: 'Account Settings',
+          onTap: () => context.push(Routes.settings),
+        ),
+        const Color(0xFFD97706),
+      ),
+    ];
+
+    const gap = 18.0;
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = (c.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final (entry, color) in items)
+              SizedBox(
+                width: w,
+                child: _WebMenuTile(entry: entry, color: color),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -833,6 +928,119 @@ class _CompanyProfileSheet extends ConsumerWidget {
     if (d == null) return '—';
     final l = d.toLocal();
     return '${l.day.toString().padLeft(2, '0')} ${_months[l.month - 1]} ${l.year}';
+  }
+}
+
+class _WebMenuTile extends StatefulWidget {
+  const _WebMenuTile({required this.entry, required this.color});
+
+  final _MenuEntry entry;
+  final Color color;
+
+  @override
+  State<_WebMenuTile> createState() => _WebMenuTileState();
+}
+
+class _WebMenuTileState extends State<_WebMenuTile> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.color;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.entry.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _hover
+                  ? color.withValues(alpha: 0.45)
+                  : const Color(0xFFE3ECE5),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: (_hover ? color : Colors.black)
+                    .withValues(alpha: _hover ? 0.14 : 0.05),
+                blurRadius: _hover ? 28 : 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(width: 5, color: color),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                color.withValues(alpha: 0.18),
+                                color.withValues(alpha: 0.06),
+                              ],
+                            ),
+                          ),
+                          child: Icon(widget.entry.icon, size: 26, color: color),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            widget.entry.label,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1C2B20),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _hover
+                                ? color
+                                : color.withValues(alpha: 0.08),
+                          ),
+                          child: Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 18,
+                            color: _hover ? Colors.white : color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
