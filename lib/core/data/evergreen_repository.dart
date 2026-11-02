@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
@@ -36,18 +38,102 @@ class EvergreenRepository {
 
   /// `getAllTasks` is already scoped by the backend: technicians get their
   /// own tickets, client roles get their companies' tickets.
-  Future<List<ServiceTask>> getTasks({TaskStatus? status}) async {
+  /// [deleted] lists only soft-deleted tickets (admins / managers).
+  Future<List<ServiceTask>> getTasks({
+    TaskStatus? status,
+    bool deleted = false,
+  }) async {
     final body = unwrap(
       await api.post<dynamic>(
         'user/getAllTasks',
-        data: {if (status != null) 'status': status.key},
+        data: {
+          if (status != null) 'status': status.key,
+          if (deleted) 'deleted': true,
+        },
       ),
     );
     return dataList(body).map(ServiceTask.fromJson).toList();
   }
 
+  /// The equipment's ticket that is not closed or deleted, or null.
+  Future<ActiveEquipmentTask?> getActiveTaskForEquipment(
+      int equipmentId) async {
+    final body = unwrap(
+      await api.post<dynamic>(
+        'user/getActiveTaskForEquipment',
+        data: {'equipment_link': equipmentId},
+      ),
+    );
+    final data = body is Map ? body['data'] : null;
+    return data is Map<String, dynamic>
+        ? ActiveEquipmentTask.fromJson(data)
+        : null;
+  }
+
+  /// Active issue types, or every one when [includeInactive] (admins).
+  Future<List<IssueType>> getIssueTypes({bool includeInactive = false}) async {
+    final body = unwrap(
+      await api.post<dynamic>(
+        'user/getIssueTypes',
+        data: {if (includeInactive) 'include_inactive': true},
+      ),
+    );
+    return dataList(body).map(IssueType.fromJson).toList();
+  }
+
+  Future<void> createIssueType(String name) async {
+    unwrap(
+        await api.post<dynamic>('user/createIssueType', data: {'name': name}));
+  }
+
+  Future<void> updateIssueType(int id, {String? name, bool? isActive}) async {
+    unwrap(
+      await api.post<dynamic>(
+        'user/updateIssueType',
+        data: {
+          'issue_type_link': id,
+          if (name != null) 'name': name,
+          if (isActive != null) 'is_active': isActive,
+        },
+      ),
+    );
+  }
+
+  /// Active service types, or every one when [includeInactive] (admins).
+  Future<List<ServiceType>> getServiceTypes({
+    bool includeInactive = false,
+  }) async {
+    final body = unwrap(
+      await api.post<dynamic>(
+        'user/getServiceTypes',
+        data: {if (includeInactive) 'include_inactive': true},
+      ),
+    );
+    return dataList(body).map(ServiceType.fromJson).toList();
+  }
+
+  Future<void> createServiceType(String name) async {
+    unwrap(
+      await api.post<dynamic>('user/createServiceType', data: {'name': name}),
+    );
+  }
+
+  Future<void> updateServiceType(int id, {String? name, bool? isActive}) async {
+    unwrap(
+      await api.post<dynamic>(
+        'user/updateServiceType',
+        data: {
+          'service_type_link': id,
+          if (name != null) 'name': name,
+          if (isActive != null) 'is_active': isActive,
+        },
+      ),
+    );
+  }
+
   /// Admin-only on the backend.
-  Future<List<User>> getUsers({String? accessLevel, String? designation}) async {
+  Future<List<User>> getUsers(
+      {String? accessLevel, String? designation}) async {
     final body = unwrap(
       await api.post<dynamic>(
         'user/getAllUser',
@@ -61,8 +147,10 @@ class EvergreenRepository {
   }
 
   /// Uploads one file to `upload-file` and returns the stored URL/path.
-  Future<String> uploadFile(String filePath, {required String folderName}) async {
-    final form = FormData.fromMap({'file': await MultipartFile.fromFile(filePath)});
+  Future<String> uploadFile(String filePath,
+      {required String folderName}) async {
+    final form =
+        FormData.fromMap({'file': await MultipartFile.fromFile(filePath)});
     final body = unwrap(
       await api.post<dynamic>(
         'user/upload-file',
@@ -105,7 +193,22 @@ class RepositoryException implements Exception {
   String toString() => message;
 }
 
+/// How long reference lists stay cached after the last screen using them
+/// closes. Saves invalidate these providers, so edits still show at once.
+const listCacheDuration = Duration(seconds: 60);
+
+/// Keeps an auto-dispose provider's value for [duration] after its last
+/// listener leaves, so moving between screens does not refetch it.
+void cacheFor(Ref ref, Duration duration) {
+  final link = ref.keepAlive();
+  Timer? timer;
+  ref.onCancel(() => timer = Timer(duration, link.close));
+  ref.onResume(() => timer?.cancel());
+  ref.onDispose(() => timer?.cancel());
+}
+
 final companiesProvider = FutureProvider.autoDispose<List<Company>>((ref) {
+  cacheFor(ref, listCacheDuration);
   return ref.watch(evergreenRepositoryProvider).getCompanies();
 });
 
@@ -113,12 +216,61 @@ final tasksProvider = FutureProvider.autoDispose<List<ServiceTask>>((ref) {
   return ref.watch(evergreenRepositoryProvider).getTasks();
 });
 
+/// Soft-deleted tickets (admins / managers only).
+final deletedTasksProvider =
+    FutureProvider.autoDispose<List<ServiceTask>>((ref) {
+  return ref.watch(evergreenRepositoryProvider).getTasks(deleted: true);
+});
+
+/// Issue types offered when raising a task.
+final issueTypesProvider = FutureProvider.autoDispose<List<IssueType>>((ref) {
+  cacheFor(ref, listCacheDuration);
+  return ref.watch(evergreenRepositoryProvider).getIssueTypes();
+});
+
+/// Every issue type, including deactivated ones (admins / managers).
+final allIssueTypesProvider =
+    FutureProvider.autoDispose<List<IssueType>>((ref) {
+  return ref
+      .watch(evergreenRepositoryProvider)
+      .getIssueTypes(includeInactive: true);
+});
+
+/// Service types offered when adding or editing equipment.
+final serviceTypesProvider =
+    FutureProvider.autoDispose<List<ServiceType>>((ref) {
+  cacheFor(ref, listCacheDuration);
+  return ref.watch(evergreenRepositoryProvider).getServiceTypes();
+});
+
+/// Every service type, including deactivated ones (admins / managers).
+final allServiceTypesProvider =
+    FutureProvider.autoDispose<List<ServiceType>>((ref) {
+  return ref
+      .watch(evergreenRepositoryProvider)
+      .getServiceTypes(includeInactive: true);
+});
+
+/// The equipment's active ticket (not closed or deleted), or null.
+final activeTaskForEquipmentProvider = FutureProvider.autoDispose
+    .family<ActiveEquipmentTask?, int>((ref, equipmentId) {
+  return ref
+      .watch(evergreenRepositoryProvider)
+      .getActiveTaskForEquipment(equipmentId);
+});
+
 /// All equipment visible to the user, or one company's when [companyId] is set.
 final equipmentsProvider =
     FutureProvider.autoDispose.family<List<Equipment>, int?>((ref, companyId) {
-  return ref.watch(evergreenRepositoryProvider).getEquipments(companyId: companyId);
+  cacheFor(ref, listCacheDuration);
+  return ref
+      .watch(evergreenRepositoryProvider)
+      .getEquipments(companyId: companyId);
 });
 
 final techniciansProvider = FutureProvider.autoDispose<List<User>>((ref) {
-  return ref.watch(evergreenRepositoryProvider).getUsers(accessLevel: 'technician');
+  cacheFor(ref, listCacheDuration);
+  return ref
+      .watch(evergreenRepositoryProvider)
+      .getUsers(accessLevel: 'technician');
 });

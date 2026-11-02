@@ -337,7 +337,7 @@ class _TaskListCardState extends State<TaskListCard> {
           _infoRow(Icons.apartment_outlined, 'Company',
               t.companyName.isEmpty ? '-' : t.companyName,),
         const SizedBox(height: 4),
-        _infoRow(Icons.confirmation_number_outlined, 'Ticket No',
+        _infoRow(Icons.confirmation_number_outlined, 'Ticket ID',
             t.ticketNo.isEmpty ? '-' : t.ticketNo,),
         if (overdueLine(t) != null) ...[
           const SizedBox(height: 8),

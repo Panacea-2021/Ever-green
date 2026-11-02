@@ -82,7 +82,7 @@ void main() {
     expect(find.text('Fridge not cooling'), findsOneWidget);
     expect(find.textContaining('Equipment : ', findRichText: true), findsOneWidget);
     expect(find.textContaining('Company : ', findRichText: true), findsOneWidget);
-    expect(find.textContaining('S.No : TKT-12', findRichText: true), findsOneWidget);
+    expect(find.textContaining('Ticket ID : TKT-12', findRichText: true), findsOneWidget);
     expect(find.textContaining('Created At : 01-10-2026', findRichText: true), findsOneWidget);
     expect(find.text('Reassign'), findsOneWidget);
     await tester.tap(find.text('Report'));

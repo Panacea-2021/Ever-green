@@ -4,18 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
+import '../../../../core/router/routes.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
 import '../widgets/task_workflow.dart';
 
 /// Super Admin / Manager view for triaging tickets (membership:
-/// [TaskItem.queueBucket]; completed / closed tickets are in no tab):
-/// - "Unassigned": no Service Engineer yet — overdue first — with Assign.
-/// - "Awaiting": assigned, still open, never accepted or started, with the
-///   acceptance timer, Reassign and Unassign.
-/// - "Assigned": accepted / started / in progress / on hold, with Reassign
-///   and Unassign.
+/// [TaskItem.inQueueTab]; a ticket can be in several tabs):
+/// - "Unassigned": every open ticket.
+/// - "Awaiting": open with no Service Engineer for 15+ minutes.
+/// - "Assigned": every unclosed ticket with a Service Engineer.
+/// - "Escalation": unclosed and escalated, or the status hasn't moved for
+///   24 hours.
+/// Tapping a card opens the ticket's details.
 class UnassignedQueueScreen extends ConsumerStatefulWidget {
   const UnassignedQueueScreen({super.key});
 
@@ -26,24 +28,20 @@ class UnassignedQueueScreen extends ConsumerStatefulWidget {
 
 class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
   static const Color _green = Color(0xFF106220);
-  int _tab = 0; // 0 = Unassigned, 1 = Awaiting Acceptance, 2 = Assigned
+  QueueTab _tab = QueueTab.unassigned;
 
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(taskItemsProvider);
     final all = ref.watch(taskProvider);
-    // Membership rules: TaskItem.queueBucket.
-    final unassigned = ref.watch(unassignedTasksProvider);
-    final awaiting = ref.watch(awaitingAcceptanceProvider);
-    final assigned = ref.watch(assignedQueueProvider);
+    final tabs = ref.watch(queueTabsProvider);
+    final noEngineer = ref.watch(unassignedCountProvider);
 
-    final list = _tab == 0
-        ? unassigned
-        : _tab == 1
-            ? awaiting
-            : assigned;
-    final overdueUnassigned = unassigned.where((t) => t.isOverdue()).length;
-    final overdueAccept = awaiting.where((t) => t.isAcceptanceOverdue()).length;
+    final list = tabs[_tab]!;
+    final overdueOpen =
+        tabs[QueueTab.unassigned]!.where((t) => t.isOverdue()).length;
+    final awaitingCount = tabs[QueueTab.awaiting]!.length;
+    final escalationCount = tabs[QueueTab.escalation]!.length;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -68,17 +66,21 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
               bottom: false,
               child: Column(
                 children: [
-                  _header(unassigned.length),
+                  _header(noEngineer),
                   const SizedBox(height: 6),
-                  if (_tab == 0 && overdueUnassigned > 0)
+                  if (_tab == QueueTab.unassigned && overdueOpen > 0)
                     _overdueBanner(
-                      '$overdueUnassigned ticket${overdueUnassigned == 1 ? '' : 's'} past SLA with no one assigned',
+                      '$overdueOpen open ticket${overdueOpen == 1 ? '' : 's'} past SLA',
                     ),
-                  if (_tab == 1 && overdueAccept > 0)
+                  if (_tab == QueueTab.awaiting && awaitingCount > 0)
                     _overdueBanner(
-                      '$overdueAccept ticket${overdueAccept == 1 ? '' : 's'} not accepted within ${TaskItem.acceptanceWindowMinutes} min — reassign',
+                      '$awaitingCount ticket${awaitingCount == 1 ? '' : 's'} with no Service Engineer for over ${TaskItem.unassignedWaitMinutes} min — assign now',
                     ),
-                  _tabs(unassigned.length, awaiting.length, assigned.length),
+                  if (_tab == QueueTab.escalation && escalationCount > 0)
+                    _overdueBanner(
+                      '$escalationCount ticket${escalationCount == 1 ? '' : 's'} escalated or stuck in the same status for ${TaskItem.staleStatusHours}h+',
+                    ),
+                  _tabs(tabs),
                   const SizedBox(height: 16),
                   Expanded(
                     child: RefreshIndicator(
@@ -207,15 +209,15 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
     );
   }
 
-  Widget _tabs(int unassigned, int awaiting, int assigned) {
-    Widget tab(String label, int index) {
-      final sel = _tab == index;
+  Widget _tabs(Map<QueueTab, List<TaskItem>> tabs) {
+    Widget tab(String label, QueueTab value) {
+      final sel = _tab == value;
       return Expanded(
         child: GestureDetector(
-          onTap: () => setState(() => _tab = index),
+          onTap: () => setState(() => _tab = value),
           child: Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
             decoration: BoxDecoration(
               color: sel ? _green : Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -228,7 +230,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Montserrat',
-                fontSize: 11.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: sel ? Colors.white : const Color(0xFF545454),
               ),
@@ -238,165 +240,197 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
       );
     }
 
+    String label(String name, QueueTab value) =>
+        '$name\n(${tabs[value]!.length})';
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
-          tab('Unassigned ($unassigned)', 0),
-          const SizedBox(width: 7),
-          tab('Awaiting ($awaiting)', 1),
-          const SizedBox(width: 7),
-          tab('Assigned ($assigned)', 2),
+          tab(label('Unassigned', QueueTab.unassigned), QueueTab.unassigned),
+          const SizedBox(width: 5),
+          tab(label('Awaiting', QueueTab.awaiting), QueueTab.awaiting),
+          const SizedBox(width: 5),
+          tab(label('Assigned', QueueTab.assigned), QueueTab.assigned),
+          const SizedBox(width: 5),
+          tab(label('Escalation', QueueTab.escalation), QueueTab.escalation),
         ],
       ),
     );
   }
+
+  static String _span(Duration d) {
+    if (d.inMinutes < 60) return '${d.inMinutes}m';
+    if (d.inHours < 24) return '${d.inHours}h ${d.inMinutes % 60}m';
+    return '${d.inDays}d ${d.inHours % 24}h';
+  }
+
+  static String _statusLabel(TaskItem t) => switch (t.serviceStatus) {
+        ServiceStatus.open => t.hasAssignee ? 'Assigned' : 'Open',
+        ServiceStatus.inProgress => 'In Progress',
+        ServiceStatus.hold => 'On Hold',
+        ServiceStatus.completed => 'Completed',
+        ServiceStatus.closed => 'Closed',
+      };
 
   Widget _card(TaskItem t) {
     final overdue = t.isOverdue();
-    final waiting = DateTime.now().difference(t.createdAt);
-    final waitedText = waiting.inHours < 24
-        ? '${waiting.inHours}h waiting'
-        : '${waiting.inDays}d waiting';
+    final alert =
+        _tab == QueueTab.awaiting || _tab == QueueTab.escalation || overdue;
+    final canAct = t.serviceStatus == ServiceStatus.open ||
+        t.serviceStatus == ServiceStatus.inProgress ||
+        t.serviceStatus == ServiceStatus.hold;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: overdue ? const Color(0xFFD32F2F) : Colors.grey.shade200,
-          width: overdue ? 1.4 : 1,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => context.push('${Routes.taskDetails}/${t.id}'),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: alert ? const Color(0xFFD32F2F) : Colors.grey.shade200,
+            width: alert ? 1.4 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  t.title,
-                  style: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1C2B20),
-                  ),
-                ),
-              ),
-              _priorityPill(t.priority),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            [
-              if (t.isIndividual) ...[t.contactName, t.address]
-              else ...[t.equipment, t.companyName],
-            ].where((s) => s.isNotEmpty).join('  •  '),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 12,
-              color: Color(0xFF6B6B6B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              _tag('Ticket #${t.ticketNo}', const Color(0xFFEBF0EA), _green),
-              if (t.isIndividual)
-                _tag('Individual', const Color(0xFFEBF0EA), _green),
-              if (t.clientName.isNotEmpty)
-                _tag(
-                  'Raised by ${t.clientName}',
-                  const Color(0xFFEAF2FF),
-                  const Color(0xFF1565C0),
-                ),
-              if (_tab != 0 && t.assignee != '-')
-                _tag(
-                  '@${t.assignee}',
-                  const Color(0xFFF3EAFE),
-                  const Color(0xFF6A1B9A),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // For the "Awaiting" tab show the acceptance timer; otherwise the
-          // SLA / waiting indicator.
-          if (_tab == 1)
-            _acceptanceRow(t)
-          else
-            Row(
-              children: [
-                Icon(
-                  overdue ? Icons.warning_amber_rounded : Icons.schedule,
-                  size: 15,
-                  color: overdue
-                      ? const Color(0xFFD32F2F)
-                      : const Color(0xFF6B6B6B),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  overdue ? 'Overdue • $waitedText' : waitedText,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: overdue
-                        ? const Color(0xFFD32F2F)
-                        : const Color(0xFF6B6B6B),
-                  ),
-                ),
-              ],
-            ),
-          const SizedBox(height: 12),
-          if (_tab == 0)
-            _primaryButton('Assign to Service Engineer', () => _assignSheet(t))
-          else
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
                 Expanded(
-                  child: _primaryButton('Reassign', () => _assignSheet(t)),
+                  child: Text(
+                    t.title,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1C2B20),
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 10),
-                _outlineButton('Unassign', () => _unassign(t)),
+                _priorityPill(t.priority),
               ],
             ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              [
+                if (t.isIndividual) ...[
+                  t.contactName,
+                  t.address
+                ] else ...[
+                  t.equipment,
+                  t.companyName
+                ],
+              ].where((s) => s.isNotEmpty).join('  •  '),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12,
+                color: Color(0xFF6B6B6B),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                _tag('Ticket #${t.ticketNo}', const Color(0xFFEBF0EA), _green),
+                _tag(_statusLabel(t), const Color(0xFFF1F1F1),
+                    const Color(0xFF545454)),
+                if (t.isIndividual)
+                  _tag('Individual', const Color(0xFFEBF0EA), _green),
+                if (t.escalated)
+                  _tag('Escalated', const Color(0xFFFDE8E8),
+                      const Color(0xFFD32F2F)),
+                if (t.clientName.isNotEmpty)
+                  _tag(
+                    'Raised by ${t.clientName}',
+                    const Color(0xFFEAF2FF),
+                    const Color(0xFF1565C0),
+                  ),
+                if (t.hasAssignee)
+                  _tag(
+                    '@${t.assignee}',
+                    const Color(0xFFF3EAFE),
+                    const Color(0xFF6A1B9A),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _timeRow(t),
+            if (canAct) ...[
+              const SizedBox(height: 12),
+              if (!t.hasAssignee)
+                _primaryButton(
+                  'Assign to Service Engineer',
+                  () => _assignSheet(t),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: _primaryButton('Reassign', () => _assignSheet(t)),
+                    ),
+                    const SizedBox(width: 10),
+                    _outlineButton('Unassign', () => _unassign(t)),
+                  ],
+                ),
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _acceptanceRow(TaskItem t) {
-    final mins = t.pendingAcceptanceMinutes();
-    final overdue = t.isAcceptanceOverdue();
-    final color = overdue ? const Color(0xFFD32F2F) : const Color(0xFFE08600);
-    final text = overdue
-        ? 'Not accepted for ${mins}m • past ${TaskItem.acceptanceWindowMinutes}m window'
-        : 'Awaiting acceptance • ${mins}m of ${TaskItem.acceptanceWindowMinutes}m';
+  /// Awaiting: time with no engineer. Escalation: time in the current
+  /// status. Otherwise: age, flagged when past SLA.
+  Widget _timeRow(TaskItem t) {
+    const red = Color(0xFFD32F2F);
+    const grey = Color(0xFF6B6B6B);
+    final now = DateTime.now();
+    final IconData icon;
+    final String text;
+    final Color color;
+    switch (_tab) {
+      case QueueTab.awaiting:
+        icon = Icons.person_off_outlined;
+        text = 'No Service Engineer for '
+            '${_span(Duration(minutes: t.unassignedMinutes(now)))}';
+        color = red;
+      case QueueTab.escalation:
+        icon = Icons.trending_up;
+        text = t.isStatusStale(now)
+            ? '${_statusLabel(t)} for ${_span(t.statusAge(now))} with no change'
+            : 'Escalated${(t.escalationReason ?? '').isEmpty ? '' : ' • ${t.escalationReason}'}';
+        color = red;
+      case QueueTab.unassigned:
+      case QueueTab.assigned:
+        final overdue = t.isOverdue(now);
+        final waited = '${_span(now.difference(t.createdAt))} since raised';
+        icon = overdue ? Icons.warning_amber_rounded : Icons.schedule;
+        text = overdue ? 'Overdue • $waited' : waited;
+        color = overdue ? red : grey;
+    }
     return Row(
       children: [
-        Icon(
-          overdue ? Icons.timer_off_outlined : Icons.hourglass_bottom,
-          size: 15,
-          color: color,
-        ),
+        Icon(icon, size: 15, color: color),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             text,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: 'Montserrat',
               fontSize: 12,
@@ -495,65 +529,65 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
           TechnicianChoices(
             builder: (techs, stats) => Column(
               children: [
-          for (final tech in techs)
-            Builder(
-              builder: (_) {
-                final s = statsFor(tech, stats);
-                final isCurrent = tech.backendId == t.technicianId;
-                final overloaded = s.isOverloaded;
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  enabled: !isCurrent,
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFFEBF0EA),
-                    child: Text(
-                      tech.name.isNotEmpty ? tech.name[0] : '?',
-                      style: const TextStyle(color: _green),
-                    ),
+                for (final tech in techs)
+                  Builder(
+                    builder: (_) {
+                      final s = statsFor(tech, stats);
+                      final isCurrent = tech.backendId == t.technicianId;
+                      final overloaded = s.isOverloaded;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        enabled: !isCurrent,
+                        leading: CircleAvatar(
+                          backgroundColor: const Color(0xFFEBF0EA),
+                          child: Text(
+                            tech.name.isNotEmpty ? tech.name[0] : '?',
+                            style: const TextStyle(color: _green),
+                          ),
+                        ),
+                        title: Text(
+                          tech.name,
+                          style: const TextStyle(fontFamily: 'Montserrat'),
+                        ),
+                        subtitle: Text(
+                          isCurrent
+                              ? 'Current assignee'
+                              : '${s.active} active task(s)',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 12,
+                            color: overloaded
+                                ? const Color(0xFFD32F2F)
+                                : const Color(0xFF6B6B6B),
+                          ),
+                        ),
+                        trailing: isCurrent
+                            ? const Icon(Icons.check, color: _green)
+                            : overloaded
+                                ? const Text(
+                                    'Busy',
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      color: Color(0xFFD32F2F),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  )
+                                : const Icon(Icons.chevron_right),
+                        onTap: isCurrent
+                            ? null
+                            : () async {
+                                Navigator.pop(sheetContext);
+                                if (overloaded) {
+                                  final ok = await _confirmOverload(
+                                      tech.name, s.active);
+                                  if (ok != true || !mounted) return;
+                                }
+                                _doAssign(t, tech, isReassign);
+                              },
+                      );
+                    },
                   ),
-                  title: Text(
-                    tech.name,
-                    style: const TextStyle(fontFamily: 'Montserrat'),
-                  ),
-                  subtitle: Text(
-                    isCurrent
-                        ? 'Current assignee'
-                        : '${s.active} active task(s)',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 12,
-                      color: overloaded
-                          ? const Color(0xFFD32F2F)
-                          : const Color(0xFF6B6B6B),
-                    ),
-                  ),
-                  trailing: isCurrent
-                      ? const Icon(Icons.check, color: _green)
-                      : overloaded
-                          ? const Text(
-                              'Busy',
-                              style: TextStyle(
-                                fontFamily: 'Montserrat',
-                                color: Color(0xFFD32F2F),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            )
-                          : const Icon(Icons.chevron_right),
-                  onTap: isCurrent
-                      ? null
-                      : () async {
-                          Navigator.pop(sheetContext);
-                          if (overloaded) {
-                            final ok =
-                                await _confirmOverload(tech.name, s.active);
-                            if (ok != true || !mounted) return;
-                          }
-                          _doAssign(t, tech, isReassign);
-                        },
-                );
-              },
-            ),
               ],
             ),
           ),
@@ -686,7 +720,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            _tab == 0
+            _tab == QueueTab.unassigned
                 ? Icons.inbox_outlined
                 : Icons.assignment_turned_in_outlined,
             size: 56,
@@ -695,9 +729,10 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
           const SizedBox(height: 12),
           Text(
             switch (_tab) {
-              0 => 'No unassigned tickets',
-              1 => 'Nothing awaiting acceptance',
-              _ => 'No assigned tickets',
+              QueueTab.unassigned => 'No open tickets',
+              QueueTab.awaiting => 'Nothing awaiting assignment',
+              QueueTab.assigned => 'No assigned tickets',
+              QueueTab.escalation => 'No escalations',
             },
             style: const TextStyle(
               fontFamily: 'Montserrat',
@@ -709,9 +744,13 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
           const SizedBox(height: 4),
           Text(
             switch (_tab) {
-              0 => 'Every raised ticket has an owner.',
-              1 => 'Every assigned ticket has been accepted.',
-              _ => 'No Service Engineer is working a ticket right now.',
+              QueueTab.unassigned => 'Every ticket has been picked up.',
+              QueueTab.awaiting =>
+                'No ticket has waited ${TaskItem.unassignedWaitMinutes} min for an engineer.',
+              QueueTab.assigned =>
+                'No Service Engineer is working a ticket right now.',
+              QueueTab.escalation =>
+                'Every ticket moved status in the last ${TaskItem.staleStatusHours}h.',
             },
             style: const TextStyle(
               fontFamily: 'Montserrat',

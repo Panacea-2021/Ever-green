@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/data/evergreen_repository.dart';
 import '../../../core/models/backend_models.dart';
+import '../../users/data/users_repository.dart';
 import '../domain/models/amc_contract.dart';
 
 /// AMC contracts derived from [companiesProvider] (the single source of
@@ -54,6 +55,9 @@ class CompanyInput {
   final String adminEmail;
   final String adminPassword;
 
+  /// Email the new client admin their login details.
+  final bool sendCredentials;
+
   const CompanyInput({
     required this.name,
     required this.branchName,
@@ -69,6 +73,7 @@ class CompanyInput {
     this.adminPhone = '',
     this.adminEmail = '',
     this.adminPassword = '',
+    this.sendCredentials = true,
   });
 
   bool get isAmc => serviceType == CompanyServiceType.amc;
@@ -90,6 +95,7 @@ class CompanyInput {
       if (opt(adminPhone) != null) 'phone': opt(adminPhone),
       if (opt(adminEmail) != null) 'email': opt(adminEmail),
       if (opt(adminPassword) != null) 'password': opt(adminPassword),
+      'send_credentials': sendCredentials,
     };
   }
 }
@@ -146,19 +152,32 @@ class AmcRepository {
   AmcRepository(this._repo);
   final EvergreenRepository _repo;
 
-  Future<Company?> createCompany(CompanyInput input) async {
+  /// `emailSent` is whether the backend emailed a new client admin their
+  /// login details.
+  Future<({Company? company, bool emailSent})> createCompany(
+    CompanyInput input,
+  ) async {
     final body = unwrap(
       await _repo.api.post<dynamic>('user/createCompany', data: input.toBody()),
     );
-    return _company(body);
+    return (
+      company: _company(body),
+      emailSent: UsersRepository.emailSent(body)
+    );
   }
 
-  Future<Company?> updateCompany(int id, CompanyInput input) async {
+  Future<({Company? company, bool emailSent})> updateCompany(
+    int id,
+    CompanyInput input,
+  ) async {
     final body = unwrap(
       await _repo.api
           .put<dynamic>('user/updateCompany/$id', data: input.toBody()),
     );
-    return _company(body);
+    return (
+      company: _company(body),
+      emailSent: UsersRepository.emailSent(body)
+    );
   }
 
   /// Only changes the contract (service type, AMC type, dates); the backend

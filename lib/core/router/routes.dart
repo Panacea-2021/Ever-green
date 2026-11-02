@@ -51,6 +51,12 @@ abstract class Routes {
   // Verified Equipments route
   static const String verifiedEquipments = '/verified-equipments';
 
+  // Issue (service) types used when raising tickets — admins only
+  static const String issueTypes = '/issue-types';
+
+  // Service types set on equipment — admins only
+  static const String serviceTypes = '/service-types';
+
   // Audit / Activity history (scoped per role by the backend)
   static const String auditLog = '/audit-log';
 

@@ -16,7 +16,7 @@ import 'dashboard_repository.dart';
 class AnalyticsSnapshot {
   final DateTime date;
   final int poc;
-  final int clients;
+  final int companyManagers;
   final int managers;
   final int technicians;
   final int openTasks;
@@ -27,7 +27,7 @@ class AnalyticsSnapshot {
   const AnalyticsSnapshot({
     required this.date,
     required this.poc,
-    required this.clients,
+    required this.companyManagers,
     required this.managers,
     required this.technicians,
     required this.openTasks,
@@ -40,8 +40,8 @@ class AnalyticsSnapshot {
     switch (m) {
       case TrendMetric.poc:
         return poc;
-      case TrendMetric.clients:
-        return clients;
+      case TrendMetric.companyManagers:
+        return companyManagers;
       case TrendMetric.managers:
         return managers;
       case TrendMetric.technicians:
@@ -60,7 +60,7 @@ class AnalyticsSnapshot {
 
 enum TrendMetric {
   poc,
-  clients,
+  companyManagers,
   managers,
   technicians,
   openTasks,
@@ -107,9 +107,8 @@ List<AnalyticsSnapshot> buildAnalyticsHistory({
   List<Equipment>? equipment,
 }) {
   final out = <AnalyticsSnapshot>[];
-  final amcCompanies = (companies ?? const <Company>[])
-      .where((c) => c.isAmc)
-      .toList();
+  final amcCompanies =
+      (companies ?? const <Company>[]).where((c) => c.isAmc).toList();
 
   for (var m = DateTime(now.year - analyticsYearsBack);
       !m.isAfter(DateTime(now.year, now.month));
@@ -143,7 +142,7 @@ List<AnalyticsSnapshot> buildAnalyticsHistory({
       AnalyticsSnapshot(
         date: m,
         poc: roles((r) => r == UserRole.client),
-        clients: roles((r) => r.isClientSide),
+        companyManagers: roles((r) => r == UserRole.clientAdmin),
         managers: roles((r) => r == UserRole.manager),
         technicians: roles((r) => r.isTechnicianLevel),
         openTasks: opened,

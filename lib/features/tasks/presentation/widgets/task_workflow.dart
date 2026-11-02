@@ -35,6 +35,8 @@ enum TaskAction {
   hold('Hold', Icons.pause_rounded),
   startWork('Start Work', Icons.play_arrow_rounded),
   rate('Confirm & Rate', Icons.star_rounded),
+  markCompleted('Mark Completed', Icons.done_rounded),
+  closeTask('Close Task', Icons.lock_outline_rounded),
   delete('Delete', Icons.delete_outline);
 
   const TaskAction(this.label, this.icon);
@@ -59,6 +61,8 @@ enum TaskMenuItem { assign, status, edit, delete }
 /// - Senior Technician: assign / reassign while open
 /// - the assigned technician: accept, start, hold, screenshots, complete
 /// - client-side roles: confirm & rate completed work
+/// - Super Admin, Manager, POC and Client Admin: mark completed / close once
+///   an engineer is assigned
 List<TaskButton> taskButtonsFor(TaskItem t, User? user) {
   final role = user?.role ?? UserRole.client;
   final isSuperAdmin = role == UserRole.superAdmin;
@@ -109,13 +113,116 @@ List<TaskButton> taskButtonsFor(TaskItem t, User? user) {
     }
   }
 
-  if (role.isClientSide &&
+  final rates = role.isClientSide &&
       t.approval == ApprovalState.completed &&
-      t.rating == null) {
-    add(TaskAction.rate, TaskButtonKind.filled);
+      t.rating == null;
+  if (rates) add(TaskAction.rate, TaskButtonKind.filled);
+
+  if (canFinishTask(t, role)) {
+    if (t.serviceStatus != ServiceStatus.completed) {
+      add(TaskAction.markCompleted);
+    }
+    // Confirm & Rate already closes the ticket for client-side roles.
+    if (!rates) add(TaskAction.closeTask, TaskButtonKind.filled);
   }
 
   return buttons;
+}
+
+/// Super Admin, Manager, POC and Client Admin may mark a ticket completed or
+/// close it once an engineer is assigned (the backend limits client-side
+/// roles to their own company).
+bool canFinishTask(TaskItem t, UserRole role) =>
+    (role == UserRole.superAdmin ||
+        role == UserRole.manager ||
+        role.isClientSide) &&
+    t.hasAssignee &&
+    t.serviceStatus != ServiceStatus.closed;
+
+/// Asks to confirm marking [t] completed ([closing] false) or closing it,
+/// with an optional note for the timeline. Null when cancelled.
+Future<String?> askTaskFinishNote(
+  BuildContext context,
+  TaskItem t, {
+  required bool closing,
+}) {
+  return showDialog<String>(
+    context: context,
+    builder: (_) => _FinishTaskDialog(task: t, closing: closing),
+  );
+}
+
+class _FinishTaskDialog extends StatefulWidget {
+  const _FinishTaskDialog({required this.task, required this.closing});
+
+  final TaskItem task;
+  final bool closing;
+
+  @override
+  State<_FinishTaskDialog> createState() => _FinishTaskDialogState();
+}
+
+class _FinishTaskDialogState extends State<_FinishTaskDialog> {
+  final _note = TextEditingController();
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.task;
+    final verb = widget.closing ? 'Close' : 'Mark Completed';
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text(
+        widget.closing ? 'Close Task' : 'Mark Task Completed',
+        style: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${widget.closing ? 'Close' : 'Mark completed'} "${t.title}" '
+            '(Ticket ${t.ticketNo})? The POC, company manager and engineer '
+            'will be notified.',
+            style: const TextStyle(fontFamily: 'Montserrat', fontSize: 13.5),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            key: const Key('finishNoteField'),
+            controller: _note,
+            minLines: 1,
+            maxLines: 3,
+            maxLength: 300,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: 'Note (optional)',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+      actions: [
+        TaskDialogButtons([
+          TaskDialogButton.cancel(onPressed: () => Navigator.pop(context)),
+          TaskDialogButton(
+            label: verb,
+            onPressed: () => Navigator.pop(context, _note.text.trim()),
+          ),
+        ]),
+      ],
+    );
+  }
 }
 
 /// Just the actions of [taskButtonsFor].
@@ -124,8 +231,7 @@ List<TaskAction> taskActionsFor(TaskItem t, User? user) =>
 
 /// Which overflow-menu items apply to [role].
 List<TaskMenuItem> taskMenuFor(UserRole role) {
-  final isManagerial =
-      role == UserRole.superAdmin || role == UserRole.manager;
+  final isManagerial = role == UserRole.superAdmin || role == UserRole.manager;
   final canAssign = isManagerial || role == UserRole.seniorTechnician;
   return [
     if (canAssign) TaskMenuItem.assign,
@@ -141,10 +247,14 @@ List<TaskButton> taskDetailButtonsFor(TaskItem t, User? user) {
   final role = user?.role ?? UserRole.client;
   return [
     ...taskButtonsFor(t, user),
-    if (taskMenuFor(role).contains(TaskMenuItem.delete))
+    if (taskMenuFor(role).contains(TaskMenuItem.delete) && canDeleteTask(t))
       const TaskButton(TaskAction.delete, TaskButtonKind.danger),
   ];
 }
+
+/// The backend only deletes tickets that are still open (raised or
+/// assigned, work not started).
+bool canDeleteTask(TaskItem t) => t.serviceStatus == ServiceStatus.open;
 
 /// Just the actions of [taskDetailButtonsFor].
 List<TaskAction> taskDetailActionsFor(TaskItem t, User? user) =>
@@ -349,37 +459,32 @@ class _ReasonDialogState extends State<_ReasonDialog> {
           ),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(fontFamily: 'Montserrat'),
+        TaskDialogButtons([
+          TaskDialogButton.cancel(onPressed: () => Navigator.pop(context)),
+          TaskDialogButton(
+            label: widget.confirmLabel,
+            color: _danger,
+            onPressed: () {
+              final reason = _controller.text.trim();
+              if (reason.isEmpty) return;
+              Navigator.pop(context, reason);
+            },
           ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final reason = _controller.text.trim();
-            if (reason.isEmpty) return;
-            Navigator.pop(context, reason);
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: _danger),
-          child: Text(
-            widget.confirmLabel,
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              color: Colors.white,
-            ),
-          ),
-        ),
+        ]),
       ],
     );
   }
 }
 
-/// Red "Delete Task" confirmation dialog. Returns true when confirmed.
-Future<bool> confirmTaskDelete(BuildContext context, TaskItem t) async {
-  final ok = await showGeneralDialog<bool>(
+/// Maximum length of a delete reason (matches the backend).
+const int taskDeleteReasonMax = 500;
+
+/// Red "Delete Task" dialog that requires a reason. Returns the trimmed
+/// reason when confirmed, null when cancelled.
+Future<String?> askTaskDeleteReason(BuildContext context, TaskItem t) {
+  return showGeneralDialog<String>(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Delete Task',
@@ -401,149 +506,289 @@ Future<bool> confirmTaskDelete(BuildContext context, TaskItem t) async {
           opacity: anim.value.clamp(0.0, 1.0),
           child: Transform.scale(
             scale: 0.85 + 0.15 * curved.value,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(26),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33D32F2F),
-                          blurRadius: 36,
-                          offset: Offset(0, 14),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 62,
-                          height: 62,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFFDE8E8),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.delete_outline,
-                            color: _danger,
-                            size: 30,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Delete Task',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1F1F1F),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Delete "${t.title}" (Ticket ${t.ticketNo})?\n'
-                          'This action cannot be undone.',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 13.5,
-                            height: 1.45,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF6B6B6B),
-                          ),
-                        ),
-                        const SizedBox(height: 22),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 48,
-                                child: OutlinedButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(
-                                      color: Color(0xFFD8D8D8),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      fontFamily: 'Montserrat',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF545454),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: SizedBox(
-                                height: 48,
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFFE53935),
-                                        Color(0xFFD32F2F),
-                                      ],
-                                      begin: Alignment.centerLeft,
-                                      end: Alignment.centerRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: _danger.withValues(alpha: 0.32),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(14),
-                                      onTap: () => Navigator.pop(ctx, true),
-                                      child: const Center(
-                                        child: Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                            fontFamily: 'Montserrat',
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            child: _DeleteTaskDialog(task: t),
           ),
         ),
       );
     },
   );
-  return ok == true;
+}
+
+class _DeleteTaskDialog extends StatefulWidget {
+  final TaskItem task;
+  const _DeleteTaskDialog({required this.task});
+
+  @override
+  State<_DeleteTaskDialog> createState() => _DeleteTaskDialogState();
+}
+
+class _DeleteTaskDialogState extends State<_DeleteTaskDialog> {
+  final _reason = TextEditingController();
+  bool _showError = false;
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final reason = _reason.text.trim();
+    if (reason.isEmpty) {
+      setState(() => _showError = true);
+      return;
+    }
+    Navigator.pop(context, reason);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.task;
+    return Center(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          left: 32,
+          right: 32,
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33D32F2F),
+                  blurRadius: 36,
+                  offset: Offset(0, 14),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 62,
+                  height: 62,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFDE8E8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: _danger,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Delete Task',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1F1F1F),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Delete "${t.title}" (Ticket ${t.ticketNo})?\n'
+                  'The raiser, company manager and engineer will be notified.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 13.5,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF6B6B6B),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  key: const Key('deleteReasonField'),
+                  controller: _reason,
+                  autofocus: true,
+                  minLines: 2,
+                  maxLines: 4,
+                  maxLength: taskDeleteReasonMax,
+                  textCapitalization: TextCapitalization.sentences,
+                  onChanged: (_) {
+                    if (_showError) setState(() => _showError = false);
+                  },
+                  style:
+                      const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
+                  decoration: InputDecoration(
+                    labelText: 'Reason for deleting *',
+                    errorText: _showError ? 'Please enter a reason' : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFD8D8D8)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF545454),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _danger,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A dialog button in the Delete Task dialog's style. Labels shrink to fit
+/// on one line instead of wrapping inside the button.
+class TaskDialogButton extends StatelessWidget {
+  const TaskDialogButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.color = _green,
+    this.filled = true,
+    this.borderColor,
+  });
+
+  /// The grey outlined Cancel button.
+  const TaskDialogButton.cancel({super.key, required this.onPressed})
+      : label = 'Cancel',
+        icon = null,
+        color = const Color(0xFF545454),
+        filled = false,
+        borderColor = const Color(0xFFD8D8D8);
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final Color color;
+  final bool filled;
+
+  /// Outline colour of an unfilled button; defaults to [color].
+  final Color? borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = filled ? Colors.white : color;
+    final content = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: foreground),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            label,
+            maxLines: 1,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 14,
+              fontWeight: filled ? FontWeight.w700 : FontWeight.w600,
+              color: foreground,
+            ),
+          ),
+        ],
+      ),
+    );
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+    );
+    const padding = EdgeInsets.symmetric(horizontal: 10);
+    return SizedBox(
+      height: 48,
+      child: filled
+          ? ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                padding: padding,
+                shape: shape,
+              ),
+              child: content,
+            )
+          : OutlinedButton(
+              onPressed: onPressed,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: borderColor ?? color),
+                padding: padding,
+                shape: shape,
+              ),
+              child: content,
+            ),
+    );
+  }
+}
+
+/// [buttons] side by side with equal widths and a 12 px gap.
+class TaskDialogButtons extends StatelessWidget {
+  const TaskDialogButtons(this.buttons, {super.key});
+
+  final List<Widget> buttons;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var i = 0; i < buttons.length; i++) ...[
+          if (i > 0) const SizedBox(width: 12),
+          Expanded(child: buttons[i]),
+        ],
+      ],
+    );
+  }
 }
 
 /// Picks one image from [source] and returns its local path.
@@ -741,7 +986,8 @@ class _EditTaskSheetState extends ConsumerState<_EditTaskSheet> {
     final t = widget.task;
     final keyboard = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 8, 20, keyboard + widget.bottomInset + 16),
+      padding:
+          EdgeInsets.fromLTRB(20, 8, 20, keyboard + widget.bottomInset + 16),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
