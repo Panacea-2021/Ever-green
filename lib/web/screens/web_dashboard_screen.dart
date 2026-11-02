@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/permissions.dart';
+import '../../core/data/evergreen_repository.dart';
 import '../../core/router/routes.dart';
 import '../../features/amcs/data/amc_provider.dart';
 import '../../features/amcs/data/equipment_provider.dart';
@@ -35,6 +36,11 @@ class WebDashboardScreen extends ConsumerWidget {
     final equipmentCount = ref.watch(equipmentCountProvider);
     final role = ref.watch(currentUserRoleProvider);
 
+    bool pending(AsyncValue<Object?> v) => !v.hasValue && !v.hasError;
+    final tasksLoading = pending(ref.watch(taskItemsProvider));
+    final companiesLoading = pending(ref.watch(companiesProvider));
+    final equipmentLoading = pending(ref.watch(allEquipmentsProvider));
+
     final openCount = tasks.where((t) => t.status != TaskStatus.closed).length;
 
     VoidCallback? open(String route) =>
@@ -48,6 +54,7 @@ class WebDashboardScreen extends ConsumerWidget {
         accent: WebTokens.green,
         caption: '${tasks.length} total',
         onTap: open(Routes.tasks),
+        loading: tasksLoading,
       ),
       WebStatCard(
         label: 'Overdue (SLA)',
@@ -56,6 +63,7 @@ class WebDashboardScreen extends ConsumerWidget {
         accent: _red,
         caption: overdue.isEmpty ? 'All on track' : 'Needs attention',
         onTap: open(Routes.tasks),
+        loading: tasksLoading,
       ),
       WebStatCard(
         label: 'Unassigned',
@@ -64,6 +72,7 @@ class WebDashboardScreen extends ConsumerWidget {
         accent: _orange,
         caption: 'In the queue',
         onTap: open(Routes.ticketQueue),
+        loading: tasksLoading,
       ),
       WebStatCard(
         label: 'Renewals Due',
@@ -72,6 +81,7 @@ class WebDashboardScreen extends ConsumerWidget {
         accent: _blue,
         caption: 'AMC expiring/expired',
         onTap: open(Routes.amcRenewals),
+        loading: companiesLoading,
       ),
       WebStatCard(
         label: 'Equipment',
@@ -80,6 +90,7 @@ class WebDashboardScreen extends ConsumerWidget {
         accent: _purple,
         caption: 'Under service',
         onTap: open(Routes.amcs),
+        loading: equipmentLoading,
       ),
     ];
 
@@ -119,10 +130,12 @@ class WebDashboardScreen extends ConsumerWidget {
                   builder: (context, c) {
                     final table = _RecentTasks(
                       tasks: tasks,
+                      loading: tasksLoading,
                       onViewAll: open(Routes.tasks),
                     );
                     final panel = _RenewalsPanel(
                       renewals: renewals,
+                      loading: companiesLoading,
                       onViewAll: open(Routes.amcRenewals),
                     );
                     if (c.maxWidth < 1280) {
@@ -151,8 +164,13 @@ class WebDashboardScreen extends ConsumerWidget {
 }
 
 class _RecentTasks extends StatelessWidget {
-  const _RecentTasks({required this.tasks, this.onViewAll});
+  const _RecentTasks({
+    required this.tasks,
+    required this.loading,
+    this.onViewAll,
+  });
   final List<TaskItem> tasks;
+  final bool loading;
   final VoidCallback? onViewAll;
 
   Color _statusColor(TaskItem t) {
@@ -189,6 +207,7 @@ class _RecentTasks extends StatelessWidget {
       actionLabel: 'View all',
       onAction: onViewAll,
       child: WebTable(
+        loading: loading,
         columns: const [
           WebColumn('Task', flex: 4),
           WebColumn('Company', flex: 5),
@@ -213,8 +232,13 @@ class _RecentTasks extends StatelessWidget {
 }
 
 class _RenewalsPanel extends StatelessWidget {
-  const _RenewalsPanel({required this.renewals, this.onViewAll});
+  const _RenewalsPanel({
+    required this.renewals,
+    required this.loading,
+    this.onViewAll,
+  });
   final List<AmcContract> renewals;
+  final bool loading;
   final VoidCallback? onViewAll;
 
   @override
@@ -226,7 +250,38 @@ class _RenewalsPanel extends StatelessWidget {
       actionLabel: renewals.isEmpty ? null : 'View all',
       onAction: onViewAll,
       padBody: true,
-      child: top.isEmpty
+      child: loading
+          ? Column(
+              children: [
+                for (var i = 0; i < 3; i++)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: WebTokens.line,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: WebTokens.line,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            )
+          : top.isEmpty
           ? Container(
               padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 12),
               decoration: BoxDecoration(

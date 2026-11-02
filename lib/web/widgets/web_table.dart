@@ -12,7 +12,11 @@ class WebTable extends StatelessWidget {
     required this.rows,
     this.onRowTap,
     this.emptyText = 'Nothing to show.',
+    this.loading = false,
   });
+
+  /// Shows placeholder rows instead of [rows] / [emptyText].
+  final bool loading;
 
   /// Header labels with their flex weights.
   final List<WebColumn> columns;
@@ -57,7 +61,35 @@ class WebTable extends StatelessWidget {
             ],
           ),
         ),
-        if (rows.isEmpty)
+        if (loading)
+          for (var i = 0; i < 5; i++)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 17),
+              decoration: BoxDecoration(
+                border: i == 4
+                    ? null
+                    : const Border(bottom: BorderSide(color: WebTokens.line)),
+              ),
+              child: Row(
+                children: [
+                  for (final c in columns)
+                    Expanded(
+                      flex: c.flex,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 24),
+                        child: Container(
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: WebTokens.line,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            )
+        else if (rows.isEmpty)
           Padding(
             padding: const EdgeInsets.all(28),
             child: Text(emptyText, style: WebTokens.bodyText(13.5)),

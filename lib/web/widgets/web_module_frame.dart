@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/data/evergreen_repository.dart';
 import '../../core/router/routes.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
@@ -20,6 +21,33 @@ class WebModuleFrame extends ConsumerStatefulWidget {
   final Widget child;
 
   static const maxContentWidth = 1280.0;
+
+  /// Width for form and settings pages, so fields are not stretched across
+  /// a desktop screen.
+  static const formContentWidth = 820.0;
+
+  /// Width for list and detail pages built from mobile cards.
+  static const listContentWidth = 1100.0;
+
+  /// Form and settings pages (matched by prefix, so `/add-task/new` counts).
+  static const _formPaths = [
+    Routes.addTask,
+    Routes.addEquipment,
+    Routes.createAmc,
+    Routes.createIndividualTask,
+    Routes.addUser,
+    Routes.editProfile,
+    Routes.changePassword,
+    Routes.uploadEquipments,
+    Routes.uploadTechnicians,
+    Routes.uploadAmc,
+    Routes.downloadQr,
+    Routes.profile,
+    Routes.settings,
+  ];
+
+  /// Shared lists are refreshed in the background at most this often.
+  static const _refreshAfter = Duration(seconds: 60);
 
   /// Paths that are part of the public website or the sign-in flow.
   static const _unframedPaths = {
@@ -119,7 +147,33 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   void _syncLocation() {
     if (!mounted) return;
     final location = _currentLocation();
-    if (location != _location) setState(() => _location = location);
+    if (location != _location) {
+      setState(() => _location = location);
+      _refreshIfStale();
+    }
+  }
+
+  DateTime _lastRefresh = DateTime.now();
+
+  /// Re-fetches the cached lists after [WebModuleFrame._refreshAfter]. The
+  /// previous data stays on screen while the new request runs.
+  void _refreshIfStale() {
+    if (!ref.read(isAuthenticatedProvider)) return;
+    final now = DateTime.now();
+    if (now.difference(_lastRefresh) < WebModuleFrame._refreshAfter) return;
+    _lastRefresh = now;
+    ref.invalidate(tasksProvider);
+    ref.invalidate(companiesProvider);
+    ref.invalidate(equipmentsProvider(null));
+  }
+
+  double _contentWidthFor(String location) {
+    for (final p in WebModuleFrame._formPaths) {
+      if (location == p || location.startsWith('$p/')) {
+        return WebModuleFrame.formContentWidth;
+      }
+    }
+    return WebModuleFrame.listContentWidth;
   }
 
   Future<void> _signOut() async {
@@ -152,6 +206,12 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
 
     final content = KeyedSubtree(key: _contentKey, child: widget.child);
     if (!framed) return content;
+
+    // Keep the shared lists cached (and start loading them) for the whole
+    // signed-in session, so modules open with data instead of re-fetching.
+    ref.listen(tasksProvider, (_, __) {});
+    ref.listen(companiesProvider, (_, __) {});
+    ref.listen(equipmentsProvider(null), (_, __) {});
 
     final user = ref.watch(currentUserProvider);
     final role = ref.watch(currentUserRoleProvider);
@@ -194,16 +254,19 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
 
                       final hPad = constraints.maxWidth > 900 ? 28.0 : 16.0;
                       final width = (constraints.maxWidth - hPad * 2)
-                          .clamp(0.0, WebModuleFrame.maxContentWidth);
-                      final height = constraints.maxHeight - 40;
-                      return Center(
+                          .clamp(0.0, _contentWidthFor(_location));
+                      final height = constraints.maxHeight - 48;
+                      return Align(
+                        alignment: Alignment.topCenter,
                         child: Container(
                           width: width,
                           height: height,
+                          margin: const EdgeInsets.only(top: 24),
                           clipBehavior: Clip.antiAlias,
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: WebTokens.line),
                             boxShadow: WebTokens.softShadow,
                           ),
                           child: MediaQuery(

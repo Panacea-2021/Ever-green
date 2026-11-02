@@ -14,6 +14,7 @@ class WebStatCard extends StatefulWidget {
     required this.accent,
     this.caption,
     this.onTap,
+    this.loading = false,
   });
 
   final String label;
@@ -22,6 +23,9 @@ class WebStatCard extends StatefulWidget {
   final Color accent;
   final String? caption;
   final VoidCallback? onTap;
+
+  /// Shows placeholders instead of [value] and [caption] until data arrives.
+  final bool loading;
 
   @override
   State<WebStatCard> createState() => _WebStatCardState();
@@ -74,10 +78,13 @@ class _WebStatCardState extends State<WebStatCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.value,
-                          style: WebTokens.display(26, h: 1.0),
-                        ),
+                        if (widget.loading)
+                          const _Placeholder(width: 46, height: 26)
+                        else
+                          Text(
+                            widget.value,
+                            style: WebTokens.display(26, h: 1.0),
+                          ),
                         const SizedBox(height: 4),
                         Text(
                           widget.label,
@@ -90,7 +97,10 @@ class _WebStatCardState extends State<WebStatCard> {
                   ),
                 ],
               ),
-              if (widget.caption != null) ...[
+              if (widget.loading) ...[
+                const SizedBox(height: 14),
+                const _Placeholder(width: 90, height: 21),
+              ] else if (widget.caption != null) ...[
                 const SizedBox(height: 14),
                 Container(
                   padding:
@@ -115,6 +125,24 @@ class _WebStatCardState extends State<WebStatCard> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _Placeholder extends StatelessWidget {
+  const _Placeholder({required this.width, required this.height});
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: WebTokens.line,
+        borderRadius: BorderRadius.circular(8),
       ),
     );
   }
