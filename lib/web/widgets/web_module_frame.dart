@@ -34,9 +34,6 @@ class WebModuleFrame extends ConsumerStatefulWidget {
   static const _formPaths = [
     Routes.addUser,
     Routes.editProfile,
-    Routes.uploadEquipments,
-    Routes.uploadTechnicians,
-    Routes.uploadAmc,
     Routes.downloadQr,
   ];
 
