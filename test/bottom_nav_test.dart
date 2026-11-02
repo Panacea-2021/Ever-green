@@ -25,11 +25,22 @@ Future<void> _pumpShell(
       ShellRoute(
         builder: (_, __, child) => ScaffoldWithBottomNav(child: child),
         routes: [
-          for (final r in [Routes.home, Routes.tasks, Routes.profile])
+          for (final r in [
+            Routes.home,
+            Routes.amcs,
+            Routes.tasks,
+            Routes.profile,
+          ])
             GoRoute(path: r, builder: (_, __) => page(r)),
         ],
       ),
       GoRoute(path: Routes.scanner, builder: (_, __) => page(Routes.scanner)),
+      GoRoute(
+          path: Routes.createAmc, builder: (_, __) => page(Routes.createAmc)),
+      GoRoute(
+        path: '${Routes.addEquipment}/:id',
+        builder: (_, __) => page(Routes.addEquipment),
+      ),
       GoRoute(
         path: '${Routes.addTask}/:id',
         builder: (_, __) => page(Routes.addTask),
@@ -58,11 +69,11 @@ void main() {
   });
 
   group('tabsFor', () {
-    test('Super Admin / Manager: Home, AMCs, Tasks, Profile, Settings', () {
+    test('Super Admin / Manager: Home, AMCs, Tasks, Profile', () {
       for (final role in _admins) {
         expect(
           ScaffoldWithBottomNav.tabsFor(role).map((t) => t.label),
-          ['Home', 'AMCs', 'Tasks', 'Profile', 'Settings'],
+          ['Home', 'AMCs', 'Tasks', 'Profile'],
         );
       }
     });
@@ -79,11 +90,16 @@ void main() {
   });
 
   group('quickActionsFor', () {
-    test('admins get Scan QR + Add Task', () {
+    test('admins get Add Company, Add Equipment and Add Task', () {
       for (final role in _admins) {
         final actions = ScaffoldWithBottomNav.quickActionsFor(role);
-        expect(actions.map((a) => a.label), ['Scan QR', 'Add Task']);
-        expect(actions.last.route, '${Routes.addTask}/new');
+        expect(actions.map((a) => a.label),
+            ['Add Company', 'Add Equipment', 'Add Task']);
+        expect(actions.map((a) => a.route), [
+          Routes.createAmc,
+          '${Routes.addEquipment}/new',
+          '${Routes.addTask}/new',
+        ]);
       }
     });
 
@@ -105,10 +121,12 @@ void main() {
 
   group('ScaffoldWithBottomNav widget', () {
     for (final role in UserRole.values) {
-      testWidgets('${role.name}: tabs and center button render without overflow',
+      testWidgets(
+          '${role.name}: tabs and center button render without overflow',
           (tester) async {
         await _pumpShell(tester, role);
-        final expected = ScaffoldWithBottomNav.tabsFor(role).map((t) => t.label);
+        final expected =
+            ScaffoldWithBottomNav.tabsFor(role).map((t) => t.label);
         for (final label in expected) {
           expect(find.text(label), findsOneWidget, reason: '$role $label');
         }
@@ -120,17 +138,17 @@ void main() {
       });
     }
 
-    testWidgets('5 tabs + center button fit a narrow phone', (tester) async {
+    testWidgets('4 tabs sit two on each side of the center button',
+        (tester) async {
       await _pumpShell(tester, UserRole.manager, size: const Size(320, 640));
       expect(tester.takeException(), isNull);
+      expect(find.text('Settings'), findsNothing);
       final fab = tester.getCenter(find.byType(FloatingActionButton));
       expect(fab.dx, closeTo(160, 1));
-      final tasks = tester.getCenter(find.text('Tasks'));
-      final profile = tester.getCenter(find.text('Profile'));
-      final settings = tester.getCenter(find.text('Settings'));
-      expect(tasks.dx, lessThan(fab.dx));
-      expect(profile.dx, greaterThan(fab.dx));
-      expect(settings.dx, greaterThan(profile.dx));
+      expect(tester.getCenter(find.text('Home')).dx, lessThan(fab.dx));
+      expect(tester.getCenter(find.text('AMCs')).dx, lessThan(fab.dx));
+      expect(tester.getCenter(find.text('Tasks')).dx, greaterThan(fab.dx));
+      expect(tester.getCenter(find.text('Profile')).dx, greaterThan(fab.dx));
     });
 
     testWidgets('2 tabs sit either side of the center button', (tester) async {
@@ -140,18 +158,20 @@ void main() {
       expect(tester.getCenter(find.text('Tasks')).dx, greaterThan(fab.dx));
     });
 
-    testWidgets('center "+" opens the chooser; Scan QR navigates',
+    testWidgets('center "+" opens Add Company, Add Equipment and Add Task',
         (tester) async {
       await _pumpShell(tester, UserRole.manager);
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
       expect(find.text('Quick Actions'), findsOneWidget);
-      expect(find.text('Scan QR'), findsOneWidget);
+      expect(find.text('Scan QR'), findsNothing);
+      expect(find.text('Add Company'), findsOneWidget);
+      expect(find.text('Add Equipment'), findsOneWidget);
       expect(find.text('Add Task'), findsOneWidget);
 
-      await tester.tap(find.text('Scan QR'));
+      await tester.tap(find.text('Add Company'));
       await tester.pumpAndSettle();
-      expect(find.text('page:${Routes.scanner}'), findsOneWidget);
+      expect(find.text('page:${Routes.createAmc}'), findsOneWidget);
     });
 
     testWidgets('chooser Add Task opens add-task/new', (tester) async {

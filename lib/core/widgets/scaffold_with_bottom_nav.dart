@@ -68,8 +68,10 @@ class ScaffoldWithBottomNav extends ConsumerWidget {
     return kBottomNavHeight + kFabOverhang + safe;
   }
 
-  /// Bottom tabs for [role]: Home and Tasks for everyone; Super Admin and
-  /// Manager also get AMCs, Profile and Settings.
+  /// Bottom tabs for [role]. The center "+" sits between the two halves, so
+  /// Super Admin and Manager read Home, AMCs, +, Tasks, Profile. Settings is
+  /// opened from Profile (Account Settings), not its own tab. Other roles get
+  /// Home and Tasks.
   static List<BottomNavTab> tabsFor(UserRole role) {
     final admin = Permissions.hasProfileTab(role);
     return [
@@ -99,20 +101,40 @@ class ScaffoldWithBottomNav extends ConsumerWidget {
           label: 'Profile',
           route: Routes.profile,
         ),
-      if (admin)
-        const BottomNavTab(
-          icon: Icons.settings_outlined,
-          activeIcon: Icons.settings,
-          label: 'Settings',
-          route: Routes.settings,
-        ),
     ];
   }
 
   /// Options in the center "+" chooser for [role]. Empty when the role has
-  /// no center button.
+  /// no center button. Super Admin and Manager get Add Company, Add Equipment
+  /// and Add Task. Other roles keep Scan QR, plus Add Task when they can
+  /// raise tickets.
   static List<QuickAction> quickActionsFor(UserRole role) {
     if (!Permissions.hasCenterAction(role)) return const [];
+    if (Permissions.canManageAmcs(role)) {
+      return const [
+        QuickAction(
+          icon: Icons.apartment,
+          label: 'Add Company',
+          subtitle: 'Create a new company',
+          color: _green,
+          route: Routes.createAmc,
+        ),
+        QuickAction(
+          icon: Icons.precision_manufacturing_outlined,
+          label: 'Add Equipment',
+          subtitle: 'Add equipment to a company',
+          color: Color(0xFF2196F3),
+          route: '${Routes.addEquipment}/new',
+        ),
+        QuickAction(
+          icon: Icons.add_task,
+          label: 'Add Task',
+          subtitle: 'Create a new service task',
+          color: Color(0xFFFF9800),
+          route: '${Routes.addTask}/new',
+        ),
+      ];
+    }
     return [
       const QuickAction(
         icon: Icons.qr_code_scanner,
@@ -327,8 +349,8 @@ class ScaffoldWithBottomNav extends ConsumerWidget {
     ];
     final Widget row;
     if (hasCenter) {
-      // Each side of the docked FAB gets half the bar, so the FAB stays
-      // centered whether there are 2 or 3 tabs.
+      // Each side of the docked FAB gets half the tabs, so the FAB stays
+      // centered (Home and AMCs on the left, Tasks and Profile on the right).
       final split = (items.length + 1) ~/ 2;
       row = Row(
         children: [
