@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,7 +47,7 @@ class _TechnicianPerformanceScreenState
           SafeArea(
             child: Column(
               children: [
-                _header(context),
+                if (!kIsWeb) _header(context),
                 _roleTabs(),
                 _rangeBar(range),
                 const SizedBox(height: 4),

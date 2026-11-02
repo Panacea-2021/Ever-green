@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -160,7 +161,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
               bottom: false,
               child: Column(
                 children: [
-                  _buildHeader(context),
+                  if (!kIsWeb) _buildHeader(context),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),

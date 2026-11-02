@@ -409,7 +409,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
               bottom: false,
               child: Column(
                 children: [
-                  _buildHeader(),
+                  if (!kIsWeb) _buildHeader(),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),

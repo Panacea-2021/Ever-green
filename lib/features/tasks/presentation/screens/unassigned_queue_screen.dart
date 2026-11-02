@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -139,22 +140,26 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
       padding: const EdgeInsets.fromLTRB(12, 12, 16, 8),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: const Icon(Icons.arrow_back, color: Color(0xFF1C2B20)),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Text(
-              'Ticket Queue',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1C2B20),
+          if (kIsWeb)
+            const Spacer()
+          else ...[
+            GestureDetector(
+              onTap: () => context.pop(),
+              child: const Icon(Icons.arrow_back, color: Color(0xFF1C2B20)),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Text(
+                'Ticket Queue',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1C2B20),
+                ),
               ),
             ),
-          ),
+          ],
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(

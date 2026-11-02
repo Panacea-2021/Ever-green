@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -287,8 +288,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           SafeArea(
             child: Column(
               children: [
-                _header(context),
-                _searchField(),
+                if (!kIsWeb) _header(context),
+                if (!kIsWeb) _searchField(),
                 _tabBar(tabs, selected, results),
                 const SizedBox(height: 8),
                 Expanded(child: _tabBody(selected, results[selected]!)),

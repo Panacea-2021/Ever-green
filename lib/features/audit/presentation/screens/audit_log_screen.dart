@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -74,8 +75,10 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                 children: [
                   _buildHeader(feed?.total ?? 0),
                   const SizedBox(height: 4),
-                  _buildSearchBar(),
-                  const SizedBox(height: 12),
+                  if (!kIsWeb) ...[
+                    _buildSearchBar(),
+                    const SizedBox(height: 12),
+                  ],
                   if (canFilterEntity) ...[
                     _buildFilters(),
                     const SizedBox(height: 10),
@@ -221,21 +224,24 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
       padding: const EdgeInsets.fromLTRB(14, 10, 16, 10),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
-          ),
-          const SizedBox(width: 14),
-          const Text(
-            'Activity History',
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-              letterSpacing: -0.6,
+          if (!kIsWeb) ...[
+            GestureDetector(
+              onTap: () => context.pop(),
+              child:
+                  const Icon(Icons.arrow_back, color: Colors.black, size: 24),
             ),
-          ),
+            const SizedBox(width: 14),
+            const Text(
+              'Activity History',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                letterSpacing: -0.6,
+              ),
+            ),
+          ],
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

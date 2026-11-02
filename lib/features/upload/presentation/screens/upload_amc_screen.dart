@@ -48,7 +48,7 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
               bottom: false,
               child: Column(
                 children: [
-                  _buildHeader(),
+                  if (!kIsWeb) _buildHeader(),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
