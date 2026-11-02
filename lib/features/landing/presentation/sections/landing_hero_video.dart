@@ -81,7 +81,7 @@ class _LandingHeroVideoState extends State<LandingHeroVideo>
     super.dispose();
   }
 
-  static const _alignment = Alignment(0, -0.6);
+  static const _alignment = Alignment.topCenter;
 
   @override
   Widget build(BuildContext context) {
