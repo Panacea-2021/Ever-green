@@ -743,7 +743,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: _webLine),
             boxShadow: [
               BoxShadow(
@@ -756,22 +756,22 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(width: 5, color: dueFg),
+              Container(width: 4, color: dueFg),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
                   child: Row(
                     children: [
                       Container(
-                        width: 50,
-                        height: 50,
+                        width: 42,
+                        height: 42,
                         decoration: BoxDecoration(
                           color: dueBg,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(Icons.build_outlined, color: dueFg),
+                        child: Icon(Icons.build_outlined, color: dueFg, size: 20),
                       ),
-                      const SizedBox(width: 14),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -783,7 +783,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontFamily: 'Montserrat',
-                                fontSize: 15,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF14201A),
                               ),
@@ -813,7 +813,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                                 ],
                               ),
                             ],
-                            const SizedBox(height: 9),
+                            const SizedBox(height: 7),
                             Wrap(
                               spacing: 6,
                               runSpacing: 4,
@@ -832,15 +832,15 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                       if (canOpen) ...[
                         const SizedBox(width: 10),
                         Container(
-                          width: 32,
-                          height: 32,
+                          width: 28,
+                          height: 28,
                           decoration: BoxDecoration(
                             color: dueFg.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.chevron_right_rounded,
-                            size: 20,
+                            size: 18,
                             color: dueFg,
                           ),
                         ),
