@@ -11,6 +11,7 @@ import '../../features/amcs/domain/models/amc_contract.dart';
 import '../../features/amcs/presentation/widgets/amc_async_states.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
+import '../widgets/web_filter_tiles.dart';
 import '../widgets/web_table.dart';
 
 enum _TypeFilter {
@@ -22,6 +23,22 @@ enum _TypeFilter {
 
   const _TypeFilter(this.label);
   final String label;
+
+  IconData get icon => switch (this) {
+        _TypeFilter.all => Icons.apartment_rounded,
+        _TypeFilter.cAmc => Icons.verified_outlined,
+        _TypeFilter.ncAmc => Icons.handshake_outlined,
+        _TypeFilter.nonAmc => Icons.build_circle_outlined,
+        _TypeFilter.regular => Icons.storefront_outlined,
+      };
+
+  Color get color => switch (this) {
+        _TypeFilter.all => const Color(0xFF106220),
+        _TypeFilter.cAmc => const Color(0xFF2E5AAC),
+        _TypeFilter.ncAmc => const Color(0xFF0F766E),
+        _TypeFilter.nonAmc => const Color(0xFFB7791F),
+        _TypeFilter.regular => const Color(0xFF7B4FB0),
+      };
 
   bool matches(Company c) => switch (this) {
         _TypeFilter.all => true,
@@ -114,29 +131,19 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
   }
 
   Widget _toolbar(List<Company> all) {
-    final filters = Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: WebTokens.line),
-      ),
-      child: Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        children: [
-          for (final type in _TypeFilter.values)
-            _FilterTab(
-              label: type.label,
-              count: all.isEmpty ? null : all.where(type.matches).length,
-              selected: _typeFilter == type,
-              onTap: () => setState(() => _typeFilter = type),
-            ),
-        ],
-      ),
+    return WebFilterTiles(
+      options: [
+        for (final type in _TypeFilter.values)
+          WebFilterOption(
+            label: type.label,
+            icon: type.icon,
+            color: type.color,
+            count: all.isEmpty ? null : all.where(type.matches).length,
+            selected: _typeFilter == type,
+            onTap: () => setState(() => _typeFilter = type),
+          ),
+      ],
     );
-
-    return Align(alignment: Alignment.centerLeft, child: filters);
   }
 
   Widget _table(List<Company> companies, bool canManage) {
@@ -431,76 +438,6 @@ class _RowMenuButton extends StatelessWidget {
         child: const Padding(
           padding: EdgeInsets.all(6),
           child: Icon(Icons.more_vert, color: Colors.black54, size: 20),
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterTab extends StatelessWidget {
-  const _FilterTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.count,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final int? count;
-
-  static const Color _green = Color(0xFF106220);
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          decoration: BoxDecoration(
-            color: selected ? _green : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: WebTokens.fontFamily,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: selected ? Colors.white : const Color(0xFF1F1F1F),
-                ),
-              ),
-              if (count != null) ...[
-                const SizedBox(width: 7),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? Colors.white.withValues(alpha: 0.22)
-                        : WebTokens.cream,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$count',
-                    style: TextStyle(
-                      fontFamily: WebTokens.fontFamily,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: selected ? Colors.white : WebTokens.body,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
         ),
       ),
     );

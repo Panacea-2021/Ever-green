@@ -12,6 +12,7 @@ import '../../features/tasks/presentation/widgets/task_action_handler.dart';
 import '../../features/tasks/presentation/widgets/task_workflow.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
+import '../widgets/web_filter_tiles.dart';
 import '../widgets/web_table.dart';
 
 /// Web layout of the Task Board: same scoping, filters, sorting, texts and
@@ -142,40 +143,29 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
   }
 
   Widget _filters(List<TaskItem> scoped) {
-    final chips = <MapEntry<String, TaskStatus?>>[
-      const MapEntry('All', null),
-      const MapEntry('Open', TaskStatus.open),
-      const MapEntry('Hold', TaskStatus.hold),
-      const MapEntry('In Progress', TaskStatus.inProgress),
-      const MapEntry('Closed', TaskStatus.closed),
+    const chips = <(String, TaskStatus?, IconData, Color)>[
+      ('All', null, Icons.dashboard_outlined, Color(0xFF106220)),
+      ('Open', TaskStatus.open, Icons.radio_button_unchecked, Color(0xFF2E5AAC)),
+      ('Hold', TaskStatus.hold, Icons.pause_circle_outline, Color(0xFFB7791F)),
+      ('In Progress', TaskStatus.inProgress, Icons.timelapse, Color(0xFFE08600)),
+      ('Closed', TaskStatus.closed, Icons.check_circle_outline, Color(0xFF0F766E)),
     ];
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: WebTokens.line),
-        ),
-        child: Wrap(
-          spacing: 4,
-          runSpacing: 4,
-          children: [
-            for (final chip in chips)
-              _FilterTab(
-                label: chip.key,
-                count: scoped.isEmpty
-                    ? null
-                    : chip.value == null
-                        ? scoped.length
-                        : scoped.where((t) => t.status == chip.value).length,
-                selected: _statusFilter == chip.value,
-                onTap: () => setState(() => _statusFilter = chip.value),
-              ),
-          ],
-        ),
-      ),
+    return WebFilterTiles(
+      options: [
+        for (final chip in chips)
+          WebFilterOption(
+            label: chip.$1,
+            icon: chip.$3,
+            color: chip.$4,
+            count: scoped.isEmpty
+                ? null
+                : chip.$2 == null
+                    ? scoped.length
+                    : scoped.where((t) => t.status == chip.$2).length,
+            selected: _statusFilter == chip.$2,
+            onTap: () => setState(() => _statusFilter = chip.$2),
+          ),
+      ],
     );
   }
 
@@ -609,76 +599,6 @@ class _SmallButton extends StatelessWidget {
               fontWeight: FontWeight.w700,
               color: filled ? Colors.white : _green,
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterTab extends StatelessWidget {
-  const _FilterTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.count,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final int? count;
-
-  static const Color _green = Color(0xFF106220);
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          decoration: BoxDecoration(
-            color: selected ? _green : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: WebTokens.fontFamily,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: selected ? Colors.white : const Color(0xFF1F1F1F),
-                ),
-              ),
-              if (count != null) ...[
-                const SizedBox(width: 7),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? Colors.white.withValues(alpha: 0.22)
-                        : WebTokens.cream,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$count',
-                    style: TextStyle(
-                      fontFamily: WebTokens.fontFamily,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: selected ? Colors.white : WebTokens.body,
-                    ),
-                  ),
-                ),
-              ],
-            ],
           ),
         ),
       ),
