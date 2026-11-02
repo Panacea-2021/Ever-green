@@ -74,6 +74,8 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.webDashboard,
     Routes.tasks,
     Routes.amcs,
+    Routes.amcRenewals,
+    Routes.pmSchedule,
   };
 
   /// Titles for pages that are not sidebar destinations.
