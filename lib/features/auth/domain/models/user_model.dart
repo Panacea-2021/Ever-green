@@ -20,11 +20,11 @@ extension UserRoleX on UserRole {
       case UserRole.seniorTechnician:
         return 'Senior Service Engineer';
       case UserRole.technician:
-        return 'Junior Service Engineer';
+        return 'Service Engineer';
       case UserRole.clientAdmin:
-        return 'Client Admin';
+        return 'Company Manager';
       case UserRole.client:
-        return 'Client / POC';
+        return 'POC';
     }
   }
 
@@ -95,15 +95,20 @@ extension UserRoleX on UserRole {
   }
 
   static const seniorDesignation = 'Senior Service Engineer';
-  static const juniorDesignation = 'Junior Service Engineer';
+  static const juniorDesignation = 'Service Engineer';
 
-  /// Designation still stored on older backend rows; parsed as junior.
-  static const legacyJuniorDesignation = 'Junior Technician';
+  /// Designations still possible on older backend rows; parsed as
+  /// [juniorDesignation].
+  static const legacyJuniorDesignations = [
+    'Junior Service Engineer',
+    'Junior Technician',
+  ];
 
-  /// Whether [designation] is a junior designation (current or legacy).
+  /// Whether [designation] is the (non-senior) Service Engineer designation,
+  /// current or legacy.
   static bool isJuniorDesignation(String? designation) =>
       designation == juniorDesignation ||
-      designation == legacyJuniorDesignation;
+      legacyJuniorDesignations.contains(designation);
 }
 
 /// A company the user is linked to through `company_user`.
@@ -112,7 +117,8 @@ class UserCompany {
   final String name;
   final String branchName;
 
-  const UserCompany({required this.id, required this.name, this.branchName = ''});
+  const UserCompany(
+      {required this.id, required this.name, this.branchName = ''});
 
   factory UserCompany.fromJson(Map<String, dynamic> json) => UserCompany(
         id: (json['id'] as num).toInt(),
@@ -120,7 +126,8 @@ class UserCompany {
         branchName: json['branch_name']?.toString() ?? '',
       );
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'branch_name': branchName};
+  Map<String, dynamic> toJson() =>
+      {'id': id, 'name': name, 'branch_name': branchName};
 }
 
 class User {
@@ -178,7 +185,10 @@ class User {
     final flat = json['companies'];
     if (companies.isEmpty && flat is List) {
       companies.addAll(
-        flat.whereType<Map<String, dynamic>>().where((c) => c['id'] is num).map(UserCompany.fromJson),
+        flat
+            .whereType<Map<String, dynamic>>()
+            .where((c) => c['id'] is num)
+            .map(UserCompany.fromJson),
       );
     }
     final designation = json['designation']?.toString();
@@ -186,7 +196,8 @@ class User {
       id: '${json['id']}',
       email: json['email']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      role: UserRoleX.fromBackend(json['access_level']?.toString(), designation),
+      role:
+          UserRoleX.fromBackend(json['access_level']?.toString(), designation),
       phone: json['phone']?.toString() ?? '',
       location: json['location']?.toString() ?? '',
       designation: designation,

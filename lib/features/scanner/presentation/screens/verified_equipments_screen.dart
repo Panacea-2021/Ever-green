@@ -6,6 +6,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../amcs/data/equipment_provider.dart';
+import '../../../../core/utils/fuzzy_search.dart';
 
 class VerifiedEquipmentsScreen extends ConsumerStatefulWidget {
   const VerifiedEquipmentsScreen({super.key});
@@ -44,14 +45,18 @@ class _VerifiedEquipmentsScreenState
 
     // Filter by search
     if (_searchController.text.isNotEmpty) {
-      final query = _searchController.text.toLowerCase();
-      filtered = filtered.where((e) {
-        return e.name.toLowerCase().contains(query) ||
-            e.serialNumber.toLowerCase().contains(query) ||
-            e.location.toLowerCase().contains(query) ||
-            e.companyName.toLowerCase().contains(query) ||
-            e.verifiedBy.toLowerCase().contains(query);
-      }).toList();
+      final query = _searchController.text;
+      filtered = filtered
+          .where(
+            (e) => fuzzyMatches(query, [
+              e.name,
+              e.serialNumber,
+              e.location,
+              e.companyName,
+              e.verifiedBy,
+            ]),
+          )
+          .toList();
     }
 
     return filtered;

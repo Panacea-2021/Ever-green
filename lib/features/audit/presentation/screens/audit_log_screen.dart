@@ -885,6 +885,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
       const MapEntry('Tasks', AuditEntity.task),
       const MapEntry('AMCs', AuditEntity.amc),
       const MapEntry('Equipment', AuditEntity.equipment),
+      const MapEntry('Issue Types', AuditEntity.issueType),
     ];
     return SizedBox(
       height: 36,

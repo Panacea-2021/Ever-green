@@ -12,6 +12,7 @@ import '../../../../core/router/routes.dart';
 import '../../../../core/widgets/scaffold_with_bottom_nav.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../../shared/widgets/app_drawer.dart';
+import '../../../../shared/widgets/count_badge.dart';
 import '../../../../shared/widgets/custom_menu_icon.dart';
 import '../../data/amc_provider.dart';
 import '../../domain/models/amc_contract.dart';
@@ -55,10 +56,13 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
     super.dispose();
   }
 
-  List<Company> _visible(List<Company> companies) {
+  List<Company> _visible(List<Company> companies) =>
+      _searched(companies).where(_serviceTypeFilter.matches).toList();
+
+  /// [companies] matching the search box, before the service-type filter.
+  List<Company> _searched(List<Company> companies) {
     final q = _searchQuery.trim().toLowerCase();
     return companies.where((c) {
-      if (!_serviceTypeFilter.matches(c)) return false;
       if (q.isEmpty) return true;
       return [
         c.name,
@@ -76,6 +80,10 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
   @override
   Widget build(BuildContext context) {
     final companiesAsync = ref.watch(companiesProvider);
+    final searched = _searched(companiesAsync.valueOrNull ?? const []);
+    final counts = {
+      for (final t in _TypeFilter.values) t: searched.where(t.matches).length,
+    };
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -108,9 +116,21 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
                   _buildSearchBar(),
 
                   // Service-type filter chips (C AMC / NC AMC / Non-AMC / Regular)
-                  _buildTypeFilter(),
+                  _buildTypeFilter(
+                    companiesAsync.hasValue ? counts : const {},
+                  ),
 
                   const SizedBox(height: 12),
+
+                  if (companiesAsync.hasValue) ...[
+                    CountHeader(
+                      label: _serviceTypeFilter == _TypeFilter.all
+                          ? 'Companies'
+                          : _serviceTypeFilter.label,
+                      count: counts[_serviceTypeFilter] ?? 0,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
 
                   // Company Cards List — filtered by search + service type
                   Expanded(
@@ -389,7 +409,8 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
     );
   }
 
-  Widget _buildTypeFilter() {
+  /// Chips with the number of (searched) companies of each type.
+  Widget _buildTypeFilter(Map<_TypeFilter, int> counts) {
     const types = _TypeFilter.values;
     return SizedBox(
       height: 38,
@@ -424,14 +445,27 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
                       ]
                     : null,
               ),
-              child: Text(
-                type.label,
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: sel ? Colors.white : const Color(0xFF1F1F1F),
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    type.label,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: sel ? Colors.white : const Color(0xFF1F1F1F),
+                    ),
+                  ),
+                  if (counts[type] != null) ...[
+                    const SizedBox(width: 6),
+                    CountBadge(
+                      counts[type]!,
+                      key: Key('companyTypeCount-${type.name}'),
+                      onDark: sel,
+                    ),
+                  ],
+                ],
               ),
             ),
           );
@@ -497,8 +531,12 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value,
-      {double size = 14,}) {
+  Widget _infoRow(
+    IconData icon,
+    String label,
+    String value, {
+    double size = 14,
+  }) {
     return Row(
       children: [
         Icon(icon, color: Colors.black54, size: size),

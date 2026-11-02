@@ -105,7 +105,7 @@ Iterable<String?> engineerSearchFields(User u) => [
       engineerDesignation(u),
     ];
 
-/// Display designation; older rows still store "Junior Technician".
+/// Display designation; older rows may still store "Junior Technician".
 String engineerDesignation(User u) {
   if (u.role.isTechnicianLevel) return u.role.label;
   final d = u.designation?.trim() ?? '';

@@ -7,6 +7,7 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
+import '../widgets/task_timeline.dart';
 import '../widgets/task_action_button.dart';
 import '../widgets/task_action_handler.dart';
 import '../widgets/task_workflow.dart';
@@ -92,19 +93,21 @@ class TaskDetailsScreen extends ConsumerWidget {
 
     final individual = task?.isIndividual ?? false;
     final title = taskTitle ?? task?.title ?? 'Task';
+    final taskLocation = task?.source?.location ?? '';
     final loc = location ??
+        (taskLocation.isNotEmpty ? taskLocation : null) ??
         (individual ? task?.address : null) ??
         task?.source?.company?.location ??
         equipment?.location ??
         '';
     final stat = status ?? task?.lifecycleLabel ?? 'Not Started';
-    final img = imageUrl ??
-        (taskImg.startsWith('http') ? taskImg : _defaultImage);
+    final img =
+        imageUrl ?? (taskImg.startsWith('http') ? taskImg : _defaultImage);
     final company = companyName ?? task?.companyName ?? '';
     final client = clientName ?? task?.clientName ?? '';
     final mob = mobile ?? task?.clientPhone ?? '';
-    final tech = technician ??
-        (task != null && task.hasAssignee ? task.assignee : '');
+    final tech =
+        technician ?? (task != null && task.hasAssignee ? task.assignee : '');
     final techMob = technicianMobile ?? task?.technicianPhone ?? '';
     final created = createdOn ?? _fmt(task?.createdAt);
     final sNo = serialNumber ?? serial;
@@ -113,9 +116,8 @@ class TaskDetailsScreen extends ConsumerWidget {
 
     final user = ref.watch(currentUserProvider);
     final role = user?.role ?? UserRole.client;
-    final actions = task == null
-        ? const <TaskButton>[]
-        : taskDetailButtonsFor(task, user);
+    final actions =
+        task == null ? const <TaskButton>[] : taskDetailButtonsFor(task, user);
     final canEdit = taskMenuFor(role).contains(TaskMenuItem.edit);
 
     return Scaffold(
@@ -150,7 +152,8 @@ class TaskDetailsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     child: Row(
                       children: [
-                        const Icon(Icons.location_on, color: Color(0xFF125420), size: 16),
+                        const Icon(Icons.location_on,
+                            color: Color(0xFF125420), size: 16),
                         const SizedBox(width: 5),
                         Flexible(
                           child: Text(
@@ -181,12 +184,15 @@ class TaskDetailsScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
 
                   _buildTaskDetailsCard(
+                    task?.ticketNo ?? '',
+                    task?.source?.issueTypeLabel ?? '',
                     tech,
                     techMob,
                     created,
                     individual ? null : sNo,
                     desc,
                     lastUpdated,
+                    task?.source?.equipment?.serviceType?.name,
                   ),
 
                   if (task != null && actions.isNotEmpty) ...[
@@ -194,14 +200,19 @@ class TaskDetailsScreen extends ConsumerWidget {
                     _buildActionsCard(context, ref, task, actions),
                   ],
 
+                  if (task != null && task.taskId > 0) ...[
+                    const SizedBox(height: 20),
+                    TaskTimelineCard(taskId: task.taskId),
+                  ],
+
                   const SizedBox(height: 24),
                 ],
               ),
             ),
           ),
-
           if (canEdit)
-            _buildBottomButtons(context, ref, task, title, loc, stat, company, client, mob, tech, techMob, created, sNo, desc),
+            _buildBottomButtons(context, ref, task, title, loc, stat, company,
+                client, mob, tech, techMob, created, sNo, desc),
         ],
       ),
     );
@@ -247,7 +258,8 @@ class TaskDetailsScreen extends ConsumerWidget {
                 children: [
                   GestureDetector(
                     onTap: () => context.pop(),
-                    child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                    child: const Icon(Icons.arrow_back,
+                        color: Colors.white, size: 24),
                   ),
                   const SizedBox(width: 12),
                   const Text(
@@ -282,7 +294,8 @@ class TaskDetailsScreen extends ConsumerWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(color: Color(0xFF125420), shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+                color: Color(0xFF125420), shape: BoxShape.circle),
           ),
           const SizedBox(width: 6),
           Text(
@@ -351,7 +364,7 @@ class TaskDetailsScreen extends ConsumerWidget {
           // Client
           Align(
             alignment: Alignment.centerLeft,
-            child: _infoField('Client', client.isEmpty ? '-' : client),
+            child: _infoField('Raised By', client.isEmpty ? '-' : client),
           ),
           const SizedBox(height: 14),
 
@@ -392,7 +405,8 @@ class TaskDetailsScreen extends ConsumerWidget {
               color: _greenTitle.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.person_outline, color: _greenTitle, size: 26),
+            child:
+                const Icon(Icons.person_outline, color: _greenTitle, size: 26),
           ),
           const SizedBox(height: 14),
           const Text(
@@ -433,7 +447,8 @@ class TaskDetailsScreen extends ConsumerWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Flexible(child: _infoField('Mobile', phone, link: true)),
+                        Flexible(
+                            child: _infoField('Mobile', phone, link: true)),
                         const SizedBox(width: 6),
                         const Icon(Icons.copy_rounded, size: 16, color: _green),
                       ],
@@ -454,12 +469,15 @@ class TaskDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildTaskDetailsCard(
+    String ticketNo,
+    String issueType,
     String technician,
     String techMobile,
     String createdOn,
     String? serialNo,
     String description,
     String lastUpdated,
+    String? serviceType,
   ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 11),
@@ -488,7 +506,8 @@ class TaskDetailsScreen extends ConsumerWidget {
                     color: _blueTitle.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.build_outlined, color: _blueTitle, size: 24),
+                  child: const Icon(Icons.build_outlined,
+                      color: _blueTitle, size: 24),
                 ),
                 const SizedBox(height: 12),
 
@@ -505,6 +524,28 @@ class TaskDetailsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _infoField(
+                      'Ticket ID', ticketNo.isEmpty ? '-' : ticketNo),
+                ),
+                const SizedBox(height: 12),
+
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _infoField(
+                      'Issue Type', issueType.isEmpty ? '-' : issueType),
+                ),
+                const SizedBox(height: 12),
+
+                if (serviceType != null) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _infoField('Service Type', serviceType),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
                 // Technician
                 Align(
                   alignment: Alignment.centerLeft,
@@ -518,21 +559,24 @@ class TaskDetailsScreen extends ConsumerWidget {
                 // Mobile
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: _infoField('Mobile', techMobile.isEmpty ? '-' : techMobile),
+                  child: _infoField(
+                      'Mobile', techMobile.isEmpty ? '-' : techMobile),
                 ),
                 const SizedBox(height: 12),
 
                 // Created on
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: _infoField('Created on', createdOn.isEmpty ? '-' : createdOn),
+                  child: _infoField(
+                      'Created on', createdOn.isEmpty ? '-' : createdOn),
                 ),
                 const SizedBox(height: 12),
 
                 if (serialNo != null) ...[
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: _infoField('S.No', serialNo.isEmpty ? '-' : serialNo),
+                    child: _infoField(
+                        'Equipment S.No', serialNo.isEmpty ? '-' : serialNo),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -540,7 +584,8 @@ class TaskDetailsScreen extends ConsumerWidget {
                 // Description
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: _infoField('Description', description.isEmpty ? '-' : description),
+                  child: _infoField(
+                      'Description', description.isEmpty ? '-' : description),
                 ),
                 const SizedBox(height: 20),
               ],
@@ -569,7 +614,9 @@ class TaskDetailsScreen extends ConsumerWidget {
                 children: [
                   TextSpan(
                     text: 'Last Updated on : ',
-                    style: TextStyle(color: Colors.black.withValues(alpha: 0.4), fontStyle: FontStyle.italic),
+                    style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        fontStyle: FontStyle.italic),
                   ),
                   TextSpan(
                     text: lastUpdated.isEmpty ? '-' : lastUpdated,
@@ -657,8 +704,7 @@ class TaskDetailsScreen extends ConsumerWidget {
     );
   }
 
-  static String _actionLabel(TaskAction action) =>
-      switch (action) {
+  static String _actionLabel(TaskAction action) => switch (action) {
         TaskAction.status => 'Change Status',
         TaskAction.delete => 'Delete Task',
         _ => action.label,
@@ -684,34 +730,6 @@ class TaskDetailsScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-
-  /// Disable: a pending request is rejected (with a reason); any other
-  /// ticket is closed.
-  Future<void> _disable(BuildContext context, WidgetRef ref, TaskItem? task) async {
-    if (task == null) return;
-    final actions = ref.read(taskActionsProvider);
-    if (task.approval == ApprovalState.requested) {
-      final reason = await askTaskReason(
-        context,
-        title: 'Disable task',
-        hint: 'Reason for disabling',
-        confirmLabel: 'Disable',
-      );
-      if (reason == null || !context.mounted) return;
-      await runTaskAction(
-        context,
-        () => actions.rejectRequest(task, reason: reason),
-        success: 'Task disabled',
-      );
-      return;
-    }
-    if (task.serviceStatus == ServiceStatus.closed) return;
-    await runTaskAction(
-      context,
-      () => actions.setStatus(task, ServiceStatus.closed),
-      success: 'Task disabled',
     );
   }
 
@@ -747,32 +765,6 @@ class TaskDetailsScreen extends ConsumerWidget {
         top: false,
         child: Row(
           children: [
-            // Disable button
-            Expanded(
-              child: GestureDetector(
-                onTap: () => _disable(context, ref, task),
-                child: Container(
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: const Color(0xFF155622).withValues(alpha: 0.5), width: 1),
-                  ),
-                  child: const Text(
-                    'Disable',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF0E501B),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Edit button
             Expanded(
               child: GestureDetector(
                 onTap: () {

@@ -3,7 +3,8 @@
 // never breaks a list.
 
 int _int(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
-int? _intOrNull(dynamic v) => v == null ? null : (v is num ? v.toInt() : int.tryParse('$v'));
+int? _intOrNull(dynamic v) =>
+    v == null ? null : (v is num ? v.toInt() : int.tryParse('$v'));
 String _str(dynamic v) => v == null ? '' : '$v';
 String? _strOrNull(dynamic v) {
   if (v == null) return null;
@@ -11,7 +12,8 @@ String? _strOrNull(dynamic v) {
   return s.isEmpty ? null : s;
 }
 
-DateTime? _date(dynamic v) => v == null ? null : DateTime.tryParse('$v')?.toLocal();
+DateTime? _date(dynamic v) =>
+    v == null ? null : DateTime.tryParse('$v')?.toLocal();
 bool? _boolOrNull(dynamic v) => v is bool ? v : null;
 Map<String, dynamic>? _map(dynamic v) => v is Map<String, dynamic> ? v : null;
 
@@ -86,6 +88,74 @@ enum CallType {
     }
     return null;
   }
+}
+
+/// A row of `issue_type`: the issue types offered when raising a task.
+/// Built-in rows carry the legacy [callType] older apps still send.
+class IssueType {
+  final int id;
+  final String name;
+  final CallType? callType;
+  final bool isActive;
+
+  const IssueType({
+    required this.id,
+    required this.name,
+    this.callType,
+    this.isActive = true,
+  });
+
+  factory IssueType.fromJson(Map<String, dynamic> json) => IssueType(
+        id: _int(json['id']),
+        name: _str(json['name']),
+        callType: CallType.fromKey(json['call_type']),
+        isActive: json['is_active'] != false,
+      );
+}
+
+/// Admin-managed service type set on equipment (e.g. "Chiller AMC").
+class ServiceType {
+  final int id;
+  final String name;
+  final bool isActive;
+
+  const ServiceType(
+      {required this.id, required this.name, this.isActive = true});
+
+  factory ServiceType.fromJson(Map<String, dynamic> json) => ServiceType(
+        id: _int(json['id']),
+        name: _str(json['name']),
+        isActive: json['is_active'] != false,
+      );
+
+  /// `equipment.service_type` (`{id, name}`), or null.
+  static ServiceType? fromNullable(Object? json) {
+    final m = _map(json);
+    return m == null ? null : ServiceType.fromJson(m);
+  }
+}
+
+/// The ticket that blocks raising another one on the same equipment.
+class ActiveEquipmentTask {
+  final int id;
+  final String ticketNo;
+  final String name;
+  final TaskStatus status;
+
+  const ActiveEquipmentTask({
+    required this.id,
+    required this.ticketNo,
+    required this.name,
+    required this.status,
+  });
+
+  factory ActiveEquipmentTask.fromJson(Map<String, dynamic> json) =>
+      ActiveEquipmentTask(
+        id: _int(json['id']),
+        ticketNo: _str(json['ticket_no']),
+        name: _str(json['name']),
+        status: TaskStatus.fromKey(json['status']),
+      );
 }
 
 /// `hold_reason.hold`.
@@ -246,25 +316,25 @@ class Company {
   factory Company.fromJson(Map<String, dynamic> json) {
     final pocUser = _map(_map(json['poc_details'])?['user']);
     return Company(
-        id: _int(json['id']),
-        name: _str(json['name']),
-        branchName: _str(json['branch_name']),
-        email: _str(json['email']),
-        gstNumber: _strOrNull(json['gst_number']),
-        location: _strOrNull(json['location']),
-        serviceType: CompanyServiceType.fromKey(json['service_type']),
-        amcType: AmcType.fromKey(json['amc_type']),
-        startDate: _date(json['start_date']),
-        endDate: _date(json['end_date']),
-        isActive: json['is_active'] != false,
-        equipment: (json['equipment'] as List? ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .map(Equipment.fromJson)
-            .toList(),
-        poc: TaskPerson.fromJson(pocUser),
-        pocEmail: _strOrNull(pocUser?['email']),
-        raw: json,
-      );
+      id: _int(json['id']),
+      name: _str(json['name']),
+      branchName: _str(json['branch_name']),
+      email: _str(json['email']),
+      gstNumber: _strOrNull(json['gst_number']),
+      location: _strOrNull(json['location']),
+      serviceType: CompanyServiceType.fromKey(json['service_type']),
+      amcType: AmcType.fromKey(json['amc_type']),
+      startDate: _date(json['start_date']),
+      endDate: _date(json['end_date']),
+      isActive: json['is_active'] != false,
+      equipment: (json['equipment'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(Equipment.fromJson)
+          .toList(),
+      poc: TaskPerson.fromJson(pocUser),
+      pocEmail: _strOrNull(pocUser?['email']),
+      raw: json,
+    );
   }
 }
 
@@ -290,6 +360,7 @@ class Equipment {
   final DateTime? installedAt;
   final DateTime? verifiedAt;
   final TaskPerson? verifier;
+  final ServiceType? serviceType;
   final Map<String, dynamic> raw;
 
   const Equipment({
@@ -314,6 +385,7 @@ class Equipment {
     this.installedAt,
     this.verifiedAt,
     this.verifier,
+    this.serviceType,
     this.raw = const {},
   });
 
@@ -328,10 +400,12 @@ class Equipment {
       serialNumber: _strOrNull(json['serial_number']),
       specifications: _strOrNull(json['specifications']),
       imageUrl: _strOrNull(json['image_url']),
-      manufacturerDate: _date(json['manufacturer_date'] ?? json['manufacturerDate']),
+      manufacturerDate:
+          _date(json['manufacturer_date'] ?? json['manufacturerDate']),
       location: _strOrNull(json['location']),
       description: _strOrNull(json['description']),
-      tmFrequency: TmFrequency.fromKey(json['tm_frequency'] ?? json['tmFrequency']),
+      tmFrequency:
+          TmFrequency.fromKey(json['tm_frequency'] ?? json['tmFrequency']),
       companyId: _intOrNull(json['company_link']),
       company: company == null ? null : Company.fromJson(company),
       manual: _strOrNull(json['manual']),
@@ -341,6 +415,7 @@ class Equipment {
       installedAt: _date(json['installed_at']),
       verifiedAt: _date(json['verified_at']),
       verifier: TaskPerson.fromJson(json['verifier']),
+      serviceType: ServiceType.fromNullable(json['service_type']),
       raw: json,
     );
   }
@@ -353,6 +428,8 @@ class HoldReason {
   final String? sparePartNumber;
   final String? image;
   final String? reason;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const HoldReason({
     required this.id,
@@ -361,6 +438,8 @@ class HoldReason {
     this.sparePartNumber,
     this.image,
     this.reason,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory HoldReason.fromJson(Map<String, dynamic> json) => HoldReason(
@@ -370,6 +449,8 @@ class HoldReason {
         sparePartNumber: _strOrNull(json['spare_part_number']),
         image: _strOrNull(json['image']),
         reason: _strOrNull(json['reason']),
+        createdAt: _date(json['created_at']),
+        updatedAt: _date(json['updated_at']),
       );
 }
 
@@ -380,7 +461,11 @@ class TaskPerson {
   final String phone;
   final String? accessLevel;
 
-  const TaskPerson({required this.id, required this.name, this.phone = '', this.accessLevel});
+  const TaskPerson(
+      {required this.id,
+      required this.name,
+      this.phone = '',
+      this.accessLevel});
 
   static TaskPerson? fromJson(dynamic json) {
     if (json is! Map<String, dynamic>) return null;
@@ -437,6 +522,16 @@ class ServiceTask {
   final String? contactName;
   final String? contactPhone;
   final String? address;
+
+  /// Where on site the work is (free text entered when raising).
+  final String? location;
+  final int? issueTypeId;
+  final String? issueTypeName;
+
+  /// Soft-delete details (only on tickets from the deleted list).
+  final DateTime? deletedAt;
+  final String? deletedByName;
+  final String? deleteReason;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final Map<String, dynamic> raw;
@@ -481,10 +576,19 @@ class ServiceTask {
     this.contactName,
     this.contactPhone,
     this.address,
+    this.location,
+    this.issueTypeId,
+    this.issueTypeName,
+    this.deletedAt,
+    this.deletedByName,
+    this.deleteReason,
     this.createdAt,
     this.updatedAt,
     this.raw = const {},
   });
+
+  /// The issue type's display name: the managed type, else the legacy one.
+  String get issueTypeLabel => issueTypeName ?? callType?.label ?? '';
 
   Company? get company => equipment?.company;
 
@@ -547,6 +651,13 @@ class ServiceTask {
       contactName: _strOrNull(task['contact_name']),
       contactPhone: _strOrNull(task['contact_phone']),
       address: _strOrNull(task['address']),
+      location: _strOrNull(task['location']),
+      issueTypeId: _intOrNull(task['issue_type_link']) ??
+          _intOrNull(_map(task['issue_type'])?['id']),
+      issueTypeName: _strOrNull(_map(task['issue_type'])?['name']),
+      deletedAt: _date(task['deleted_at']),
+      deletedByName: _strOrNull(_map(task['deleter'])?['name']),
+      deleteReason: _strOrNull(task['delete_reason']),
       createdAt: _date(task['created_at']),
       updatedAt: _date(json['updated_at'] ?? task['updated_at']),
       raw: json,
@@ -573,7 +684,8 @@ class AppNotification {
     this.createdAt,
   });
 
-  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
+  factory AppNotification.fromJson(Map<String, dynamic> json) =>
+      AppNotification(
         id: _int(json['id']),
         title: _str(json['title']),
         description: _str(json['description']),

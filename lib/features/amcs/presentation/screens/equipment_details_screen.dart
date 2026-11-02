@@ -75,6 +75,8 @@ class _EquipmentDetailsScreenState
           'status': e.status.key,
           'type': e.type,
           'installedAt': e.installedAt?.toIso8601String(),
+          'serviceTypeId': e.serviceType?.id,
+          'serviceTypeName': e.serviceType?.name,
         },
       },
     );
@@ -129,7 +131,8 @@ class _EquipmentDetailsScreenState
       await shareQrStickerPdf(
         ref,
         equipmentIds: [e.id],
-        filename: 'qr_${qrFileSlug(e.egSerialNumber.isEmpty ? e.name : e.egSerialNumber)}.pdf',
+        filename:
+            'qr_${qrFileSlug(e.egSerialNumber.isEmpty ? e.name : e.egSerialNumber)}.pdf',
       );
     } catch (err) {
       if (mounted) {
@@ -574,6 +577,7 @@ class _EquipmentDetailsScreenState
     String v(String? value) =>
         value == null || value.trim().isEmpty ? '-' : value.trim();
     final rows = <(String, String)>[
+      ('Service Type', v(e.serviceType?.name)),
       ('Make', v(e.make)),
       ('Model', v(e.model)),
       ('S.No', v(e.serialNumber)),
@@ -740,8 +744,8 @@ class _EquipmentDetailsScreenState
   }
 
   Widget _buildRepairHistoryItem(ServiceTask task, Equipment equipment) {
-    final isOpen = task.status != TaskStatus.completed &&
-        task.status != TaskStatus.closed;
+    final isOpen =
+        task.status != TaskStatus.completed && task.status != TaskStatus.closed;
     final title = task.name.isNotEmpty
         ? task.name
         : (task.description.isNotEmpty ? task.description : task.ticketNo);
@@ -903,8 +907,18 @@ class _EquipmentDetailsScreenState
 
   String _fmtDate(DateTime d) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sept',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${d.day.toString().padLeft(2, '0')} ${months[d.month - 1]} ${d.year}';
   }

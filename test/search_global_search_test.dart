@@ -176,14 +176,14 @@ void main() {
   });
 
   group('service engineer fields', () {
-    for (final q in ['suresh', '90000', 'suresh@evergreen', 'junior service']) {
+    for (final q in ['suresh', '90000', 'suresh@evergreen', 'service engineer']) {
       test('match "$q"', () {
         expect(matchesQuery(q, engineerSearchFields(engineer)), isTrue);
       });
     }
 
     test('never exposes the legacy "Technician" designation', () {
-      expect(engineerDesignation(engineer), 'Junior Service Engineer');
+      expect(engineerDesignation(engineer), 'Service Engineer');
       expect(
         matchesQuery('technician', engineerSearchFields(engineer)),
         isFalse,

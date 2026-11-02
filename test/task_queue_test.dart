@@ -61,7 +61,8 @@ void main() {
       'assigned, not accepted': item(
         row(id: 3, technician: _tech, assignedAt: '2026-10-01T11:50:00Z'),
       ),
-      'assigned, null assigned_at (legacy)': item(row(id: 4, technician: _tech)),
+      'assigned, null assigned_at (legacy)':
+          item(row(id: 4, technician: _tech)),
       'accepted, not started': item(
         row(id: 5, technician: _tech, acceptedAt: '2026-10-01T11:00:00Z'),
       ),
@@ -90,39 +91,74 @@ void main() {
       ),
     };
 
-    QueueBucket? bucketOf(String name) => tasks[name]!.queueBucket;
+    Iterable<String> ids(QueueTab tab, DateTime at) =>
+        queueTabs(tasks.values, at)[tab]!.map((t) => t.id);
 
-    test('each ticket lands in the expected tab', () {
-      expect(bucketOf('open, no engineer'), QueueBucket.unassigned);
-      expect(bucketOf('individual, no engineer'), QueueBucket.unassigned);
-      expect(bucketOf('assigned, not accepted'), QueueBucket.awaiting);
+    test('Unassigned lists every open ticket, with or without an engineer', () {
       expect(
-        bucketOf('assigned, null assigned_at (legacy)'),
-        QueueBucket.awaiting,
+        ids(QueueTab.unassigned, now),
+        unorderedEquals(['1', '2', '3', '4', '5', '11', '12']),
       );
-      expect(bucketOf('engineer without a name'), QueueBucket.awaiting);
-      expect(bucketOf('accepted, not started'), QueueBucket.assigned);
-      expect(bucketOf('in progress'), QueueBucket.assigned);
-      expect(bucketOf('on hold'), QueueBucket.assigned);
-      expect(bucketOf('reassigned while in progress'), QueueBucket.assigned);
-      expect(bucketOf('individual, accepted'), QueueBucket.assigned);
-      expect(bucketOf('completed'), isNull);
-      expect(bucketOf('closed'), isNull);
     });
 
-    test('queueBuckets partitions every unfinished ticket exactly once', () {
-      final b = queueBuckets(tasks.values, now);
-      final ids = [
-        for (final list in b.values)
-          for (final t in list) t.id,
-      ];
-      expect(ids.toSet().length, ids.length);
-      expect(b[QueueBucket.unassigned]!.map((t) => t.id), unorderedEquals(['1', '2']));
-      expect(b[QueueBucket.awaiting]!.map((t) => t.id), unorderedEquals(['3', '4', '11']));
+    test('Awaiting lists open tickets with no engineer after 15 min', () {
+      // Raised 2026-10-01T10:00Z.
       expect(
-        b[QueueBucket.assigned]!.map((t) => t.id),
-        unorderedEquals(['5', '6', '7', '8', '12']),
+          ids(QueueTab.awaiting, DateTime.utc(2026, 10, 1, 10, 14)), isEmpty);
+      expect(
+        ids(QueueTab.awaiting, DateTime.utc(2026, 10, 1, 10, 15)),
+        unorderedEquals(['1', '2']),
       );
+    });
+
+    test('Assigned lists every unclosed ticket with an engineer', () {
+      expect(
+        ids(QueueTab.assigned, now),
+        unorderedEquals(['3', '4', '5', '6', '7', '8', '9', '11', '12']),
+      );
+    });
+
+    test('Escalation lists unclosed tickets with no status move for 24h', () {
+      expect(ids(QueueTab.escalation, now), isEmpty);
+      // 24h after creation: only tickets whose last move was the creation,
+      // or a move more than 24h ago.
+      final later = DateTime.utc(2026, 10, 2, 10);
+      expect(
+        ids(QueueTab.escalation, later),
+        unorderedEquals(['1', '2', '4', '6', '7', '8', '9', '11']),
+      );
+      expect(ids(QueueTab.escalation, later), isNot(contains('10')));
+    });
+
+    test('a hold restarts the 24h escalation clock', () {
+      final held = item({
+        ...row(id: 20, status: 'hold', technician: _tech),
+        'task': {
+          ...row(id: 20)['task'] as Map<String, dynamic>,
+          'hold_reason': [
+            {
+              'id': 1,
+              'hold': 'spare_part',
+              'is_active': true,
+              'created_at': '2026-10-02T09:00:00Z',
+            },
+          ],
+        },
+      });
+      expect(held.statusChangedAt, DateTime.utc(2026, 10, 2, 9).toLocal());
+      expect(held.isStatusStale(DateTime.utc(2026, 10, 3, 8)), isFalse);
+      expect(held.isStatusStale(DateTime.utc(2026, 10, 3, 9)), isTrue);
+    });
+
+    test('a manually escalated ticket is in Escalation straight away', () {
+      final t = item({
+        ...row(id: 21),
+        'task': {
+          ...row(id: 21)['task'] as Map<String, dynamic>,
+          'escalated': true,
+        },
+      });
+      expect(t.inQueueTab(QueueTab.escalation, now), isTrue);
     });
 
     test('an assignment with no assigned_at still counts waiting time', () {
@@ -136,11 +172,6 @@ void main() {
 
       final fresh = tasks['assigned, not accepted']!;
       expect(fresh.pendingAcceptanceMinutes(now), 10);
-    });
-
-    test('awaiting is sorted longest-waiting first', () {
-      final b = queueBuckets(tasks.values, DateTime.utc(2026, 10, 2, 11));
-      expect(b[QueueBucket.awaiting]!.first.id, '3');
     });
 
     test('an engineer with no name keeps the ticket assigned', () {
@@ -189,7 +220,11 @@ void main() {
       final body = TaskActions.individualTaskBody(
         name: 'AC not cooling',
         description: 'Split AC in bedroom',
-        callType: CallType.breakdown,
+        issueType: const IssueType(
+          id: 2,
+          name: 'Breakdown',
+          callType: CallType.breakdown,
+        ),
         priority: TaskPriority.high,
         contactName: 'Anil Kumar',
         contactPhone: '+919876543210',
@@ -199,6 +234,7 @@ void main() {
       expect(body, {
         'name': 'AC not cooling',
         'description': 'Split AC in bedroom',
+        'issue_type_link': 2,
         'call_type': 'breakdown',
         'priority': 'high',
         'contact_name': 'Anil Kumar',
@@ -219,8 +255,16 @@ void main() {
         address: 'a',
       );
       expect(body.containsKey('call_type'), isFalse);
+      expect(body.containsKey('issue_type_link'), isFalse);
       expect(body.containsKey('priority'), isFalse);
       expect(body['images'], isEmpty);
+    });
+
+    test('a custom issue type sends only its id', () {
+      expect(
+        TaskActions.issueTypeBody(const IssueType(id: 9, name: 'Gas refill')),
+        {'issue_type_link': 9},
+      );
     });
   });
 

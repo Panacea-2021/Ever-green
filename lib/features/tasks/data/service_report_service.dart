@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../domain/models/task_event.dart';
 import '../domain/models/task_item.dart';
 
 /// Generates a printable / shareable "Service Report" PDF for a task, matching
@@ -20,8 +21,12 @@ class ServiceReportService {
   static const PdfColor _light = PdfColor.fromInt(0xFFF1F4F8);
   static const PdfColor _red = PdfColor.fromInt(0xFFD32F2F);
 
-  /// Build the PDF bytes for [task].
-  static Future<Uint8List> build(TaskItem task) async {
+  /// Build the PDF bytes for [task]. [events] (the ticket's timeline)
+  /// supply who raised, assigned, accepted, started, completed and closed it.
+  static Future<Uint8List> build(
+    TaskItem task, {
+    List<TaskEvent> events = const [],
+  }) async {
     final doc = pw.Document();
 
     doc.addPage(
@@ -44,7 +49,7 @@ class ServiceReportService {
               _issue(task),
               pw.SizedBox(height: 12),
               _sectionBar('TIMELINE OF EVENTS'),
-              _timeline(task),
+              _timeline(task, events),
               pw.SizedBox(height: 12),
               _sectionBar('TASK PHOTOS / ATTACHMENTS'),
               _attachments(task),
@@ -73,8 +78,12 @@ class ServiceReportService {
 
   /// Generate and open the native share sheet for [task]. [bytes] is a
   /// ready-made report (e.g. the backend's PDF); otherwise one is built.
-  static Future<void> share(TaskItem task, {Uint8List? bytes}) async {
-    final pdf = bytes ?? await build(task);
+  static Future<void> share(
+    TaskItem task, {
+    Uint8List? bytes,
+    List<TaskEvent> events = const [],
+  }) async {
+    final pdf = bytes ?? await build(task, events: events);
     await Printing.sharePdf(
       bytes: pdf,
       filename: 'Ticket_${_fileTicket(task)}.pdf',
@@ -82,10 +91,14 @@ class ServiceReportService {
   }
 
   /// Open the system print / preview dialog for [task].
-  static Future<void> open(TaskItem task, {Uint8List? bytes}) async {
+  static Future<void> open(
+    TaskItem task, {
+    Uint8List? bytes,
+    List<TaskEvent> events = const [],
+  }) async {
     await Printing.layoutPdf(
       name: 'Ticket_${_fileTicket(task)}',
-      onLayout: (format) async => bytes ?? await build(task),
+      onLayout: (format) async => bytes ?? await build(task, events: events),
     );
   }
 
@@ -315,8 +328,14 @@ class ServiceReportService {
       child: pw.Column(
         children: [
           if (e != null) ...[
-            row([cell('Name', _dash(t.equipment)), cell('Make', _dash(e.make))]),
-            row([cell('Model', _dash(e.model)), cell('Serial No.', _dash(serial))]),
+            row([
+              cell('Name', _dash(t.equipment)),
+              cell('Make', _dash(e.make))
+            ]),
+            row([
+              cell('Model', _dash(e.model)),
+              cell('Serial No.', _dash(serial))
+            ]),
           ],
           row([
             cell('Call type', _dash(t.callType?.label)),
@@ -355,8 +374,20 @@ class ServiceReportService {
     );
   }
 
-  static pw.Widget _timeline(TaskItem t) {
-    final events = <(String, DateTime?, String)>[
+  /// Raised, assigned / accepted, work started, completed and closed. From
+  /// [timeline] when available, else from the ticket's timestamps.
+  static pw.Widget _timeline(TaskItem t, List<TaskEvent> timeline) {
+    final events = timeline.isNotEmpty
+        ? [
+            for (final (at, title, detail) in reportSteps(timeline))
+              (title, at as DateTime?, detail),
+          ]
+        : _timestampSteps(t);
+    return _timelineList(events);
+  }
+
+  static List<(String, DateTime?, String)> _timestampSteps(TaskItem t) {
+    return <(String, DateTime?, String)>[
       ('Task created', t.createdAt, 'Ticket ${t.ticketNo} was raised.'),
       if (t.hasAssignee)
         (
@@ -375,6 +406,9 @@ class ServiceReportService {
       if (t.serviceStatus == ServiceStatus.closed)
         ('Closed', t.closedAt, 'Ticket closed.'),
     ];
+  }
+
+  static pw.Widget _timelineList(List<(String, DateTime?, String)> events) {
     return pw.Padding(
       padding: const pw.EdgeInsets.only(top: 6),
       child: pw.Column(

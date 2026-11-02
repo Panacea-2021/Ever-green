@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
+import '../../domain/models/amc_contract.dart';
 
 const Color _trendDown = Color(0xFFBF0F0F);
 const Color _trendUp = Color(0xFF106220);
@@ -79,6 +80,21 @@ class CompanyDetailsScreen extends ConsumerWidget {
     this.imageUrl,
   });
 
+  /// Stock header used when the company has no image or it fails to load.
+  static Widget _defaultHeader() => Image.asset(
+        'assets/images/company_header_bg.png',
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.orange.shade400, Colors.orange.shade700],
+            ),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final id = int.tryParse(companyId);
@@ -106,6 +122,8 @@ class CompanyDetailsScreen extends ConsumerWidget {
       onRetry: () => ref.invalidate(equipmentsProvider(id)),
     );
 
+    final headerImage = mediaUrl(company?.logo ?? imageUrl);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SizedBox(
@@ -119,24 +137,13 @@ class CompanyDetailsScreen extends ConsumerWidget {
               top: 0,
               right: 0,
               height: 344,
-              child: Image.asset(
-                'assets/images/company_header_bg.png',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.orange.shade400,
-                          Colors.orange.shade700,
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: headerImage.startsWith('http')
+                  ? Image.network(
+                      headerImage,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _defaultHeader(),
+                    )
+                  : _defaultHeader(),
             ),
 
             // Back Arrow - left: 16px, top: 54px, size: 24px

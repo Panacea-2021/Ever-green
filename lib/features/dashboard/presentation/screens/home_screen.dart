@@ -118,7 +118,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 24),
                     ],
 
-                    _sectionHeader(showOrgOverview ? 'Task Status' : 'My Task Status'),
+                    _sectionHeader(
+                        showOrgOverview ? 'Task Status' : 'My Task Status'),
                     const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -149,17 +150,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: _Palette.ink,
-              letterSpacing: -0.54,
+          Flexible(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: _Palette.ink,
+                letterSpacing: -0.54,
+              ),
             ),
           ),
-          if (caption != null)
+          if (caption != null) ...[
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
@@ -176,6 +181,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -235,6 +241,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return () => _shellRoutes.contains(route)
         ? context.go(route)
         : context.push(route, extra: extra);
+  }
+
+  /// Opens the Tasks tab with [status] selected (null = All).
+  VoidCallback? _openTasks([TaskStatus? status]) {
+    final role = ref.watch(currentUserRoleProvider);
+    if (!Permissions.canAccessRoute(role, Routes.tasks)) return null;
+    return () => context.go(Routes.tasks, extra: status);
   }
 
   /// A rounded card whose ripple stays inside its corners. Not tappable (and
@@ -317,57 +330,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(context),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName != null ? 'Welcome back,' : 'Welcome',
-                    style: const TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white70,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  if (displayName != null) const SizedBox(height: 2),
-                  if (displayName != null)
-                    Text(
-                      displayName,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: -0.7,
-                        shadows: [
-                          Shadow(color: Colors.black45, blurRadius: 10),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _roleChip(role.label),
-                      const SizedBox(width: 10),
-                      Text(
-                        dateStr,
-                        style: const TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white70,
-                          shadows: [
-                            Shadow(color: Colors.black38, blurRadius: 6),
+            // Shrinks the greeting rather than overflowing the fixed-height
+            // hero on small screens or with large system text.
+            Expanded(
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName != null ? 'Welcome back,' : 'Welcome',
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white70,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        if (displayName != null) const SizedBox(height: 2),
+                        if (displayName != null)
+                          Text(
+                            displayName,
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: -0.7,
+                              shadows: [
+                                Shadow(color: Colors.black45, blurRadius: 10),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _roleChip(role.label),
+                            Text(
+                              dateStr,
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white70,
+                                shadows: [
+                                  Shadow(color: Colors.black38, blurRadius: 6),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
           ],
@@ -517,11 +542,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final role = ref.watch(currentUserRoleProvider);
     if (!Permissions.canViewOrgOverview(role)) return _buildMyTasksSummaryBar();
     final users = _userStats?.total ?? _users?.length;
-    final amcs = ref
-        .watch(companiesProvider)
-        .valueOrNull
-        ?.where((c) => c.isAmc)
-        .length;
+    final amcs =
+        ref.watch(companiesProvider).valueOrNull?.where((c) => c.isAmc).length;
     final tasks = _counts?.total;
 
     return _summaryCard([
@@ -561,7 +583,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'Open',
         counts?.of(TaskStatus.open),
         _Palette.amber,
-        onTap: _open(Routes.taskBoard, extra: TaskStatus.open),
+        onTap: _openTasks(TaskStatus.open),
       ),
       _summaryDivider(),
       _summaryCell(
@@ -569,7 +591,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'In Progress',
         counts?.of(TaskStatus.inProgress),
         _Palette.green,
-        onTap: _open(Routes.taskBoard, extra: TaskStatus.inProgress),
+        onTap: _openTasks(TaskStatus.inProgress),
       ),
       _summaryDivider(),
       _summaryCell(
@@ -805,7 +827,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: _inkCard(
-        onTap: _open(Routes.taskBoard),
+        onTap: _openTasks(),
         splash: Colors.white,
         radius: 18,
         padding: const EdgeInsets.all(16),
@@ -868,21 +890,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildOverviewGrid() {
     final stats = _userStats;
     final pocCount = stats?.clients ?? _roleCount((r) => r == UserRole.client);
-    final clientCount = stats != null
-        ? stats.clients + stats.clientAdmins
-        : _roleCount((r) => r.isClientSide);
+    final companyManagerCount =
+        stats?.clientAdmins ?? _roleCount((r) => r == UserRole.clientAdmin);
     final managerCount =
         stats?.managers ?? _roleCount((r) => r == UserRole.manager);
     final techCount =
         stats?.technicians ?? _roleCount((r) => r.isTechnicianLevel);
 
     final pocTrend = ref.watch(trendProvider(TrendMetric.poc));
-    final clientTrend = ref.watch(trendProvider(TrendMetric.clients));
+    final companyManagerTrend =
+        ref.watch(trendProvider(TrendMetric.companyManagers));
     final mgrTrend = ref.watch(trendProvider(TrendMetric.managers));
     final techTrend = ref.watch(trendProvider(TrendMetric.technicians));
 
     final pocSeries = _series(TrendMetric.poc);
-    final clientSeries = _series(TrendMetric.clients);
+    final companyManagerSeries = _series(TrendMetric.companyManagers);
     final mgrSeries = _series(TrendMetric.managers);
     final techSeries = _series(TrendMetric.technicians);
 
@@ -906,10 +928,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.groups_outlined,
                 tint: const Color(0xFF775DAC),
-                title: 'Clients',
-                value: clientCount,
-                trend: clientTrend,
-                series: clientSeries,
+                title: 'Company Managers',
+                value: companyManagerCount,
+                trend: companyManagerTrend,
+                series: companyManagerSeries,
                 onTap: _open(Routes.usersList, extra: {'tab': 0}),
               ),
             ),
@@ -954,6 +976,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return last.map((e) => e.toDouble()).toList();
   }
 
+  /// Card icon with the title on its own line below it, so narrow cards
+  /// show the whole title (shrunk if needed) instead of cutting it off.
+  Widget _cardHeading({
+    required IconData icon,
+    required Color tint,
+    required String title,
+    required TextStyle style,
+    double circle = 34,
+    double iconSize = 19,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: circle,
+          height: circle,
+          decoration: BoxDecoration(
+            color: tint.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: tint, size: iconSize),
+        ),
+        const SizedBox(height: 8),
+        _fitLeft(Text(title, maxLines: 1, style: style)),
+      ],
+    );
+  }
+
+  /// One line that scales down to the available width, aligned left.
+  Widget _fitLeft(Widget child) => SizedBox(
+        width: double.infinity,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: child,
+        ),
+      );
+
   Widget _statCard({
     required IconData icon,
     required Color tint,
@@ -984,36 +1044,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.14),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: tint, size: 19),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 15,
-                    height: 1.1,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.6),
-                    letterSpacing: -0.4,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          _cardHeading(
+            icon: icon,
+            tint: tint,
+            title: title,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.black.withValues(alpha: 0.6),
+              letterSpacing: -0.4,
+            ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -1051,16 +1094,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(width: 3),
               Expanded(
-                child: Text(
-                  trend.label,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: deltaColor,
-                    letterSpacing: -0.3,
+                child: _fitLeft(
+                  Text(
+                    trend.label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: deltaColor,
+                      letterSpacing: -0.3,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1154,7 +1199,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildKpiGrid() {
     final openTasks = _counts?.active ?? 0;
-    final onTap = _open(Routes.analytics) ?? _open(Routes.taskBoard);
 
     final openTrend = ref.watch(trendProvider(TrendMetric.openTasks));
     final closedTrend = ref.watch(trendProvider(TrendMetric.closedTasks));
@@ -1174,7 +1218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   trend: openTrend,
                   invert: true,
                   series: _series(TrendMetric.openTasks),
-                  onTap: onTap,
+                  onTap: _openTasks(TaskStatus.open),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1186,7 +1230,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   value: '${closedTrend.current}',
                   trend: closedTrend,
                   series: _series(TrendMetric.closedTasks),
-                  onTap: onTap,
+                  onTap: _openTasks(TaskStatus.closed),
                 ),
               ),
             ],
@@ -1231,33 +1275,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: tint, size: 16),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.55),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          _cardHeading(
+            icon: icon,
+            tint: tint,
+            title: label,
+            circle: 28,
+            iconSize: 16,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black.withValues(alpha: 0.55),
+            ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -1287,14 +1318,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   size: 12,
                 ),
                 const SizedBox(width: 2),
-                Text(
-                  '${trend!.percent}% vs last mo',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    color: deltaColor,
-                  ),
+                Flexible(
+                  child: _fitLeft(Text(
+                    '${trend!.percent}% vs last mo',
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: deltaColor,
+                    ),
+                  )),
                 ),
               ],
             )
@@ -1358,10 +1392,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 10),
             // Inline legend.
-            Row(
+            Wrap(
+              spacing: 16,
+              runSpacing: 6,
               children: [
                 _legendDot(_Palette.green, barLabel),
-                const SizedBox(width: 16),
                 _legendDot(_Palette.accentBlue, lineLabel),
               ],
             ),
@@ -1380,6 +1415,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _legendDot(Color c, String label) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 10,
@@ -1387,13 +1423,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           decoration: BoxDecoration(color: c, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.black54,
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.black54,
+            ),
           ),
         ),
       ],
@@ -1405,7 +1444,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final snapshots = ref.watch(yearSnapshotsProvider(year));
     final months = snapshots.map(snapshotMonthLabel).toList();
     final (barMetric, lineMetric) = switch (_reportMetric) {
-      _ReportMetric.users => (TrendMetric.technicians, TrendMetric.clients),
+      _ReportMetric.users => (
+          TrendMetric.technicians,
+          TrendMetric.companyManagers,
+        ),
       _ReportMetric.tasks => (TrendMetric.openTasks, TrendMetric.closedTasks),
       _ReportMetric.equipment => (TrendMetric.equipment, TrendMetric.amcs),
     };
@@ -1436,7 +1478,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   (String, String) _reportLegends() {
     switch (_reportMetric) {
       case _ReportMetric.users:
-        return ('Service Engineers', 'Clients');
+        return ('Service Engineers', 'Company Managers');
       case _ReportMetric.tasks:
         return ('Open', 'Closed');
       case _ReportMetric.equipment:
@@ -1450,33 +1492,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       (_ReportMetric.tasks, 'Tasks'),
       (_ReportMetric.equipment, 'Equipment'),
     ];
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
         for (final (metric, label) in items)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () => setState(() => _reportMetric = metric),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
+          GestureDetector(
+            onTap: () => setState(() => _reportMetric = metric),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: _reportMetric == metric
+                    ? _Palette.green
+                    : const Color(0xFFEBF0EA),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                   color: _reportMetric == metric
-                      ? _Palette.green
-                      : const Color(0xFFEBF0EA),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: _reportMetric == metric
-                        ? Colors.white
-                        : Colors.black.withValues(alpha: 0.6),
-                  ),
+                      ? Colors.white
+                      : Colors.black.withValues(alpha: 0.6),
                 ),
               ),
             ),
@@ -1776,7 +1816,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'Closed': TaskStatus.closed,
     };
     return _inkCard(
-      onTap: _open(Routes.taskBoard, extra: statusByTitle[title]),
+      onTap: _openTasks(statusByTitle[title]),
       splash: tint,
       radius: 24,
       padding: const EdgeInsets.all(16),
@@ -1794,46 +1834,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.14),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: tint, size: 19),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.6),
-                    letterSpacing: -0.4,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          _cardHeading(
+            icon: icon,
+            tint: tint,
+            title: title,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black.withValues(alpha: 0.6),
+              letterSpacing: -0.4,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           TweenAnimationBuilder<int>(
             tween: IntTween(begin: 0, end: value),
             duration: const Duration(milliseconds: 700),
             curve: Curves.easeOutCubic,
-            builder: (_, v, __) => Text(
-              '$v',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
-                color: tint,
-                letterSpacing: -0.9,
+            builder: (_, v, __) => _fitLeft(
+              Text(
+                '$v',
+                maxLines: 1,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                  color: tint,
+                  letterSpacing: -0.9,
+                ),
               ),
             ),
           ),

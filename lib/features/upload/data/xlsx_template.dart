@@ -10,7 +10,8 @@ import 'package:file_picker/file_picker.dart';
 /// `uploadEquipmentData` headers. Name, Make and Model are required; a blank
 /// EG Serial Number is generated. TM Frequency is one of daily, weekly,
 /// biweekly, monthly, bi_monthly, tri_monthly, quarterly, semi_annual,
-/// annual.
+/// annual. Service Type is the name of an active service type (any case) or
+/// blank.
 const equipmentTemplateHeaders = [
   'Name',
   'Make',
@@ -20,6 +21,7 @@ const equipmentTemplateHeaders = [
   'Location',
   'Description',
   'TM Frequency',
+  'Service Type',
   'Manufacturer Date',
 ];
 
@@ -33,6 +35,7 @@ const equipmentSampleRows = [
     'Ground Floor - Billing Area',
     'Main billing counter AC',
     'quarterly',
+    'HVAC',
     '2025-06-15',
   ],
   [
@@ -44,6 +47,7 @@ const equipmentSampleRows = [
     'Terrace',
     'Central cooling plant',
     'monthly',
+    '',
     '2024-11-01',
   ],
 ];
@@ -111,7 +115,7 @@ const technicianTemplateHeaders = [
   'Location',
 ];
 
-/// Designation is "Senior Service Engineer" or "Junior Service Engineer".
+/// Designation is "Senior Service Engineer" or "Service Engineer".
 const technicianSampleRows = [
   [
     'Suresh Reddy',
@@ -126,7 +130,7 @@ const technicianSampleRows = [
     '9876501234',
     'kiran.rao@example.com',
     'Kiran@123',
-    'Junior Service Engineer',
+    'Service Engineer',
     'Secunderabad',
   ],
 ];

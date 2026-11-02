@@ -9,6 +9,7 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/service_report_service.dart';
 import '../../data/task_provider.dart';
+import '../../domain/models/task_event.dart';
 import '../../domain/models/task_item.dart';
 import 'task_workflow.dart';
 
@@ -28,7 +29,8 @@ class TaskActionHandler {
   TaskActions get _actions => ref.read(taskActionsProvider);
 
   /// Dispatches [action] for [t]. [onDeleted] runs after a successful delete.
-  Future<void> run(TaskItem t, TaskAction action, {VoidCallback? onDeleted}) async {
+  Future<void> run(TaskItem t, TaskAction action,
+      {VoidCallback? onDeleted}) async {
     switch (action) {
       case TaskAction.serviceReport:
         await serviceReport(t);
@@ -57,7 +59,8 @@ class TaskActionHandler {
       case TaskAction.escalate:
         await runTaskAction(
           context,
-          () => _actions.escalate(t, reason: 'Overdue by ${-t.hoursToSla()}h (SLA)'),
+          () => _actions.escalate(t,
+              reason: 'Overdue by ${-t.hoursToSla()}h (SLA)'),
           success: '${t.title} escalated to Manager',
         );
       case TaskAction.accept:
@@ -80,12 +83,27 @@ class TaskActionHandler {
         );
       case TaskAction.rate:
         await _rateSheet(t);
+      case TaskAction.markCompleted:
+      case TaskAction.closeTask:
+        final closing = action == TaskAction.closeTask;
+        final note = await askTaskFinishNote(context, t, closing: closing);
+        if (note == null || !context.mounted) return;
+        await runTaskAction(
+          context,
+          () => _actions.setStatus(
+            t,
+            closing ? ServiceStatus.closed : ServiceStatus.completed,
+            note: note,
+          ),
+          success:
+              closing ? '${t.title} closed' : '${t.title} marked completed',
+        );
       case TaskAction.delete:
-        final ok = await confirmTaskDelete(context, t);
-        if (!ok || !context.mounted) return;
+        final reason = await askTaskDeleteReason(context, t);
+        if (reason == null || !context.mounted) return;
         final deleted = await runTaskAction(
           context,
-          () => _actions.delete(t),
+          () => _actions.delete(t, reason),
           success: 'Task deleted',
         );
         if (deleted) onDeleted?.call();
@@ -94,8 +112,8 @@ class TaskActionHandler {
 
   /// Star toggle: high / critical -> medium, anything else -> high.
   Future<void> togglePriority(TaskItem t) {
-    final isHigh = t.priority == TaskPriority.high ||
-        t.priority == TaskPriority.critical;
+    final isHigh =
+        t.priority == TaskPriority.high || t.priority == TaskPriority.critical;
     final next = isHigh ? TaskPriority.medium : TaskPriority.high;
     return runTaskAction(
       context,
@@ -121,34 +139,44 @@ class TaskActionHandler {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Service Report',
-          style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600),
+          style:
+              TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Generate service report for "${t.title}"?',
           style: const TextStyle(fontFamily: 'Montserrat'),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(fontFamily: 'Montserrat')),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(ctx, true),
-            icon: const Icon(Icons.share, size: 16, color: Colors.white),
-            label: const Text(
-              'Share',
-              style: TextStyle(fontFamily: 'Montserrat', color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(backgroundColor: _green),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(ctx, false),
-            icon: const Icon(Icons.print, size: 16, color: Colors.white),
-            label: const Text(
-              'Print',
-              style: TextStyle(fontFamily: 'Montserrat', color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(backgroundColor: _green),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TaskDialogButtons([
+                TaskDialogButton(
+                  label: 'Share',
+                  icon: Icons.share_outlined,
+                  filled: false,
+                  onPressed: () => Navigator.pop(ctx, true),
+                ),
+                TaskDialogButton(
+                  label: 'Print',
+                  icon: Icons.print_outlined,
+                  onPressed: () => Navigator.pop(ctx, false),
+                ),
+              ]),
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF545454),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -170,11 +198,17 @@ class TaskActionHandler {
         bytes = null;
       }
     }
+    var events = const <TaskEvent>[];
+    if (bytes == null && t.taskId > 0) {
+      try {
+        events = await ref.read(taskTimelineProvider(t.taskId).future);
+      } catch (_) {}
+    }
     try {
       if (share) {
-        await ServiceReportService.share(t, bytes: bytes);
+        await ServiceReportService.share(t, bytes: bytes, events: events);
       } else {
-        await ServiceReportService.open(t, bytes: bytes);
+        await ServiceReportService.open(t, bytes: bytes, events: events);
       }
     } catch (_) {
       messenger.showSnackBar(
@@ -201,7 +235,9 @@ class TaskActionHandler {
         padding: EdgeInsets.fromLTRB(20, 20, 20, _inset(ctx) + 8),
         children: [
           Text(
-            reassign ? 'Reassign Service Engineer' : 'Assign to Service Engineer',
+            reassign
+                ? 'Reassign Service Engineer'
+                : 'Assign to Service Engineer',
             style: const TextStyle(
               fontFamily: 'Montserrat',
               fontSize: 16,
@@ -289,25 +325,22 @@ class TaskActionHandler {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Service Engineer is busy',
-          style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600),
+          style:
+              TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600),
         ),
         content: Text(
           '$name already has $active active tasks. Assign anyway?',
           style: const TextStyle(fontFamily: 'Montserrat'),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(fontFamily: 'Montserrat')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: _green),
-            child: const Text(
-              'Assign anyway',
-              style: TextStyle(fontFamily: 'Montserrat', color: Colors.white),
+          TaskDialogButtons([
+            TaskDialogButton.cancel(onPressed: () => Navigator.pop(ctx, false)),
+            TaskDialogButton(
+              label: 'Assign anyway',
+              onPressed: () => Navigator.pop(ctx, true),
             ),
-          ),
+          ]),
         ],
       ),
     );
@@ -443,7 +476,8 @@ class TaskActionHandler {
   /// Work-done notes plus screenshots; on submit the work report is sent and
   /// the task is completed (pending client confirmation / rating).
   Future<void> _resolutionSheet(TaskItem t) async {
-    final notesController = TextEditingController(text: t.resolutionNotes ?? '');
+    final notesController =
+        TextEditingController(text: t.resolutionNotes ?? '');
     final notes = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -470,7 +504,7 @@ class TaskActionHandler {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Describe the work done. The client will see this.',
+                  'Describe the work done. The POC will see this.',
                   style: TextStyle(
                     fontFamily: 'Montserrat',
                     fontSize: 12.5,
@@ -481,7 +515,8 @@ class TaskActionHandler {
                 TextField(
                   controller: notesController,
                   maxLines: 4,
-                  style: const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
+                  style:
+                      const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Work done, parts replaced, observations…',
                     filled: true,
@@ -495,7 +530,8 @@ class TaskActionHandler {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.image_outlined, size: 18, color: Colors.grey.shade600),
+                    Icon(Icons.image_outlined,
+                        size: 18, color: Colors.grey.shade600),
                     const SizedBox(width: 8),
                     Text(
                       '${t.attachments.length + pending.length} '
@@ -509,7 +545,8 @@ class TaskActionHandler {
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => _addScreenshot(t),
-                      icon: const Icon(Icons.add_a_photo_outlined, size: 18, color: _green),
+                      icon: const Icon(Icons.add_a_photo_outlined,
+                          size: 18, color: _green),
                       label: const Text(
                         'Add',
                         style: TextStyle(
@@ -530,7 +567,8 @@ class TaskActionHandler {
                       final notes = notesController.text.trim();
                       if (notes.isEmpty) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Please describe the work done')),
+                          const SnackBar(
+                              content: Text('Please describe the work done')),
                         );
                         return;
                       }
@@ -538,7 +576,8 @@ class TaskActionHandler {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _green,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
                     child: const Text(
                       'Submit & Close',
@@ -557,7 +596,8 @@ class TaskActionHandler {
       ),
     );
     if (notes == null || !context.mounted) return;
-    final pending = ref.read(pendingScreenshotsProvider)[t.id] ?? const <String>[];
+    final pending =
+        ref.read(pendingScreenshotsProvider)[t.id] ?? const <String>[];
     final role = ref.read(currentUserRoleProvider);
     final ok = await runTaskAction(
       context,
@@ -636,7 +676,8 @@ class TaskActionHandler {
                   onPressed: () => Navigator.pop(ctx, true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _green,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                   child: const Text(
                     'Submit',

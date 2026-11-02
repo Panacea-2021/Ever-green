@@ -4,20 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../widgets/picker_scaffold.dart';
+import '../../../../core/utils/fuzzy_search.dart';
 
-/// Whether [e] matches the lower-cased [query] by name, make, model, serial
-/// number or EG serial number.
-bool equipmentMatches(Equipment e, String query) {
-  final q = query.trim().toLowerCase();
-  if (q.isEmpty) return true;
-  return [
-    e.name,
-    e.make ?? '',
-    e.model ?? '',
-    e.serialNumber ?? '',
-    e.egSerialNumber,
-  ].any((f) => f.toLowerCase().contains(q));
-}
+/// Whether [e] matches [query] (typo-tolerant, see [fuzzyMatches]) by
+/// name, make, model, serial number, EG serial number, type or location.
+bool equipmentMatches(Equipment e, String query) => fuzzyMatches(query, [
+      e.name,
+      e.make,
+      e.model,
+      e.serialNumber,
+      e.egSerialNumber,
+      e.type,
+      e.location,
+      e.serviceType?.name,
+    ]);
 
 /// Full-page searchable list of one company's equipment. Inactive equipment
 /// is hidden unless it is the current [selectedId]. Pops with the selected
@@ -63,16 +63,18 @@ class EquipmentPickerScreen extends ConsumerWidget {
       onRetry: () => ref.invalidate(equipmentsProvider(companyId)),
       emptyText: 'No equipment for this company',
       itemBuilder: (context, e) {
-        final makeModel =
-            [e.make ?? '', e.model ?? ''].where((s) => s.isNotEmpty).join(' · ');
+        final makeModel = [e.make ?? '', e.model ?? '']
+            .where((s) => s.isNotEmpty)
+            .join(' · ');
         final serials = [
           if (e.egSerialNumber.isNotEmpty) 'EG ${e.egSerialNumber}',
           if ((e.serialNumber ?? '').isNotEmpty) 'S.No ${e.serialNumber}',
         ].join('  •  ');
         return PickerCard(
           icon: Icons.handyman_outlined,
+          imageUrl: mediaUrl(e.imageUrl),
           title: e.name.isEmpty ? 'Equipment #${e.id}' : e.name,
-          tag: e.isActive ? null : 'Inactive',
+          tag: e.isActive ? e.serviceType?.name : 'Inactive',
           selected: e.id == selectedId,
           lines: [makeModel, serials],
           onTap: () => Navigator.of(context).pop(e),

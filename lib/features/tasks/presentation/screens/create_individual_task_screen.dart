@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/models/backend_models.dart' show CallType;
+import '../../../../core/data/evergreen_repository.dart';
+import '../../../../core/models/backend_models.dart' show IssueType;
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
 import '../../../../web/widgets/web_form_kit.dart';
@@ -30,7 +31,7 @@ class _CreateIndividualTaskScreenState
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
-  CallType? _callType;
+  int? _issueTypeId;
   TaskPriority? _priority;
 
   /// Locally picked image paths (uploaded on save).
@@ -57,7 +58,7 @@ class _CreateIndividualTaskScreenState
       _nameController.clear();
       _phoneController.clear();
       _addressController.clear();
-      _callType = null;
+      _issueTypeId = null;
       _priority = null;
       _selectedImages.clear();
     });
@@ -73,13 +74,17 @@ class _CreateIndividualTaskScreenState
     final phoneError = validateContactPhone(phone);
     if (phoneError != null) return _snack(phoneError);
     if (address.isEmpty) return _snack('Please enter the address');
+    IssueType? issueType;
+    for (final it in ref.read(issueTypesProvider).valueOrNull ?? const <IssueType>[]) {
+      if (it.id == _issueTypeId) issueType = it;
+    }
 
     final ok = await runTaskAction(
       context,
       () => ref.read(taskActionsProvider).createIndividual(
             name: title,
             description: _descriptionController.text.trim(),
-            callType: _callType,
+            issueType: issueType,
             priority: _priority,
             contactName: name,
             contactPhone: normalizeContactPhone(phone),
@@ -105,11 +110,15 @@ class _CreateIndividualTaskScreenState
     if (path != null && mounted) setState(() => _selectedImages.add(path));
   }
 
-  Widget _issueTypeField() => _buildDropdownField<CallType>(
+  Widget _issueTypeField() => _buildDropdownField<int>(
         label: 'Issue Type',
-        value: _callType,
-        items: [for (final c in CallType.values) (c, c.label)],
-        onChanged: (v) => setState(() => _callType = v),
+        value: _issueTypeId,
+        items: [
+          for (final it in ref.watch(issueTypesProvider).valueOrNull ??
+              const <IssueType>[])
+            (it.id, it.name),
+        ],
+        onChanged: (v) => setState(() => _issueTypeId = v),
       );
 
   Widget _priorityField() => _buildDropdownField<TaskPriority>(
@@ -238,13 +247,15 @@ class _CreateIndividualTaskScreenState
                       children: [
                         _buildContactCard(),
                         const SizedBox(height: 16),
-                        _buildDropdownField<CallType>(
+                        _buildDropdownField<int>(
                           label: 'Issue Type',
-                          value: _callType,
+                          value: _issueTypeId,
                           items: [
-                            for (final c in CallType.values) (c, c.label),
+                            for (final it in ref.watch(issueTypesProvider).valueOrNull ??
+                                const <IssueType>[])
+                              (it.id, it.name),
                           ],
-                          onChanged: (v) => setState(() => _callType = v),
+                          onChanged: (v) => setState(() => _issueTypeId = v),
                         ),
                         const SizedBox(height: 16),
                         _buildDropdownField<TaskPriority>(
