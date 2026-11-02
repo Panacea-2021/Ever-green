@@ -13,6 +13,7 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../audit/data/audit_logger.dart';
 import '../../../audit/domain/models/audit_log_entry.dart';
 import '../../data/amc_provider.dart';
+import '../../../../web/widgets/web_form_kit.dart';
 import '../../domain/models/amc_contract.dart';
 
 class CreateAmcScreen extends ConsumerStatefulWidget {
@@ -411,19 +412,21 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
                 children: [
                   if (!kIsWeb) _buildHeader(),
                   Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            _buildCompanyInfoCard(),
-                            const SizedBox(height: 20),
-                            _buildClientDetailsCard(),
-                          ],
-                        ),
-                      ),
-                    ),
+                    child: kIsWeb
+                        ? Form(key: _formKey, child: _webCards())
+                        : SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  _buildCompanyInfoCard(),
+                                  const SizedBox(height: 20),
+                                  _buildClientDetailsCard(),
+                                ],
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -470,9 +473,9 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
   }) {
     return Material(
       color: Colors.white,
-      elevation: 2,
+      elevation: kIsWeb ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(32),
+      shape: WebForm.fieldShape(32),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
@@ -513,15 +516,15 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
                 )
               : null,
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(WebForm.radius(32)),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(WebForm.radius(32)),
             borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(WebForm.radius(32)),
             borderSide: BorderSide.none,
           ),
         ),
@@ -538,9 +541,9 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
   }) {
     return Material(
       color: Colors.white,
-      elevation: 2,
+      elevation: kIsWeb ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(32),
+      shape: WebForm.fieldShape(32),
       child: Container(
         height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -595,9 +598,9 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
       onTap: onTap,
       child: Material(
         color: Colors.white,
-        elevation: 2,
+        elevation: kIsWeb ? 0 : 2,
         shadowColor: Colors.black.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(32),
+        shape: WebForm.fieldShape(32),
         child: Container(
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -708,39 +711,12 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
             const SizedBox(height: 19),
 
             // Service Type dropdown (AMC / Non-AMC / Regular).
-            _pillDropdown(
-              hint: 'Service Type',
-              value: _serviceType.label,
-              items: [for (final t in CompanyServiceType.values) t.label],
-              onChanged: (v) {
-                final type = CompanyServiceType.values
-                    .where((t) => t.label == v)
-                    .firstOrNull;
-                if (type == null) return;
-                setState(() {
-                  _serviceType = type;
-                  // AMC type and dates only apply to AMC.
-                  if (!_isAmc) {
-                    _amcType = null;
-                    _startDate = null;
-                    _endDate = null;
-                  }
-                });
-              },
-            ),
+            _serviceTypeField(),
 
             // AMC type + contract dates only apply to AMC.
             if (_isAmc) ...[
               const SizedBox(height: 19),
-              _pillDropdown(
-                hint: 'AMC Category (NC AMC / C AMC)',
-                value: _amcType?.label,
-                items: [AmcType.ncAmc.label, AmcType.cAmc.label],
-                onChanged: (v) => setState(
-                  () => _amcType =
-                      AmcType.values.where((t) => t.label == v).firstOrNull,
-                ),
-              ),
+              _amcTypeField(),
               const SizedBox(height: 19),
               _pillDateField(
                 hint: 'Start Date',
@@ -761,6 +737,111 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
         ),
       ),
     );
+  }
+
+  Widget _serviceTypeField() {
+    return _pillDropdown(
+      hint: 'Service Type',
+      value: _serviceType.label,
+      items: [for (final t in CompanyServiceType.values) t.label],
+      onChanged: (v) {
+        final type =
+            CompanyServiceType.values.where((t) => t.label == v).firstOrNull;
+        if (type == null) return;
+        setState(() {
+          _serviceType = type;
+          // AMC type and dates only apply to AMC.
+          if (!_isAmc) {
+            _amcType = null;
+            _startDate = null;
+            _endDate = null;
+          }
+        });
+      },
+    );
+  }
+
+  Widget _amcTypeField() {
+    return _pillDropdown(
+      hint: 'AMC Category (NC AMC / C AMC)',
+      value: _amcType?.label,
+      items: [AmcType.ncAmc.label, AmcType.cAmc.label],
+      onChanged: (v) => setState(
+        () => _amcType = AmcType.values.where((t) => t.label == v).firstOrNull,
+      ),
+    );
+  }
+
+  /// Web layout: both cards with their fields paired in two columns.
+  Widget _webCards() {
+    return WebForm.page([
+      WebForm.section(
+        icon: Icons.apartment,
+        title: 'Company Information',
+        subtitle: 'Provide basic details of the company',
+        children: [
+          ...WebForm.pairs([
+            _pillField(controller: _companyController, hint: 'Company Name'),
+            _pillField(controller: _branchNameController, hint: 'Branch Name'),
+            _pillField(
+              controller: _companyEmailController,
+              hint: 'Company Email',
+              keyboardType: TextInputType.emailAddress,
+            ),
+            _pillField(
+              controller: _gstController,
+              hint: 'GST Number',
+              capitalization: TextCapitalization.characters,
+            ),
+            _pillField(
+              controller: _addressController,
+              hint: 'Company Address',
+              keyboardType: TextInputType.streetAddress,
+            ),
+            _serviceTypeField(),
+            if (_isAmc) ...[
+              _amcTypeField(),
+              _pillDateField(
+                hint: 'Start Date',
+                value: _formatDate(_startDate),
+                onTap: () => _selectDate(context, true),
+              ),
+              _pillDateField(
+                hint: 'End Date',
+                value: _formatDate(_endDate),
+                onTap: () => _selectDate(context, false),
+              ),
+            ],
+          ]),
+          const SizedBox(height: 20),
+          _buildImageUploadArea(),
+        ],
+      ),
+      const SizedBox(height: 20),
+      WebForm.section(
+        icon: Icons.person_outline,
+        title: 'Client Details',
+        subtitle: 'Enter primary contact details',
+        children: WebForm.pairs([
+          _pillField(controller: _nameController, hint: 'Name'),
+          _pillField(
+            controller: _mobileController,
+            hint: 'Mobile Number',
+            keyboardType: TextInputType.phone,
+          ),
+          _pillField(
+            controller: _emailController,
+            hint: 'Email',
+            keyboardType: TextInputType.emailAddress,
+          ),
+          _pillField(
+            controller: _passwordController,
+            hint: 'Password',
+            isPassword: true,
+          ),
+        ]),
+      ),
+    ]);
   }
 
   Widget _buildClientDetailsCard() {
@@ -849,10 +930,12 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
       child: Container(
         width: double.infinity,
         height: 150,
-        decoration: BoxDecoration(
-          color: const Color(0xFFEBEDFF),
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: kIsWeb
+            ? WebForm.uploadDecoration()
+            : BoxDecoration(
+                color: const Color(0xFFEBEDFF),
+                borderRadius: BorderRadius.circular(16),
+              ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -912,13 +995,17 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
     final showBulkUpload = !widget.isEdit &&
         Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-      ),
+      padding: kIsWeb
+          ? WebForm.barPadding
+          : const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      decoration: kIsWeb
+          ? WebForm.barDecoration
+          : const BoxDecoration(
+              color: Colors.white,
+            ),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: WebForm.actions(Row(
           children: [
             if (showBulkUpload) ...[
               Expanded(
@@ -997,7 +1084,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
               ),
             ),
           ],
-        ),
+        ),),
       ),
     );
   }

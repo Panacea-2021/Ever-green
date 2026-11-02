@@ -11,6 +11,7 @@ import '../../../../core/router/routes.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../pickers/presentation/screens/company_picker_screen.dart';
 import '../../data/equipment_provider.dart';
+import '../../../../web/widgets/web_form_kit.dart';
 import '../../domain/models/equipment_item.dart';
 
 class AddEquipmentScreen extends ConsumerStatefulWidget {
@@ -163,10 +164,12 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
                 children: [
                   if (!kIsWeb) _buildHeader(context),
                   Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                      child: _buildFormCard(),
-                    ),
+                    child: kIsWeb
+                        ? WebForm.page([_webFormCard()])
+                        : SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                            child: _buildFormCard(),
+                          ),
                   ),
                   _buildBottomButtons(),
                 ],
@@ -307,6 +310,42 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
     );
   }
 
+  /// Web layout of the form: the same fields paired in two columns inside a
+  /// section card, then the description and the upload box.
+  Widget _webFormCard() {
+    return WebForm.section(
+      icon: Icons.apartment,
+      title: 'Equipment Information',
+      subtitle: 'Provide basic details of the Equipment',
+      children: [
+        ...WebForm.pairs([
+          if (_needsCompany) _buildCompanyPicker(),
+          _pillField(_equipmentNameController, 'Fridge'),
+          _pillField(_makeController, 'Make'),
+          _pillField(_modelController, 'Model Number'),
+          _pillField(_serialNumberController, 'Serial Number'),
+          _pillField(_locationController, 'Hyderabad'),
+          _dropdownField(
+            'Manufacturer Year',
+            _selectedYear,
+            _years,
+            (v) => setState(() => _selectedYear = v),
+          ),
+          _dropdownField(
+            'PM Frequency',
+            _selectedFrequency,
+            _frequencies,
+            (v) => setState(() => _selectedFrequency = v),
+          ),
+        ]),
+        const SizedBox(height: WebForm.gap),
+        _buildDescriptionField(),
+        const SizedBox(height: 20),
+        _buildUploadBox(),
+      ],
+    );
+  }
+
   Widget _buildCompanyPicker() {
     final async = ref.watch(companiesProvider);
     final companies = async.valueOrNull ?? const <Company>[];
@@ -335,9 +374,9 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
   Widget _pillField(TextEditingController controller, String hint) {
     return Material(
       color: Colors.white,
-      elevation: 2,
+      elevation: kIsWeb ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(32),
+      shape: WebForm.fieldShape(32),
       child: TextField(
         controller: controller,
         cursorColor: _green,
@@ -362,15 +401,15 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(WebForm.radius(32)),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(WebForm.radius(32)),
             borderSide: const BorderSide(color: _green, width: 1.5),
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(WebForm.radius(32)),
             borderSide: BorderSide.none,
           ),
         ),
@@ -390,9 +429,9 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
           () => _showDropdownSheet(hint, items, value, onChanged),
       child: Material(
         color: Colors.white,
-        elevation: 2,
+        elevation: kIsWeb ? 0 : 2,
         shadowColor: Colors.black.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(32),
+        shape: WebForm.fieldShape(32),
         child: Container(
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -429,9 +468,9 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
   Widget _buildDescriptionField() {
     return Material(
       color: Colors.white,
-      elevation: 2,
+      elevation: kIsWeb ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(24),
+      shape: WebForm.fieldShape(24),
       child: TextField(
         controller: _descriptionController,
         cursorColor: _green,
@@ -454,15 +493,15 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
           ),
           contentPadding: const EdgeInsets.all(16),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(WebForm.radius(24)),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(WebForm.radius(24)),
             borderSide: const BorderSide(color: _green, width: 1.5),
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(WebForm.radius(24)),
             borderSide: BorderSide.none,
           ),
         ),
@@ -480,10 +519,12 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 28),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEBEDFF),
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: kIsWeb
+            ? WebForm.uploadDecoration()
+            : BoxDecoration(
+                color: const Color(0xFFEBEDFF),
+                borderRadius: BorderRadius.circular(16),
+              ),
         child: Column(
           children: [
             Container(
@@ -551,11 +592,15 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
     final showBulkUpload = !widget.isEdit &&
         Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: kIsWeb
+          ? WebForm.barDecoration
+          : const BoxDecoration(color: Colors.white),
+      padding: kIsWeb
+          ? WebForm.barPadding
+          : const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: WebForm.actions(Row(
           children: [
             if (showBulkUpload) ...[
               Expanded(
@@ -631,7 +676,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
               ),
             ),
           ],
-        ),
+        ),),
       ),
     );
   }
