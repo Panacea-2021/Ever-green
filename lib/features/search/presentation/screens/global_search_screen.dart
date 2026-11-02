@@ -687,19 +687,38 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _webLine),
-            ),
-            child: Column(
-              children: [
-                for (var i = 0; i < r.hits.length; i++)
-                  _WebHitRow(hit: r.hits[i], last: i == r.hits.length - 1),
-              ],
-            ),
+          LayoutBuilder(
+            builder: (context, c) {
+              const gap = 16.0;
+              final cols = c.maxWidth >= 960
+                  ? 3
+                  : c.maxWidth >= 620
+                      ? 2
+                      : 1;
+              return Column(
+                children: [
+                  for (var i = 0; i < r.hits.length; i += cols)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: gap),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (var j = i; j < i + cols; j++) ...[
+                              if (j > i) const SizedBox(width: gap),
+                              Expanded(
+                                child: j < r.hits.length
+                                    ? _WebHitCard(hit: r.hits[j])
+                                    : const SizedBox.shrink(),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -798,23 +817,26 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   }
 }
 
-/// One result as a full-width list row (web): icon chip, title and subtitle,
-/// optional badge and a chevron, highlighted on hover.
-class _WebHitRow extends StatefulWidget {
-  const _WebHitRow({required this.hit, required this.last});
+/// One result as a grid card (web): icon and badge on top, the title, then
+/// each subtitle part as its own tag. Lifts and turns green on hover.
+class _WebHitCard extends StatefulWidget {
+  const _WebHitCard({required this.hit});
   final _Hit hit;
-  final bool last;
 
   @override
-  State<_WebHitRow> createState() => _WebHitRowState();
+  State<_WebHitCard> createState() => _WebHitCardState();
 }
 
-class _WebHitRowState extends State<_WebHitRow> {
+class _WebHitCardState extends State<_WebHitCard> {
   bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
     final h = widget.hit;
+    final parts = h.subtitle
+        .split(' • ')
+        .where((p) => p.trim().isNotEmpty)
+        .toList();
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -823,80 +845,114 @@ class _WebHitRowState extends State<_WebHitRow> {
         behavior: HitTestBehavior.opaque,
         onTap: h.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          duration: const Duration(milliseconds: 160),
+          transform: Matrix4.translationValues(0, _hover ? -2 : 0, 0),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: _hover ? const Color(0xFFE8F3EA) : Colors.white,
-            border: widget.last
-                ? null
-                : const Border(bottom: BorderSide(color: Color(0xFFE2E8E3))),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: _green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: Icon(h.icon, color: _green, size: 21),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _hover ? _green.withValues(alpha: 0.55) : const Color(0xFFE2E8E3),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: _hover ? 0.08 : 0.03),
+                blurRadius: _hover ? 18 : 8,
+                offset: const Offset(0, 4),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      h.title,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF14201A),
-                      ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: _hover ? _green : _green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(13),
                     ),
-                    if (h.subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        h.subtitle,
-                        style: const TextStyle(
+                    child: Icon(
+                      h.icon,
+                      color: _hover ? Colors.white : _green,
+                      size: 22,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (h.badge != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: h.badgeColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        h.badge!,
+                        style: TextStyle(
                           fontFamily: 'Montserrat',
-                          fontSize: 12.5,
-                          height: 1.4,
-                          color: Color(0xFF4B5A50),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: h.badgeColor,
                         ),
                       ),
-                    ],
+                    )
+                  else
+                    Icon(
+                      Icons.arrow_outward_rounded,
+                      size: 18,
+                      color: _hover ? _green : const Color(0xFFB8C2BA),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                h.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  height: 1.3,
+                  color: Color(0xFF14201A),
+                ),
+              ),
+              if (parts.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final p in parts)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF2F5F2),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Text(
+                          p,
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF4B5A50),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-              ),
-              if (h.badge != null) ...[
-                const SizedBox(width: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: h.badgeColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    h.badge!,
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: h.badgeColor,
-                    ),
-                  ),
-                ),
               ],
-              const SizedBox(width: 10),
-              Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: _hover ? _green : const Color(0xFFB0B0B0),
-              ),
             ],
           ),
         ),
