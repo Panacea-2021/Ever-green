@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/data/evergreen_repository.dart';
@@ -77,6 +78,25 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.amcRenewals,
     Routes.pmSchedule,
   };
+
+  /// Module pages shown under a green title banner, with the page in a card
+  /// overlapping it (matched by prefix, so `/add-task/new` counts).
+  static const _bannerPaths = [
+    Routes.addTask,
+    Routes.createIndividualTask,
+    Routes.addEquipment,
+    Routes.ticketQueue,
+    Routes.createAmc,
+    Routes.uploadEquipments,
+    Routes.uploadTechnicians,
+    Routes.uploadAmc,
+    Routes.downloadQr,
+    Routes.technicianPerformance,
+    Routes.auditLog,
+    Routes.profile,
+    Routes.changePassword,
+    Routes.settings,
+  ];
 
   /// Titles for pages that are not sidebar destinations.
   static const _detailTitles = {
@@ -186,6 +206,13 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     if (route != _location) widget.router.go(route);
   }
 
+  WebNavEntry? _entryFor(UserRole role) {
+    for (final entry in WebSideNav.entriesFor(role)) {
+      if (entry.route == _location) return entry;
+    }
+    return null;
+  }
+
   String _titleFor(UserRole role) {
     for (final entry in WebSideNav.entriesFor(role)) {
       if (entry.route == _location) return entry.label;
@@ -218,6 +245,9 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     final role = ref.watch(currentUserRoleProvider);
     final webDesigned = WebModuleFrame._webDesignedPaths.contains(_location) ||
         _location.startsWith('${Routes.companyDetails}/');
+    final bannered = WebModuleFrame._bannerPaths
+        .any((p) => _location == p || _location.startsWith('$p/'));
+    final title = _titleFor(role);
 
     return Material(
       color: WebTokens.cream,
@@ -233,7 +263,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
             child: Column(
               children: [
                 _WebTopBar(
-                  title: _titleFor(role),
+                  title: bannered ? '' : title,
                   userName: user?.name ?? role.label,
                   roleLabel: role.label,
                   onSearch: () => _navigate(Routes.globalSearch),
@@ -257,6 +287,17 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                       final hPad = constraints.maxWidth > 900 ? 28.0 : 16.0;
                       final width = (constraints.maxWidth - hPad * 2)
                           .clamp(0.0, _contentWidthFor(_location));
+
+                      if (bannered) {
+                        return _BannerShell(
+                          title: title,
+                          entry: _entryFor(role),
+                          width: width,
+                          mq: mq,
+                          constraints: constraints,
+                          child: content,
+                        );
+                      }
                       final height = constraints.maxHeight - 48;
                       return Align(
                         alignment: Alignment.topCenter,
@@ -291,6 +332,172 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
       ),
     );
   }
+}
+
+/// Green gradient title banner with the module icon and title, and the page
+/// in a white card that overlaps the banner's lower edge.
+class _BannerShell extends StatelessWidget {
+  const _BannerShell({
+    required this.title,
+    required this.entry,
+    required this.width,
+    required this.mq,
+    required this.constraints,
+    required this.child,
+  });
+
+  final String title;
+  final WebNavEntry? entry;
+  final double width;
+  final MediaQueryData mq;
+  final BoxConstraints constraints;
+  final Widget child;
+
+  static const _bannerHeight = 176.0;
+  static const _cardTop = 108.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final height = (constraints.maxHeight - _cardTop - 28)
+        .clamp(0.0, double.infinity);
+    final e = entry;
+    final icon = e?.svgIcon != null
+        ? SvgPicture.asset(
+            e!.svgIcon!,
+            width: 24,
+            height: 24,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          )
+        : Icon(
+            e?.icon ?? Icons.dashboard_outlined,
+            size: 24,
+            color: Colors.white,
+          );
+
+    return Stack(
+      children: [
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: _bannerHeight,
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF106220), Color(0xFF0A3F15)],
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -60,
+                  top: -90,
+                  child: _circle(260, 0.07),
+                ),
+                Positioned(
+                  right: 180,
+                  bottom: -70,
+                  child: _circle(150, 0.05),
+                ),
+                Positioned(
+                  left: -40,
+                  bottom: -60,
+                  child: _circle(140, 0.04),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: _cardTop,
+          child: Center(
+            child: SizedBox(
+              width: width,
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.22),
+                      ),
+                    ),
+                    child: icon,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: WebTokens.fontFamily,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: _cardTop,
+          left: 0,
+          right: 0,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              width: width,
+              height: height,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0A3F15).withValues(alpha: 0.14),
+                    blurRadius: 36,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
+              ),
+              child: MediaQuery(
+                data: mq.copyWith(
+                  size: Size(width, height),
+                  padding: EdgeInsets.zero,
+                  viewPadding: EdgeInsets.zero,
+                ),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _circle(double size, double alpha) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: alpha),
+        ),
+      );
 }
 
 class _WebTopBar extends StatelessWidget {
