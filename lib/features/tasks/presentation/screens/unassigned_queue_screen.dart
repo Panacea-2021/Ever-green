@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
+import '../../../../web/widgets/web_filter_tiles.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
@@ -212,7 +213,40 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
     );
   }
 
+  Widget _webTabs(int unassigned, int awaiting, int assigned) {
+    WebFilterOption option(
+      String label,
+      int index,
+      int count,
+      IconData icon,
+      Color color,
+    ) =>
+        WebFilterOption(
+          label: label,
+          icon: icon,
+          color: color,
+          count: count,
+          selected: _tab == index,
+          onTap: () => setState(() => _tab = index),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: WebFilterTiles(
+        options: [
+          option('Unassigned', 0, unassigned, Icons.person_off_outlined,
+              const Color(0xFFD32F2F),),
+          option('Awaiting', 1, awaiting, Icons.hourglass_top_rounded,
+              const Color(0xFFE08600),),
+          option('Assigned', 2, assigned, Icons.assignment_ind_outlined,
+              const Color(0xFF106220),),
+        ],
+      ),
+    );
+  }
+
   Widget _tabs(int unassigned, int awaiting, int assigned) {
+    if (kIsWeb) return _webTabs(unassigned, awaiting, assigned);
     Widget tab(String label, int index) {
       final sel = _tab == index;
       return Expanded(
