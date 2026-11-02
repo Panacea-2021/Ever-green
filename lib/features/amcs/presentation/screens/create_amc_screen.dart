@@ -947,7 +947,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
     final showBulkUpload = !widget.isEdit &&
         Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 16),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
       decoration: BoxDecoration(
         color: Colors.white,
         border: const Border(top: BorderSide(color: _webLine)),
@@ -965,30 +965,33 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
           constraints: const BoxConstraints(maxWidth: _webMaxWidth),
           child: Row(
             children: [
+              const Spacer(),
               if (showBulkUpload) ...[
-                Expanded(
+                SizedBox(
+                  width: 170,
                   child: OutlinedButton.icon(
                     onPressed: () => context.push(Routes.uploadAmc),
-                    icon: const Icon(Icons.cloud_upload_outlined, size: 19),
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 17),
                     label: const Text('Bulk Upload'),
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 50),
+                      minimumSize: const Size(0, 42),
                       foregroundColor: const Color(0xFF0E501B),
                       side: const BorderSide(color: Color(0x80155622)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       textStyle: const TextStyle(
                         fontFamily: 'Montserrat',
-                        fontSize: 15.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
               ],
-              Expanded(
+              SizedBox(
+                width: 170,
                 child: MouseRegion(
                   cursor: _saving
                       ? SystemMouseCursors.basic
@@ -996,14 +999,14 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
                   child: GestureDetector(
                     onTap: _saving ? null : _handleSave,
                     child: Container(
-                      height: 50,
+                      height: 42,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [Color(0xFF138A2A), Color(0xFF106220)],
                         ),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
                             color:
@@ -1016,8 +1019,8 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
                       child: Center(
                         child: _saving
                             ? const SizedBox(
-                                width: 22,
-                                height: 22,
+                                width: 20,
+                                height: 20,
                                 child: CircularProgressIndicator(
                                   color: Colors.white,
                                   strokeWidth: 2,
@@ -1027,7 +1030,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
                                 widget.isEdit ? 'Update' : 'Save',
                                 style: const TextStyle(
                                   fontFamily: 'Montserrat',
-                                  fontSize: 15.5,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
