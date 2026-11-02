@@ -74,6 +74,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.amcs,
     Routes.amcRenewals,
     Routes.pmSchedule,
+    Routes.taskBoard,
   };
 
   /// Module pages shown in a card with their own icon-and-title header
