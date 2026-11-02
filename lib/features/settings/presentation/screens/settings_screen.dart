@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/scaffold_with_bottom_nav.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
+import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../users/data/users_repository.dart';
 import '../../data/settings_preferences.dart';
@@ -119,7 +121,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ),
             Column(
               children: [
-                _header(),
+                if (!kIsWeb) _header(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
@@ -130,138 +132,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                           ? 32
                           : ScaffoldWithBottomNav.bottomInset(context) + 16,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _sectionLabel('Preferences'),
-                        _card([
-                          _switchTile(
-                            Icons.dark_mode_outlined,
-                            'Dark Mode',
-                            prefs.darkMode,
-                            (v) {
-                              ref
-                                  .read(settingsPreferencesProvider.notifier)
-                                  .setDarkMode(v);
-                              _toast(v ? 'Dark mode on' : 'Dark mode off');
-                            },
-                          ),
-                          _divider(),
-                          _switchTile(
-                            Icons.notifications_outlined,
-                            'Push Notifications',
-                            _pushNotifications,
-                            _setPushNotifications,
-                          ),
-                          _divider(),
-                          _navTile(
-                            Icons.language_outlined,
-                            'Language',
-                            trailing: prefs.language,
-                            onTap: _showLanguagePicker,
-                          ),
-                        ]),
-                        const SizedBox(height: 22),
-                        _sectionLabel('Account'),
-                        _card([
-                          _navTile(
-                            Icons.lock_outline,
-                            'Change Password',
-                            onTap: _showChangePassword,
-                          ),
-                          if (Permissions.canManageUsers(role)) ...[
-                            _divider(),
-                            _navTile(
-                              Icons.admin_panel_settings_outlined,
-                              'Manage Roles & Permissions',
-                              onTap: () => context.push(Routes.usersList),
-                            ),
-                            _divider(),
-                            _navTile(
-                              Icons.palette_outlined,
-                              'Company Branding',
-                              onTap: _showBranding,
-                            ),
-                          ],
-                        ]),
-                        if (Permissions.canViewAnalytics(role)) ...[
-                          const SizedBox(height: 22),
-                          _sectionLabel('Reports'),
-                          _card([
-                            _navTile(
-                              Icons.summarize_outlined,
-                              'Export Service Report (CSV)',
-                              onTap: () => _exportServiceReport(context),
-                            ),
-                            _divider(),
-                            _navTile(
-                              Icons.cloud_done_outlined,
-                              'Offline Data',
-                              trailing: 'Cached',
-                              onTap: _showOfflineInfo,
-                            ),
-                          ]),
-                        ],
-                        const SizedBox(height: 22),
-                        _sectionLabel('Support'),
-                        _card([
-                          _navTile(
-                            Icons.help_outline,
-                            'Help Center',
-                            onTap: () => _showInfoDialog(
-                              'Help Center',
-                              Icons.help_outline,
-                              'Browse FAQs and how-to guides, or reach our support '
-                                  'team at support@evergreen.com. Average response '
-                                  'time is under 4 hours on business days.',
-                            ),
-                          ),
-                          _divider(),
-                          _navTile(
-                            Icons.feedback_outlined,
-                            'Send Feedback',
-                            onTap: _showFeedbackSheet,
-                          ),
-                          _divider(),
-                          _navTile(
-                            Icons.description_outlined,
-                            'Terms of Service',
-                            onTap: () => _showInfoDialog(
-                              'Terms of Service',
-                              Icons.description_outlined,
-                              'By using EverGreen you agree to use the platform for '
-                                  'legitimate equipment and maintenance management. '
-                                  'Full terms are available on our website.',
-                            ),
-                          ),
-                          _divider(),
-                          _navTile(
-                            Icons.privacy_tip_outlined,
-                            'Privacy Policy',
-                            onTap: () => _showInfoDialog(
-                              'Privacy Policy',
-                              Icons.privacy_tip_outlined,
-                              'Your data is stored securely and never sold. Service '
-                                  'records are retained for the life of the AMC '
-                                  'contract. See our website for the full policy.',
-                            ),
-                          ),
-                        ]),
-                        const SizedBox(height: 22),
-                        _logoutButton(),
-                        const SizedBox(height: 18),
-                        const Center(
-                          child: Text(
-                            'EverGreen v1.0.0',
-                            style: TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontSize: 12,
-                              color: Color(0xFF9B9B9B),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: _body(role, prefs),
                   ),
                 ),
               ],
@@ -313,6 +184,319 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
   }
 
+  Widget _body(UserRole role, SettingsPreferences prefs) {
+    final canAnalytics = Permissions.canViewAnalytics(role);
+    if (kIsWeb) return _webBody(role, prefs, canAnalytics);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionLabel('Preferences'),
+        _preferencesCard(prefs),
+        const SizedBox(height: 22),
+        _sectionLabel('Account'),
+        _accountCard(role),
+        if (canAnalytics) ...[
+          const SizedBox(height: 22),
+          _sectionLabel('Reports'),
+          _reportsCard(),
+        ],
+        const SizedBox(height: 22),
+        _sectionLabel('Support'),
+        _supportCard(),
+        const SizedBox(height: 22),
+        _logoutButton(),
+        const SizedBox(height: 18),
+        const Center(child: _VersionText()),
+      ],
+    );
+  }
+
+  Widget _webBody(UserRole role, SettingsPreferences prefs, bool canAnalytics) {
+    final preferences = _webSection(
+      'Preferences',
+      Icons.tune_rounded,
+      const Color(0xFF106220),
+      _preferencesCard(prefs),
+    );
+    final account = _webSection(
+      'Account',
+      Icons.manage_accounts_outlined,
+      const Color(0xFF2563EB),
+      _accountCard(role),
+    );
+    final reports = canAnalytics
+        ? _webSection(
+            'Reports',
+            Icons.insert_chart_outlined_rounded,
+            const Color(0xFF7C3AED),
+            _reportsCard(),
+          )
+        : null;
+    final support = _webSection(
+      'Support',
+      Icons.support_agent_rounded,
+      const Color(0xFFD97706),
+      _supportCard(),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final twoCol = c.maxWidth >= 720;
+          final grid = twoCol
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          preferences,
+                          if (reports != null) ...[
+                            const SizedBox(height: 26),
+                            reports,
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 26),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          account,
+                          const SizedBox(height: 26),
+                          support,
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    preferences,
+                    const SizedBox(height: 22),
+                    account,
+                    if (reports != null) ...[
+                      const SizedBox(height: 22),
+                      reports,
+                    ],
+                    const SizedBox(height: 22),
+                    support,
+                  ],
+                );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              grid,
+              const SizedBox(height: 28),
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 14, 14, 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F8F4),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFDCEBDF)),
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(child: _VersionText()),
+                    SizedBox(width: 240, child: _logoutButton()),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _webSection(String label, IconData icon, Color color, Widget body) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE3ECE5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.10),
+                  color.withValues(alpha: 0.02),
+                ],
+              ),
+              border: Border(
+                bottom: BorderSide(color: color.withValues(alpha: 0.12)),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [color, Color.lerp(color, Colors.black, 0.25)!],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.30),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, size: 20, color: Colors.white),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1C2B20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          body,
+        ],
+      ),
+    );
+  }
+
+  Widget _preferencesCard(SettingsPreferences prefs) {
+    return _card([
+      _switchTile(
+        Icons.dark_mode_outlined,
+        'Dark Mode',
+        prefs.darkMode,
+        (v) {
+          ref.read(settingsPreferencesProvider.notifier).setDarkMode(v);
+          _toast(v ? 'Dark mode on' : 'Dark mode off');
+        },
+      ),
+      _divider(),
+      _switchTile(
+        Icons.notifications_outlined,
+        'Push Notifications',
+        _pushNotifications,
+        _setPushNotifications,
+      ),
+      _divider(),
+      _navTile(
+        Icons.language_outlined,
+        'Language',
+        trailing: prefs.language,
+        onTap: _showLanguagePicker,
+      ),
+    ]);
+  }
+
+  Widget _accountCard(UserRole role) {
+    return _card([
+      _navTile(
+        Icons.lock_outline,
+        'Change Password',
+        onTap: _showChangePassword,
+      ),
+      if (Permissions.canManageUsers(role)) ...[
+        _divider(),
+        _navTile(
+          Icons.admin_panel_settings_outlined,
+          'Manage Roles & Permissions',
+          onTap: () => context.push(Routes.usersList),
+        ),
+        _divider(),
+        _navTile(
+          Icons.palette_outlined,
+          'Company Branding',
+          onTap: _showBranding,
+        ),
+      ],
+    ]);
+  }
+
+  Widget _reportsCard() {
+    return _card([
+      _navTile(
+        Icons.summarize_outlined,
+        'Export Service Report (CSV)',
+        onTap: () => _exportServiceReport(context),
+      ),
+      _divider(),
+      _navTile(
+        Icons.cloud_done_outlined,
+        'Offline Data',
+        trailing: 'Cached',
+        onTap: _showOfflineInfo,
+      ),
+    ]);
+  }
+
+  Widget _supportCard() {
+    return _card([
+      _navTile(
+        Icons.help_outline,
+        'Help Center',
+        onTap: () => _showInfoDialog(
+          'Help Center',
+          Icons.help_outline,
+          'Browse FAQs and how-to guides, or reach our support '
+              'team at support@evergreen.com. Average response '
+              'time is under 4 hours on business days.',
+        ),
+      ),
+      _divider(),
+      _navTile(
+        Icons.feedback_outlined,
+        'Send Feedback',
+        onTap: _showFeedbackSheet,
+      ),
+      _divider(),
+      _navTile(
+        Icons.description_outlined,
+        'Terms of Service',
+        onTap: () => _showInfoDialog(
+          'Terms of Service',
+          Icons.description_outlined,
+          'By using EverGreen you agree to use the platform for '
+              'legitimate equipment and maintenance management. '
+              'Full terms are available on our website.',
+        ),
+      ),
+      _divider(),
+      _navTile(
+        Icons.privacy_tip_outlined,
+        'Privacy Policy',
+        onTap: () => _showInfoDialog(
+          'Privacy Policy',
+          Icons.privacy_tip_outlined,
+          'Your data is stored securely and never sold. Service '
+              'records are retained for the life of the AMC '
+              'contract. See our website for the full policy.',
+        ),
+      ),
+    ]);
+  }
+
   Widget _sectionLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 10),
@@ -330,10 +514,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Widget _card(List<Widget> children) {
+    if (kIsWeb) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Column(children: children),
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
+        border: kIsWeb ? Border.all(color: const Color(0xFFE3ECE5)) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -342,7 +533,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: kIsWeb ? 12 : 8,
+        vertical: kIsWeb ? 6 : 0,
+      ),
       child: Column(children: children),
     );
   }
@@ -353,6 +547,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       );
 
   Widget _iconChip(IconData icon) {
+    if (kIsWeb) {
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F7F3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE3ECE5)),
+        ),
+        child: Icon(icon, size: 20, color: _green),
+      );
+    }
     return Container(
       width: 38,
       height: 38,
@@ -436,6 +642,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             onChanged: onChanged,
             activeThumbColor: Colors.white,
             activeTrackColor: _green,
+            inactiveThumbColor: kIsWeb ? Colors.white : null,
+            inactiveTrackColor: kIsWeb ? const Color(0xFFD5DED7) : null,
+            trackOutlineColor: kIsWeb
+                ? const WidgetStatePropertyAll(Colors.transparent)
+                : null,
           ),
         ],
       ),
@@ -476,6 +687,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   // Change Password — redesigned to match the app style
   // ---------------------------------------------------------------------------
   Future<void> _showChangePassword() async {
+    if (kIsWeb) {
+      final message = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.white,
+          insetPadding: const EdgeInsets.all(24),
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(height: 4, color: _green),
+                _ChangePasswordBody(
+                  submit: (current, next) => ref
+                      .read(usersRepositoryProvider)
+                      .changePassword(
+                        currentPassword: current,
+                        newPassword: next,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (message != null && mounted) _toast(message);
+      return;
+    }
     final message = await showDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -500,6 +745,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       'తెలుగు (Telugu)',
       'தமிழ் (Tamil)',
     ];
+    if (kIsWeb) {
+      showDialog(
+        context: context,
+        builder: (ctx) => _webDialog(
+          ctx,
+          title: 'Select Language',
+          icon: Icons.language_outlined,
+          children: [
+            for (final l in langs)
+              ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                leading: Icon(
+                  l == ref.read(settingsPreferencesProvider).language
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: _green,
+                ),
+                title: Text(
+                  l,
+                  style: const TextStyle(fontFamily: 'Montserrat'),
+                ),
+                onTap: () {
+                  ref.read(settingsPreferencesProvider.notifier).setLanguage(l);
+                  Navigator.pop(ctx);
+                  _toast('Language set to $l');
+                },
+              ),
+          ],
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -542,6 +821,75 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   /// The design's branding dialog; the chosen accent is kept on this device.
   void _showBranding() {
+    if (kIsWeb) {
+      showDialog(
+        context: context,
+        builder: (ctx) => Consumer(
+          builder: (ctx, ref, _) {
+            final selected =
+                ref.watch(settingsPreferencesProvider).brandAccent ??
+                    _green.toARGB32();
+            return _webDialog(
+              ctx,
+              title: 'Company Branding',
+              icon: Icons.palette_outlined,
+              children: [
+                const Text(
+                  'Pick a brand accent color for this device. Logo upload '
+                  'and app-wide theming arrive with the admin web console.',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    height: 1.6,
+                    color: Color(0xFF555555),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 14,
+                  runSpacing: 10,
+                  children: [
+                    for (final c in _brandAccents)
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () => ref
+                              .read(settingsPreferencesProvider.notifier)
+                              .setBrandAccent(c.toARGB32()),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: c,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: c.toARGB32() == selected
+                                    ? const Color(0xFF1C2B20)
+                                    : Colors.transparent,
+                                width: 3,
+                              ),
+                            ),
+                            child: c.toARGB32() == selected
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 20,
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _webAction('Got it', () => Navigator.pop(ctx)),
+              ],
+            );
+          },
+        ),
+      );
+      return;
+    }
     showDialog(
       context: context,
       builder: (ctx) => Consumer(
@@ -627,6 +975,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   void _showFeedbackSheet() {
     final controller = TextEditingController();
+    if (kIsWeb) {
+      showDialog(
+        context: context,
+        builder: (ctx) => _webDialog(
+          ctx,
+          title: 'Send Feedback',
+          icon: Icons.feedback_outlined,
+          children: [
+            TextField(
+              controller: controller,
+              maxLines: 5,
+              style: const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Tell us what’s working or what could be better…',
+                filled: true,
+                fillColor: const Color(0xFFF7FAF8),
+                contentPadding: const EdgeInsets.all(14),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFD9E2DB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _green, width: 1.4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _webAction('Submit Feedback', () async {
+              final text = controller.text.trim();
+              if (text.isEmpty) {
+                _toast('Please write your feedback first', error: true);
+                return;
+              }
+              Navigator.pop(ctx);
+              await _shareFeedback(text);
+            }),
+          ],
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -682,6 +1072,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// Read-only info is shown in a lightweight dialog rather than a bottom
   /// sheet — a sheet is only warranted when there's real interaction.
   void _showInfoDialog(String title, IconData icon, String body) {
+    if (kIsWeb) {
+      showDialog(
+        context: context,
+        builder: (ctx) => _webDialog(
+          ctx,
+          title: title,
+          icon: icon,
+          children: [
+            Text(
+              body,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 14,
+                height: 1.65,
+                color: Color(0xFF555555),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _webAction('Got it', () => Navigator.pop(ctx)),
+          ],
+        ),
+      );
+      return;
+    }
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -708,6 +1122,116 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               const SizedBox(height: 20),
               _gradientButton('Got it', () => Navigator.pop(ctx)),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Centred dialog for the web: tinted header with icon, title and close,
+  /// then [children].
+  Widget _webDialog(
+    BuildContext ctx, {
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.all(24),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(22, 18, 12, 18),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFEAF4EC), Colors.white],
+                  ),
+                  border: Border(
+                    bottom: BorderSide(color: Color(0xFFE3ECE5)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFCFE3D4)),
+                      ),
+                      child: Icon(icon, color: _green, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1C2B20),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: Color(0xFF6B6B6B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 22),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: children,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Compact right-aligned primary button for web dialogs.
+  Widget _webAction(String label, VoidCallback onTap) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _green,
+          elevation: 0,
+          minimumSize: const Size(140, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       ),
@@ -1198,6 +1722,22 @@ class _ChangePasswordBodyState extends State<_ChangePasswordBody> {
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: _green, width: 1.4),
         ),
+      ),
+    );
+  }
+}
+
+class _VersionText extends StatelessWidget {
+  const _VersionText();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text(
+      'EverGreen v1.0.0',
+      style: TextStyle(
+        fontFamily: 'Montserrat',
+        fontSize: 12,
+        color: Color(0xFF9B9B9B),
       ),
     );
   }

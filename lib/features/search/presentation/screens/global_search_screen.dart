@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -269,6 +270,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     final selected = tabs.contains(_selected) ? _selected! : tabs.first;
     final results = {for (final t in tabs) t: _results(t, tabs)};
 
+    if (kIsWeb) return _webLayout(tabs, selected, results);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F7),
       body: Stack(
@@ -287,8 +290,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           SafeArea(
             child: Column(
               children: [
-                _header(context),
-                _searchField(),
+                if (!kIsWeb) _header(context),
+                if (!kIsWeb) _searchField(),
                 _tabBar(tabs, selected, results),
                 const SizedBox(height: 8),
                 Expanded(child: _tabBody(selected, results[selected]!)),
@@ -555,6 +558,142 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Web layout: summary tiles acting as tabs, and a card grid of results.
+  // ---------------------------------------------------------------------------
+
+  static IconData _webTabIcon(SearchTab tab) => switch (tab) {
+        SearchTab.companies => Icons.business_outlined,
+        SearchTab.equipments => Icons.precision_manufacturing_outlined,
+        SearchTab.tasks => Icons.task_alt,
+        SearchTab.serviceEngineers => Icons.engineering_outlined,
+      };
+
+  static Color _webTabAccent(SearchTab tab) => switch (tab) {
+        SearchTab.companies => const Color(0xFF106220),
+        SearchTab.equipments => const Color(0xFF0F766E),
+        SearchTab.tasks => const Color(0xFFB7791F),
+        SearchTab.serviceEngineers => const Color(0xFF2E5AAC),
+      };
+
+  Widget _webLayout(
+    List<SearchTab> tabs,
+    SearchTab selected,
+    Map<SearchTab, _TabResult> results,
+  ) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9F6),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LayoutBuilder(
+              builder: (context, c) {
+                const gap = 14.0;
+                final perRow = c.maxWidth >= 760 ? tabs.length : 2;
+                final w = ((c.maxWidth - gap * (perRow - 1)) / perRow)
+                    .clamp(0.0, 230.0);
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    for (final tab in tabs)
+                      SizedBox(
+                        width: w,
+                        child: _WebTabTile(
+                          label: tab.label,
+                          icon: _webTabIcon(tab),
+                          accent: _webTabAccent(tab),
+                          active: tab == selected,
+                          count: results[tab]!.loading || results[tab]!.failed
+                              ? null
+                              : results[tab]!.hits.length,
+                          onTap: () => setState(() => _selected = tab),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 22),
+            Expanded(child: _webTabBody(selected, results[selected]!)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webTabBody(SearchTab tab, _TabResult r) {
+    if (r.loading) {
+      return const Center(child: CircularProgressIndicator(color: _green));
+    }
+    if (r.failed) {
+      return _centerMsg(
+        Icons.cloud_off_outlined,
+        "Couldn't load ${tab.label.toLowerCase()}",
+        'Check your connection and try again.',
+        onRetry: r.retry,
+      );
+    }
+    final noun = tab.label.toLowerCase();
+    if (r.hits.isEmpty) {
+      return _query.isEmpty
+          ? _centerMsg(Icons.inbox_outlined, 'No $noun yet', 'Nothing to show here.')
+          : _centerMsg(
+              Icons.search_off,
+              'No matching $noun',
+              'Try a different term.',
+            );
+    }
+    return RefreshIndicator(
+      color: _green,
+      onRefresh: r.refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          LayoutBuilder(
+            builder: (context, c) {
+              const gap = 16.0;
+              final cols = c.maxWidth >= 960
+                  ? 3
+                  : c.maxWidth >= 620
+                      ? 2
+                      : 1;
+              return Column(
+                children: [
+                  for (var i = 0; i < r.hits.length; i += cols)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: gap),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (var j = i; j < i + cols; j++) ...[
+                              if (j > i) const SizedBox(width: gap),
+                              Expanded(
+                                child: j < r.hits.length
+                                    ? _WebHitCard(
+                                        hit: r.hits[j],
+                                        accent: _webTabAccent(tab),
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _centerMsg(
     IconData icon,
     String title,
@@ -642,6 +781,366 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Summary tile used as a tab on web: icon, label and match count. The
+/// selected tile is filled with its accent gradient.
+class _WebTabTile extends StatefulWidget {
+  const _WebTabTile({
+    required this.label,
+    required this.icon,
+    required this.accent,
+    required this.active,
+    required this.count,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color accent;
+  final bool active;
+
+  /// Null while the group is loading or failed.
+  final int? count;
+  final VoidCallback onTap;
+
+  @override
+  State<_WebTabTile> createState() => _WebTabTileState();
+}
+
+class _WebTabTileState extends State<_WebTabTile> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final a = widget.accent;
+    final on = widget.active;
+    final fg = on ? Colors.white : const Color(0xFF14201A);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 74,
+          clipBehavior: Clip.antiAlias,
+          transform: Matrix4.translationValues(0, _hover && !on ? -2 : 0, 0),
+          decoration: BoxDecoration(
+            color: on ? null : Colors.white,
+            gradient: on
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [a, Color.lerp(a, Colors.black, 0.25)!],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: on
+                  ? Colors.transparent
+                  : _hover
+                      ? a.withValues(alpha: 0.45)
+                      : const Color(0xFFE2E8E3),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: on
+                    ? a.withValues(alpha: 0.30)
+                    : Colors.black.withValues(alpha: 0.04),
+                blurRadius: on ? 14 : 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -20,
+                top: -20,
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: on
+                        ? Colors.white.withValues(alpha: 0.10)
+                        : a.withValues(alpha: 0.06),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: on
+                            ? Colors.white.withValues(alpha: 0.18)
+                            : a.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        widget.icon,
+                        color: on ? Colors.white : a,
+                        size: 19,
+                      ),
+                    ),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          widget.count == null
+                              ? SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: on ? Colors.white : a,
+                                  ),
+                                )
+                              : Text(
+                                  '${widget.count}',
+                                  style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.1,
+                                    color: fg,
+                                  ),
+                                ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: on
+                                  ? Colors.white.withValues(alpha: 0.88)
+                                  : const Color(0xFF4B5A50),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One result as a grid card (web): an accent-tinted header with the icon
+/// overlapping its edge, then the title and each subtitle part as a tag.
+class _WebHitCard extends StatefulWidget {
+  const _WebHitCard({required this.hit, required this.accent});
+  final _Hit hit;
+  final Color accent;
+
+  @override
+  State<_WebHitCard> createState() => _WebHitCardState();
+}
+
+class _WebHitCardState extends State<_WebHitCard> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final h = widget.hit;
+    final a = widget.accent;
+    final parts =
+        h.subtitle.split(' • ').where((p) => p.trim().isNotEmpty).toList();
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: h.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          clipBehavior: Clip.antiAlias,
+          transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _hover ? a.withValues(alpha: 0.5) : const Color(0xFFE2E8E3),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _hover
+                    ? a.withValues(alpha: 0.16)
+                    : Colors.black.withValues(alpha: 0.04),
+                blurRadius: _hover ? 24 : 10,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 64,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          a.withValues(alpha: _hover ? 0.22 : 0.14),
+                          a.withValues(alpha: 0.03),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: -18,
+                    top: -30,
+                    child: Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: a.withValues(alpha: 0.08),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 14,
+                    child: h.badge != null
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: h.badgeColor.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Text(
+                              h.badge!,
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: h.badgeColor,
+                              ),
+                            ),
+                          )
+                        : AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _hover ? a : Colors.white,
+                            ),
+                            child: Icon(
+                              Icons.arrow_outward_rounded,
+                              size: 16,
+                              color: _hover ? Colors.white : a,
+                            ),
+                          ),
+                  ),
+                  Positioned(
+                    left: 18,
+                    bottom: -24,
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: a.withValues(alpha: 0.18),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(h.icon, color: a, size: 25),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 34, 18, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      h.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                        color: Color(0xFF14201A),
+                      ),
+                    ),
+                    if (parts.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final p in parts)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: a.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(7),
+                                border: Border.all(
+                                  color: a.withValues(alpha: 0.12),
+                                ),
+                              ),
+                              child: Text(
+                                p,
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF3F4D44),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

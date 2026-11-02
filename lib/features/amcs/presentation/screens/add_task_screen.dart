@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart' hide TaskStatus;
 import '../../../../shared/providers/auth_state_provider.dart';
+import '../../../../web/widgets/web_form_kit.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../pickers/presentation/screens/location_picker_screen.dart';
 import '../../../pickers/presentation/screens/company_picker_screen.dart';
@@ -410,6 +412,19 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
         tasksAsync.isLoading &&
         !tasksAsync.hasValue;
 
+    if (kIsWeb) {
+      return _webBuild(
+        companies,
+        equipments,
+        selectedEquipment,
+        editing,
+        waitingForEdit,
+        issueTypesAsync,
+        issueTypes,
+        activeTask,
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F7),
       body: Stack(
@@ -429,7 +444,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
             child: Column(
               children: [
                 // Header
-                _buildHeader(),
+                if (!kIsWeb) _buildHeader(),
 
                 // Form Content
                 Expanded(
@@ -512,6 +527,291 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Web layout: labelled fields in two columns inside section cards, with the
+  // actions right-aligned in a bottom bar.
+  // ---------------------------------------------------------------------------
+
+  static const _webLine = Color(0xFFE2E8E3);
+
+  Widget _webBuild(
+    AsyncValue<List<Company>> companies,
+    AsyncValue<List<Equipment>>? equipments,
+    Equipment? selectedEquipment,
+    TaskItem? editing,
+    bool waitingForEdit,
+    AsyncValue<List<IssueType>> issueTypesAsync,
+    List<IssueType> issueTypes,
+    ActiveEquipmentTask? activeTask,
+  ) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9F7),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.25,
+              child: Image.asset(
+                'assets/images/home_bg.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              Expanded(
+                child: waitingForEdit
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF106220),
+                        ),
+                      )
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxWidth: double.infinity,
+                            ),
+                            child: WebForm.split(
+                                _webSection(
+                                  header: true,
+                                  children: [
+                                    _webRow(
+                                      _webLabelled(
+                                        'Company',
+                                        _companyField(
+                                          companies,
+                                          _companyLocked,
+                                        ),
+                                      ),
+                                      _webLabelled(
+                                        'Branch',
+                                        _branchDropdown(
+                                          companies,
+                                          _companyLocked,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 18),
+                                    _webRow(
+                                      _webLabelled(
+                                        'Location',
+                                        ValueListenableBuilder<
+                                            TextEditingValue>(
+                                          valueListenable: _locationController,
+                                          builder: (context, value, _) =>
+                                              _pickerField(
+                                            label:
+                                                'Location (e.g. Block B, 2nd floor)',
+                                            value: value.text.trim().isEmpty
+                                                ? null
+                                                : value.text.trim(),
+                                            onTap: _pickLocation,
+                                          ),
+                                        ),
+                                      ),
+                                      _webLabelled(
+                                        'Equipment',
+                                        _equipmentField(
+                                          equipments,
+                                          selectedEquipment,
+                                        ),
+                                      ),
+                                    ),
+                                    if (activeTask != null) ...[
+                                      const SizedBox(height: 12),
+                                      _activeTaskBanner(activeTask),
+                                    ],
+                                    if (selectedEquipment != null) ...[
+                                      const SizedBox(height: 18),
+                                      _buildEquipmentSpecifications(
+                                        selectedEquipment,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                _webSection(
+                                  children: [
+                                    _webRow(
+                                      _webLabelled(
+                                        'Issue Type',
+                                        issueTypesAsync.hasError &&
+                                                issueTypes.isEmpty
+                                            ? _statusField(
+                                                'Couldn\'t load issue types — tap to retry',
+                                                onTap: () => ref.invalidate(
+                                                  issueTypesProvider,
+                                                ),
+                                              )
+                                            : _buildInlineDropdownField<int>(
+                                                label: 'Issue Type',
+                                                value: _issueTypeId,
+                                                items: [
+                                                  for (final it in issueTypes)
+                                                    (it.id, it.name),
+                                                ],
+                                                onChanged: (value) => setState(
+                                                  () => _issueTypeId = value,
+                                                ),
+                                              ),
+                                      ),
+                                      _webLabelled(
+                                        'Subject',
+                                        _buildTextField(
+                                          label: 'Subject',
+                                          controller: _subjectController,
+                                          hintText: 'Enter subject',
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 18),
+                                    _webLabelled(
+                                      'Description',
+                                      _buildTextField(
+                                        label: 'Description',
+                                        controller: _descriptionController,
+                                        hintText: 'Enter description',
+                                        maxLines: 4,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    _buildImageUploadSection(),
+                                  ],
+                                ),
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+              _buildBottomButtons(editing, issueTypes, activeTask),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// White section card; with [header], it opens with the Task Information
+  /// badge, title and subtitle aligned to the left.
+  Widget _webSection({bool header = false, required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(26, 24, 26, 26),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _webLine),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (header) ...[
+            Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCEBDD),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: const Icon(
+                    Icons.check_box_outlined,
+                    color: Color(0xFF278245),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Task Information',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF14201A),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Provide basic details of the Task',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black.withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: _webLine),
+            const SizedBox(height: 22),
+          ],
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  /// Two fields side by side, stacked when the form is narrow.
+  Widget _webRow(Widget a, Widget b) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        if (c.maxWidth < 560) {
+          return Column(children: [a, const SizedBox(height: 18), b]);
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: a),
+            const SizedBox(width: 18),
+            Expanded(child: b),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _webLabelled(String label, Widget field) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF3F4D44),
+          ),
+        ),
+        const SizedBox(height: 7),
+        field,
+      ],
+    );
+  }
+
+  /// Field outline: a soft bordered rectangle on web, the pill on mobile.
+  ShapeBorder _fieldShape(double radius) => RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(kIsWeb ? 12 : radius),
+        side: kIsWeb ? const BorderSide(color: Color(0xFFD9E2DB)) : BorderSide.none,
+      );
+
   /// Companies a client role may pick from (null = all).
   Set<int>? _allowedCompanyIds;
 
@@ -579,11 +879,11 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     final enabled = onTap != null;
     return Material(
       color: enabled ? Colors.white : const Color(0xFFF4F4F4),
-      elevation: enabled ? 2 : 0,
+      elevation: enabled && !kIsWeb ? 2 : 0,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(32),
+      shape: _fieldShape(32),
       child: InkWell(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
         onTap: onTap,
         child: Container(
           height: 48,
@@ -670,11 +970,11 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   Widget _statusField(String text, {VoidCallback? onTap}) {
     return Material(
       color: Colors.white,
-      elevation: 2,
+      elevation: kIsWeb ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(32),
+      shape: _fieldShape(32),
       child: InkWell(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
         onTap: onTap,
         child: Container(
           height: 48,
@@ -837,9 +1137,9 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   }) {
     return Material(
       color: Colors.white,
-      elevation: 2,
+      elevation: kIsWeb ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(32),
+      shape: _fieldShape(32),
       child: Container(
         height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -977,12 +1277,12 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     String? hintText,
     int maxLines = 1,
   }) {
-    final radius = maxLines > 1 ? 24.0 : 32.0;
+    final radius = kIsWeb ? 12.0 : (maxLines > 1 ? 24.0 : 32.0);
     return Material(
       color: Colors.white,
-      elevation: 2,
+      elevation: kIsWeb ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(radius),
+      shape: _fieldShape(radius),
       child: TextField(
         controller: controller,
         maxLines: maxLines,
@@ -1035,15 +1335,20 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
             width: double.infinity,
             height: 169,
             decoration: BoxDecoration(
-              color: const Color(0xFFEBEDFF),
+              color: kIsWeb ? const Color(0xFFF3F8F4) : const Color(0xFFEBEDFF),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              border: kIsWeb
+                  ? Border.all(color: const Color(0xFFB9D5BF), width: 1.2)
+                  : null,
+              boxShadow: kIsWeb
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1183,11 +1488,16 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     ActiveEquipmentTask? activeTask,
   ) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      decoration: const BoxDecoration(color: Colors.white),
+      padding: kIsWeb
+          ? const EdgeInsets.fromLTRB(24, 14, 24, 14)
+          : const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: kIsWeb ? Border(top: BorderSide(color: _webLine)) : null,
+      ),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: _webAlignActions(Row(
           children: [
             // Reset Button (outlined pill)
             Expanded(
@@ -1247,8 +1557,16 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
               ),
             ),
           ],
-        ),
+        ),),
       ),
     );
   }
+
+  /// On web the action buttons sit together at the right of the bar.
+  Widget _webAlignActions(Widget row) => kIsWeb
+      ? Align(
+          alignment: Alignment.centerRight,
+          child: SizedBox(width: 380, child: row),
+        )
+      : row;
 }

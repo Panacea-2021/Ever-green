@@ -87,6 +87,7 @@ class _LandingHeroVideoState extends State<LandingHeroVideo>
     if (_ready && controller != null && controller.value.isInitialized) {
       return FittedBox(
         fit: BoxFit.cover,
+        alignment: const Alignment(0, 0.6),
         clipBehavior: Clip.hardEdge,
         child: SizedBox(
           width: controller.value.size.width,
@@ -99,6 +100,7 @@ class _LandingHeroVideoState extends State<LandingHeroVideo>
     return Image.asset(
       LandingAssets.heroBg,
       fit: BoxFit.cover,
+      alignment: const Alignment(0, 0.6),
       width: double.infinity,
       height: double.infinity,
       errorBuilder: (_, __, ___) => const ColoredBox(

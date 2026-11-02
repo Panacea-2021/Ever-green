@@ -404,6 +404,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) return _webBuild();
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -425,7 +426,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
               bottom: false,
               child: Column(
                 children: [
-                  _buildHeader(),
+                  if (!kIsWeb) _buildHeader(),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
@@ -447,6 +448,617 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
           ],
         ),
         bottomNavigationBar: _buildBottomButtons(),
+      ),
+    );
+  }
+
+  static const double _webMaxWidth = double.infinity;
+  static const Color _webLine = Color(0xFFE2E8E3);
+  static const Color _webFieldBorder = Color(0xFFD9E2DB);
+  static const Color _webInk = Color(0xFF14201A);
+
+  Widget _webBuild() {
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F8F4),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/home_bg.png',
+                fit: BoxFit.cover,
+                color: const Color(0xFFF5F8F4).withValues(alpha: 0.9),
+                colorBlendMode: BlendMode.srcOver,
+                errorBuilder: (_, __, ___) =>
+                    Container(color: const Color(0xFFF5F8F4)),
+              ),
+            ),
+            Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: _webMaxWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _webSection(
+                          icon: Icons.apartment,
+                          title: 'Company Information',
+                          subtitle: 'Provide basic details of the company',
+                          children: _webCompanyFields(),
+                        ),
+                        const SizedBox(height: 24),
+                        _webSection(
+                          icon: Icons.person_outline,
+                          title: 'Client Details',
+                          subtitle: 'Enter primary contact details',
+                          children: _webClientFields(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: _webBottomBar(),
+      ),
+    );
+  }
+
+  Widget _webSection({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required List<Widget> children,
+  }) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _webLine),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFE8F4EB), Colors.white],
+              ),
+              border: Border(bottom: BorderSide(color: _webLine)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFCFE3D4)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF278245).withValues(alpha: 0.15),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, size: 27, color: const Color(0xFF278245)),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    color: _webInk,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black.withValues(alpha: 0.45),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 26, 28, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _webPair(Widget a, Widget b) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        if (c.maxWidth < 560) {
+          return Column(children: [a, const SizedBox(height: 18), b]);
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: a),
+            const SizedBox(width: 18),
+            Expanded(child: b),
+          ],
+        );
+      },
+    );
+  }
+
+  List<Widget> _webCompanyFields() {
+    return [
+      _webPair(
+        _webField(
+          controller: _companyController,
+          hint: 'Company Name',
+          icon: Icons.business_outlined,
+        ),
+        _webField(
+          controller: _branchNameController,
+          hint: 'Branch Name',
+          icon: Icons.account_tree_outlined,
+        ),
+      ),
+      const SizedBox(height: 18),
+      _webPair(
+        _webField(
+          controller: _companyEmailController,
+          hint: 'Company Email',
+          icon: Icons.mail_outline,
+          keyboardType: TextInputType.emailAddress,
+        ),
+        _webField(
+          controller: _gstController,
+          hint: 'GST Number',
+          icon: Icons.receipt_long_outlined,
+          capitalization: TextCapitalization.characters,
+        ),
+      ),
+      const SizedBox(height: 18),
+      _webField(
+        controller: _addressController,
+        hint: 'Company Address',
+        icon: Icons.location_on_outlined,
+        keyboardType: TextInputType.streetAddress,
+      ),
+      const SizedBox(height: 18),
+      _webPair(
+        _webDropdown(
+          hint: 'Service Type',
+          icon: Icons.design_services_outlined,
+          value: _serviceType.label,
+          items: [for (final t in CompanyServiceType.values) t.label],
+          onChanged: (v) {
+            final type =
+                CompanyServiceType.values.where((t) => t.label == v).firstOrNull;
+            if (type == null) return;
+            setState(() {
+              _serviceType = type;
+              if (!_isAmc) {
+                _amcType = null;
+                _startDate = null;
+                _endDate = null;
+              }
+            });
+          },
+        ),
+        _isAmc
+            ? _webDropdown(
+                hint: 'AMC Category (NC AMC / C AMC)',
+                icon: Icons.category_outlined,
+                value: _amcType?.label,
+                items: [AmcType.ncAmc.label, AmcType.cAmc.label],
+                onChanged: (v) => setState(
+                  () => _amcType =
+                      AmcType.values.where((t) => t.label == v).firstOrNull,
+                ),
+              )
+            : const SizedBox.shrink(),
+      ),
+      if (_isAmc) ...[
+        const SizedBox(height: 18),
+        _webPair(
+          _webDate(
+            hint: 'Start Date',
+            value: _formatDate(_startDate),
+            onTap: () => _selectDate(context, true),
+          ),
+          _webDate(
+            hint: 'End Date',
+            value: _formatDate(_endDate),
+            onTap: () => _selectDate(context, false),
+          ),
+        ),
+      ],
+      const SizedBox(height: 22),
+      _webUploadArea(),
+    ];
+  }
+
+  List<Widget> _webClientFields() {
+    return [
+      _webPair(
+        _webField(
+          controller: _nameController,
+          hint: 'Name',
+          icon: Icons.person_outline,
+        ),
+        _webField(
+          controller: _mobileController,
+          hint: 'Mobile Number',
+          icon: Icons.phone_outlined,
+          keyboardType: TextInputType.phone,
+        ),
+      ),
+      const SizedBox(height: 18),
+      _webPair(
+        _webField(
+          controller: _emailController,
+          hint: 'Email',
+          icon: Icons.alternate_email,
+          keyboardType: TextInputType.emailAddress,
+        ),
+        _webField(
+          controller: _passwordController,
+          hint: 'Password',
+          icon: Icons.lock_outline,
+          isPassword: true,
+        ),
+      ),
+    ];
+  }
+
+  TextStyle get _webHintStyle => TextStyle(
+        fontFamily: 'Montserrat',
+        fontSize: 14.5,
+        fontWeight: FontWeight.w500,
+        color: Colors.black.withValues(alpha: 0.4),
+      );
+
+  static const TextStyle _webValueStyle = TextStyle(
+    fontFamily: 'Montserrat',
+    fontSize: 14.5,
+    fontWeight: FontWeight.w500,
+    color: _webInk,
+  );
+
+  BoxDecoration get _webBoxDecoration => BoxDecoration(
+        color: const Color(0xFFFAFCFA),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _webFieldBorder),
+      );
+
+  Widget _webIcon(IconData icon) =>
+      Icon(icon, size: 20, color: const Color(0xFF278245));
+
+  Widget _webField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool isPassword = false,
+    TextCapitalization capitalization = TextCapitalization.none,
+  }) {
+    OutlineInputBorder border(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: color, width: width),
+        );
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textCapitalization: capitalization,
+      obscureText: isPassword && !_isPasswordVisible,
+      cursorColor: AppColors.primary,
+      textAlignVertical: TextAlignVertical.center,
+      style: _webValueStyle,
+      decoration: InputDecoration(
+        isDense: true,
+        filled: true,
+        fillColor: const Color(0xFFFAFCFA),
+        hintText: hint,
+        hintStyle: _webHintStyle,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        prefixIcon: _webIcon(icon),
+        prefixIconConstraints: const BoxConstraints(minWidth: 46),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _isPasswordVisible
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: Colors.black.withValues(alpha: 0.4),
+                  size: 20,
+                ),
+                onPressed: () =>
+                    setState(() => _isPasswordVisible = !_isPasswordVisible),
+              )
+            : null,
+        enabledBorder: border(_webFieldBorder),
+        border: border(_webFieldBorder),
+        focusedBorder: border(AppColors.primary, 1.5),
+      ),
+    );
+  }
+
+  Widget _webDropdown({
+    required String hint,
+    required IconData icon,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.only(left: 13, right: 12),
+      decoration: _webBoxDecoration,
+      child: Row(
+        children: [
+          _webIcon(icon),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: value,
+                isExpanded: true,
+                borderRadius: BorderRadius.circular(14),
+                icon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Colors.black.withValues(alpha: 0.55),
+                ),
+                hint: Text(hint, style: _webHintStyle),
+                items: items
+                    .map(
+                      (e) => DropdownMenuItem<String>(
+                        value: e,
+                        child: Text(e, style: _webValueStyle),
+                      ),
+                    )
+                    .toList(),
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _webDate({
+    required String hint,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 13),
+          decoration: _webBoxDecoration,
+          child: Row(
+            children: [
+              _webIcon(Icons.calendar_month),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  value.isEmpty ? hint : value,
+                  style: value.isEmpty ? _webHintStyle : _webValueStyle,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webUploadArea() {
+    final hasImage = _selectedImagePath != null || _existingLogo != null;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _handleImageUpload,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F8F4),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFB9D5BF), width: 1.2),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCFE3D4)),
+                ),
+                child: Icon(
+                  hasImage ? Icons.check_circle : Icons.cloud_upload_outlined,
+                  color: const Color(0xFF278245),
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasImage
+                          ? 'Image Selected'
+                          : 'Please upload Company image here',
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                        color: _webInk,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _selectedImagePath?.split(RegExp(r'[/\\]')).last ??
+                          'Jpg,Png upto 5MB',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF278245),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webBottomBar() {
+    final showBulkUpload = !widget.isEdit &&
+        Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(top: BorderSide(color: _webLine)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _webMaxWidth),
+          child: Row(
+            children: [
+              const Spacer(),
+              if (showBulkUpload) ...[
+                SizedBox(
+                  width: 170,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(Routes.uploadAmc),
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 17),
+                    label: const Text('Bulk Upload'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 42),
+                      foregroundColor: const Color(0xFF0E501B),
+                      side: const BorderSide(color: Color(0x80155622)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              SizedBox(
+                width: 170,
+                child: MouseRegion(
+                  cursor: _saving
+                      ? SystemMouseCursors.basic
+                      : SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: _saving ? null : _handleSave,
+                    child: Container(
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF138A2A), Color(0xFF106220)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFF138A2A).withValues(alpha: 0.25),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: _saving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                widget.isEdit ? 'Update' : 'Save',
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
