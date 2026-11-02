@@ -336,11 +336,11 @@ class _WebNavTileState extends State<_WebNavTile> {
         onTap: widget.onTap,
         child: Container(
           margin: EdgeInsets.symmetric(
-            horizontal: widget.collapsed ? 12 : 14,
+            horizontal: widget.collapsed ? 12 : 8,
             vertical: 3,
           ),
           padding: EdgeInsets.symmetric(
-            horizontal: widget.collapsed ? 0 : 14,
+            horizontal: widget.collapsed ? 0 : 12,
             vertical: 11,
           ),
           decoration: BoxDecoration(
@@ -359,15 +359,16 @@ class _WebNavTileState extends State<_WebNavTile> {
             children: [
               iconWidget,
               if (!widget.collapsed) ...[
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     entry.label,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: WebTokens.fontFamily,
                       fontSize: 13.5,
+                      height: 1.3,
                       fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                       color: fg,
                     ),
