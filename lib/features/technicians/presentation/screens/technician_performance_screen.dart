@@ -189,7 +189,7 @@ class _TechnicianPerformanceScreenState
             duration: const Duration(milliseconds: 180),
             height: 48,
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               color: sel ? _green : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
@@ -212,13 +212,17 @@ class _TechnicianPerformanceScreenState
                   color: sel ? Colors.white : const Color(0xFF4B5A50),
                 ),
                 const SizedBox(width: 9),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: sel ? Colors.white : const Color(0xFF4B5A50),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: sel ? Colors.white : const Color(0xFF4B5A50),
+                    ),
                   ),
                 ),
               ],
