@@ -335,49 +335,53 @@ class _RatingPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(8, 6, 14, 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _Dot(Color(0xFFB7C4BC)),
-          SizedBox(width: 4),
-          _Dot(Color(0xFF8FA396)),
-          SizedBox(width: 4),
-          _Dot(Color(0xFFE7B6A8)),
-          SizedBox(width: 10),
-          Text(
-            '4.8/5',
-            style: TextStyle(
-              fontFamily: LandingTypography.fontFamily,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF142117),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(8, 6, 14, 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _Dot(Color(0xFFB7C4BC)),
+            SizedBox(width: 4),
+            _Dot(Color(0xFF8FA396)),
+            SizedBox(width: 4),
+            _Dot(Color(0xFFE7B6A8)),
+            SizedBox(width: 10),
+            Text(
+              '4.8/5',
+              style: TextStyle(
+                fontFamily: LandingTypography.fontFamily,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF142117),
+              ),
             ),
-          ),
-          SizedBox(width: 6),
-          Text(
-            '★★★★★',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFFE0B323),
-              letterSpacing: 1,
+            SizedBox(width: 6),
+            Text(
+              '★★★★★',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFFE0B323),
+                letterSpacing: 1,
+              ),
             ),
-          ),
-          SizedBox(width: 8),
-          Text(
-            'Trusted by 5,000+ homes',
-            style: TextStyle(
-              fontFamily: LandingTypography.fontFamily,
-              fontSize: 12,
-              color: Color(0xFF5C6B62),
+            SizedBox(width: 8),
+            Text(
+              'Trusted by 5,000+ homes',
+              style: TextStyle(
+                fontFamily: LandingTypography.fontFamily,
+                fontSize: 12,
+                color: Color(0xFF5C6B62),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

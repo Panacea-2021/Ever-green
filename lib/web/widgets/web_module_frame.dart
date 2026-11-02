@@ -353,98 +353,229 @@ class _HeaderCardShell extends StatelessWidget {
   final BoxConstraints constraints;
   final Widget child;
 
-  static const _headerHeight = 78.0;
+  static const _headerHeight = 104.0;
+  static const _accentHeight = 4.0;
 
   @override
   Widget build(BuildContext context) {
     final height = (constraints.maxHeight - 48).clamp(0.0, double.infinity);
-    final bodyHeight = (height - _headerHeight - 1).clamp(0.0, double.infinity);
+    final bodyHeight = (height - _accentHeight - _headerHeight - 1)
+        .clamp(0.0, double.infinity);
     final e = entry;
     final icon = e?.svgIcon != null
         ? SvgPicture.asset(
             e!.svgIcon!,
-            width: 21,
-            height: 21,
+            width: 24,
+            height: 24,
             colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           )
         : Icon(
             e?.icon ?? Icons.dashboard_outlined,
-            size: 21,
+            size: 24,
             color: Colors.white,
           );
 
-    return Align(
-      alignment: Alignment.topCenter,
-      child: Container(
-        width: width,
-        height: height,
-        margin: const EdgeInsets.only(top: 24),
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: WebTokens.line),
-          boxShadow: WebTokens.softShadow,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              height: _headerHeight,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [Color(0xFFEAF4EC), Colors.white],
+    return Stack(
+      children: [
+        // Soft background shapes behind the card.
+        Positioned(right: -120, top: -140, child: _blob(420, 0.10)),
+        Positioned(left: -160, bottom: -180, child: _blob(460, 0.07)),
+        Align(
+          alignment: Alignment.topCenter,
+          child: Container(
+            width: width,
+            height: height,
+            margin: const EdgeInsets.only(top: 24),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: WebTokens.line),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0A3F15).withValues(alpha: 0.08),
+                  blurRadius: 40,
+                  offset: const Offset(0, 16),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: WebTokens.green,
-                      borderRadius: BorderRadius.circular(13),
-                      boxShadow: [
-                        BoxShadow(
-                          color: WebTokens.green.withValues(alpha: 0.25),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  height: _accentHeight,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0xFF0A3F15),
+                        Color(0xFF106220),
+                        Color(0xFF5FB36F),
                       ],
                     ),
-                    child: icon,
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: WebTokens.heading(19),
+                ),
+                SizedBox(
+                  height: _headerHeight,
+                  child: Stack(
+                    children: [
+                      const Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [Colors.white, Color(0xFFEFF7F0)],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(right: -40, top: -70, child: _ring(200)),
+                      Positioned(right: 70, top: 30, child: _ring(110)),
+                      const Positioned(
+                        right: 210,
+                        top: 22,
+                        child: _DotGrid(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 28),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF2E8B3E),
+                                    Color(0xFF0A3F15),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(17),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: WebTokens.green
+                                        .withValues(alpha: 0.32),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: icon,
+                            ),
+                            const SizedBox(width: 18),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: WebTokens.heading(23),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    width: 44,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFF106220),
+                                          Color(0xFF5FB36F),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, thickness: 1, color: WebTokens.line),
+                SizedBox(
+                  height: bodyHeight,
+                  child: MediaQuery(
+                    data: mq.copyWith(
+                      size: Size(width, bodyHeight),
+                      padding: EdgeInsets.zero,
+                      viewPadding: EdgeInsets.zero,
+                    ),
+                    child: child,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _blob(double size, double alpha) => IgnorePointer(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                const Color(0xFF5FB36F).withValues(alpha: alpha),
+                const Color(0xFF5FB36F).withValues(alpha: 0),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  Widget _ring(double size) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: WebTokens.green.withValues(alpha: 0.08),
+            width: 14,
+          ),
+        ),
+      );
+}
+
+/// Small decorative grid of dots for the page header.
+class _DotGrid extends StatelessWidget {
+  const _DotGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var r = 0; r < 4; r++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 9),
+            child: Row(
+              children: [
+                for (var c = 0; c < 6; c++)
+                  Container(
+                    width: 4,
+                    height: 4,
+                    margin: const EdgeInsets.only(right: 9),
+                    decoration: BoxDecoration(
+                      color: WebTokens.green.withValues(alpha: 0.16),
+                      shape: BoxShape.circle,
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
-            const Divider(height: 1, thickness: 1, color: WebTokens.line),
-            SizedBox(
-              height: bodyHeight,
-              child: MediaQuery(
-                data: mq.copyWith(
-                  size: Size(width, bodyHeight),
-                  padding: EdgeInsets.zero,
-                  viewPadding: EdgeInsets.zero,
-                ),
-                child: child,
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
   }
 }
