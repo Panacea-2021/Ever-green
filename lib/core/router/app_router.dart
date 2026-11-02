@@ -138,9 +138,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return Routes.home;
       }
 
-      // Session restore still running: wait on the splash screen.
+      // Session restore still running: wait on the splash screen. On web the
+      // page stays put (the module frame shows a loader) so a reload keeps
+      // the user where they were.
       if (authState.status == AuthStatus.unknown && !isPublicRoute) {
-        return Routes.splash;
+        return kIsWeb ? null : Routes.splash;
       }
 
       // If not authenticated (signed out, or a 401 expired the session) and

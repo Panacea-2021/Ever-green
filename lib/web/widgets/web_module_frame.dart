@@ -219,18 +219,26 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   @override
   Widget build(BuildContext context) {
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
-    final framed = isAuthenticated &&
-        _location.isNotEmpty &&
+    final restoring = ref.watch(
+      authStateProvider.select((s) => s.status == AuthStatus.unknown),
+    );
+    final protectedPage = _location.isNotEmpty &&
         !WebModuleFrame._unframedPaths.contains(_location);
+    final framed = isAuthenticated && protectedPage;
+
+    // Keep the shared lists cached (and start loading them) for the whole
+    // signed-in session, from the moment sign-in completes, so the dashboard
+    // and modules open with data instead of waiting on a fresh request.
+    if (isAuthenticated) {
+      ref.listen(tasksProvider, (_, __) {});
+      ref.listen(companiesProvider, (_, __) {});
+      ref.listen(equipmentsProvider(null), (_, __) {});
+    }
+
+    if (restoring && protectedPage) return const _WebRestoringSession();
 
     final content = KeyedSubtree(key: _contentKey, child: widget.child);
     if (!framed) return content;
-
-    // Keep the shared lists cached (and start loading them) for the whole
-    // signed-in session, so modules open with data instead of re-fetching.
-    ref.listen(tasksProvider, (_, __) {});
-    ref.listen(companiesProvider, (_, __) {});
-    ref.listen(equipmentsProvider(null), (_, __) {});
 
     final user = ref.watch(currentUserProvider);
     final role = ref.watch(currentUserRoleProvider);
@@ -419,6 +427,71 @@ class _HeaderCardShell extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// Shown on a signed-in page while a page reload restores the session.
+class _WebRestoringSession extends StatelessWidget {
+  const _WebRestoringSession();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: WebTokens.cream,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: WebTokens.green.withValues(alpha: 0.18),
+                    blurRadius: 36,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 60,
+                  height: 60,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.eco_rounded,
+                    size: 40,
+                    color: WebTokens.green,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 22),
+            Text(
+              'EverGreen',
+              style: WebTokens.heading(22).copyWith(color: WebTokens.green),
+            ),
+            const SizedBox(height: 18),
+            const SizedBox(
+              width: 160,
+              child: ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(4)),
+                child: LinearProgressIndicator(
+                  minHeight: 4,
+                  color: WebTokens.green,
+                  backgroundColor: Color(0x1F106220),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _WebTopBar extends StatelessWidget {
