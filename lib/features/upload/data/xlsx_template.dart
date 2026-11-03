@@ -7,8 +7,9 @@ import 'package:file_picker/file_picker.dart';
 // matched case-insensitively with spaces as underscores, so each sample keeps
 // a single sheet. Every cell is written as text; dates are YYYY-MM-DD.
 
-/// `uploadEquipmentData` headers. Name, Make and Model are required; a blank
-/// EG Serial Number is generated. TM Frequency is one of daily, weekly,
+/// `uploadEquipmentData` headers. Name is required; Make, Model, Serial Number,
+/// and Manufacturer Date may be blank. A blank EG Serial Number is generated.
+/// TM Frequency is one of daily, weekly,
 /// biweekly, monthly, bi_monthly, tri_monthly, quarterly, semi_annual,
 /// annual. Service Type is the name of an active service type (any case) or
 /// blank.
@@ -17,6 +18,7 @@ const equipmentTemplateHeaders = [
   'Make',
   'Model',
   'EG Serial Number',
+  'Serial Number',
   'Specifications',
   'Location',
   'Description',
@@ -31,6 +33,7 @@ const equipmentSampleRows = [
     'Daikin',
     'FTKF50',
     '',
+    '',
     '1.5 Ton Inverter',
     'Ground Floor - Billing Area',
     'Main billing counter AC',
@@ -43,6 +46,7 @@ const equipmentSampleRows = [
     'Carrier',
     '30XA-252',
     'EG-SAMPLE-0002',
+    '',
     '250 TR Air Cooled',
     'Terrace',
     'Central cooling plant',
@@ -52,10 +56,10 @@ const equipmentSampleRows = [
   ],
 ];
 
-/// `uploadCompanyData` headers. company_name, branch_name and all admin_*
-/// fields except admin_location are required. service_type: amc, non_amc or
-/// regular (blank = amc). amc_type (AMC only): c_amc or nc_amc. start_date /
-/// end_date apply to AMC only (blank = today / one year from today).
+/// `uploadCompanyData` headers. company_name and branch_name are required.
+/// Admin name/phone/email may all be blank; if supplied, all three are needed.
+/// A blank password imports with a temporary default. service_type: amc,
+/// non_amc or regular; blank stays unset. amc_type and dates are optional.
 const companyTemplateHeaders = [
   'company_name',
   'branch_name',
@@ -105,7 +109,9 @@ const companySampleRows = [
   ],
 ];
 
-/// `uploadTechnicianData` headers (service engineers). Location is optional.
+/// `uploadTechnicianData` headers (service engineers). Location and Password
+/// are optional; blank password uses a temporary default. Designation can be
+/// Senior Service Engineer, Service Engineer, or Cold Room Service Engineer.
 const technicianTemplateHeaders = [
   'Name',
   'Phone',
@@ -115,7 +121,8 @@ const technicianTemplateHeaders = [
   'Location',
 ];
 
-/// Designation is "Senior Service Engineer" or "Service Engineer".
+/// Supported designations include Senior Service Engineer, Service Engineer,
+/// and Cold Room Service Engineer.
 const technicianSampleRows = [
   [
     'Suresh Reddy',
