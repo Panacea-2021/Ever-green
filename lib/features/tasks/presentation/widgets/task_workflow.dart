@@ -358,7 +358,7 @@ class TechnicianChoices extends ConsumerWidget {
         .where(
           (u) =>
               role != UserRole.seniorTechnician ||
-              u.role == UserRole.technician,
+              (u.role.isTechnicianLevel && u.role != UserRole.seniorTechnician),
         )
         .toList();
     if (techs.isEmpty) {

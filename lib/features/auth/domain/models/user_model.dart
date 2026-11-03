@@ -5,6 +5,7 @@ enum UserRole {
   manager,
   seniorTechnician,
   technician,
+  coldRoomTechnician,
   clientAdmin,
   client,
 }
@@ -21,6 +22,8 @@ extension UserRoleX on UserRole {
         return 'Senior Service Engineer';
       case UserRole.technician:
         return 'Service Engineer';
+      case UserRole.coldRoomTechnician:
+        return 'Cold Room Service Engineer';
       case UserRole.clientAdmin:
         return 'Company Manager';
       case UserRole.client:
@@ -30,7 +33,9 @@ extension UserRoleX on UserRole {
 
   /// True for any technician-level role (field staff).
   bool get isTechnicianLevel =>
-      this == UserRole.technician || this == UserRole.seniorTechnician;
+      this == UserRole.technician ||
+      this == UserRole.seniorTechnician ||
+      this == UserRole.coldRoomTechnician;
 
   /// True for any client-side role.
   bool get isClientSide =>
@@ -55,9 +60,13 @@ extension UserRoleX on UserRole {
       case 'eg_admin':
         return UserRole.manager;
       case 'technician':
-        return designation == seniorDesignation
-            ? UserRole.seniorTechnician
-            : UserRole.technician;
+        if (designation == seniorDesignation) {
+          return UserRole.seniorTechnician;
+        }
+        if (designation == coldRoomDesignation) {
+          return UserRole.coldRoomTechnician;
+        }
+        return UserRole.technician;
       case 'client_admin':
         return UserRole.clientAdmin;
       default:
@@ -74,6 +83,7 @@ extension UserRoleX on UserRole {
         return 'eg_admin';
       case UserRole.seniorTechnician:
       case UserRole.technician:
+      case UserRole.coldRoomTechnician:
         return 'technician';
       case UserRole.clientAdmin:
         return 'client_admin';
@@ -89,6 +99,8 @@ extension UserRoleX on UserRole {
         return seniorDesignation;
       case UserRole.technician:
         return juniorDesignation;
+      case UserRole.coldRoomTechnician:
+        return coldRoomDesignation;
       default:
         return null;
     }
@@ -96,6 +108,7 @@ extension UserRoleX on UserRole {
 
   static const seniorDesignation = 'Senior Service Engineer';
   static const juniorDesignation = 'Service Engineer';
+  static const coldRoomDesignation = 'Cold Room Service Engineer';
 
   /// Designations still possible on older backend rows; parsed as
   /// [juniorDesignation].
@@ -117,8 +130,11 @@ class UserCompany {
   final String name;
   final String branchName;
 
-  const UserCompany(
-      {required this.id, required this.name, this.branchName = ''});
+  const UserCompany({
+    required this.id,
+    required this.name,
+    this.branchName = '',
+  });
 
   factory UserCompany.fromJson(Map<String, dynamic> json) => UserCompany(
         id: (json['id'] as num).toInt(),

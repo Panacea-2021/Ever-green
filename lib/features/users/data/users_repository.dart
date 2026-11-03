@@ -16,8 +16,8 @@ class UsersRepository {
 
   UsersRepository(this._api);
 
-  /// `POST user/createUser`. Technicians are never linked to companies on the
-  /// backend, so [companyIds] is dropped for technician roles. With
+  /// `POST user/createUser`. Technician company links record their allocated
+  /// sites without changing technician permissions. With
   /// [sendCredentials] the backend emails the login details; the returned
   /// message says so when that email could not be sent.
   Future<Either<Failure, String>> createUser({
@@ -40,8 +40,7 @@ class UsersRepository {
         'location': location,
         'access_level': role.accessLevel,
         if (role.designation != null) 'designation': role.designation,
-        if (!role.isTechnicianLevel && companyIds.isNotEmpty)
-          'company_link': companyIds,
+        if (companyIds.isNotEmpty) 'company_link': companyIds,
         'send_credentials': sendCredentials,
       },
     );
@@ -125,7 +124,8 @@ class UsersRepository {
     final result =
         await _api.post<dynamic>('user/forgetPassword', data: {'phone': phone});
     return result.map(
-        (body) => _message(body, 'Password sent to your registered email'));
+      (body) => _message(body, 'Password sent to your registered email'),
+    );
   }
 
   /// Whether the backend reported the credentials email as sent.
