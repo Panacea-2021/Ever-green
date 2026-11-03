@@ -70,8 +70,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   final _subjectController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  /// Locally picked image paths (uploaded on save).
-  final List<String> _selectedImages = [];
+  /// Locally picked images (uploaded on save).
+  final List<XFile> _selectedImages = [];
 
   bool _prefilledEdit = false;
   bool _preselectedEquipment = false;
@@ -231,8 +231,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
       );
       return;
     }
-    final path = await pickImageFrom(source);
-    if (path != null && mounted) setState(() => _selectedImages.add(path));
+    final image = await pickImageFrom(source);
+    if (image != null && mounted) setState(() => _selectedImages.add(image));
   }
 
   void _removeImage(int index) {
@@ -316,7 +316,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
           issueType: issueType,
           clientId: user.backendId,
           location: location,
-          imagePaths: List.of(_selectedImages),
+          imageFiles: List.of(_selectedImages),
         ),
         success: 'Task created successfully',
       );
@@ -560,6 +560,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
           ),
           Column(
             children: [
+              _buildBottomButtons(editing, issueTypes, activeTask),
               Expanded(
                 child: waitingForEdit
                     ? const Center(
@@ -572,120 +573,121 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                         child: Center(
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(
-                              maxWidth: double.infinity,
+                              maxWidth: 960,
                             ),
                             child: WebForm.split(
-                                _webSection(
-                                  header: true,
-                                  children: [
-                                    _webRow(
-                                      _webLabelled(
-                                        'Company',
-                                        _companyField(
-                                          companies,
-                                          _companyLocked,
-                                        ),
-                                      ),
-                                      _webLabelled(
-                                        'Branch',
-                                        _branchDropdown(
-                                          companies,
-                                          _companyLocked,
-                                        ),
+                              _webSection(
+                                header: true,
+                                children: [
+                                  _webLabelled(
+                                    'Company',
+                                    _companyField(companies, _companyLocked),
+                                    Icons.apartment_rounded,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _webLabelled(
+                                    'Branch',
+                                    _branchDropdown(
+                                      companies,
+                                      _companyLocked,
+                                    ),
+                                    Icons.account_tree_rounded,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _webLabelled(
+                                    'Location',
+                                    ValueListenableBuilder<TextEditingValue>(
+                                      valueListenable: _locationController,
+                                      builder: (context, value, _) =>
+                                          _pickerField(
+                                        label:
+                                            'Location (e.g. Block B, 2nd floor)',
+                                        value: value.text.trim().isEmpty
+                                            ? null
+                                            : value.text.trim(),
+                                        onTap: _pickLocation,
                                       ),
                                     ),
+                                    Icons.location_on_outlined,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _webLabelled(
+                                    'Equipment',
+                                    _equipmentField(
+                                      equipments,
+                                      selectedEquipment,
+                                    ),
+                                    Icons.layers_outlined,
+                                  ),
+                                  if (activeTask != null) ...[
+                                    const SizedBox(height: 12),
+                                    _activeTaskBanner(activeTask),
+                                  ],
+                                  if (selectedEquipment != null) ...[
                                     const SizedBox(height: 18),
-                                    _webRow(
-                                      _webLabelled(
-                                        'Location',
-                                        ValueListenableBuilder<
-                                            TextEditingValue>(
-                                          valueListenable: _locationController,
-                                          builder: (context, value, _) =>
-                                              _pickerField(
-                                            label:
-                                                'Location (e.g. Block B, 2nd floor)',
-                                            value: value.text.trim().isEmpty
-                                                ? null
-                                                : value.text.trim(),
-                                            onTap: _pickLocation,
+                                    _buildEquipmentSpecifications(
+                                      selectedEquipment,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              _webSection(
+                                children: [
+                                  _webLabelled(
+                                    'Issue Type',
+                                    issueTypesAsync.hasError &&
+                                            issueTypes.isEmpty
+                                        ? _statusField(
+                                            'Couldn\'t load issue types — tap to retry',
+                                            onTap: () => ref.invalidate(
+                                              issueTypesProvider,
+                                            ),
+                                          )
+                                        : _buildInlineDropdownField<int>(
+                                            label: 'Issue Type',
+                                            value: _issueTypeId,
+                                            items: [
+                                              for (final it in issueTypes)
+                                                (it.id, it.name),
+                                            ],
+                                            onChanged: (value) => setState(() {
+                                              _issueTypeId = value;
+                                            }),
                                           ),
-                                        ),
-                                      ),
-                                      _webLabelled(
-                                        'Equipment',
-                                        _equipmentField(
-                                          equipments,
-                                          selectedEquipment,
-                                        ),
-                                      ),
+                                    Icons.sell_outlined,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _webLabelled(
+                                    'Subject',
+                                    _buildTextField(
+                                      label: 'Subject',
+                                      controller: _subjectController,
+                                      hintText: 'Enter subject',
                                     ),
-                                    if (activeTask != null) ...[
-                                      const SizedBox(height: 12),
-                                      _activeTaskBanner(activeTask),
-                                    ],
-                                    if (selectedEquipment != null) ...[
-                                      const SizedBox(height: 18),
-                                      _buildEquipmentSpecifications(
-                                        selectedEquipment,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                _webSection(
-                                  children: [
-                                    _webRow(
-                                      _webLabelled(
-                                        'Issue Type',
-                                        issueTypesAsync.hasError &&
-                                                issueTypes.isEmpty
-                                            ? _statusField(
-                                                'Couldn\'t load issue types — tap to retry',
-                                                onTap: () => ref.invalidate(
-                                                  issueTypesProvider,
-                                                ),
-                                              )
-                                            : _buildInlineDropdownField<int>(
-                                                label: 'Issue Type',
-                                                value: _issueTypeId,
-                                                items: [
-                                                  for (final it in issueTypes)
-                                                    (it.id, it.name),
-                                                ],
-                                                onChanged: (value) => setState(
-                                                  () => _issueTypeId = value,
-                                                ),
-                                              ),
-                                      ),
-                                      _webLabelled(
-                                        'Subject',
-                                        _buildTextField(
-                                          label: 'Subject',
-                                          controller: _subjectController,
-                                          hintText: 'Enter subject',
-                                        ),
-                                      ),
+                                    Icons.edit_outlined,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _webLabelled(
+                                    'Description',
+                                    _buildTextField(
+                                      label: 'Description',
+                                      controller: _descriptionController,
+                                      hintText: 'Enter description',
+                                      maxLines: 4,
                                     ),
-                                    const SizedBox(height: 18),
-                                    _webLabelled(
-                                      'Description',
-                                      _buildTextField(
-                                        label: 'Description',
-                                        controller: _descriptionController,
-                                        hintText: 'Enter description',
-                                        maxLines: 4,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    _buildImageUploadSection(),
-                                  ],
-                                ),
+                                    Icons.notes_rounded,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _buildImageUploadSection(),
+                                ],
+                              ),
+                              leftFlex: 2,
+                              rightFlex: 3,
                             ),
                           ),
                         ),
                       ),
               ),
-              _buildBottomButtons(editing, issueTypes, activeTask),
             ],
           ),
         ],
@@ -768,40 +770,48 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     );
   }
 
-  /// Two fields side by side, stacked when the form is narrow.
-  Widget _webRow(Widget a, Widget b) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        if (c.maxWidth < 560) {
-          return Column(children: [a, const SizedBox(height: 18), b]);
-        }
-        return Row(
+  Widget _webLabelled(String label, Widget field, IconData icon) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: a),
-            const SizedBox(width: 18),
-            Expanded(child: b),
+            Container(
+              width: 38,
+              height: 38,
+              margin: const EdgeInsets.only(top: 18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF4EC),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: const Color(0xFF187333),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF3F4D44),
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  field,
+                ],
+              ),
+            ),
           ],
-        );
-      },
-    );
-  }
-
-  Widget _webLabelled(String label, Widget field) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF3F4D44),
-          ),
         ),
-        const SizedBox(height: 7),
-        field,
       ],
     );
   }
@@ -809,7 +819,9 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   /// Field outline: a soft bordered rectangle on web, the pill on mobile.
   ShapeBorder _fieldShape(double radius) => RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(kIsWeb ? 12 : radius),
-        side: kIsWeb ? const BorderSide(color: Color(0xFFD9E2DB)) : BorderSide.none,
+        side: kIsWeb
+            ? const BorderSide(color: Color(0xFFD9E2DB))
+            : BorderSide.none,
       );
 
   /// Companies a client role may pick from (null = all).
@@ -1488,6 +1500,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     ActiveEquipmentTask? activeTask,
   ) {
     return Container(
+      width: double.infinity,
       padding: kIsWeb
           ? const EdgeInsets.fromLTRB(24, 14, 24, 14)
           : const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -1497,76 +1510,155 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
       ),
       child: SafeArea(
         top: false,
-        child: _webAlignActions(Row(
-          children: [
-            // Reset Button (outlined pill)
-            Expanded(
-              child: GestureDetector(
-                onTap: _resetForm,
-                child: Container(
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(
-                      color: const Color(0x80155622),
-                      width: 1,
+        child: _webAlignActions(
+          Row(
+            children: [
+              if (kIsWeb)
+                SizedBox(
+                  width: 112,
+                  child: GestureDetector(
+                    onTap: _resetForm,
+                    child: Container(
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F8F4),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFD4E3D6)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.refresh_rounded, size: 18),
+                          SizedBox(width: 7),
+                          Text(
+                            'Reset',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0E501B),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    'Reset',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF0E501B),
+                )
+              else
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _resetForm,
+                    child: Container(
+                      height: 46,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(
+                          color: const Color(0x80155622),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        'Reset',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0E501B),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-
-            const SizedBox(width: 16),
-
-            // Save Button (green gradient pill, matches Figma)
-            Expanded(
-              child: GestureDetector(
-                onTap: () => _saveTask(editing, issueTypes, activeTask),
-                child: Container(
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF138A2A), Color(0xFF106220)],
+              const SizedBox(width: 16),
+              if (kIsWeb)
+                SizedBox(
+                  width: 148,
+                  child: GestureDetector(
+                    onTap: () => _saveTask(editing, issueTypes, activeTask),
+                    child: Container(
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF138A2A), Color(0xFF106220)],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFF106220).withValues(alpha: 0.18),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_rounded,
+                              size: 18, color: Colors.white),
+                          SizedBox(width: 7),
+                          Text(
+                            'Save',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(32),
                   ),
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
+                )
+              else
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _saveTask(editing, issueTypes, activeTask),
+                    child: Container(
+                      height: 46,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF138A2A), Color(0xFF106220)],
+                        ),
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                      child: const Text(
+                        'Save',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ],
-        ),),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  /// On web the action buttons sit together at the right of the bar.
+  /// On web the action buttons stay together on the right of the full bar.
   Widget _webAlignActions(Widget row) => kIsWeb
-      ? Align(
-          alignment: Alignment.centerRight,
-          child: SizedBox(width: 380, child: row),
+      ? SizedBox(
+          width: double.infinity,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: SizedBox(width: 276, child: row),
+          ),
         )
       : row;
 }

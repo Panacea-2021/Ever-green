@@ -59,32 +59,33 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     const SizedBox(height: 8),
                     // Header row: menu (drawer) on the left, centered title.
-                    if (!kIsWeb) Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Row(
-                        children: [
-                          Builder(
-                            builder: (ctx) => CustomMenuIcon(
-                              onTap: () => Scaffold.of(ctx).openDrawer(),
-                            ),
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'My Profile',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1C2B20),
-                                letterSpacing: -0.4,
+                    if (!kIsWeb)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: Row(
+                          children: [
+                            Builder(
+                              builder: (ctx) => CustomMenuIcon(
+                                onTap: () => Scaffold.of(ctx).openDrawer(),
                               ),
                             ),
-                          ),
-                          // Balance the 42px menu icon so the title stays centered.
-                          const SizedBox(width: 42),
-                        ],
+                            const Expanded(
+                              child: Text(
+                                'My Profile',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1C2B20),
+                                  letterSpacing: -0.4,
+                                ),
+                              ),
+                            ),
+                            // Balance the 42px menu icon so the title stays centered.
+                            const SizedBox(width: 42),
+                          ],
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 20),
                     _buildAvatar(user),
                     const SizedBox(height: 14),
@@ -598,7 +599,9 @@ class ProfileScreen extends ConsumerWidget {
         );
         if (confirmed == true && context.mounted) {
           await ref.read(authControllerProvider).logout();
-          if (context.mounted) context.go(Routes.login);
+          if (context.mounted) {
+            context.go(kIsWeb ? Routes.home : Routes.login);
+          }
         }
       },
       child: Container(
@@ -783,7 +786,8 @@ class _CompanyProfileSheet extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 10),
-          for (final (icon, label, value) in rows) _detailRow(icon, label, value),
+          for (final (icon, label, value) in rows)
+            _detailRow(icon, label, value),
         ],
       ),
     );
@@ -920,8 +924,18 @@ class _CompanyProfileSheet extends ConsumerWidget {
   }
 
   static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   static String _date(DateTime? d) {
@@ -999,7 +1013,8 @@ class _WebMenuTileState extends State<_WebMenuTile> {
                               ],
                             ),
                           ),
-                          child: Icon(widget.entry.icon, size: 26, color: color),
+                          child:
+                              Icon(widget.entry.icon, size: 26, color: color),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -1021,9 +1036,8 @@ class _WebMenuTileState extends State<_WebMenuTile> {
                           height: 36,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: _hover
-                                ? color
-                                : color.withValues(alpha: 0.08),
+                            color:
+                                _hover ? color : color.withValues(alpha: 0.08),
                           ),
                           child: Icon(
                             Icons.arrow_forward_rounded,

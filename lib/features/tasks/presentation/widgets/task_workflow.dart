@@ -553,133 +553,143 @@ class _DeleteTaskDialogState extends State<_DeleteTaskDialog> {
         ),
         child: Material(
           color: Colors.transparent,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(26),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x33D32F2F),
-                  blurRadius: 36,
-                  offset: Offset(0, 14),
-                ),
-              ],
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: kIsWeb ? 640 : double.infinity,
             ),
-            padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 62,
-                  height: 62,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFDE8E8),
-                    shape: BoxShape.circle,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33D32F2F),
+                    blurRadius: 36,
+                    offset: Offset(0, 14),
                   ),
-                  child: const Icon(
-                    Icons.delete_outline,
-                    color: _danger,
-                    size: 30,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Delete Task',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1F1F1F),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Delete "${t.title}" (Ticket ${t.ticketNo})?\n'
-                  'The raiser, company manager and engineer will be notified.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 13.5,
-                    height: 1.45,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF6B6B6B),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  key: const Key('deleteReasonField'),
-                  controller: _reason,
-                  autofocus: true,
-                  minLines: 2,
-                  maxLines: 4,
-                  maxLength: taskDeleteReasonMax,
-                  textCapitalization: TextCapitalization.sentences,
-                  onChanged: (_) {
-                    if (_showError) setState(() => _showError = false);
-                  },
-                  style:
-                      const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: 'Reason for deleting *',
-                    errorText: _showError ? 'Please enter a reason' : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
+                ],
+              ),
+              padding: EdgeInsets.fromLTRB(
+                kIsWeb ? 30 : 24,
+                kIsWeb ? 28 : 26,
+                kIsWeb ? 30 : 24,
+                kIsWeb ? 26 : 22,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 62,
+                    height: 62,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFDE8E8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: _danger,
+                      size: 30,
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFD8D8D8)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Delete Task',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1F1F1F),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Delete "${t.title}" (Ticket ${t.ticketNo})?\n'
+                    'The raiser, company manager and engineer will be notified.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 13.5,
+                      height: 1.45,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF6B6B6B),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    key: const Key('deleteReasonField'),
+                    controller: _reason,
+                    autofocus: true,
+                    minLines: 2,
+                    maxLines: 4,
+                    maxLength: taskDeleteReasonMax,
+                    textCapitalization: TextCapitalization.sentences,
+                    onChanged: (_) {
+                      if (_showError) setState(() => _showError = false);
+                    },
+                    style:
+                        const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
+                    decoration: InputDecoration(
+                      labelText: 'Reason for deleting *',
+                      errorText: _showError ? 'Please enter a reason' : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFD8D8D8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
-                          ),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF545454),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF545454),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _danger,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _danger,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
-                          ),
-                          child: const Text(
-                            'Delete',
-                            style: TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -791,14 +801,13 @@ class TaskDialogButtons extends StatelessWidget {
   }
 }
 
-/// Picks one image from [source] and returns its local path.
-Future<String?> pickImageFrom(ImageSource source) async {
-  final file = await ImagePicker().pickImage(source: source, imageQuality: 70);
-  return file?.path;
+/// Picks one image from [source] for preview and upload.
+Future<XFile?> pickImageFrom(ImageSource source) async {
+  return ImagePicker().pickImage(source: source, imageQuality: 70);
 }
 
-/// Asks for camera or gallery and returns the picked image path.
-Future<String?> pickTaskImage(BuildContext context) async {
+/// Asks for camera or gallery and returns the picked image.
+Future<XFile?> pickTaskImage(BuildContext context) async {
   final source = await showModalBottomSheet<ImageSource>(
     context: context,
     backgroundColor: Colors.white,
@@ -843,8 +852,8 @@ Future<String?> pickTaskImage(BuildContext context) async {
   return pickImageFrom(source);
 }
 
-/// Thumbnail for a locally picked image path.
-Widget localImageThumb(String path, {double size = 72}) {
+/// Thumbnail for a locally picked image.
+Widget localImageThumb(XFile file, {double size = 72}) {
   final fallback = Container(
     width: size,
     height: size,
@@ -855,14 +864,14 @@ Widget localImageThumb(String path, {double size = 72}) {
     borderRadius: BorderRadius.circular(10),
     child: kIsWeb
         ? Image.network(
-            path,
+            file.path,
             width: size,
             height: size,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => fallback,
           )
         : Image.file(
-            File(path),
+            File(file.path),
             width: size,
             height: size,
             fit: BoxFit.cover,

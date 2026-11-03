@@ -65,7 +65,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
   bool _saving = false;
 
   /// Newly picked local logo file (uploaded on save).
-  String? _selectedImagePath;
+  XFile? _selectedImage;
 
   /// Logo already stored on the company (edit mode).
   String? _existingLogo;
@@ -114,7 +114,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
     _startDate = c.isAmc ? c.amcStartDay : null;
     _endDate = c.isAmc ? c.amcEndDay : null;
     _existingLogo = c.logo;
-    _selectedImagePath = null;
+    _selectedImage = null;
   }
 
   @override
@@ -252,8 +252,8 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
 
     try {
       String? logo;
-      if (_selectedImagePath != null) {
-        logo = await repo.uploadLogo(_selectedImagePath!);
+      if (_selectedImage != null) {
+        logo = await repo.uploadLogo(_selectedImage!);
       }
 
       final input = CompanyInput(
@@ -323,7 +323,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
         imageQuality: 85,
       );
       if (file != null && mounted) {
-        setState(() => _selectedImagePath = file.path);
+        setState(() => _selectedImage = file);
       }
     } catch (e) {
       if (mounted) _showError('Could not pick image: $e');
@@ -888,7 +888,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
   }
 
   Widget _webUploadArea() {
-    final hasImage = _selectedImagePath != null || _existingLogo != null;
+    final hasImage = _selectedImage != null || _existingLogo != null;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -934,8 +934,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _selectedImagePath?.split(RegExp(r'[/\\]')).last ??
-                          'Jpg,Png upto 5MB',
+                      _selectedImage?.name ?? 'Jpg,Png upto 5MB',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1530,7 +1529,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
                 shape: BoxShape.circle,
               ),
               child: Center(
-                child: _selectedImagePath != null || _existingLogo != null
+                child: _selectedImage != null || _existingLogo != null
                     ? const Icon(
                         Icons.check_circle,
                         color: Color(0xFF6366F1),
@@ -1545,7 +1544,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              _selectedImagePath != null || _existingLogo != null
+              _selectedImage != null || _existingLogo != null
                   ? 'Image Selected'
                   : 'Please upload Company image here',
               style: const TextStyle(
@@ -1557,8 +1556,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              _selectedImagePath?.split(RegExp(r'[/\\]')).last ??
-                  'Jpg,Png upto 5MB',
+              _selectedImage?.name ?? 'Jpg,Png upto 5MB',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
