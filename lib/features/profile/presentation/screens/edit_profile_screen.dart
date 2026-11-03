@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -173,7 +174,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       try {
         avatarUrl = await ref
             .read(evergreenRepositoryProvider)
-            .uploadFile(_pickedPhoto!.path, folderName: 'avatar');
+            .uploadFile(_pickedPhoto!, folderName: 'avatar');
       } catch (e) {
         if (!mounted) return;
         setState(() => _isLoading = false);
@@ -442,12 +443,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: Center(
             child: _pickedPhoto != null
                 ? ClipOval(
-                    child: Image.file(
-                      File(_pickedPhoto!.path),
-                      width: 94,
-                      height: 94,
-                      fit: BoxFit.cover,
-                    ),
+                    child: kIsWeb
+                        ? Image.network(
+                            _pickedPhoto!.path,
+                            width: 94,
+                            height: 94,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.file(
+                            File(_pickedPhoto!.path),
+                            width: 94,
+                            height: 94,
+                            fit: BoxFit.cover,
+                          ),
                   )
                 : mediaUrl(user?.profilePictureUrl).isNotEmpty
                     ? ClipOval(

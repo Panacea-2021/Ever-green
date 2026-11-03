@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/data/evergreen_repository.dart';
 import '../../../core/models/backend_models.dart';
@@ -221,8 +222,8 @@ class AmcRepository {
     );
   }
 
-  Future<String> uploadLogo(String path) =>
-      _repo.uploadFile(path, folderName: 'logo');
+  Future<String> uploadLogo(XFile file) =>
+      _repo.uploadFile(file, folderName: 'logo');
 
   Future<CompanyUploadResult> uploadCompanyData({
     String? path,

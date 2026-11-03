@@ -29,6 +29,13 @@ class WebModuleFrame extends ConsumerStatefulWidget {
 
   /// Width for list and detail pages built from mobile cards.
   static const listContentWidth = 1100.0;
+  static const uploadContentWidth = 780.0;
+
+  static const _uploadPaths = {
+    Routes.uploadEquipments,
+    Routes.uploadTechnicians,
+    Routes.uploadAmc,
+  };
 
   /// Form and settings pages (matched by prefix, so `/add-task/new` counts).
   static const _formPaths = [
@@ -171,6 +178,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   /// previous data stays on screen while the new request runs.
   void _refreshIfStale() {
     if (!ref.read(isAuthenticatedProvider)) return;
+    if (_location != Routes.webDashboard) return;
     final now = DateTime.now();
     if (now.difference(_lastRefresh) < WebModuleFrame._refreshAfter) return;
     _lastRefresh = now;
@@ -180,6 +188,10 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   }
 
   double _contentWidthFor(String location) {
+    if (WebModuleFrame._uploadPaths
+        .any((p) => location == p || location.startsWith('$p/'))) {
+      return WebModuleFrame.uploadContentWidth;
+    }
     for (final p in WebModuleFrame._formPaths) {
       if (location == p || location.startsWith('$p/')) {
         return WebModuleFrame.formContentWidth;
@@ -225,15 +237,6 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     final protectedPage = _location.isNotEmpty &&
         !WebModuleFrame._unframedPaths.contains(_location);
     final framed = isAuthenticated && protectedPage;
-
-    // Keep the shared lists cached (and start loading them) for the whole
-    // signed-in session, from the moment sign-in completes, so the dashboard
-    // and modules open with data instead of waiting on a fresh request.
-    if (isAuthenticated) {
-      ref.listen(tasksProvider, (_, __) {});
-      ref.listen(companiesProvider, (_, __) {});
-      ref.listen(equipmentsProvider(null), (_, __) {});
-    }
 
     if (restoring && protectedPage) return const _WebRestoringSession();
 
@@ -293,6 +296,10 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                           width: width,
                           mq: mq,
                           constraints: constraints,
+                          compact: WebModuleFrame._uploadPaths.any(
+                            (p) =>
+                                _location == p || _location.startsWith('$p/'),
+                          ),
                           child: content,
                         );
                       }
@@ -339,18 +346,39 @@ class _HeaderCardShell extends StatelessWidget {
     required this.width,
     required this.mq,
     required this.constraints,
+    this.compact = false,
     required this.child,
   });
 
   final double width;
   final MediaQueryData mq;
   final BoxConstraints constraints;
+  final bool compact;
   final Widget child;
 
   static const _accentHeight = 4.0;
 
   @override
   Widget build(BuildContext context) {
+    if (compact) {
+      return Container(
+        color: const Color(0xFFF3F7F3),
+        alignment: Alignment.center,
+        child: SizedBox(
+          width: width,
+          height: constraints.maxHeight,
+          child: MediaQuery(
+            data: mq.copyWith(
+              size: Size(width, constraints.maxHeight),
+              padding: EdgeInsets.zero,
+              viewPadding: EdgeInsets.zero,
+            ),
+            child: child,
+          ),
+        ),
+      );
+    }
+
     final height = (constraints.maxHeight - 40).clamp(0.0, double.infinity);
 
     return Stack(
