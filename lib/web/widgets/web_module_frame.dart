@@ -35,7 +35,16 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.addUser,
     Routes.editProfile,
     Routes.downloadQr,
+    Routes.uploadEquipments,
+    Routes.uploadTechnicians,
+    Routes.uploadAmc,
   ];
+
+  static const _centeredUploadPaths = {
+    Routes.uploadEquipments,
+    Routes.uploadTechnicians,
+    Routes.uploadAmc,
+  };
 
   /// Shared lists are refreshed in the background at most this often.
   static const _refreshAfter = Duration(seconds: 60);
@@ -180,6 +189,10 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   }
 
   double _contentWidthFor(String location) {
+    if (WebModuleFrame._centeredUploadPaths
+        .any((p) => location == p || location.startsWith('$p/'))) {
+      return 740;
+    }
     for (final p in WebModuleFrame._formPaths) {
       if (location == p || location.startsWith('$p/')) {
         return WebModuleFrame.formContentWidth;
@@ -246,6 +259,8 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
         _location.startsWith('${Routes.companyDetails}/');
     final bannered = WebModuleFrame._bannerPaths
         .any((p) => _location == p || _location.startsWith('$p/'));
+    final centeredUpload = WebModuleFrame._centeredUploadPaths
+        .any((p) => _location == p || _location.startsWith('$p/'));
     final title = _titleFor(role);
 
     return Material(
@@ -293,6 +308,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                           width: width,
                           mq: mq,
                           constraints: constraints,
+                          centerContent: centeredUpload,
                           child: content,
                         );
                       }
@@ -339,19 +355,22 @@ class _HeaderCardShell extends StatelessWidget {
     required this.width,
     required this.mq,
     required this.constraints,
+    required this.centerContent,
     required this.child,
   });
 
   final double width;
   final MediaQueryData mq;
   final BoxConstraints constraints;
+  final bool centerContent;
   final Widget child;
 
   static const _accentHeight = 4.0;
 
   @override
   Widget build(BuildContext context) {
-    final height = (constraints.maxHeight - 40).clamp(0.0, double.infinity);
+    final height = (constraints.maxHeight - (centerContent ? 72 : 40))
+        .clamp(0.0, double.infinity);
 
     return Stack(
       children: [
@@ -363,7 +382,7 @@ class _HeaderCardShell extends StatelessWidget {
           child: Container(
             width: width,
             height: height,
-            margin: const EdgeInsets.only(top: 20),
+            margin: EdgeInsets.only(top: centerContent ? 36 : 20),
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: Colors.white,
@@ -400,7 +419,14 @@ class _HeaderCardShell extends StatelessWidget {
                         padding: EdgeInsets.zero,
                         viewPadding: EdgeInsets.zero,
                       ),
-                      child: child,
+                      child: centerContent
+                          ? Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 620),
+                                child: child,
+                              ),
+                            )
+                          : child,
                     ),
                   ),
                 ),
