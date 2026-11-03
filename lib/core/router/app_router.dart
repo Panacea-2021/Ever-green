@@ -11,6 +11,9 @@ import '../../features/landing/presentation/screens/services_page.dart';
 import '../../features/landing/presentation/screens/technicians_page.dart';
 import '../../features/landing/presentation/screens/website_info_page.dart';
 import '../../web/screens/web_dashboard_screen.dart';
+import '../../web/screens/web_companies_screen.dart';
+import '../../web/screens/web_company_details_screen.dart';
+import '../../web/screens/web_task_board_screen.dart';
 import '../../features/amcs/presentation/screens/add_equipment_screen.dart';
 import '../../features/amcs/presentation/screens/add_task_screen.dart';
 import '../../features/amcs/presentation/screens/amcs_screen.dart';
@@ -136,9 +139,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return Routes.home;
       }
 
-      // Session restore still running: wait on the splash screen.
+      // Session restore still running: wait on the splash screen. On web the
+      // page stays put (the module frame shows a loader) so a reload keeps
+      // the user where they were.
       if (authState.status == AuthStatus.unknown && !isPublicRoute) {
-        return Routes.splash;
+        return kIsWeb ? null : Routes.splash;
       }
 
       // If not authenticated (signed out, or a 401 expired the session) and
@@ -403,6 +408,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final companyId = state.pathParameters['companyId'] ?? '';
           final extra = state.extra as Map<String, dynamic>?;
+          if (kIsWeb) {
+            return WebCompanyDetailsScreen(
+              companyId: companyId,
+              companyName: extra?['companyName'],
+              location: extra?['location'],
+            );
+          }
           return CompanyDetailsScreen(
             companyId: companyId,
             companyName: extra?['companyName'],
@@ -543,7 +555,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: Routes.amcs,
             name: 'amcs',
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: AmcsScreen(),
+              child: kIsWeb ? WebCompaniesScreen() : AmcsScreen(),
             ),
           ),
           GoRoute(
@@ -553,11 +565,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               final status =
                   state.extra is TaskStatus ? state.extra! as TaskStatus : null;
               return NoTransitionPage(
-                child: TaskBoardScreen(
-                  key: ValueKey(status),
-                  isRootTab: true,
-                  initialStatus: status,
-                ),
+                child: kIsWeb
+                    ? const WebTaskBoardScreen()
+                    : TaskBoardScreen(
+                        key: ValueKey(status),
+                        isRootTab: true,
+                        initialStatus: status,
+                      ),
               );
             },
           ),

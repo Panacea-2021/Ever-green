@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/user_provider.dart';
 import '../../data/users_repository.dart';
+import '../../../../web/widgets/web_filter_tiles.dart';
 
 class UsersListScreen extends ConsumerStatefulWidget {
   const UsersListScreen({super.key, this.initialTab = 0});
@@ -78,6 +80,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     final usersAsync = ref.watch(usersListProvider);
     final users = _filterUsers(usersAsync.valueOrNull ?? const []);
 
+    if (kIsWeb) return _webBuild(usersAsync, users);
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -155,6 +158,448 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Web layout
+  // ---------------------------------------------------------------------------
+  static const Color _webLine = Color(0xFFE2E8E3);
+  static const Color _webInk = Color(0xFF14201A);
+  static const _webTabMeta = [
+    (Icons.business_center_outlined, Color(0xFF106220)),
+    (Icons.contact_phone_outlined, Color(0xFF1565C0)),
+    (Icons.engineering_outlined, Color(0xFFE08600)),
+    (Icons.manage_accounts_outlined, Color(0xFF6A4BC4)),
+  ];
+
+  bool _webInTab(UserRole role, int tab) {
+    switch (tab) {
+      case 1:
+        return role == UserRole.client;
+      case 2:
+        return role.isTechnicianLevel;
+      case 3:
+        return role == UserRole.superAdmin || role == UserRole.manager;
+      default:
+        return role == UserRole.clientAdmin;
+    }
+  }
+
+  int _webTabCount(List<User> all, int tab) {
+    final q = _searchQuery.toLowerCase();
+    return all.map(AppUser.fromUser).where((u) {
+      if (!_webInTab(u.role, tab)) return false;
+      if (q.isEmpty) return true;
+      return u.name.toLowerCase().contains(q) ||
+          u.email.toLowerCase().contains(q) ||
+          u.mobile.toLowerCase().contains(q) ||
+          u.companyNames.toLowerCase().contains(q);
+    }).length;
+  }
+
+  Widget _webBuild(AsyncValue<List<User>> usersAsync, List<AppUser> users) {
+    final all = usersAsync.valueOrNull;
+    Widget body;
+    if (usersAsync.isLoading && !usersAsync.hasValue) {
+      body = const Center(child: CircularProgressIndicator(color: _addGreen));
+    } else if (usersAsync.hasError && !usersAsync.hasValue) {
+      body = _buildEmptyState(
+        message: usersAsync.error.toString(),
+        onRetry: () => ref.invalidate(usersListProvider),
+      );
+    } else {
+      body = RefreshIndicator(
+        color: _addGreen,
+        onRefresh: () => ref.refresh(usersListProvider.future),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            if (users.isEmpty) {
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: c.maxHeight,
+                  child: _buildEmptyState(),
+                ),
+              );
+            }
+            const gap = 18.0;
+            final inner = c.maxWidth - 48;
+            final cols = inner >= 1250
+                ? 3
+                : inner >= 720
+                    ? 2
+                    : 1;
+            final w = (inner - gap * (cols - 1)) / cols;
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+              children: [
+                Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    for (final u in users)
+                      SizedBox(width: w, child: _webUserCard(u)),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F8F4),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+              child: _webToolbar(),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: WebFilterTiles(
+                options: [
+                  for (var i = 0; i < _tabs.length; i++)
+                    WebFilterOption(
+                      label: _tabs[i],
+                      icon: _webTabMeta[i].$1,
+                      color: _webTabMeta[i].$2,
+                      selected: _selectedTab == i,
+                      count: all == null ? null : _webTabCount(all, i),
+                      onTap: () => setState(() => _selectedTab = i),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: _buildResultHeader(users.length),
+            ),
+            const SizedBox(height: 12),
+            Expanded(child: body),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webToolbar() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _webLine),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              cursorColor: _addGreen,
+              textAlignVertical: TextAlignVertical.center,
+              onChanged: (v) => setState(() => _searchQuery = v),
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 14.5,
+                fontWeight: FontWeight.w500,
+                color: _webInk,
+              ),
+              decoration: InputDecoration(
+                isDense: true,
+                filled: true,
+                fillColor: const Color(0xFFF7FAF8),
+                hintText: 'Search Users',
+                hintStyle: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black.withValues(alpha: 0.35),
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  size: 21,
+                  color: _addGreen,
+                ),
+                suffixIcon: _searchQuery.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        color: Colors.black45,
+                        onPressed: () => setState(() {
+                          _searchController.clear();
+                          _searchQuery = '';
+                        }),
+                      ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _webLine),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _addGreen, width: 1.4),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton.icon(
+            onPressed: () => context.push(Routes.addUser),
+            icon: const Icon(Icons.add_rounded, size: 20, color: Colors.white),
+            label: const Text(
+              'Add',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 14.5,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _addGreen,
+              elevation: 0,
+              minimumSize: const Size(120, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _webUserCard(AppUser user) {
+    return _WebUserHover(
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _webLine),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 10, 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: SizedBox(
+                      width: 86,
+                      height: 104,
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        clipBehavior: Clip.hardEdge,
+                        child: _buildAvatar(user),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                user.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: _webInk,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 32,
+                              height: 28,
+                              child: Center(
+                                child: _busyId == user.id
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: _addGreen,
+                                        ),
+                                      )
+                                    : _buildMoreMenu(user),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: user.isActive
+                                ? _footerBg
+                                : const Color(0xFFF0F0F0),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: user.isActive ? _green : Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                user.isActive ? 'Active' : 'Inactive',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: user.isActive ? _green : Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _webInfoRow(
+                          Icons.email_outlined,
+                          'Email',
+                          user.email.isEmpty ? '-' : user.email,
+                        ),
+                        const SizedBox(height: 7),
+                        _webInfoRow(
+                          Icons.phone_outlined,
+                          'Mobile',
+                          user.mobile,
+                        ),
+                        const SizedBox(height: 7),
+                        _webInfoRow(
+                          Icons.business_outlined,
+                          'Company',
+                          user.companyNames.isEmpty ? '-' : user.companyNames,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF5F9F5),
+                border: Border(top: BorderSide(color: _webLine)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 14,
+                    color: _addGreen,
+                  ),
+                  const SizedBox(width: 8),
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'Created On ',
+                          style: TextStyle(
+                            color: Colors.black.withValues(alpha: 0.45),
+                          ),
+                        ),
+                        TextSpan(
+                          text: ':  ${_formatDate(user.createdAt)}',
+                          style: const TextStyle(color: _webInk),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: _addGreen.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Icon(icon, size: 13, color: _addGreen),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: RichText(
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+              children: [
+                TextSpan(
+                  text: '$label ',
+                  style: TextStyle(color: Colors.black.withValues(alpha: 0.45)),
+                ),
+                TextSpan(
+                  text: ': $value',
+                  style: const TextStyle(color: _webInk),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -751,6 +1196,32 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: error ? AppColors.error : _addGreen,
+      ),
+    );
+  }
+}
+
+/// Lifts its child slightly while hovered (web cards).
+class _WebUserHover extends StatefulWidget {
+  const _WebUserHover({required this.child});
+  final Widget child;
+
+  @override
+  State<_WebUserHover> createState() => _WebUserHoverState();
+}
+
+class _WebUserHoverState extends State<_WebUserHover> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
+        child: widget.child,
       ),
     );
   }

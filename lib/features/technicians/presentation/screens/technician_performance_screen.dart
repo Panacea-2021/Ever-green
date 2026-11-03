@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,6 +30,7 @@ class _TechnicianPerformanceScreenState
         ? ref.watch(technicianPerformanceProvider)
         : ref.watch(managerPerformanceProvider);
 
+    if (kIsWeb) return _webBuild(range, async, stats);
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F7),
       body: Stack(
@@ -46,7 +48,7 @@ class _TechnicianPerformanceScreenState
           SafeArea(
             child: Column(
               children: [
-                _header(context),
+                if (!kIsWeb) _header(context),
                 _roleTabs(),
                 _rangeBar(range),
                 const SizedBox(height: 4),
@@ -92,6 +94,528 @@ class _TechnicianPerformanceScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  static const Color _webLine = Color(0xFFE2E8E3);
+  static const Color _webInk = Color(0xFF14201A);
+
+  Widget _webBuild(
+    DateRange range,
+    AsyncValue<Object?> async,
+    List<PerformanceStats> stats,
+  ) {
+    Widget body;
+    if (!async.hasValue && async.isLoading) {
+      body = const Center(child: CircularProgressIndicator(color: _green));
+    } else if (!async.hasValue && async.hasError) {
+      body = _error(async.error);
+    } else {
+      body = RefreshIndicator(
+        color: _green,
+        onRefresh: () async {
+          ref.invalidate(tasksProvider);
+          await ref.read(tasksProvider.future);
+        },
+        child: LayoutBuilder(
+          builder: (_, c) {
+            if (stats.isEmpty) {
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(height: c.maxHeight, child: _empty(range)),
+              );
+            }
+            const gap = 18.0;
+            final inner = c.maxWidth - 48;
+            final cols = inner >= 1300
+                ? 3
+                : inner >= 760
+                    ? 2
+                    : 1;
+            final w = (inner - gap * (cols - 1)) / cols;
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+              children: [
+                Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    for (final s in stats)
+                      SizedBox(width: w, child: _webCard(s)),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F8F4),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_bg.png',
+              fit: BoxFit.cover,
+              color: const Color(0xFFF5F8F4).withValues(alpha: 0.9),
+              colorBlendMode: BlendMode.srcOver,
+              errorBuilder: (_, __, ___) =>
+                  Container(color: const Color(0xFFF5F8F4)),
+            ),
+          ),
+          Column(
+            children: [
+              _webToolbar(range),
+              Expanded(child: body),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _webToolbar(DateRange range) {
+    Widget roleTab(String label, IconData icon, int index) {
+      final sel = _tab == index;
+      return MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => setState(() => _tab = index),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: 48,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: sel ? _green : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: sel
+                  ? [
+                      BoxShadow(
+                        color: _green.withValues(alpha: 0.25),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 19,
+                  color: sel ? Colors.white : const Color(0xFF4B5A50),
+                ),
+                const SizedBox(width: 9),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: sel ? Colors.white : const Color(0xFF4B5A50),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 14),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _webLine),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final segment = Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F6F3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    fit: FlexFit.tight,
+                    child: roleTab(
+                      'Service Engineers',
+                      Icons.engineering_outlined,
+                      0,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    fit: FlexFit.tight,
+                    child: roleTab(
+                      'Managers',
+                      Icons.manage_accounts_outlined,
+                      1,
+                    ),
+                  ),
+                ],
+              ),
+            );
+            if (c.maxWidth < 900) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  segment,
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      for (final p in RangePreset.values) ...[
+                        if (p != RangePreset.values.first)
+                          const SizedBox(width: 8),
+                        Expanded(child: _webRangeChip(p, range)),
+                      ],
+                    ],
+                  ),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(flex: 9, child: segment),
+                const SizedBox(width: 12),
+                for (final p in RangePreset.values) ...[
+                  if (p != RangePreset.values.first) const SizedBox(width: 10),
+                  Expanded(flex: 3, child: _webRangeChip(p, range)),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _webRangeChip(RangePreset p, DateRange range) {
+    final selected = range.preset == p;
+    final label = p == RangePreset.custom && selected ? range.summary : p.label;
+    final fg = selected ? _green : const Color(0xFF4B5A50);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => _selectRange(p, range),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          height: 56,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: selected ? _green.withValues(alpha: 0.1) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? _green : _webLine,
+              width: selected ? 1.4 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                p == RangePreset.custom
+                    ? Icons.calendar_month_outlined
+                    : Icons.schedule_outlined,
+                size: 18,
+                color: fg,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectRange(RangePreset p, DateRange range) async {
+    if (p == RangePreset.custom) {
+      final picked = await showDateRangePicker(
+        context: context,
+        firstDate: DateTime(2020),
+        lastDate: DateTime(2035),
+        initialDateRange: DateTimeRange(start: range.start, end: range.end),
+        builder: (context, child) => Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: _green,
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1F1F1F),
+            ),
+          ),
+          child: child!,
+        ),
+      );
+      if (picked != null) {
+        ref.read(performanceRangeProvider.notifier).state =
+            DateRange.custom(picked.start, picked.end);
+      }
+    } else {
+      ref.read(performanceRangeProvider.notifier).state =
+          DateRange.fromPreset(p);
+    }
+  }
+
+  Widget _webCard(PerformanceStats s) {
+    final slaColor = s.slaCompliance >= 80
+        ? _green
+        : s.slaCompliance >= 50
+            ? const Color(0xFFE08600)
+            : const Color(0xFFD32F2F);
+    return _WebHoverLift(
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: s.isOverloaded ? const Color(0xFFE08600) : _webLine,
+            width: s.isOverloaded ? 1.3 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 46,
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF1E8A3A), _green],
+                      ),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Text(
+                      s.name.isNotEmpty ? s.name[0] : '?',
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      s.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: _webInk,
+                      ),
+                    ),
+                  ),
+                  if (s.overdue > 0)
+                    _webBadge(
+                      '${s.overdue} overdue',
+                      Icons.error_outline,
+                      const Color(0xFFD32F2F),
+                    )
+                  else if (s.isOverloaded)
+                    _webBadge(
+                      'Overloaded',
+                      Icons.warning_amber_rounded,
+                      const Color(0xFFE08600),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: _webLine),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _webMetric(
+                  'Created',
+                  '${s.created}',
+                  Icons.add_task_outlined,
+                  const Color(0xFF1565C0),
+                ),
+                const SizedBox(width: 10),
+                _webMetric(
+                  'Completed',
+                  '${s.completed}',
+                  Icons.check_circle_outline,
+                  _green,
+                ),
+                const SizedBox(width: 10),
+                _webMetric(
+                  'Active',
+                  '${s.active}',
+                  Icons.pending_actions_outlined,
+                  const Color(0xFF6A1B9A),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _webMetric(
+                  'Avg Resolve',
+                  s.avgResolutionHours == 0
+                      ? '-'
+                      : '${s.avgResolutionHours.toStringAsFixed(0)}h',
+                  Icons.timer_outlined,
+                  const Color(0xFF00897B),
+                ),
+                const SizedBox(width: 10),
+                _webMetric(
+                  'SLA Met',
+                  s.completed == 0
+                      ? '-'
+                      : '${s.slaCompliance.toStringAsFixed(0)}%',
+                  Icons.verified_outlined,
+                  slaColor,
+                ),
+                const SizedBox(width: 10),
+                _webMetric(
+                  'Rating',
+                  s.avgRating == 0 ? '-' : s.avgRating.toStringAsFixed(1),
+                  Icons.star_outline_rounded,
+                  const Color(0xFFFFB300),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webBadge(String text, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _webMetric(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.14)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(icon, size: 16, color: color),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 16,
+                      height: 1.1,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF6B6B6B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -486,6 +1010,32 @@ class _TechnicianPerformanceScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Lifts its child slightly while hovered (web cards).
+class _WebHoverLift extends StatefulWidget {
+  const _WebHoverLift({required this.child});
+  final Widget child;
+
+  @override
+  State<_WebHoverLift> createState() => _WebHoverLiftState();
+}
+
+class _WebHoverLiftState extends State<_WebHoverLift> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
+        child: widget.child,
       ),
     );
   }

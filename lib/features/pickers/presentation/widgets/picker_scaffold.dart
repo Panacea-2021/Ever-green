@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,6 +42,7 @@ class _PickerScaffoldState<T> extends State<PickerScaffold<T>> {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) return _webBuild(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F7),
       body: Stack(
@@ -69,6 +71,232 @@ class _PickerScaffoldState<T> extends State<PickerScaffold<T>> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _webBuild(BuildContext context) {
+    final count = widget.items.valueOrNull?.length;
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7F2),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
+            child: Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xFFE2E8E3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -50,
+                    top: -70,
+                    child: Container(
+                      width: 210,
+                      height: 210,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFFBFE3C6).withValues(alpha: 0.5),
+                            const Color(0xFFBFE3C6).withValues(alpha: 0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+                    child: LayoutBuilder(
+                      builder: (context, c) {
+                        final heading = Row(
+                          children: [
+                            Material(
+                              color: Colors.white,
+                              shape: const CircleBorder(
+                                side: BorderSide(color: Color(0xFFE2E8E3)),
+                              ),
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: () => Navigator.of(context).pop(),
+                                child: const SizedBox(
+                                  width: 42,
+                                  height: 42,
+                                  child: Icon(
+                                    Icons.arrow_back,
+                                    size: 20,
+                                    color: Color(0xFF14201A),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                gradient: const LinearGradient(
+                                  colors: [pickerGreen, Color(0xFF0C4A18)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.checklist_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Flexible(
+                              child: Text(
+                                widget.title,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF14201A),
+                                ),
+                              ),
+                            ),
+                            if (count != null) ...[
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 11,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F3EA),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '$count',
+                                  style: const TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: pickerGreen,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                        final search = SizedBox(
+                          width: c.maxWidth < 760 ? double.infinity : 380,
+                          child: _webSearch(),
+                        );
+                        if (c.maxWidth < 760) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [heading, const SizedBox(height: 14), search],
+                          );
+                        }
+                        return Row(
+                          children: [
+                            Expanded(child: heading),
+                            const SizedBox(width: 16),
+                            search,
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(child: _body()),
+        ],
+      ),
+    );
+  }
+
+  Widget _webSearch() {
+    return TextField(
+      onChanged: (v) => setState(() => _query = v),
+      cursorColor: pickerGreen,
+      textInputAction: TextInputAction.search,
+      style: const TextStyle(
+        fontFamily: 'Montserrat',
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: Colors.black,
+      ),
+      decoration: InputDecoration(
+        hintText: widget.searchHint,
+        hintStyle: TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Colors.black.withValues(alpha: 0.4),
+        ),
+        prefixIcon: const Icon(Icons.search, color: Color(0xFF9B9B9B)),
+        isDense: true,
+        filled: true,
+        fillColor: const Color(0xFFF5F8F5),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE2E8E3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: pickerGreen, width: 1.4),
+        ),
+      ),
+    );
+  }
+
+  /// Picker cards three, two or one per row, equal height within a row.
+  Widget _webGrid(List<T> visible) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
+        const gap = 16.0;
+        final rows = (visible.length + cols - 1) ~/ cols;
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+          itemCount: rows,
+          itemBuilder: (context, r) {
+            final cells = <Widget>[];
+            for (var j = 0; j < cols; j++) {
+              if (j > 0) cells.add(const SizedBox(width: gap));
+              final k = r * cols + j;
+              cells.add(
+                Expanded(
+                  child: k < visible.length
+                      ? widget.itemBuilder(context, visible[k])
+                      : const SizedBox.shrink(),
+                ),
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: gap),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: cells,
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -184,6 +412,19 @@ class _PickerScaffoldState<T> extends State<PickerScaffold<T>> {
         'Nothing matches "${_query.trim()}"',
       );
     }
+    if (kIsWeb) {
+      if (queryItem == null) return _webGrid(visible);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 4, 24, 12),
+            child: queryItem,
+          ),
+          Expanded(child: _webGrid(visible)),
+        ],
+      );
+    }
     final offset = queryItem == null ? 0 : 1;
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -260,29 +501,38 @@ class PickerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: kIsWeb ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: kIsWeb && selected ? const Color(0xFFF3F9F4) : Colors.white,
+        borderRadius: BorderRadius.circular(kIsWeb ? 18 : 20),
         border: Border.all(
-          color: selected ? pickerGreen : Colors.transparent,
+          color: selected
+              ? pickerGreen
+              : (kIsWeb ? const Color(0xFFE2E8E3) : Colors.transparent),
           width: 1.4,
         ),
         boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE0D9EE).withValues(alpha: 0.9),
-            blurRadius: 24,
-            offset: const Offset(0, 4),
-          ),
+          kIsWeb
+              ? BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                )
+              : BoxShadow(
+                  color: const Color(0xFFE0D9EE).withValues(alpha: 0.9),
+                  blurRadius: 24,
+                  offset: const Offset(0, 4),
+                ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(kIsWeb ? 18 : 20),
+          hoverColor: pickerGreen.withValues(alpha: 0.04),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(kIsWeb ? 16 : 14),
             child: Row(
               children: [
                 Container(
