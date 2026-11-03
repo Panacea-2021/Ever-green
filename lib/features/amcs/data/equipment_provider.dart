@@ -180,22 +180,51 @@ class EquipmentApi {
     throw RepositoryException(message ?? fallback);
   }
 
-  Future<UploadResult> uploadEquipmentExcel(String filePath, {required int companyId}) {
-    return _uploadExcel('user/uploadEquipmentData', filePath, {'company_link': companyId});
+  Future<UploadResult> uploadEquipmentExcel({
+    required String? filePath,
+    required List<int>? fileBytes,
+    required String fileName,
+    required int companyId,
+  }) {
+    return _uploadExcel(
+      'user/uploadEquipmentData',
+      filePath: filePath,
+      fileBytes: fileBytes,
+      fileName: fileName,
+      fields: {'company_link': companyId},
+    );
   }
 
-  Future<UploadResult> uploadTechnicianExcel(String filePath) {
-    return _uploadExcel('user/uploadTechnicianData', filePath, const {});
+  Future<UploadResult> uploadTechnicianExcel({
+    required String? filePath,
+    required List<int>? fileBytes,
+    required String fileName,
+  }) {
+    return _uploadExcel(
+      'user/uploadTechnicianData',
+      filePath: filePath,
+      fileBytes: fileBytes,
+      fileName: fileName,
+      fields: const {},
+    );
   }
 
   Future<UploadResult> _uploadExcel(
-    String path,
-    String filePath,
-    Map<String, dynamic> fields,
-  ) async {
+    String path, {
+    required String? filePath,
+    required List<int>? fileBytes,
+    required String fileName,
+    required Map<String, dynamic> fields,
+  }) async {
+    if (filePath == null && fileBytes == null) {
+      throw ArgumentError('An Excel file path or its bytes must be provided.');
+    }
+    final file = filePath != null
+        ? await MultipartFile.fromFile(filePath, filename: fileName)
+        : MultipartFile.fromBytes(fileBytes!, filename: fileName);
     final form = FormData.fromMap({
       ...fields,
-      'file': await MultipartFile.fromFile(filePath),
+      'file': file,
     });
     final body = unwrap(await api.post<dynamic>(path, data: form));
     final map = body is Map ? body : const {};

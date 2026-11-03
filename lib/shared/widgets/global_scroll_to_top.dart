@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// App-wide "back to top" control.
 ///
@@ -90,6 +92,43 @@ class _GlobalScrollToTopState extends State<GlobalScrollToTop>
     );
   }
 
+  KeyEventResult _handleWebScrollKeys(FocusNode node, KeyEvent event) {
+    if (!kIsWeb ||
+        (event is! KeyDownEvent && event is! KeyRepeatEvent) ||
+        _isEditingText) {
+      return KeyEventResult.ignored;
+    }
+
+    final delta = switch (event.logicalKey) {
+      LogicalKeyboardKey.arrowDown => 1,
+      LogicalKeyboardKey.arrowUp => -1,
+      _ => 0,
+    };
+    if (delta == 0) return KeyEventResult.ignored;
+
+    final position = _position;
+    if (position == null || !position.hasContentDimensions) {
+      return KeyEventResult.ignored;
+    }
+
+    final distance = position.viewportDimension * 0.8;
+    final target = (position.pixels + distance * delta)
+        .clamp(position.minScrollExtent, position.maxScrollExtent);
+    position.animateTo(
+      target,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+    );
+    return KeyEventResult.handled;
+  }
+
+  bool get _isEditingText {
+    final context = FocusManager.instance.primaryFocus?.context;
+    return context != null &&
+        (context.widget is EditableText ||
+            context.findAncestorWidgetOfExactType<EditableText>() != null);
+  }
+
   @override
   Widget build(BuildContext context) {
     return NotificationListener<ScrollNotification>(
@@ -97,62 +136,68 @@ class _GlobalScrollToTopState extends State<GlobalScrollToTop>
         _handleNotification(notification);
         return false;
       },
-      child: Stack(
-        children: [
-          widget.child,
-          ValueListenableBuilder<bool>(
-            valueListenable: _visible,
-            builder: (context, visible, _) {
-              return IgnorePointer(
-                ignoring: !visible,
-                child: Align(
-                  alignment: Alignment.bottomRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 24, bottom: 24),
-                    child: AnimatedOpacity(
-                      opacity: visible ? 1 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOut,
-                      child: AnimatedSlide(
-                        offset: visible ? Offset.zero : const Offset(0, 0.3),
-                        duration: const Duration(milliseconds: 220),
-                        curve: Curves.easeOutCubic,
-                        child: Semantics(
-                          button: true,
-                          label: 'Back to top',
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: GestureDetector(
-                              onTap: _scrollToTop,
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 160),
-                                width: 52,
-                                height: 52,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                  border: Border.all(
-                                    color: const Color(0xFFD7E6DA),
-                                    width: 1.2,
+      child: Focus(
+        autofocus: kIsWeb,
+        onKeyEvent: _handleWebScrollKeys,
+        child: Stack(
+          children: [
+            widget.child,
+            ValueListenableBuilder<bool>(
+              valueListenable: _visible,
+              builder: (context, visible, _) {
+                return IgnorePointer(
+                  ignoring: !visible,
+                  child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 24, bottom: 24),
+                      child: AnimatedOpacity(
+                        opacity: visible ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        child: AnimatedSlide(
+                          offset: visible ? Offset.zero : const Offset(0, 0.3),
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutCubic,
+                          child: Semantics(
+                            button: true,
+                            label: 'Back to top',
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: _scrollToTop,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 160),
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: const Color(0xFFD7E6DA),
+                                      width: 1.2,
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x2610391D),
+                                        blurRadius: 14,
+                                        offset: Offset(0, 6),
+                                      ),
+                                    ],
                                   ),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x2610391D),
-                                      blurRadius: 14,
-                                      offset: Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: AnimatedBuilder(
-                                    animation: _bobCurve,
-                                    builder: (context, child) => Transform.translate(
-                                      offset: Offset(0, -2.5 * _bobCurve.value),
-                                      child: child,
-                                    ),
-                                    child: const CustomPaint(
-                                      size: Size(18, 20),
-                                      painter: _UpArrowPainter(color: _green),
+                                  child: Center(
+                                    child: AnimatedBuilder(
+                                      animation: _bobCurve,
+                                      builder: (context, child) =>
+                                          Transform.translate(
+                                        offset:
+                                            Offset(0, -2.5 * _bobCurve.value),
+                                        child: child,
+                                      ),
+                                      child: const CustomPaint(
+                                        size: Size(18, 20),
+                                        painter: _UpArrowPainter(color: _green),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -163,11 +208,11 @@ class _GlobalScrollToTopState extends State<GlobalScrollToTop>
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

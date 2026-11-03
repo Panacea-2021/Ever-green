@@ -1,4 +1,5 @@
 import 'package:evergreen/core/data/evergreen_repository.dart';
+import 'package:evergreen/core/models/backend_models.dart';
 import 'package:evergreen/features/amcs/presentation/screens/add_equipment_screen.dart';
 import 'package:evergreen/features/auth/domain/models/user_model.dart';
 import 'package:evergreen/shared/providers/auth_state_provider.dart';
@@ -6,7 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Future<void> _pumpAdd(WidgetTester tester) async {
+Future<void> _pumpAdd(
+  WidgetTester tester, {
+  String companyId = '3',
+  List<Company> companies = const [],
+}) async {
   tester.view.physicalSize = const Size(800, 2000);
   tester.view.devicePixelRatio = 2.5;
   addTearDown(tester.view.reset);
@@ -15,8 +20,9 @@ Future<void> _pumpAdd(WidgetTester tester) async {
       overrides: [
         currentUserRoleProvider.overrideWithValue(UserRole.manager),
         serviceTypesProvider.overrideWith((ref) async => const []),
+        companiesProvider.overrideWith((ref) async => companies),
       ],
-      child: const MaterialApp(home: AddEquipmentScreen(companyId: '3')),
+      child: MaterialApp(home: AddEquipmentScreen(companyId: companyId)),
     ),
   );
   await tester.pumpAndSettle();
@@ -36,6 +42,20 @@ void main() {
     expect(find.text('Location'), findsOneWidget);
     expect(find.text('Fridge'), findsNothing);
     expect(find.text('Hyderabad'), findsNothing);
+  });
+
+  testWidgets('company picker displays available companies', (tester) async {
+    await _pumpAdd(
+      tester,
+      companyId: 'new',
+      companies: const [Company(id: 1, name: 'Evergreen Foods')],
+    );
+    await tester.ensureVisible(find.text('Company'));
+    await tester.tap(find.text('Company').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Select Company'), findsOneWidget);
+    expect(find.text('Evergreen Foods'), findsOneWidget);
   });
 
   testWidgets('manufacturer year picker scrolls back to older years',

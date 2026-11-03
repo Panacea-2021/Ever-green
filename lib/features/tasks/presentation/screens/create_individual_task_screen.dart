@@ -34,8 +34,8 @@ class _CreateIndividualTaskScreenState
   int? _issueTypeId;
   TaskPriority? _priority;
 
-  /// Locally picked image paths (uploaded on save).
-  final List<String> _selectedImages = [];
+  /// Locally picked images (uploaded on save).
+  final List<XFile> _selectedImages = [];
 
   @override
   void dispose() {
@@ -75,7 +75,8 @@ class _CreateIndividualTaskScreenState
     if (phoneError != null) return _snack(phoneError);
     if (address.isEmpty) return _snack('Please enter the address');
     IssueType? issueType;
-    for (final it in ref.read(issueTypesProvider).valueOrNull ?? const <IssueType>[]) {
+    for (final it
+        in ref.read(issueTypesProvider).valueOrNull ?? const <IssueType>[]) {
       if (it.id == _issueTypeId) issueType = it;
     }
 
@@ -89,7 +90,7 @@ class _CreateIndividualTaskScreenState
             contactName: name,
             contactPhone: normalizeContactPhone(phone),
             address: address,
-            imagePaths: List.of(_selectedImages),
+            imageFiles: List.of(_selectedImages),
           ),
       success: 'Task created successfully',
     );
@@ -106,8 +107,8 @@ class _CreateIndividualTaskScreenState
       );
       return;
     }
-    final path = await pickImageFrom(source);
-    if (path != null && mounted) setState(() => _selectedImages.add(path));
+    final image = await pickImageFrom(source);
+    if (image != null && mounted) setState(() => _selectedImages.add(image));
   }
 
   Widget _issueTypeField() => _buildDropdownField<int>(
@@ -151,69 +152,183 @@ class _CreateIndividualTaskScreenState
         textCapitalization: TextCapitalization.sentences,
       );
 
-  /// Web layout: two section cards with paired fields and right-aligned
-  /// actions.
+  /// Web layout: centred task form with a top action bar.
   Widget _webBuild() {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9F7),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.25,
-              child: Image.asset(
-                'assets/images/home_bg.png',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
+      backgroundColor: const Color(0xFFF2F6F2),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFF6F9F6), Color(0xFFEDF4EE)],
           ),
-          Column(
-            children: [
-              Expanded(
-                child: WebForm.page(
-                  maxWidth: double.infinity,
-                  [
-                    WebForm.split(
-                      WebForm.section(
-                        icon: Icons.person_outline,
-                        title: 'Contact Information',
-                        subtitle: 'Who and where the work is for',
-                        children: [
-                          _nameField(),
-                          const SizedBox(height: WebForm.gap),
-                          _phoneField(),
-                          const SizedBox(height: WebForm.gap),
-                          _addressField(),
-                        ],
-                      ),
-                      WebForm.section(
-                        children: [
-                          WebForm.row(_issueTypeField(), _priorityField()),
-                          const SizedBox(height: WebForm.gap),
-                          _buildTextField(
-                            controller: _titleController,
-                            hintText: 'Task title *',
-                          ),
-                          const SizedBox(height: WebForm.gap),
-                          _buildTextField(
-                            controller: _descriptionController,
-                            hintText: 'Enter description',
-                            maxLines: 4,
-                          ),
-                          const SizedBox(height: 20),
-                          _buildImageUploadSection(),
-                        ],
-                      ),
-                      leftFlex: 2,
-                      rightFlex: 3,
-                    ),
-                  ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -150,
+              right: -120,
+              child: IgnorePointer(
+                child: Container(
+                  width: 360,
+                  height: 360,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF73B980).withValues(alpha: 0.08),
+                  ),
                 ),
               ),
-              _buildBottomButtons(),
-            ],
+            ),
+            Positioned(
+              bottom: -180,
+              left: -140,
+              child: IgnorePointer(
+                child: Container(
+                  width: 400,
+                  height: 400,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF73B980).withValues(alpha: 0.06),
+                  ),
+                ),
+              ),
+            ),
+            Column(
+              children: [
+                _buildBottomButtons(webTop: true),
+                Expanded(
+                  child: WebForm.page(
+                    [
+                      WebForm.split(
+                        _individualTaskSection(
+                          icon: Icons.person_outline,
+                          title: 'Contact Information',
+                          subtitle: 'Who and where the work is for',
+                          children: [
+                            _nameField(),
+                            const SizedBox(height: WebForm.gap),
+                            _phoneField(),
+                            const SizedBox(height: WebForm.gap),
+                            _addressField(),
+                          ],
+                        ),
+                        _individualTaskSection(
+                          children: [
+                            WebForm.row(_issueTypeField(), _priorityField()),
+                            const SizedBox(height: WebForm.gap),
+                            _buildTextField(
+                              controller: _titleController,
+                              hintText: 'Task title *',
+                            ),
+                            const SizedBox(height: WebForm.gap),
+                            _buildTextField(
+                              controller: _descriptionController,
+                              hintText: 'Enter description',
+                              maxLines: 4,
+                            ),
+                            const SizedBox(height: 20),
+                            _buildImageUploadSection(),
+                          ],
+                        ),
+                        leftFlex: 2,
+                        rightFlex: 3,
+                      ),
+                    ],
+                    maxWidth: 1120,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _individualTaskSection({
+    IconData? icon,
+    String? title,
+    String? subtitle,
+    required List<Widget> children,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(26, 24, 26, 26),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, Color(0xFFFCFEFC)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFDCE7DE)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF174A24).withValues(alpha: 0.07),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (title != null) ...[
+            Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFE7F3E9), Color(0xFFD8EBDD)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: const Color(0xFF187333),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF14201A),
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black.withValues(alpha: 0.48),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: Color(0xFFE2E8E3)),
+            const SizedBox(height: 22),
+          ],
+          ...children,
         ],
       ),
     );
@@ -251,8 +366,9 @@ class _CreateIndividualTaskScreenState
                           label: 'Issue Type',
                           value: _issueTypeId,
                           items: [
-                            for (final it in ref.watch(issueTypesProvider).valueOrNull ??
-                                const <IssueType>[])
+                            for (final it
+                                in ref.watch(issueTypesProvider).valueOrNull ??
+                                    const <IssueType>[])
                               (it.id, it.name),
                           ],
                           onChanged: (v) => setState(() => _issueTypeId = v),
@@ -700,70 +816,134 @@ class _CreateIndividualTaskScreenState
     );
   }
 
-  Widget _buildBottomButtons() {
+  Widget _buildBottomButtons({bool webTop = false}) {
+    final buttons = Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: _resetForm,
+            child: Container(
+              height: kIsWeb ? 40 : 46,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: kIsWeb ? const Color(0xFFF4F8F4) : Colors.white,
+                borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
+                border: Border.all(
+                  color: kIsWeb
+                      ? const Color(0xFFD5E3D7)
+                      : const Color(0x80155622),
+                ),
+              ),
+              child: kIsWeb
+                  ? const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.refresh_rounded,
+                            size: 16, color: Color(0xFF416B49)),
+                        SizedBox(width: 6),
+                        Text(
+                          'Reset',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF416B49),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Text(
+                      'Reset',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF0E501B),
+                      ),
+                    ),
+            ),
+          ),
+        ),
+        SizedBox(width: kIsWeb ? 10 : 16),
+        Expanded(
+          child: GestureDetector(
+            onTap: _save,
+            child: Container(
+              height: kIsWeb ? 40 : 46,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF138A2A), _green],
+                ),
+                borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
+                boxShadow: kIsWeb
+                    ? [
+                        BoxShadow(
+                          color: _green.withValues(alpha: 0.18),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: kIsWeb
+                  ? const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_rounded,
+                            size: 16, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'Save',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Text(
+                      'Save',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+
     return Container(
       padding: kIsWeb
           ? WebForm.barPadding
           : const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: kIsWeb
-          ? WebForm.barDecoration
+          ? webTop
+              ? const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(bottom: BorderSide(color: WebForm.line)),
+                )
+              : WebForm.barDecoration
           : const BoxDecoration(color: Colors.white),
       child: SafeArea(
         top: false,
-        child: WebForm.actions(Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: _resetForm,
-                child: Container(
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: const Color(0x80155622)),
-                  ),
-                  child: const Text(
-                    'Reset',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF0E501B),
-                    ),
-                  ),
+        child: kIsWeb
+            ? Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  width: 300,
+                  child: buttons,
                 ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: GestureDetector(
-                onTap: _save,
-                child: Container(
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF138A2A), _green],
-                    ),
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),),
+              )
+            : buttons,
       ),
     );
   }

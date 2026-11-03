@@ -134,53 +134,53 @@ class TaskActionHandler {
             builder: (_) => _WebReportDialog(title: t.title),
           )
         : await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Service Report',
+              title: const Text(
+                'Service Report',
           style:
               TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          'Generate service report for "${t.title}"?',
-          style: const TextStyle(fontFamily: 'Montserrat'),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-        actions: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TaskDialogButtons([
-                TaskDialogButton(
-                  label: 'Share',
-                  icon: Icons.share_outlined,
-                  filled: false,
-                  onPressed: () => Navigator.pop(ctx, true),
-                ),
-                TaskDialogButton(
-                  label: 'Print',
-                  icon: Icons.print_outlined,
-                  onPressed: () => Navigator.pop(ctx, false),
-                ),
-              ]),
-              const SizedBox(height: 4),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF545454),
-                  ),
-                ),
               ),
-            ],
-          ),
-        ],
-      ),
-    );
+              content: Text(
+                'Generate service report for "${t.title}"?',
+                style: const TextStyle(fontFamily: 'Montserrat'),
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+              actions: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TaskDialogButtons([
+                      TaskDialogButton(
+                        label: 'Share',
+                        icon: Icons.share_outlined,
+                        filled: false,
+                        onPressed: () => Navigator.pop(ctx, true),
+                      ),
+                      TaskDialogButton(
+                        label: 'Print',
+                        icon: Icons.print_outlined,
+                        onPressed: () => Navigator.pop(ctx, false),
+                      ),
+                    ]),
+                    const SizedBox(height: 4),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF545454),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
     if (choice == null || !context.mounted) return;
     await _runReport(t, share: choice);
   }
@@ -596,15 +596,14 @@ class TaskActionHandler {
       ),
     );
     if (notes == null || !context.mounted) return;
-    final pending =
-        ref.read(pendingScreenshotsProvider)[t.id] ?? const <String>[];
+    final pending = ref.read(pendingScreenshotsProvider)[t.id] ?? const [];
     final role = ref.read(currentUserRoleProvider);
     final ok = await runTaskAction(
       context,
       () => _actions.complete(
         t,
         actionTaken: notes,
-        imagePaths: pending,
+        imageFiles: pending,
         asTechnician: role.isTechnicianLevel,
       ),
       success: 'Work submitted for "${t.title}"',
