@@ -439,6 +439,7 @@ class AnalyticsScreen extends ConsumerWidget {
         UserRole.manager => const Color(0xFF1565C0),
         UserRole.seniorTechnician => const Color(0xFFC25E00),
         UserRole.technician => const Color(0xFFE08600),
+        UserRole.coldRoomTechnician => const Color(0xFF00838F),
         UserRole.clientAdmin => const Color(0xFF4A148C),
         UserRole.client => const Color(0xFF6A1B9A),
       };
