@@ -944,11 +944,6 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
       return;
     }
     final year = int.tryParse(_selectedYear ?? '');
-    // createEquipment always parses manufacturer_date.
-    if (!widget.isEdit && year == null) {
-      _snack('Please select the manufacturer year', error: true);
-      return;
-    }
     if (_uploadingImage) {
       _snack('Please wait for the image to finish uploading', error: true);
       return;

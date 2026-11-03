@@ -73,6 +73,7 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
         c.poc?.phone ?? '',
         c.pocEmail ?? '',
         c.serviceLabel,
+        c.parentCompanyName ?? '',
       ].any((v) => v.toLowerCase().contains(q));
     }).toList();
   }
@@ -750,12 +751,28 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
               ),
             ),
 
-            // POC row
+            // Parent and child companies are shown from the linked hierarchy.
             Positioned(
               left: 137,
               top: 79,
               right: 12,
-              child: _infoRow(Icons.person, 'POC', company.poc?.name ?? ''),
+              child: company.isUndertaking
+                  ? _infoRow(
+                      Icons.account_tree_outlined,
+                      'Sites',
+                      '${company.childCompanyCount} linked companies',
+                    )
+                  : company.parentCompanyName != null
+                      ? _infoRow(
+                          Icons.account_tree_outlined,
+                          'Under',
+                          company.parentCompanyName!,
+                        )
+                      : _infoRow(
+                          Icons.person,
+                          'POC',
+                          company.poc?.name ?? '',
+                        ),
             ),
 
             // Email row

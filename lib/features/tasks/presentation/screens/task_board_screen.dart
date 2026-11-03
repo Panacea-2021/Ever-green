@@ -67,7 +67,7 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
     final all = async.value ?? const <TaskItem>[];
 
     Iterable<TaskItem> scoped = all;
-    if (role == UserRole.technician) {
+    if (role.isTechnicianLevel && role != UserRole.seniorTechnician) {
       scoped = all.where(
         (t) => t.technicianId != null && t.technicianId == user?.backendId,
       );
@@ -117,7 +117,7 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
             : _statusChips.firstWhere((c) => c.$2 == _statusFilter).$1;
     final selectedCount = counts[selectedLabel];
 
-    final title = role == UserRole.technician
+    final title = role.isTechnicianLevel && role != UserRole.seniorTechnician
         ? 'My Tasks'
         : role.isClientSide
             ? 'My Service Tasks'

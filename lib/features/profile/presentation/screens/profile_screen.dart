@@ -202,6 +202,7 @@ class ProfileScreen extends ConsumerWidget {
       case UserRole.seniorTechnician:
         return Icons.engineering_outlined;
       case UserRole.technician:
+      case UserRole.coldRoomTechnician:
         return Icons.build_outlined;
       case UserRole.clientAdmin:
         return Icons.apartment_outlined;
@@ -592,7 +593,8 @@ class _CompanyProfileSheet extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 10),
-          for (final (icon, label, value) in rows) _detailRow(icon, label, value),
+          for (final (icon, label, value) in rows)
+            _detailRow(icon, label, value),
         ],
       ),
     );
@@ -729,8 +731,18 @@ class _CompanyProfileSheet extends ConsumerWidget {
   }
 
   static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   static String _date(DateTime? d) {
