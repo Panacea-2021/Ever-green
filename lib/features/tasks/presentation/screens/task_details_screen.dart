@@ -230,19 +230,6 @@ class TaskDetailsScreen extends ConsumerWidget {
               ],
             ),
     );
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : Column(
-              children: [
-                Expanded(child: SingleChildScrollView(child: details)),
-                if (editButton != null) editButton,
-              ],
-            ),
-    );
   }
 
   Widget _buildHeroHeader(BuildContext context, String img) {
