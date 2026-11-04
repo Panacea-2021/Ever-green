@@ -14,6 +14,7 @@ import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
 import '../widgets/web_panel.dart';
 import '../widgets/web_stat_card.dart';
+import '../widgets/web_search_state.dart';
 import '../widgets/web_table.dart';
 
 /// Authenticated web dashboard — a desktop overview that reuses the same
@@ -35,6 +36,7 @@ class WebDashboardScreen extends ConsumerWidget {
     final renewals = ref.watch(amcRenewalsProvider);
     final equipmentCount = ref.watch(equipmentCountProvider);
     final role = ref.watch(currentUserRoleProvider);
+    final searchQuery = ref.watch(webModuleSearchQueryProvider);
 
     bool pending(AsyncValue<Object?> v) => !v.hasValue && !v.hasError;
     final tasksLoading = pending(ref.watch(taskItemsProvider));
@@ -93,6 +95,13 @@ class WebDashboardScreen extends ConsumerWidget {
         loading: equipmentLoading,
       ),
     ];
+    final visibleCards = cards.where(
+      (card) => matchesWebSearch(searchQuery, [
+        card.label,
+        card.caption,
+        card.value,
+      ]),
+    );
 
     return Scaffold(
       backgroundColor: WebTokens.cream,
@@ -119,7 +128,7 @@ class WebDashboardScreen extends ConsumerWidget {
                       spacing: gap,
                       runSpacing: gap,
                       children: [
-                        for (final card in cards)
+                        for (final card in visibleCards)
                           SizedBox(width: cardW, child: card),
                       ],
                     );
@@ -130,11 +139,13 @@ class WebDashboardScreen extends ConsumerWidget {
                   builder: (context, c) {
                     final table = _RecentTasks(
                       tasks: tasks,
+                      query: searchQuery,
                       loading: tasksLoading,
                       onViewAll: open(Routes.tasks),
                     );
                     final panel = _RenewalsPanel(
                       renewals: renewals,
+                      query: searchQuery,
                       loading: companiesLoading,
                       onViewAll: open(Routes.amcRenewals),
                     );
@@ -166,10 +177,12 @@ class WebDashboardScreen extends ConsumerWidget {
 class _RecentTasks extends StatelessWidget {
   const _RecentTasks({
     required this.tasks,
+    required this.query,
     required this.loading,
     this.onViewAll,
   });
   final List<TaskItem> tasks;
+  final String query;
   final bool loading;
   final VoidCallback? onViewAll;
 
@@ -200,7 +213,8 @@ class _RecentTasks extends StatelessWidget {
   Widget build(BuildContext context) {
     final recent = [...tasks]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final top = recent.take(8).toList();
+    final visible =
+        recent.where((task) => task.matchesQuery(query)).take(8).toList();
 
     return WebPanel(
       title: 'Recent Tasks',
@@ -215,9 +229,9 @@ class _RecentTasks extends StatelessWidget {
           WebColumn('Status', flex: 3),
           WebColumn('Priority', flex: 3),
         ],
-        onRowTap: (i) => context.push('${Routes.taskDetails}/${top[i].id}'),
+        onRowTap: (i) => context.push('${Routes.taskDetails}/${visible[i].id}'),
         rows: [
-          for (final t in top)
+          for (final t in visible)
             [
               WebCellText(t.title, bold: true),
               WebCellText(t.companyName),
@@ -234,20 +248,35 @@ class _RecentTasks extends StatelessWidget {
 class _RenewalsPanel extends StatelessWidget {
   const _RenewalsPanel({
     required this.renewals,
+    required this.query,
     required this.loading,
     this.onViewAll,
   });
   final List<AmcContract> renewals;
+  final String query;
   final bool loading;
   final VoidCallback? onViewAll;
 
   @override
   Widget build(BuildContext context) {
-    final top = renewals.take(5).toList();
+    final top = renewals
+        .where(
+          (contract) => matchesWebSearch(query, [
+            contract.companyName,
+            contract.branchName,
+            contract.pocName,
+            contract.mobile,
+            contract.email,
+            contract.serviceType,
+            contract.amcCategory,
+          ]),
+        )
+        .take(5)
+        .toList();
     return WebPanel(
       title: 'AMC Renewals Due',
-      count: renewals.isEmpty ? null : renewals.length,
-      actionLabel: renewals.isEmpty ? null : 'View all',
+      count: top.isEmpty ? null : top.length,
+      actionLabel: top.isEmpty ? null : 'View all',
       onAction: onViewAll,
       padBody: true,
       child: loading
@@ -305,7 +334,9 @@ class _RenewalsPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'No renewals due. Every contract is active.',
+                    query.isEmpty
+                        ? 'No renewals due. Every contract is active.'
+                        : 'No renewals match your search.',
                     textAlign: TextAlign.center,
                     style: WebTokens.bodyText(13.5, color: WebTokens.ink),
                   ),

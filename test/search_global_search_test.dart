@@ -12,7 +12,12 @@ void main() {
     'gst_number': '36AABCA1234F1Z5',
     'service_type': 'amc',
     'poc_details': {
-      'user': {'id': 9, 'name': 'Ravi Kumar', 'phone': '9876543210'},
+      'user': {
+        'id': 9,
+        'name': 'Ravi Kumar',
+        'phone': '9876543210',
+        'email': 'ravi@apollo.in',
+      },
     },
   });
 
@@ -24,6 +29,8 @@ void main() {
     'serial_number': 'SN-777',
     'eg_serial_number': 'EG-0042',
     'location': 'Radiology',
+    'status': 'under_maintenance',
+    'service_type': {'id': 3, 'name': 'Annual Service'},
     'company': {'id': 1, 'name': 'Apollo Hospitals', 'branch_name': ''},
   });
 
@@ -36,11 +43,25 @@ void main() {
       'ticket_no': 'TKT-1001',
       'name': 'Coil failure',
       'description': 'Head coil not detected',
+      'priority': 'high',
+      'approval': 'approved',
+      'issue_type': {'id': 2, 'name': 'Preventive Service'},
       'equipment': {
         'id': 5,
         'name': 'MRI Scanner',
         'eg_serial_number': 'EG-0042',
-        'company': {'id': 1, 'name': 'Apollo Hospitals'},
+        'company': {
+          'id': 1,
+          'name': 'Apollo Hospitals',
+          'poc_details': {
+            'user': {
+              'id': 9,
+              'name': 'Ravi Kumar',
+              'phone': '9876543210',
+              'email': 'ravi@apollo.in',
+            },
+          },
+        },
       },
     },
   });
@@ -113,6 +134,12 @@ void main() {
         expect(matchesQuery(q, companySearchFields(company)), isTrue);
       });
     }
+
+    test('web fields include PIC email and company status', () {
+      final fields = companySearchFields(company, includeWebFields: true);
+      expect(matchesQuery('ravi@apollo', fields), isTrue);
+      expect(matchesQuery('active', fields), isTrue);
+    });
   });
 
   group('equipment fields', () {
@@ -129,6 +156,12 @@ void main() {
         expect(matchesQuery(q, equipmentSearchFields(equipment)), isTrue);
       });
     }
+
+    test('web fields include equipment service and status', () {
+      final fields = equipmentSearchFields(equipment, includeWebFields: true);
+      expect(matchesQuery('annual service', fields), isTrue);
+      expect(matchesQuery('under maintenance', fields), isTrue);
+    });
 
     test('falls back to the looked-up company name', () {
       final bare = Equipment.fromJson(
@@ -160,6 +193,14 @@ void main() {
       });
     }
 
+    test('web fields include PIC, service, and priority', () {
+      final fields = taskSearchFields(companyTask, includeWebFields: true);
+      expect(matchesQuery('high', fields), isTrue);
+      expect(matchesQuery('approved', fields), isTrue);
+      expect(matchesQuery('preventive service', fields), isTrue);
+      expect(matchesQuery('ravi', fields), isTrue);
+    });
+
     for (final q in ['lakshmi', '91234', 'banjara', 'tkt-1002']) {
       test('individual task matches contact "$q"', () {
         expect(matchesQuery(q, taskSearchFields(individualTask)), isTrue);
@@ -176,11 +217,22 @@ void main() {
   });
 
   group('service engineer fields', () {
-    for (final q in ['suresh', '90000', 'suresh@evergreen', 'service engineer']) {
+    for (final q in [
+      'suresh',
+      '90000',
+      'suresh@evergreen',
+      'service engineer',
+    ]) {
       test('match "$q"', () {
         expect(matchesQuery(q, engineerSearchFields(engineer)), isTrue);
       });
     }
+
+    test('web fields include role and account status', () {
+      final fields = engineerSearchFields(engineer, includeWebFields: true);
+      expect(matchesQuery('service engineer', fields), isTrue);
+      expect(matchesQuery('active', fields), isTrue);
+    });
 
     test('never exposes the legacy "Technician" designation', () {
       expect(engineerDesignation(engineer), 'Service Engineer');

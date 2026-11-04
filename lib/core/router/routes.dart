@@ -28,6 +28,7 @@ abstract class Routes {
 
   // Feature routes
   static const String notifications = '/notifications';
+  static const String announcements = '/announcements';
   static const String scanner = '/scanner';
   static const String assignTasks = '/assign-tasks';
   static const String createAmc = '/create-amc';

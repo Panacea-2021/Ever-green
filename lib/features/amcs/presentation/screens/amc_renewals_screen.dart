@@ -12,6 +12,7 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../data/amc_provider.dart';
 import '../../domain/models/amc_contract.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
+import '../../../../web/widgets/web_search_state.dart';
 import '../widgets/amc_async_states.dart';
 
 /// Super Admin / Manager view of AMC contracts that need attention —
@@ -31,6 +32,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final searchQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     final companiesAsync = ref.watch(companiesProvider);
     final all = amcContractsFrom(companiesAsync.valueOrNull ?? const [])
         .where((c) => c.company?.isActive != false)
@@ -41,9 +43,18 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
     final expiredCount =
         all.where((c) => c.status() == AmcStatus.expired).length;
 
-    final visible = _filter == null
-        ? flagged
-        : flagged.where((c) => c.status() == _filter).toList();
+    final visible = flagged.where((contract) {
+      return (_filter == null || contract.status() == _filter) &&
+          matchesWebSearch(searchQuery, [
+            contract.companyName,
+            contract.branchName,
+            contract.pocName,
+            contract.mobile,
+            contract.email,
+            contract.serviceType,
+            contract.amcCategory,
+          ]);
+    }).toList();
     final canRenew =
         Permissions.canManageAmcs(ref.watch(currentUserRoleProvider));
 
@@ -171,7 +182,8 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
               builder: (context, c) {
                 final filters = WebFilterTiles(
                   options: [
-                    for (final f in <(String, AmcStatus?, int, IconData, Color)>[
+                    for (final f
+                        in <(String, AmcStatus?, int, IconData, Color)>[
                       ('All', null, dueCount, Icons.dashboard_outlined, _green),
                       (
                         'Expiring Soon',
@@ -210,7 +222,10 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
                 }
                 return Row(
                   children: [
-                    SizedBox(width: 280, child: _webDueTile(dueCount)),
+                    SizedBox(
+                      width: (c.maxWidth - 44) / 4,
+                      child: _webDueTile(dueCount),
+                    ),
                     const SizedBox(width: 16),
                     Expanded(child: filters),
                   ],
@@ -227,7 +242,8 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
 
   Widget _webDueTile(int count) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -247,21 +263,21 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
       child: Row(
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: const Icon(Icons.autorenew, color: Colors.white, size: 26),
+            child: const Icon(Icons.autorenew, color: Colors.white, size: 21),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               '$count due',
               style: const TextStyle(
                 fontFamily: 'Montserrat',
-                fontSize: 26,
+                fontSize: 21,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
               ),
@@ -273,8 +289,18 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
   }
 
   static const _webMonths = [
-    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+    'JAN',
+    'FEB',
+    'MAR',
+    'APR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AUG',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DEC',
   ];
 
   /// Tear-off calendar block showing the contract end date.
@@ -362,9 +388,8 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
                   for (var j = i; j < i + cols; j++) ...[
                     if (j > i) const SizedBox(width: gap),
                     Expanded(
-                      child: j < cards.length
-                          ? cards[j]
-                          : const SizedBox.shrink(),
+                      child:
+                          j < cards.length ? cards[j] : const SizedBox.shrink(),
                     ),
                   ],
                 ],

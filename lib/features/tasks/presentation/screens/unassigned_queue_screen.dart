@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
+import '../../../../web/widgets/web_search_state.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
@@ -37,13 +38,20 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
     final async = ref.watch(taskItemsProvider);
     final all = ref.watch(taskProvider);
     final tabs = ref.watch(queueTabsProvider);
+    final searchQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     final noEngineer = ref.watch(unassignedCountProvider);
 
-    final list = tabs[_tab]!;
+    final visibleTabs = {
+      for (final tab in QueueTab.values)
+        tab: tabs[tab]!
+            .where((task) => task.matchesQuery(searchQuery))
+            .toList(),
+    };
+    final list = visibleTabs[_tab]!;
     final overdueOpen =
-        tabs[QueueTab.unassigned]!.where((t) => t.isOverdue()).length;
-    final awaitingCount = tabs[QueueTab.awaiting]!.length;
-    final escalationCount = tabs[QueueTab.escalation]!.length;
+        visibleTabs[QueueTab.unassigned]!.where((t) => t.isOverdue()).length;
+    final awaitingCount = visibleTabs[QueueTab.awaiting]!.length;
+    final escalationCount = visibleTabs[QueueTab.escalation]!.length;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -82,7 +90,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                     _overdueBanner(
                       '$escalationCount ticket${escalationCount == 1 ? '' : 's'} escalated or stuck in the same status for ${TaskItem.staleStatusHours}h+',
                     ),
-                  _tabs(tabs),
+                  _tabs(visibleTabs),
                   const SizedBox(height: 16),
                   Expanded(
                     child: RefreshIndicator(
