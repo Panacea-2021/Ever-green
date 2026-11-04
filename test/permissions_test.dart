@@ -218,9 +218,11 @@ void main() {
     });
   });
 
-  group('RBAC — new roles (Senior Technician, Client Admin)', () {
-    test('there are six roles', () {
-      expect(UserRole.values.length, 6);
+  group(
+      'RBAC — new roles (Senior Technician, Cold Room Engineer, Client Admin)',
+      () {
+    test('there are seven roles', () {
+      expect(UserRole.values.length, 7);
     });
 
     test('Senior Technician can assign tasks and view performance', () {

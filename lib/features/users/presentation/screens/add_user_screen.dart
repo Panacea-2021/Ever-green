@@ -288,8 +288,8 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     );
   }
 
-  /// The design's "Assign to AMC" picker, fed by the companies (AMCs) the
-  /// signed-in user can see.
+  /// Assign client users to an AMC, or optionally link technicians to an
+  /// allocated site. Technician links are informational assignment metadata.
   Widget _buildCompanyField() {
     final companiesAsync = ref.watch(repo.companiesProvider);
     final companies = [...companiesAsync.valueOrNull ?? const <Company>[]]
@@ -301,7 +301,9 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
           value: companies.any((c) => c.id == _selectedCompanyId)
               ? _selectedCompanyId
               : null,
-          hintText: 'Assign to AMC',
+          hintText: _selectedRole?.isTechnicianLevel == true
+              ? 'Allocated Site (optional)'
+              : 'Assign to AMC',
           items: {for (final c in companies) c.id: c.displayName},
           validator: (v) =>
               _needsCompany && v == null ? 'Please select an AMC' : null,

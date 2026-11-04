@@ -390,6 +390,7 @@ class ProfileScreen extends ConsumerWidget {
       case UserRole.seniorTechnician:
         return Icons.engineering_outlined;
       case UserRole.technician:
+      case UserRole.coldRoomTechnician:
         return Icons.build_outlined;
       case UserRole.clientAdmin:
         return Icons.apartment_outlined;

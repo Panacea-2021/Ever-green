@@ -23,7 +23,8 @@ List<SearchTab> searchTabsFor(UserRole role) => [
       // `getAllUser` lists service engineers only for admins and senior
       // service engineers.
       if (Permissions.canAccessRoute(role, Routes.technicianTasks) &&
-          role != UserRole.technician)
+          role != UserRole.technician &&
+          role != UserRole.coldRoomTechnician)
         SearchTab.serviceEngineers,
     ];
 

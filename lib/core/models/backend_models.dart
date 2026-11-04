@@ -119,8 +119,11 @@ class ServiceType {
   final String name;
   final bool isActive;
 
-  const ServiceType(
-      {required this.id, required this.name, this.isActive = true});
+  const ServiceType({
+    required this.id,
+    required this.name,
+    this.isActive = true,
+  });
 
   factory ServiceType.fromJson(Map<String, dynamic> json) => ServiceType(
         id: _int(json['id']),
@@ -273,6 +276,9 @@ class Company {
   final DateTime? endDate;
   final bool isActive;
   final List<Equipment> equipment;
+  final bool isUndertaking;
+  final String? parentCompanyName;
+  final int childCompanyCount;
 
   /// Client admin linked to the company (`poc_details.user`), if any.
   final TaskPerson? poc;
@@ -292,6 +298,9 @@ class Company {
     this.endDate,
     this.isActive = true,
     this.equipment = const [],
+    this.isUndertaking = false,
+    this.parentCompanyName,
+    this.childCompanyCount = 0,
     this.poc,
     this.pocEmail,
     this.raw = const {},
@@ -327,6 +336,9 @@ class Company {
       startDate: _date(json['start_date']),
       endDate: _date(json['end_date']),
       isActive: json['is_active'] != false,
+      isUndertaking: json['is_undertaking'] == true,
+      parentCompanyName: _strOrNull(_map(json['parent'])?['name']),
+      childCompanyCount: (json['children'] as List? ?? const []).length,
       equipment: (json['equipment'] as List? ?? const [])
           .whereType<Map<String, dynamic>>()
           .map(Equipment.fromJson)
@@ -461,11 +473,12 @@ class TaskPerson {
   final String phone;
   final String? accessLevel;
 
-  const TaskPerson(
-      {required this.id,
-      required this.name,
-      this.phone = '',
-      this.accessLevel});
+  const TaskPerson({
+    required this.id,
+    required this.name,
+    this.phone = '',
+    this.accessLevel,
+  });
 
   static TaskPerson? fromJson(dynamic json) {
     if (json is! Map<String, dynamic>) return null;

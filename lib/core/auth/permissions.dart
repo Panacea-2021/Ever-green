@@ -65,6 +65,10 @@ class Permissions {
       Routes.tasks,
       Routes.technicianTasks,
     ],
+    UserRole.coldRoomTechnician: [
+      Routes.tasks,
+      Routes.technicianTasks,
+    ],
     // Client Admin: a client-side administrator — same read scope as a client
     // plus renewals and managing their own company's POCs/users.
     UserRole.clientAdmin: [
