@@ -21,7 +21,7 @@ import '../../../tasks/presentation/widgets/task_workflow.dart';
 /// Company and equipment come from the backend; client roles are limited to
 /// their own companies (and locked when they have just one). The backend
 /// generates the ticket number. Images are uploaded to the `tasks` folder
-/// first and sent as URLs (new tickets only; the update API has no images).
+/// first and sent as URLs for both new and edited tickets.
 class AddTaskScreen extends ConsumerStatefulWidget {
   /// Backend company id to preselect (non-numeric values are ignored).
   final String companyId;
@@ -122,10 +122,6 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   }
 
   void _showImagePickerDialog() {
-    if (widget.isEdit) {
-      _snack('Images can only be attached when raising a task');
-      return;
-    }
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -301,6 +297,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
           issueType: issueType,
           equipmentId: _equipmentId,
           location: location,
+          imageFiles: List.of(_selectedImages),
         ),
         success: 'Task updated successfully',
       );

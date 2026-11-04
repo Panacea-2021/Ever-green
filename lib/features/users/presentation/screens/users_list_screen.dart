@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart' as repo;
+import '../../../../core/models/backend_models.dart' as backend;
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/count_badge.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
+import '../../../auth/data/repositories/auth_repository_impl.dart';
 import '../../data/user_provider.dart';
 import '../../data/users_repository.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
@@ -1088,22 +1090,37 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     }
   }
 
+  bool _canEditUser(UserRole viewer, AppUser target) {
+    if (viewer == UserRole.superAdmin) return true;
+    if (viewer != UserRole.manager) return false;
+    return target.role.isTechnicianLevel ||
+        target.role == UserRole.clientAdmin ||
+        target.role == UserRole.client;
+  }
+
   Widget _buildMoreMenu(AppUser user) {
     final viewer = ref.watch(currentUserRoleProvider);
     final meId = ref.watch(currentUserProvider)?.id;
+    final canEdit = _canEditUser(viewer, user);
     final canToggle = _canToggleActive(viewer, user, meId);
     final canDelete = canDeleteUsers(viewer) && user.id != meId;
 
     return PopupMenuButton<String>(
-      enabled: canToggle || canDelete,
+      enabled: canEdit || canToggle || canDelete,
       padding: EdgeInsets.zero,
       tooltip: 'More options',
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (value) {
         if (value == 'toggle') _toggleActive(user);
         if (value == 'delete') _confirmDelete(user);
+        if (value == 'edit') _editUser(user);
       },
       itemBuilder: (_) => [
+        if (canEdit)
+          const PopupMenuItem(
+            value: 'edit',
+            child: Text('Edit user', style: TextStyle(fontFamily: 'Montserrat')),
+          ),
         if (canToggle)
           PopupMenuItem(
             value: 'toggle',
@@ -1125,6 +1142,167 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
           ),
       ],
       child: const Icon(Icons.more_vert, color: Colors.black54, size: 16),
+    );
+  }
+
+  Future<void> _editUser(AppUser user) async {
+    final phone = TextEditingController(text: user.mobile);
+    final email = TextEditingController(text: user.email);
+    final roleChoices = ref.read(currentUserRoleProvider) == UserRole.superAdmin
+        ? UserRole.values
+        : const [
+            UserRole.technician,
+            UserRole.seniorTechnician,
+            UserRole.coldRoomTechnician,
+            UserRole.clientAdmin,
+            UserRole.client,
+          ];
+    var selectedRole = user.role;
+    final selectedCompanies = user.companies.map((c) => c.id).toSet();
+    List<backend.Company> companies;
+    try {
+      companies = await ref.read(repo.companiesProvider.future);
+    } catch (e) {
+      if (mounted) _snack('Could not load companies: $e', error: true);
+      phone.dispose();
+      email.dispose();
+      return;
+    }
+    if (!mounted) {
+      phone.dispose();
+      email.dispose();
+      return;
+    }
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Edit ${user.name}'),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: phone,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(labelText: 'Mobile number'),
+                  ),
+                  TextField(
+                    controller: email,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(labelText: 'Email address'),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<UserRole>(
+                    value: selectedRole,
+                    decoration: const InputDecoration(labelText: 'Access type'),
+                    items: [
+                      for (final role in roleChoices)
+                        DropdownMenuItem(value: role, child: Text(role.label)),
+                    ],
+                    onChanged: (role) {
+                      if (role != null) setDialogState(() => selectedRole = role);
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  const Text('Assign to company / AMC'),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: 190,
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final company in companies)
+                          CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(company.displayName),
+                            value: selectedCompanies.contains(company.id),
+                            onChanged: (selected) => setDialogState(() {
+                              if (selected == true) {
+                                selectedCompanies.add(company.id);
+                              } else {
+                                selectedCompanies.remove(company.id);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    final updatedPhone = phone.text.trim();
+    final updatedEmail = email.text.trim();
+    phone.dispose();
+    email.dispose();
+    if (saved != true || !mounted) return;
+    if (updatedPhone.isEmpty) {
+      _snack('Mobile number is required', error: true);
+      return;
+    }
+    setState(() => _busyId = user.id);
+    final result = await ref.read(usersRepositoryProvider).updateUser(
+          user.backendId,
+          phone: updatedPhone,
+          email: updatedEmail,
+          role: selectedRole,
+          companyIds: selectedCompanies.toList(),
+        );
+    if (!mounted) return;
+    setState(() => _busyId = null);
+    result.fold(
+      (failure) => _snack(failure.displayMessage, error: true),
+      (message) async {
+        _snack(message);
+        final signedIn = ref.read(currentUserProvider);
+        if (signedIn?.id == user.id) {
+          ref.read(authStateProvider.notifier).updateUser(
+                signedIn!.copyWith(
+                  phone: updatedPhone,
+                  email: updatedEmail,
+                  role: selectedRole,
+                  designation: selectedRole.designation,
+                  companies: [
+                    for (final company in companies)
+                      if (selectedCompanies.contains(company.id))
+                        UserCompany(
+                          id: company.id,
+                          name: company.name,
+                          branchName: company.branchName,
+                        ),
+                  ],
+                ),
+              );
+          if (signedIn!.phone != updatedPhone) {
+            _snack('Mobile number updated. Sign in again with the new number.');
+            await ref.read(authRepositoryProvider).logout();
+            ref.read(authStateProvider.notifier).logout();
+            if (mounted) context.go(Routes.login);
+            return;
+          }
+        }
+        ref.invalidate(usersListProvider);
+        ref.invalidate(repo.techniciansProvider);
+        ref.invalidate(repo.companiesProvider);
+      },
     );
   }
 

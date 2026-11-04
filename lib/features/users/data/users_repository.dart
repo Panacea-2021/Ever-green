@@ -58,7 +58,10 @@ class UsersRepository {
   Future<Either<Failure, String>> updateUser(
     int id, {
     String? name,
+    String? phone,
     String? email,
+    UserRole? role,
+    List<int>? companyIds,
     String? location,
     String? bio,
     DateTime? dateOfBirth,
@@ -68,7 +71,11 @@ class UsersRepository {
       'user/updateUser/$id',
       data: {
         if (name != null) 'name': name,
+        if (phone != null) 'phone': phone,
         if (email != null) 'email': email,
+        if (role != null) 'access_level': role.accessLevel,
+        if (role?.designation != null) 'designation': role!.designation,
+        if (companyIds != null) 'company_link': companyIds,
         if (location != null) 'location': location,
         if (bio != null) 'bio': bio,
         if (dateOfBirth != null)
