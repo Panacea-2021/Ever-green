@@ -1266,7 +1266,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     setState(() => _busyId = null);
     result.fold(
       (failure) => _snack(failure.displayMessage, error: true),
-      (message) {
+      (message) async {
         _snack(message);
         final signedIn = ref.read(currentUserProvider);
         if (signedIn?.id == user.id) {
