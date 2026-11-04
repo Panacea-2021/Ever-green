@@ -45,7 +45,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
 
     final visible = flagged.where((contract) {
       return (_filter == null || contract.status() == _filter) &&
-          matchesWebSearch(searchQuery, [
+          matchesWebSearchTerms(searchQuery, [
             contract.companyName,
             contract.branchName,
             contract.pocName,

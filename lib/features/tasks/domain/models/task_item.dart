@@ -406,6 +406,30 @@ class TaskItem {
     ].any((f) => f.toLowerCase().contains(q));
   }
 
+  /// Web header search matches every word across the task's searchable fields.
+  /// Kept separate from [matchesQuery] so existing mobile search stays intact.
+  bool matchesAllQueryTerms(String query) {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) return true;
+    final terms = normalized.split(RegExp(r'\s+'));
+    final fields = [
+      title,
+      equipment,
+      companyName,
+      assignee,
+      clientName,
+      ticketNo,
+      lifecycleLabel,
+      priority.label,
+      contactName,
+      contactPhone,
+      address,
+    ];
+    return terms.every(
+      (term) => fields.any((field) => field.toLowerCase().contains(term)),
+    );
+  }
+
   bool get isBreakdown => callType == backend.CallType.breakdown;
 
   /// SLA deadline = createdAt + priority SLA (or explicit dueDate).

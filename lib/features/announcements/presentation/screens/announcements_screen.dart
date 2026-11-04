@@ -60,7 +60,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
         final selectedRecipients = _selectedRecipients(recipients);
         final history = data.announcements.where((announcement) {
           return announcement.senderId == currentUser?.id &&
-              matchesWebSearch(searchQuery, [
+              matchesWebSearchTerms(searchQuery, [
                 announcement.title,
                 announcement.message,
                 announcement.senderName,
@@ -75,7 +75,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
             : data
                 .inboxFor(currentUser.id)
                 .where(
-                  (item) => matchesWebSearch(
+                  (item) => matchesWebSearchTerms(
                     searchQuery,
                     [
                       item.announcement.title,

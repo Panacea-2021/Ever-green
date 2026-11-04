@@ -70,7 +70,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
       if (!_inTab(u.role)) return false;
       final fields = [u.name, u.email, u.mobile, u.companyNames];
       return matchesWebSearch(q, fields) &&
-          matchesWebSearch(moduleQuery, fields);
+          matchesWebSearchTerms(moduleQuery, fields);
     }).toList();
   }
 
@@ -192,7 +192,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
       if (!_webInTab(u.role, tab)) return false;
       final fields = [u.name, u.email, u.mobile, u.companyNames];
       return matchesWebSearch(q, fields) &&
-          matchesWebSearch(moduleQuery, fields);
+          matchesWebSearchTerms(moduleQuery, fields);
     }).length;
   }
 

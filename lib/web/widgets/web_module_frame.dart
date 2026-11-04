@@ -567,7 +567,8 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
 
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 1200;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final compact = screenWidth < 900;
     final searchQuery = ref.watch(webModuleSearchQueryProvider);
     ref.listen<String>(webModuleSearchQueryProvider, (previous, next) {
       if (_searchController.text != next) {
@@ -577,6 +578,12 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
         );
       }
     });
+    void submitSearch() {
+      ref.read(webModuleSearchQueryProvider.notifier).state =
+          _searchController.text.trim();
+      _searchFocusNode.unfocus();
+    }
+
     final userId = ref.watch(currentUserProvider)?.id ?? '';
     final unreadCount = ref.watch(announcementControllerProvider).maybeWhen(
           data: (data) => data.unreadCountFor(userId),
@@ -584,15 +591,15 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
         );
 
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      height: compact ? 64 : 72,
+      padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 28),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: WebTokens.line)),
       ),
       child: Row(
         children: [
-          if (widget.entry != null) ...[
+          if (widget.entry != null && !compact) ...[
             Container(
               width: 40,
               height: 40,
@@ -619,75 +626,51 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
             ),
             const SizedBox(width: 14),
           ],
-          Expanded(
-            child: Text(
+          if (compact)
+            Expanded(
+              child: Text(
+                widget.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: WebTokens.heading(18),
+              ),
+            )
+          else
+            Text(
               widget.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: WebTokens.heading(21),
             ),
-          ),
-          Container(
-            width: wide ? 380 : 280,
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: WebTokens.cream,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: WebTokens.line),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  tooltip: 'Search this page',
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints:
-                      const BoxConstraints.tightFor(width: 28, height: 28),
-                  icon: const Icon(
-                    Icons.search,
-                    size: 18,
-                    color: WebTokens.faint,
-                  ),
-                  onPressed: _searchFocusNode.requestFocus,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    onChanged: (value) => ref
-                        .read(webModuleSearchQueryProvider.notifier)
-                        .state = value,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: 'Search this page…',
-                      hintStyle: WebTokens.bodyText(13),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
+          SizedBox(width: compact ? 8 : 24),
+          if (compact)
+            Expanded(
+              flex: 3,
+              child: _topBarSearchField(searchQuery, submitSearch),
+            )
+          else
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final desiredWidth = screenWidth >= 1400
+                      ? 520.0
+                      : screenWidth >= 1200
+                          ? 460.0
+                          : 360.0;
+                  final searchWidth = constraints.maxWidth < desiredWidth
+                      ? constraints.maxWidth
+                      : desiredWidth;
+                  return Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      width: searchWidth,
+                      child: _topBarSearchField(searchQuery, submitSearch),
                     ),
-                    style: WebTokens.bodyText(13),
-                  ),
-                ),
-                if (searchQuery.isNotEmpty)
-                  IconButton(
-                    tooltip: 'Clear search',
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 28, height: 28),
-                    icon: const Icon(Icons.close, size: 16),
-                    onPressed: () {
-                      _searchController.clear();
-                      ref.read(webModuleSearchQueryProvider.notifier).state =
-                          '';
-                    },
-                  ),
-              ],
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(width: 14),
+          SizedBox(width: compact ? 8 : 14),
           _Hoverable(
             onTap: widget.onNotifications,
             child: Container(
@@ -738,44 +721,136 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
               ),
             ),
           ),
-          const SizedBox(width: 18),
-          CircleAvatar(
-            radius: 19,
-            backgroundColor: WebTokens.mintSoft,
-            child: Text(
-              widget.userName.isNotEmpty
-                  ? widget.userName[0].toUpperCase()
-                  : '?',
-              style: const TextStyle(
-                fontFamily: WebTokens.fontFamily,
-                fontWeight: FontWeight.w700,
-                color: WebTokens.green,
+          if (!compact) ...[
+            const SizedBox(width: 18),
+            CircleAvatar(
+              radius: 19,
+              backgroundColor: WebTokens.mintSoft,
+              child: Text(
+                widget.userName.isNotEmpty
+                    ? widget.userName[0].toUpperCase()
+                    : '?',
+                style: const TextStyle(
+                  fontFamily: WebTokens.fontFamily,
+                  fontWeight: FontWeight.w700,
+                  color: WebTokens.green,
+                ),
+              ),
+            ),
+            if (screenWidth >= 1200) ...[
+              const SizedBox(width: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 160),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.userName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: WebTokens.bodyText(
+                        13.5,
+                        color: WebTokens.ink,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(widget.roleLabel, style: WebTokens.bodyText(11.5)),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _topBarSearchField(String searchQuery, VoidCallback submitSearch) {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: WebTokens.cream,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.search_rounded,
+            size: 19,
+            color: WebTokens.green,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              onChanged: (value) =>
+                  ref.read(webModuleSearchQueryProvider.notifier).state = value,
+              onSubmitted: (_) => submitSearch(),
+              textInputAction: TextInputAction.search,
+              cursorColor: WebTokens.green,
+              decoration: InputDecoration(
+                hintText: 'Search this page',
+                hintStyle: WebTokens.bodyText(13),
+                filled: false,
+                fillColor: Colors.transparent,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: WebTokens.bodyText(13, color: WebTokens.ink),
+            ),
+          ),
+          if (searchQuery.isNotEmpty)
+            Semantics(
+              label: 'Clear search',
+              button: true,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  _searchController.clear();
+                  ref.read(webModuleSearchQueryProvider.notifier).state = '';
+                },
+                child: const SizedBox(
+                  width: 30,
+                  height: 34,
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 17,
+                    color: WebTokens.faint,
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(width: 4),
+          Semantics(
+            label: 'Apply search',
+            button: true,
+            child: Material(
+              color: WebTokens.green,
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
+                onTap: submitSearch,
+                borderRadius: BorderRadius.circular(10),
+                child: const SizedBox(
+                  width: 34,
+                  height: 34,
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ),
-          if (wide) ...[
-            const SizedBox(width: 10),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 160),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.userName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: WebTokens.bodyText(
-                      13.5,
-                      color: WebTokens.ink,
-                      weight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(widget.roleLabel, style: WebTokens.bodyText(11.5)),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );

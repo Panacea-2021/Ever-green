@@ -44,7 +44,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
     final visibleTabs = {
       for (final tab in QueueTab.values)
         tab: tabs[tab]!
-            .where((task) => task.matchesQuery(searchQuery))
+            .where((task) => task.matchesAllQueryTerms(searchQuery))
             .toList(),
     };
     final list = visibleTabs[_tab]!;

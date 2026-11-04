@@ -70,7 +70,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
   List<Company> _visible(List<Company> companies, String query) =>
       companies.where((company) {
         return _typeFilter.matches(company) &&
-            matchesWebSearch(query, [
+            matchesWebSearchTerms(query, [
               company.name,
               company.branchName,
               company.location,
