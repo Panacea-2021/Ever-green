@@ -297,7 +297,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
           issueType: issueType,
           equipmentId: _equipmentId,
           location: location,
-          imagePaths: List.of(_selectedImages),
+          imageFiles: List.of(_selectedImages),
         ),
         success: 'Task updated successfully',
       );

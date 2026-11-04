@@ -304,9 +304,9 @@ class TaskActions {
     String? contactName,
     String? contactPhone,
     String? address,
-    List<String> imagePaths = const [],
+    List<XFile> imageFiles = const [],
   }) async {
-    final images = await _upload(imagePaths, 'tasks');
+    final images = await _upload(imageFiles, 'tasks');
     await _post('user/updateTask', {
       'task_link': t.taskId,
       if (name != null) 'name': name,
