@@ -582,8 +582,6 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
         );
       }
     });
-    void submitSearch() => _searchFocusNode.unfocus();
-
     final userId = ref.watch(currentUserProvider)?.id ?? '';
     final unreadCount = ref.watch(announcementControllerProvider).maybeWhen(
           data: (data) => data.unreadCountFor(userId),
@@ -646,7 +644,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
           if (compact)
             Expanded(
               flex: 3,
-              child: _topBarSearchField(searchQuery, submitSearch),
+              child: _topBarSearchField(searchQuery),
             )
           else
             Expanded(
@@ -664,7 +662,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
                     alignment: Alignment.centerRight,
                     child: SizedBox(
                       width: searchWidth,
-                      child: _topBarSearchField(searchQuery, submitSearch),
+                      child: _topBarSearchField(searchQuery),
                     ),
                   );
                 },
@@ -766,7 +764,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
     );
   }
 
-  Widget _topBarSearchField(String searchQuery, VoidCallback submitSearch) {
+  Widget _topBarSearchField(String searchQuery) {
     return Container(
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -787,7 +785,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
               controller: _searchController,
               focusNode: _searchFocusNode,
               onChanged: _updateSearchQuery,
-              onSubmitted: (_) => submitSearch(),
+              onSubmitted: (_) => _searchFocusNode.unfocus(),
               textInputAction: TextInputAction.search,
               cursorColor: WebTokens.green,
               decoration: InputDecoration(
@@ -828,28 +826,6 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
                 ),
               ),
             ),
-          const SizedBox(width: 4),
-          Semantics(
-            label: 'Apply search',
-            button: true,
-            child: Material(
-              color: WebTokens.green,
-              borderRadius: BorderRadius.circular(10),
-              child: InkWell(
-                onTap: submitSearch,
-                borderRadius: BorderRadius.circular(10),
-                child: const SizedBox(
-                  width: 34,
-                  height: 34,
-                  child: Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
