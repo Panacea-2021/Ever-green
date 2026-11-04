@@ -156,8 +156,8 @@ final pendingScreenshotsProvider =
     StateProvider<Map<String, List<XFile>>>((ref) => const {});
 
 /// A ticket's timeline (`user/getTaskTimeline`), oldest step first.
-final taskTimelineProvider =
-    FutureProvider.autoDispose.family<List<TaskEvent>, int>((ref, taskId) async {
+final taskTimelineProvider = FutureProvider.autoDispose
+    .family<List<TaskEvent>, int>((ref, taskId) async {
   final repo = ref.watch(evergreenRepositoryProvider);
   final body = unwrap(
     await repo.api.post<dynamic>(
@@ -304,7 +304,9 @@ class TaskActions {
     String? contactName,
     String? contactPhone,
     String? address,
+    List<XFile> imageFiles = const [],
   }) async {
+    final images = await _upload(imageFiles, 'tasks');
     await _post('user/updateTask', {
       'task_link': t.taskId,
       if (name != null) 'name': name,
@@ -317,6 +319,7 @@ class TaskActions {
       if (contactName != null) 'contact_name': contactName,
       if (contactPhone != null) 'contact_phone': contactPhone,
       if (address != null) 'address': address,
+      if (images.isNotEmpty) 'images': images,
     });
   }
 
@@ -364,7 +367,8 @@ class TaskActions {
   /// Moves the ticket to [status] (`updateTaskStatus`). Use [startWork] and
   /// [hold] for the transitions that carry hold-reason data.
   /// [note] is shown on the ticket's timeline (e.g. why it was closed).
-  Future<void> setStatus(TaskItem t, ServiceStatus status, {String? note}) async {
+  Future<void> setStatus(TaskItem t, ServiceStatus status,
+      {String? note}) async {
     await _post('user/updateTaskStatus', {
       'task_user_link': _taskUserLink(t),
       'status': status.key,

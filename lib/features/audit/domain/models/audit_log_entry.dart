@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// The kind of action that was performed.
 enum AuditAction { created, updated, deleted, loggedIn, loggedOut, assigned }
 
@@ -82,6 +84,47 @@ class AuditLogEntry {
   final String entityName;
   final String? details;
   final DateTime timestamp;
+
+  /// Converts JSON audit metadata into compact human-readable field changes.
+  String get displayDetails {
+    final raw = details?.trim();
+    if (raw == null || raw.isEmpty) return '';
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        final entries = decoded.entries
+            .map((entry) {
+              final key = entry.key.toString();
+              final label = switch (key) {
+                'is_active' => 'Status',
+                'access_level' => 'Access type',
+                _ => key
+                    .split('_')
+                    .map((part) => part.isEmpty
+                        ? part
+                        : '${part[0].toUpperCase()}${part.substring(1)}')
+                    .join(' '),
+              };
+              final value = entry.value;
+              final readable = key == 'is_active' && value is bool
+                  ? (value ? 'Active' : 'Inactive')
+                  : value is bool
+                      ? (value ? 'Yes' : 'No')
+                  : value == null
+                      ? 'Cleared'
+                      : value is Map || value is List
+                          ? jsonEncode(value)
+                          : '$value';
+              return '$label: $readable';
+            })
+            .toList();
+        if (entries.isNotEmpty) return entries.join(' · ');
+      }
+    } catch (_) {
+      // Older audit rows contain plain text rather than JSON.
+    }
+    return raw;
+  }
 
   const AuditLogEntry({
     required this.id,
