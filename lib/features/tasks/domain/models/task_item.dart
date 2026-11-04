@@ -508,7 +508,7 @@ class TaskItem {
   bool inQueueTab(QueueTab tab, [DateTime? now]) {
     switch (tab) {
       case QueueTab.unassigned:
-        return serviceStatus == ServiceStatus.open;
+        return isUnassigned;
       case QueueTab.awaiting:
         return serviceStatus == ServiceStatus.open &&
             !hasAssignee &&

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
+import '../../../amcs/data/equipment_provider.dart';
 import '../../data/qr_pdf.dart';
 
 /// Downloads the backend QR sticker PDF for every equipment of a company
@@ -454,18 +456,22 @@ class _DownloadQrScreenState extends ConsumerState<DownloadQrScreen> {
   Future<void> _downloadQr(Company company) async {
     setState(() => isDownloading = true);
     try {
-      final equipment =
-          await ref.read(equipmentsProvider(company.id).future);
+      final equipment = await ref.read(equipmentsProvider(company.id).future);
       if (equipment.isEmpty) {
         _snack('This branch has no equipment yet', error: true);
         return;
       }
-      await shareQrStickerPdf(
-        ref,
-        companyId: company.id,
-        filename: 'qr_${qrFileSlug(company.displayName)}.pdf',
+      final bytes = await ref.read(equipmentApiProvider).qrStickerPdf(
+            companyId: company.id,
+          );
+      final savedPath = await FilePicker.saveFile(
+        dialogTitle: 'Save QR stickers PDF',
+        fileName: 'qr_${qrFileSlug(company.displayName)}.pdf',
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
+        bytes: bytes,
       );
-      _snack('QR Code downloaded successfully!');
+      if (savedPath != null) _snack('QR Code saved to your device');
     } catch (e) {
       _snack('$e', error: true);
     } finally {

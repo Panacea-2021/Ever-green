@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/data/evergreen_repository.dart' show mediaUrl;
 import '../../../../core/router/routes.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -18,7 +19,7 @@ import '../widgets/task_workflow.dart';
 /// - Company Information card
 /// - Task Details card with footer
 /// - Role-based Actions card (the workflow moved off the board cards)
-/// - Disable/Edit buttons at bottom (Super Admin / Manager)
+/// - Edit controls for Super Admin / Manager
 class TaskDetailsScreen extends ConsumerWidget {
   final String taskId;
 
@@ -104,8 +105,14 @@ class TaskDetailsScreen extends ConsumerWidget {
     final img =
         imageUrl ?? (taskImg.startsWith('http') ? taskImg : _defaultImage);
     final company = companyName ?? task?.companyName ?? '';
-    final client = clientName ?? task?.clientName ?? '';
-    final mob = mobile ?? task?.clientPhone ?? '';
+    final companyContact = task?.source?.company?.poc;
+    final hasCompany = task?.source?.company != null;
+    final client = hasCompany
+        ? companyContact?.name ?? ''
+        : clientName ?? task?.clientName ?? '';
+    final mob = hasCompany
+        ? companyContact?.phone ?? ''
+        : mobile ?? task?.clientPhone ?? '';
     final tech =
         technician ?? (task != null && task.hasAssignee ? task.assignee : '');
     final techMob = technicianMobile ?? task?.technicianPhone ?? '';
@@ -131,6 +138,9 @@ class TaskDetailsScreen extends ConsumerWidget {
                 children: [
                   // Hero Image Header
                   _buildHeroHeader(context, img),
+
+                  if (task != null && task.attachments.length > 1)
+                    _buildImageGallery(task.attachments),
 
                   // Task Title
                   Padding(
@@ -277,6 +287,32 @@ class TaskDetailsScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImageGallery(List<String> images) {
+    return SizedBox(
+      height: 116,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        scrollDirection: Axis.horizontal,
+        itemCount: images.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) => ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            mediaUrl(images[index]),
+            width: 120,
+            height: 92,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: 120,
+              color: Colors.black12,
+              child: const Icon(Icons.broken_image_outlined),
+            ),
+          ),
+        ),
       ),
     );
   }

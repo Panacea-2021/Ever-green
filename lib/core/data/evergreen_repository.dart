@@ -208,7 +208,9 @@ void cacheFor(Ref ref, Duration duration) {
 }
 
 final companiesProvider = FutureProvider.autoDispose<List<Company>>((ref) {
-  cacheFor(ref, listCacheDuration);
+  // AMC Renewals and company pages revisit this list often; keep the last
+  // successful response warm between routes. Mutations invalidate it.
+  cacheFor(ref, const Duration(minutes: 5));
   return ref.watch(evergreenRepositoryProvider).getCompanies();
 });
 

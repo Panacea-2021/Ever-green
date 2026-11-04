@@ -512,10 +512,10 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                         letterSpacing: -0.2,
                       ),
                     ),
-                    if (e.details != null && e.details!.isNotEmpty) ...[
+                    if (e.displayDetails.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        e.details!,
+                        e.displayDetails,
                         style: TextStyle(
                           fontFamily: 'Montserrat',
                           fontSize: 13,
@@ -1186,10 +1186,10 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                     letterSpacing: -0.3,
                   ),
                 ),
-                if (e.details != null && e.details!.isNotEmpty) ...[
+                if (e.displayDetails.isNotEmpty) ...[
                   const SizedBox(height: 3),
                   Text(
-                    e.details!,
+                    e.displayDetails,
                     style: TextStyle(
                       fontFamily: 'Montserrat',
                       fontSize: 12,
