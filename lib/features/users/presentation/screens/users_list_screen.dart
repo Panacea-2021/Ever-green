@@ -12,6 +12,7 @@ import '../../../auth/domain/models/user_model.dart';
 import '../../data/user_provider.dart';
 import '../../data/users_repository.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
+import '../../../../web/widgets/web_search_state.dart';
 
 class UsersListScreen extends ConsumerStatefulWidget {
   const UsersListScreen({super.key, this.initialTab = 0});
@@ -63,24 +64,23 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     }
   }
 
-  List<AppUser> _filterUsers(List<User> all) {
-    final q = _searchQuery.toLowerCase();
+  List<AppUser> _filterUsers(List<User> all, String moduleQuery) {
+    final q = _searchQuery.trim().toLowerCase();
     return all.map(AppUser.fromUser).where((u) {
       if (!_inTab(u.role)) return false;
-      if (q.isEmpty) return true;
-      return u.name.toLowerCase().contains(q) ||
-          u.email.toLowerCase().contains(q) ||
-          u.mobile.toLowerCase().contains(q) ||
-          u.companyNames.toLowerCase().contains(q);
+      final fields = [u.name, u.email, u.mobile, u.companyNames];
+      return matchesWebSearch(q, fields) &&
+          matchesWebSearch(moduleQuery, fields);
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final moduleQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     final usersAsync = ref.watch(usersListProvider);
-    final users = _filterUsers(usersAsync.valueOrNull ?? const []);
+    final users = _filterUsers(usersAsync.valueOrNull ?? const [], moduleQuery);
 
-    if (kIsWeb) return _webBuild(usersAsync, users);
+    if (kIsWeb) return _webBuild(usersAsync, users, moduleQuery);
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -186,19 +186,21 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     }
   }
 
-  int _webTabCount(List<User> all, int tab) {
+  int _webTabCount(List<User> all, int tab, String moduleQuery) {
     final q = _searchQuery.toLowerCase();
     return all.map(AppUser.fromUser).where((u) {
       if (!_webInTab(u.role, tab)) return false;
-      if (q.isEmpty) return true;
-      return u.name.toLowerCase().contains(q) ||
-          u.email.toLowerCase().contains(q) ||
-          u.mobile.toLowerCase().contains(q) ||
-          u.companyNames.toLowerCase().contains(q);
+      final fields = [u.name, u.email, u.mobile, u.companyNames];
+      return matchesWebSearch(q, fields) &&
+          matchesWebSearch(moduleQuery, fields);
     }).length;
   }
 
-  Widget _webBuild(AsyncValue<List<User>> usersAsync, List<AppUser> users) {
+  Widget _webBuild(
+    AsyncValue<List<User>> usersAsync,
+    List<AppUser> users,
+    String moduleQuery,
+  ) {
     final all = usersAsync.valueOrNull;
     Widget body;
     if (usersAsync.isLoading && !usersAsync.hasValue) {
@@ -271,7 +273,9 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                       icon: _webTabMeta[i].$1,
                       color: _webTabMeta[i].$2,
                       selected: _selectedTab == i,
-                      count: all == null ? null : _webTabCount(all, i),
+                      count: all == null
+                          ? null
+                          : _webTabCount(all, i, moduleQuery),
                       onTap: () => setState(() => _selectedTab = i),
                     ),
                 ],

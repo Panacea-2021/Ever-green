@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../amcs/data/equipment_provider.dart';
 import '../../../../core/utils/fuzzy_search.dart';
+import '../../../../web/widgets/web_search_state.dart';
 
 class VerifiedEquipmentsScreen extends ConsumerStatefulWidget {
   const VerifiedEquipmentsScreen({super.key});
@@ -24,7 +26,7 @@ class _VerifiedEquipmentsScreenState
   /// Rows from `getVerifiedEquipments`, refreshed on every build.
   List<VerifiedEquipment> _verifiedEquipments = const [];
 
-  List<VerifiedEquipment> get _filteredEquipments {
+  List<VerifiedEquipment> _filteredEquipments(String moduleQuery) {
     var filtered = _verifiedEquipments;
 
     // Filter by status
@@ -44,17 +46,25 @@ class _VerifiedEquipmentsScreenState
     }
 
     // Filter by search
-    if (_searchController.text.isNotEmpty) {
-      final query = _searchController.text;
+    if (_searchController.text.isNotEmpty || moduleQuery.isNotEmpty) {
+      final query = _searchController.text.trim();
       filtered = filtered
           .where(
-            (e) => fuzzyMatches(query, [
-              e.name,
-              e.serialNumber,
-              e.location,
-              e.companyName,
-              e.verifiedBy,
-            ]),
+            (e) =>
+                fuzzyMatches(query, [
+                  e.name,
+                  e.serialNumber,
+                  e.location,
+                  e.companyName,
+                  e.verifiedBy,
+                ]) &&
+                fuzzyMatches(moduleQuery, [
+                  e.name,
+                  e.serialNumber,
+                  e.location,
+                  e.companyName,
+                  e.verifiedBy,
+                ]),
           )
           .toList();
     }
@@ -82,10 +92,12 @@ class _VerifiedEquipmentsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final moduleQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     final async = ref.watch(verifiedEquipmentsProvider);
     _verifiedEquipments = (async.valueOrNull ?? const <Equipment>[])
         .map(VerifiedEquipment.fromEquipment)
         .toList();
+    final filteredEquipments = _filteredEquipments(moduleQuery);
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
@@ -117,7 +129,7 @@ class _VerifiedEquipmentsScreenState
                           color: const Color(0xFF106220),
                           onRefresh: () =>
                               ref.refresh(verifiedEquipmentsProvider.future),
-                          child: _filteredEquipments.isEmpty
+                          child: filteredEquipments.isEmpty
                               ? LayoutBuilder(
                                   builder: (context, constraints) =>
                                       SingleChildScrollView(
@@ -129,7 +141,7 @@ class _VerifiedEquipmentsScreenState
                                     ),
                                   ),
                                 )
-                              : _buildEquipmentList(),
+                              : _buildEquipmentList(filteredEquipments),
                         ),
             ),
           ],
@@ -402,12 +414,12 @@ class _VerifiedEquipmentsScreenState
     );
   }
 
-  Widget _buildEquipmentList() {
+  Widget _buildEquipmentList(List<VerifiedEquipment> filteredEquipments) {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-      itemCount: _filteredEquipments.length,
+      itemCount: filteredEquipments.length,
       itemBuilder: (context, index) {
-        return _buildEquipmentCard(_filteredEquipments[index]);
+        return _buildEquipmentCard(filteredEquipments[index]);
       },
     );
   }

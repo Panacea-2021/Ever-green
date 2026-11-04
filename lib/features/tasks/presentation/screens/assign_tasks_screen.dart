@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
+import '../../../../web/widgets/web_search_state.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
 import '../widgets/task_list_card.dart';
@@ -26,11 +28,12 @@ class _AssignTasksScreenState extends ConsumerState<AssignTasksScreen> {
   Widget build(BuildContext context) {
     final async = ref.watch(taskItemsProvider);
     final all = ref.watch(taskProvider);
+    final moduleQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
 
     final visible = all.where((t) {
       if (t.isClosed) return false;
       if (_onlyUnassigned && t.hasAssignee) return false;
-      return t.matchesQuery(_query);
+      return t.matchesQuery(_query) && t.matchesQuery(moduleQuery);
     }).toList()
       ..sort((a, b) {
         if (a.priority.rank != b.priority.rank) {

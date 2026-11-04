@@ -10,6 +10,7 @@ import '../../data/pm_provider.dart';
 import '../../domain/models/pm_schedule.dart';
 import '../../domain/pm_occurrences.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
+import '../../../../web/widgets/web_search_state.dart';
 
 /// Upcoming preventive maintenance for all equipment (from each equipment's
 /// PM frequency and the PM schedules), plus schedule management: recurring
@@ -40,6 +41,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final searchQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     return Scaffold(
       backgroundColor: kIsWeb ? Colors.transparent : Colors.white,
       floatingActionButton: _schedulesView && _tab == 0
@@ -71,7 +73,9 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
               const SizedBox(height: 8),
             ],
             Expanded(
-              child: _schedulesView ? _schedulesSection() : _upcomingSection(),
+              child: _schedulesView
+                  ? _schedulesSection(searchQuery)
+                  : _upcomingSection(searchQuery),
             ),
           ],
         ),
@@ -271,9 +275,29 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     );
   }
 
-  Widget _schedulesSection() {
+  Widget _schedulesSection(String searchQuery) {
     final async = ref.watch(pmProvider);
     final pm = async.valueOrNull ?? const PmState();
+    final schedules = pm.schedules
+        .where(
+          (schedule) => matchesWebSearch(searchQuery, [
+            schedule.equipmentName,
+            schedule.companyName,
+            schedule.frequency.label,
+            schedule.id,
+          ]),
+        )
+        .toList();
+    final generated = pm.generated
+        .where(
+          (task) => matchesWebSearch(searchQuery, [
+            task.equipmentName,
+            task.companyName,
+            task.scheduleId,
+            task.taskId?.toString(),
+          ]),
+        )
+        .toList();
     return Column(
       children: [
         _generateBar(pm.schedules),
@@ -285,8 +309,8 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                   color: _green,
                   onRefresh: () => ref.refresh(pmProvider.future),
                   child: _tab == 0
-                      ? _schedulesList(pm.schedules)
-                      : _generatedList(pm.generated),
+                      ? _schedulesList(schedules)
+                      : _generatedList(generated),
                 )
               : async.hasError
                   ? _empty(
@@ -302,7 +326,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     );
   }
 
-  Widget _upcomingSection() {
+  Widget _upcomingSection(String searchQuery) {
     final async = ref.watch(pmDueSourcesProvider);
     final now = DateTime.now();
     final window = PmWindow.values[_view];
@@ -321,16 +345,27 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
             today: now,
             includeOverdue: range == null && window.includesOverdue,
           );
+    final visibleItems = items
+        .where(
+          (item) => matchesWebSearch(searchQuery, [
+            item.equipmentName,
+            item.companyName,
+            item.location,
+            item.frequencyLabel,
+            item.equipmentId?.toString(),
+          ]),
+        )
+        .toList();
     return Column(
       children: [
-        _rangeRow(items.length, sources != null),
+        _rangeRow(visibleItems.length, sources != null),
         const SizedBox(height: 8),
         Expanded(
           child: sources != null
               ? RefreshIndicator(
                   color: _green,
                   onRefresh: _refreshUpcoming,
-                  child: _upcomingList(items, now),
+                  child: _upcomingList(visibleItems, now),
                 )
               : async.hasError
                   ? _empty(

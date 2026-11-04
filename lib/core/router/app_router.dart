@@ -31,6 +31,7 @@ import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/dashboard/presentation/screens/home_screen.dart';
 import '../../features/dashboard/presentation/screens/analytics_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/announcements/presentation/screens/announcements_screen.dart';
 import '../../features/onboarding/presentation/screens/get_started_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -258,6 +259,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'notifications',
         builder: (context, state) => const NotificationsScreen(),
       ),
+      if (kIsWeb)
+        GoRoute(
+          path: Routes.announcements,
+          name: 'announcements',
+          builder: (context, state) => const AnnouncementsScreen(),
+        ),
       GoRoute(
         path: Routes.scanner,
         name: 'scanner',

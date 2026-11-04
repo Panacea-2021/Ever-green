@@ -9,6 +9,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
+import '../../../../web/widgets/web_search_state.dart';
 import '../../../amcs/domain/models/amc_contract.dart' show displayDate;
 import '../../../auth/domain/models/user_model.dart';
 import '../../domain/global_search.dart';
@@ -74,6 +75,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
   void _onChanged(String value) {
     setState(() {}); // clear button visibility
+    if (kIsWeb) {
+      ref.read(webModuleSearchQueryProvider.notifier).state = value;
+      return;
+    }
     _timer?.cancel();
     _timer = Timer(_debounce, () {
       if (mounted) setState(() => _query = value.trim());
@@ -83,6 +88,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   void _submit(String value) {
     _timer?.cancel();
     setState(() => _query = value.trim());
+    if (kIsWeb) {
+      ref.read(webModuleSearchQueryProvider.notifier).state = value.trim();
+    }
     FocusScope.of(context).unfocus();
   }
 
@@ -90,6 +98,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     _timer?.cancel();
     _controller.clear();
     setState(() => _query = '');
+    if (kIsWeb) {
+      ref.read(webModuleSearchQueryProvider.notifier).state = '';
+    }
   }
 
   String _join(Iterable<String?> parts) =>
@@ -101,7 +112,13 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
   _Hit _companyHit(Company c) => _Hit(
         title: c.name,
-        subtitle: _join([c.branchName, c.location, c.serviceLabel]),
+        subtitle: _join([
+          c.branchName,
+          c.location,
+          c.serviceLabel,
+          if (kIsWeb) c.poc?.name,
+          if (kIsWeb) (c.isActive ? 'Active' : 'Inactive'),
+        ]),
         icon: Icons.business_outlined,
         badge: c.isAmcExpired ? 'Expired' : null,
         badgeColor: const Color(0xFFC62828),
@@ -121,6 +138,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           e.egSerialNumber,
           _join([e.make, e.model]),
           companyName,
+          if (kIsWeb) e.serviceType?.name,
+          if (kIsWeb) e.status.label,
         ]),
         icon: Icons.precision_manufacturing_outlined,
         onTap: () => context.push(
@@ -148,6 +167,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         t.ticketNo.isNotEmpty ? '#${t.ticketNo}' : null,
         t.equipment?.name,
         who,
+        if (kIsWeb) t.technician?.name,
+        if (kIsWeb) t.issueTypeLabel,
+        if (kIsWeb) t.priority.label,
       ]),
       icon: Icons.task_alt,
       badge: t.status.label,
@@ -174,7 +196,11 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
   _Hit _engineerHit(User u) => _Hit(
         title: u.name,
-        subtitle: _join([engineerDesignation(u), u.phone]),
+        subtitle: _join([
+          engineerDesignation(u),
+          u.phone,
+          if (kIsWeb) (u.isActive ? 'Active' : 'Inactive'),
+        ]),
         icon: Icons.engineering_outlined,
         badge: u.isActive ? null : 'Inactive',
         badgeColor: const Color(0xFF8A8A8A),
@@ -196,14 +222,14 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   // Data
   // ---------------------------------------------------------------------------
 
-  _TabResult _results(SearchTab tab, List<SearchTab> tabs) {
+  _TabResult _results(SearchTab tab, List<SearchTab> tabs, String query) {
     switch (tab) {
       case SearchTab.companies:
         final src = ref.watch(companiesProvider);
         final items = filterByQuery(
           src.valueOrNull ?? const <Company>[],
-          _query,
-          companySearchFields,
+          query,
+          (Company c) => companySearchFields(c, includeWebFields: kIsWeb),
         );
         return _TabResult(
           src,
@@ -221,8 +247,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             e.company?.displayName ?? names[e.companyId];
         final items = filterByQuery(
           src.valueOrNull ?? const <Equipment>[],
-          _query,
-          (Equipment e) => equipmentSearchFields(e, companyName: nameOf(e)),
+          query,
+          (Equipment e) => equipmentSearchFields(
+            e,
+            companyName: nameOf(e),
+            includeWebFields: kIsWeb,
+          ),
         );
         return _TabResult(
           src,
@@ -234,8 +264,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         final src = ref.watch(tasksProvider);
         final items = filterByQuery(
           src.valueOrNull ?? const <ServiceTask>[],
-          _query,
-          taskSearchFields,
+          query,
+          (ServiceTask t) => taskSearchFields(t, includeWebFields: kIsWeb),
         );
         return _TabResult(
           src,
@@ -247,8 +277,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         final src = ref.watch(techniciansProvider);
         final items = filterByQuery(
           src.valueOrNull ?? const <User>[],
-          _query,
-          engineerSearchFields,
+          query,
+          (User u) => engineerSearchFields(u, includeWebFields: kIsWeb),
         );
         return _TabResult(
           src,
@@ -265,12 +295,28 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final moduleQuery = kIsWeb
+        ? ref.watch(webModuleSearchQueryProvider)
+        : _query;
+    ref.listen<String>(webModuleSearchQueryProvider, (previous, next) {
+      if (!kIsWeb) return;
+      _timer?.cancel();
+      if (_controller.text != next) {
+        _controller.value = TextEditingValue(
+          text: next,
+          selection: TextSelection.collapsed(offset: next.length),
+        );
+      }
+      if (_query != next.trim()) {
+        setState(() => _query = next.trim());
+      }
+    });
     final role = ref.watch(currentUserRoleProvider);
     final tabs = searchTabsFor(role);
     final selected = tabs.contains(_selected) ? _selected! : tabs.first;
-    final results = {for (final t in tabs) t: _results(t, tabs)};
+    final results = {for (final t in tabs) t: _results(t, tabs, moduleQuery)};
 
-    if (kIsWeb) return _webLayout(tabs, selected, results);
+    if (kIsWeb) return _webLayout(tabs, selected, results, moduleQuery);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F7),
@@ -580,6 +626,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     List<SearchTab> tabs,
     SearchTab selected,
     Map<SearchTab, _TabResult> results,
+    String query,
   ) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F6),
@@ -617,14 +664,14 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               },
             ),
             const SizedBox(height: 22),
-            Expanded(child: _webTabBody(selected, results[selected]!)),
+            Expanded(child: _webTabBody(selected, results[selected]!, query)),
           ],
         ),
       ),
     );
   }
 
-  Widget _webTabBody(SearchTab tab, _TabResult r) {
+  Widget _webTabBody(SearchTab tab, _TabResult r, String query) {
     if (r.loading) {
       return const Center(child: CircularProgressIndicator(color: _green));
     }
@@ -638,8 +685,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     }
     final noun = tab.label.toLowerCase();
     if (r.hits.isEmpty) {
-      return _query.isEmpty
-          ? _centerMsg(Icons.inbox_outlined, 'No $noun yet', 'Nothing to show here.')
+      return query.isEmpty
+          ? _centerMsg(
+              Icons.inbox_outlined,
+              'No $noun yet',
+              'Nothing to show here.',
+            )
           : _centerMsg(
               Icons.search_off,
               'No matching $noun',
@@ -980,7 +1031,8 @@ class _WebHitCardState extends State<_WebHitCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: _hover ? a.withValues(alpha: 0.5) : const Color(0xFFE2E8E3),
+              color:
+                  _hover ? a.withValues(alpha: 0.5) : const Color(0xFFE2E8E3),
             ),
             boxShadow: [
               BoxShadow(
