@@ -565,6 +565,10 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
     super.dispose();
   }
 
+  void _updateSearchQuery(String value) {
+    ref.read(webModuleSearchQueryProvider.notifier).state = value;
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
@@ -578,11 +582,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
         );
       }
     });
-    void submitSearch() {
-      ref.read(webModuleSearchQueryProvider.notifier).state =
-          _searchController.text.trim();
-      _searchFocusNode.unfocus();
-    }
+    void submitSearch() => _searchFocusNode.unfocus();
 
     final userId = ref.watch(currentUserProvider)?.id ?? '';
     final unreadCount = ref.watch(announcementControllerProvider).maybeWhen(
@@ -786,8 +786,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
             child: TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
-              onChanged: (value) =>
-                  ref.read(webModuleSearchQueryProvider.notifier).state = value,
+              onChanged: _updateSearchQuery,
               onSubmitted: (_) => submitSearch(),
               textInputAction: TextInputAction.search,
               cursorColor: WebTokens.green,
