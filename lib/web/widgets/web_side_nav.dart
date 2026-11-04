@@ -83,6 +83,11 @@ class WebSideNav extends ConsumerWidget {
         route: Routes.globalSearch,
         svgIcon: 'assets/images/menu_qr_scanner.svg',
       ),
+      const WebNavEntry(
+        label: 'Announcements',
+        route: Routes.announcements,
+        icon: Icons.campaign_outlined,
+      ),
       if (Permissions.canRaiseTasks(role))
         const WebNavEntry(
           label: 'Create Task',
@@ -218,8 +223,9 @@ class WebSideNav extends ConsumerWidget {
               vertical: 24,
             ),
             child: Row(
-              mainAxisAlignment:
-                  collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: collapsed
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               children: [
                 Container(
                   width: 34,

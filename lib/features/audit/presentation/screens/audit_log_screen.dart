@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/auth/permissions.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
+import '../../../../web/widgets/web_search_state.dart';
 import '../../../technicians/data/performance_provider.dart';
 import '../../data/audit_log_provider.dart';
 import '../../domain/models/audit_log_entry.dart';
@@ -57,13 +58,14 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
     AsyncValue<AuditLogFeed> async,
     List<AuditLogEntry> filtered,
     bool canFilterEntity,
+    String searchQuery,
   ) {
     final feed = async.valueOrNull;
     final side = _webSidePanel(canFilterEntity);
     final main = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _webListHeader(filtered.length, feed?.total ?? 0),
+        _webListHeader(filtered.length, feed?.total ?? 0, searchQuery),
         const SizedBox(height: 14),
         Expanded(
           child: RefreshIndicator(
@@ -247,10 +249,10 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
     );
   }
 
-  Widget _webListHeader(int count, int total) {
+  Widget _webListHeader(int count, int total, String searchQuery) {
     final rangeLabel = _dateRange == null ? 'All time' : _dateRange!.summary;
     final filtered =
-        _dateRange != null || _entityFilter != null || _query.isNotEmpty;
+        _dateRange != null || _entityFilter != null || searchQuery.isNotEmpty;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
       decoration: BoxDecoration(
@@ -306,6 +308,9 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                   _entityFilter = null;
                   _query = '';
                   _searchController.clear();
+                  if (kIsWeb) {
+                    ref.read(webModuleSearchQueryProvider.notifier).state = '';
+                  }
                 }),
                 child: Text(
                   'Clear',
@@ -594,6 +599,9 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final searchQuery = kIsWeb
+        ? ref.watch(webModuleSearchQueryProvider)
+        : _query;
     final canFilterEntity =
         Permissions.canFilterAuditByEntity(ref.watch(currentUserRoleProvider));
     final async = ref.watch(auditLogProvider(_entityFilter));
@@ -604,15 +612,17 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
       if (_dateRange != null && !_dateRange!.contains(e.timestamp)) {
         return false;
       }
-      if (_query.isEmpty) return true;
-      final q = _query.toLowerCase();
+      if (searchQuery.isEmpty) return true;
+      final q = searchQuery.toLowerCase();
       return e.actorName.toLowerCase().contains(q) ||
           e.entityName.toLowerCase().contains(q) ||
           (e.details ?? '').toLowerCase().contains(q) ||
           e.action.label.toLowerCase().contains(q);
     }).toList();
 
-    if (kIsWeb) return _webBuild(async, filtered, canFilterEntity);
+    if (kIsWeb) {
+      return _webBuild(async, filtered, canFilterEntity, searchQuery);
+    }
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),

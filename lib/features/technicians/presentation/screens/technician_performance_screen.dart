@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
+import '../../../../web/widgets/web_search_state.dart';
 import '../../../tasks/data/task_provider.dart';
 import '../../data/performance_provider.dart';
 
@@ -30,7 +31,18 @@ class _TechnicianPerformanceScreenState
         ? ref.watch(technicianPerformanceProvider)
         : ref.watch(managerPerformanceProvider);
 
-    if (kIsWeb) return _webBuild(range, async, stats);
+    if (kIsWeb) {
+      final searchQuery = ref.watch(webModuleSearchQueryProvider);
+      final visibleStats = stats
+          .where(
+            (item) => matchesWebSearch(searchQuery, [
+              item.name,
+              item.personId?.toString(),
+            ]),
+          )
+          .toList();
+      return _webBuild(range, async, visibleStats);
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F7),
       body: Stack(

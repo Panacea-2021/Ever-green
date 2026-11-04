@@ -110,6 +110,14 @@ The static host must serve `index.html` for app routes such as `/services` and
 single-page-app fallback, direct links and page refreshes on those routes return
 a host-level 404.
 
+### Web announcement preview
+
+The authenticated web dashboard includes an `/announcements` preview. It stores
+local announcements and per-recipient read states in the current browser only;
+it does not deliver notifications or provide server-side authorization or
+persistence. Connect it to backend endpoints that enforce role and hierarchy
+rules before using it for real announcements.
+
 ## Environment Configuration
 
 The app supports three environments:

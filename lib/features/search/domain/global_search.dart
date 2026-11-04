@@ -53,7 +53,11 @@ List<T> filterByQuery<T>(
         if (matchesQuery(query, fields(item))) item,
     ];
 
-Iterable<String?> companySearchFields(Company c) => [
+Iterable<String?> companySearchFields(
+  Company c, {
+  bool includeWebFields = false,
+}) =>
+    [
       c.name,
       c.branchName,
       c.location,
@@ -63,10 +67,21 @@ Iterable<String?> companySearchFields(Company c) => [
       c.poc?.name,
       c.poc?.phone,
       c.pocEmail,
+      if (includeWebFields) ...[
+        c.displayName,
+        c.email,
+        c.serviceType?.key,
+        c.isActive ? 'Active' : 'Inactive',
+      ],
     ];
 
 /// [companyName] covers equipment rows that arrive without a nested company.
-Iterable<String?> equipmentSearchFields(Equipment e, {String? companyName}) => [
+Iterable<String?> equipmentSearchFields(
+  Equipment e, {
+  String? companyName,
+  bool includeWebFields = false,
+}) =>
+    [
       e.name,
       e.make,
       e.model,
@@ -76,9 +91,22 @@ Iterable<String?> equipmentSearchFields(Equipment e, {String? companyName}) => [
       e.company?.name,
       e.company?.branchName,
       companyName,
+      if (includeWebFields) ...[
+        e.description,
+        e.specifications,
+        e.type,
+        e.status.label,
+        e.serviceType?.name,
+        e.company?.poc?.name,
+        e.company?.poc?.phone,
+        e.company?.pocEmail,
+      ],
     ];
 
-Iterable<String?> taskSearchFields(ServiceTask t) {
+Iterable<String?> taskSearchFields(
+  ServiceTask t, {
+  bool includeWebFields = false,
+}) {
   final contact = taskContact(t);
   return [
     t.ticketNo,
@@ -96,14 +124,37 @@ Iterable<String?> taskSearchFields(ServiceTask t) {
     contact.name,
     contact.phone,
     contact.address,
+    if (includeWebFields) ...[
+      t.equipment?.serviceType?.name,
+      t.equipment?.status.label,
+      t.equipment?.company?.poc?.name,
+      t.equipment?.company?.poc?.phone,
+      t.equipment?.company?.pocEmail,
+      t.priority.label,
+      t.approval.label,
+      t.callType?.label,
+      t.issueTypeLabel,
+      t.technician?.phone,
+      t.manager?.phone,
+      t.client?.phone,
+      t.company?.serviceLabel,
+    ],
   ];
 }
 
-Iterable<String?> engineerSearchFields(User u) => [
+Iterable<String?> engineerSearchFields(
+  User u, {
+  bool includeWebFields = false,
+}) =>
+    [
       u.name,
       u.phone,
       u.email,
       engineerDesignation(u),
+      if (includeWebFields) ...[
+        u.role.label,
+        u.isActive ? 'Active' : 'Inactive',
+      ],
     ];
 
 /// Display designation; older rows may still store "Junior Technician".

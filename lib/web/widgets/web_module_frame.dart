@@ -9,8 +9,10 @@ import '../../core/router/routes.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../shared/providers/auth_state_provider.dart';
+import '../../features/announcements/data/announcement_provider.dart';
 import '../theme/web_tokens.dart';
 import 'web_side_nav.dart';
+import 'web_search_state.dart';
 
 /// Web-only desktop frame for the signed-in dashboard modules: a fixed side
 /// navigation (replacing the phone drawer and bottom bar), a top bar, and the
@@ -75,6 +77,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.amcRenewals,
     Routes.pmSchedule,
     Routes.taskBoard,
+    Routes.announcements,
   };
 
   /// Module pages shown in a card with their own icon-and-title header
@@ -107,6 +110,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.addEquipment: 'Add Equipment',
     Routes.addTask: 'Create Task',
     Routes.notifications: 'Notifications',
+    Routes.announcements: 'Announcements',
     Routes.editProfile: 'Edit Profile',
     Routes.addUser: 'Add User',
     Routes.technicianTasks: 'Service Engineer Tasks',
@@ -139,6 +143,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
       oldWidget.router.routerDelegate.removeListener(_onRouteChanged);
       widget.router.routerDelegate.addListener(_onRouteChanged);
       _location = _currentLocation();
+      ref.read(webModuleSearchQueryProvider.notifier).state = '';
     }
   }
 
@@ -168,6 +173,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     final location = _currentLocation();
     if (location != _location) {
       setState(() => _location = location);
+      ref.read(webModuleSearchQueryProvider.notifier).state = '';
       _refreshIfStale();
     }
   }
@@ -269,8 +275,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                   entry: bannered ? _entryFor(role) : null,
                   userName: user?.name ?? role.label,
                   roleLabel: role.label,
-                  onSearch: () => _navigate(Routes.globalSearch),
-                  onNotifications: () => _navigate(Routes.notifications),
+                  onNotifications: () => _navigate(Routes.announcements),
                 ),
                 Expanded(
                   child: LayoutBuilder(
@@ -522,12 +527,11 @@ class _WebRestoringSession extends StatelessWidget {
   }
 }
 
-class _WebTopBar extends StatelessWidget {
+class _WebTopBar extends ConsumerStatefulWidget {
   const _WebTopBar({
     required this.title,
     required this.userName,
     required this.roleLabel,
-    required this.onSearch,
     required this.onNotifications,
     this.entry,
   });
@@ -536,12 +540,48 @@ class _WebTopBar extends StatelessWidget {
   final WebNavEntry? entry;
   final String userName;
   final String roleLabel;
-  final VoidCallback onSearch;
   final VoidCallback onNotifications;
+
+  @override
+  ConsumerState<_WebTopBar> createState() => _WebTopBarState();
+}
+
+class _WebTopBarState extends ConsumerState<_WebTopBar> {
+  late final TextEditingController _searchController;
+  final _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(
+      text: ref.read(webModuleSearchQueryProvider),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 1200;
+    final searchQuery = ref.watch(webModuleSearchQueryProvider);
+    ref.listen<String>(webModuleSearchQueryProvider, (previous, next) {
+      if (_searchController.text != next) {
+        _searchController.value = TextEditingValue(
+          text: next,
+          selection: TextSelection.collapsed(offset: next.length),
+        );
+      }
+    });
+    final userId = ref.watch(currentUserProvider)?.id ?? '';
+    final unreadCount = ref.watch(announcementControllerProvider).maybeWhen(
+          data: (data) => data.unreadCountFor(userId),
+          orElse: () => 0,
+        );
 
     return Container(
       height: 72,
@@ -552,7 +592,7 @@ class _WebTopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (entry != null) ...[
+          if (widget.entry != null) ...[
             Container(
               width: 40,
               height: 40,
@@ -565,9 +605,9 @@ class _WebTopBar extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: entry!.svgIcon != null
+              child: widget.entry!.svgIcon != null
                   ? SvgPicture.asset(
-                      entry!.svgIcon!,
+                      widget.entry!.svgIcon!,
                       width: 20,
                       height: 20,
                       colorFilter: const ColorFilter.mode(
@@ -575,41 +615,81 @@ class _WebTopBar extends StatelessWidget {
                         BlendMode.srcIn,
                       ),
                     )
-                  : Icon(entry!.icon, size: 20, color: Colors.white),
+                  : Icon(widget.entry!.icon, size: 20, color: Colors.white),
             ),
             const SizedBox(width: 14),
           ],
           Expanded(
             child: Text(
-              title,
+              widget.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: WebTokens.heading(21),
             ),
           ),
-          _Hoverable(
-            onTap: onSearch,
-            child: Container(
-              width: wide ? 280 : 200,
-              height: 42,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: WebTokens.cream,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: WebTokens.line),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.search, size: 18, color: WebTokens.faint),
-                  const SizedBox(width: 8),
-                  Text('Search…', style: WebTokens.bodyText(13)),
-                ],
-              ),
+          Container(
+            width: wide ? 380 : 280,
+            height: 42,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: WebTokens.cream,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: WebTokens.line),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: 'Search this page',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints.tightFor(width: 28, height: 28),
+                  icon: const Icon(
+                    Icons.search,
+                    size: 18,
+                    color: WebTokens.faint,
+                  ),
+                  onPressed: _searchFocusNode.requestFocus,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    onChanged: (value) => ref
+                        .read(webModuleSearchQueryProvider.notifier)
+                        .state = value,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: 'Search this page…',
+                      hintStyle: WebTokens.bodyText(13),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    style: WebTokens.bodyText(13),
+                  ),
+                ),
+                if (searchQuery.isNotEmpty)
+                  IconButton(
+                    tooltip: 'Clear search',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 28, height: 28),
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: () {
+                      _searchController.clear();
+                      ref.read(webModuleSearchQueryProvider.notifier).state =
+                          '';
+                    },
+                  ),
+              ],
             ),
           ),
           const SizedBox(width: 14),
           _Hoverable(
-            onTap: onNotifications,
+            onTap: widget.onNotifications,
             child: Container(
               width: 42,
               height: 42,
@@ -619,10 +699,42 @@ class _WebTopBar extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: WebTokens.line),
               ),
-              child: const Icon(
-                Icons.notifications_none,
-                size: 20,
-                color: WebTokens.ink,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Center(
+                    child: Icon(
+                      Icons.notifications_none,
+                      size: 20,
+                      color: WebTokens.ink,
+                    ),
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: -9,
+                      top: -8,
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFD32F2F),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          unreadCount > 99 ? '99+' : '$unreadCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -631,7 +743,9 @@ class _WebTopBar extends StatelessWidget {
             radius: 19,
             backgroundColor: WebTokens.mintSoft,
             child: Text(
-              userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+              widget.userName.isNotEmpty
+                  ? widget.userName[0].toUpperCase()
+                  : '?',
               style: const TextStyle(
                 fontFamily: WebTokens.fontFamily,
                 fontWeight: FontWeight.w700,
@@ -648,7 +762,7 @@ class _WebTopBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    userName,
+                    widget.userName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: WebTokens.bodyText(
@@ -657,7 +771,7 @@ class _WebTopBar extends StatelessWidget {
                       weight: FontWeight.w700,
                     ),
                   ),
-                  Text(roleLabel, style: WebTokens.bodyText(11.5)),
+                  Text(widget.roleLabel, style: WebTokens.bodyText(11.5)),
                 ],
               ),
             ),

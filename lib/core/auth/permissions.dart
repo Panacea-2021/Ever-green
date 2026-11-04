@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import '../../features/auth/domain/models/user_model.dart';
 import '../router/routes.dart';
 
@@ -87,8 +89,9 @@ class Permissions {
   static bool _isAdmin(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
 
-  /// Whether [role] is allowed to open [path]. Super Admin always can.
+  /// Whether [role] may open [path]. The announcements route is web-only.
   static bool canAccessRoute(UserRole role, String path) {
+    if (path.startsWith(Routes.announcements)) return kIsWeb;
     if (role == UserRole.superAdmin) return true;
     if (_common.any((r) => path.startsWith(r))) return true;
     final allowed = _roleRoutes[role] ?? const [];
@@ -116,6 +119,9 @@ class Permissions {
       role == UserRole.client;
 
   static bool canCreateIndividualTask(UserRole role) =>
+      role == UserRole.superAdmin || role == UserRole.manager;
+
+  static bool canCreateAnnouncements(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
 
   /// Super Admin and Manager assign freely; a Senior Technician can assign or

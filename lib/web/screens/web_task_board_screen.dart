@@ -13,6 +13,7 @@ import '../../features/tasks/presentation/widgets/task_workflow.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
 import '../widgets/web_filter_tiles.dart';
+import '../widgets/web_search_state.dart';
 import '../widgets/web_table.dart';
 
 /// Web layout of the Task Board: same scoping, filters, sorting, texts and
@@ -40,6 +41,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     final role = ref.watch(currentUserRoleProvider);
     final user = ref.watch(currentUserProvider);
     final async = ref.watch(taskItemsProvider);
+    final searchQuery = ref.watch(webModuleSearchQueryProvider);
     final all = async.value ?? const <TaskItem>[];
 
     Iterable<TaskItem> scoped = all;
@@ -53,7 +55,8 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
       );
     }
 
-    final visible = scoped
+    final searched = scoped.where((task) => task.matchesQuery(searchQuery));
+    final visible = searched
         .where((t) => _statusFilter == null || t.status == _statusFilter)
         .toList()
       ..sort((a, b) {
@@ -99,7 +102,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: _filters(scoped.toList())),
+                      Expanded(child: _filters(searched.toList())),
                       const SizedBox(width: 12),
                       _addButton(role),
                     ],
@@ -546,7 +549,9 @@ class _StarButton extends StatelessWidget {
       color: filled ? Colors.amber : Colors.grey,
       size: 21,
     );
-    if (onTap == null) return Align(alignment: Alignment.centerLeft, child: icon);
+    if (onTap == null) {
+      return Align(alignment: Alignment.centerLeft, child: icon);
+    }
     return Align(
       alignment: Alignment.centerLeft,
       child: MouseRegion(
