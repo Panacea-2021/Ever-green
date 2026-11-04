@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
@@ -83,11 +84,12 @@ class _LandingHeroVideoState extends State<LandingHeroVideo>
 
   @override
   Widget build(BuildContext context) {
+    const videoAlignment = kIsWeb ? Alignment(0, 0.76) : Alignment(0, 0.6);
     final controller = _controller;
     if (_ready && controller != null && controller.value.isInitialized) {
       return FittedBox(
         fit: BoxFit.cover,
-        alignment: const Alignment(0, 0.6),
+        alignment: videoAlignment,
         clipBehavior: Clip.hardEdge,
         child: SizedBox(
           width: controller.value.size.width,
@@ -100,7 +102,7 @@ class _LandingHeroVideoState extends State<LandingHeroVideo>
     return Image.asset(
       LandingAssets.heroBg,
       fit: BoxFit.cover,
-      alignment: const Alignment(0, 0.6),
+      alignment: videoAlignment,
       width: double.infinity,
       height: double.infinity,
       errorBuilder: (_, __, ___) => const ColoredBox(

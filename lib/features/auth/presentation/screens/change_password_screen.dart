@@ -77,9 +77,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       _saving = true;
       _error = null;
     });
-    final result = await ref
-        .read(usersRepositoryProvider)
-        .changePassword(currentPassword: _current.text, newPassword: _next.text);
+    final result = await ref.read(usersRepositoryProvider).changePassword(
+        currentPassword: _current.text, newPassword: _next.text);
     if (!mounted) return;
     result.fold(
       (failure) => setState(() {
@@ -280,7 +279,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         const SizedBox(height: 24),
         Align(
           alignment: Alignment.centerRight,
-          child: SizedBox(width: 320, child: _buildSubmitButton()),
+          child: SizedBox(width: 240, child: _buildSubmitButton()),
         ),
       ],
     );
@@ -393,9 +392,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               Icon(
                 _error == null ? Icons.info_outline : Icons.error_outline,
                 size: 14,
-                color: _error == null
-                    ? const Color(0xFF9B9B9B)
-                    : AppColors.error,
+                color:
+                    _error == null ? const Color(0xFF9B9B9B) : AppColors.error,
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -504,15 +502,15 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     return GestureDetector(
       onTap: _saving ? null : _submit,
       child: Container(
-        height: 54,
+        height: kIsWeb ? 46 : 54,
         decoration: BoxDecoration(
           gradient: const LinearGradient(colors: [_green, _green2]),
-          borderRadius: BorderRadius.circular(27),
+          borderRadius: BorderRadius.circular(kIsWeb ? 23 : 27),
           boxShadow: [
             BoxShadow(
               color: _green.withValues(alpha: 0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              blurRadius: kIsWeb ? 12 : 16,
+              offset: Offset(0, kIsWeb ? 4 : 6),
             ),
           ],
         ),
@@ -530,7 +528,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   'Update Password',
                   style: TextStyle(
                     fontFamily: 'Montserrat',
-                    fontSize: 16,
+                    fontSize: kIsWeb ? 14 : 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),

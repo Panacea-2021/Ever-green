@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -127,104 +128,120 @@ class TaskDetailsScreen extends ConsumerWidget {
         task == null ? const <TaskButton>[] : taskDetailButtonsFor(task, user);
     final canEdit = taskMenuFor(role).contains(TaskMenuItem.edit);
 
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeroHeader(context, img),
+        if (task != null && task.attachments.length > 1)
+          _buildImageGallery(task.attachments),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+              letterSpacing: -0.6,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Row(
+            children: [
+              const Icon(Icons.location_on, color: Color(0xFF125420), size: 16),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  loc,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF125420),
+                    letterSpacing: -0.42,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _buildStatusBadge(stat),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        if (individual)
+          _buildContactCard(context, task!)
+        else
+          _buildCompanyCard(company, client, mob),
+        const SizedBox(height: 20),
+        _buildTaskDetailsCard(
+          task?.ticketNo ?? '',
+          task?.source?.issueTypeLabel ?? '',
+          tech,
+          techMob,
+          created,
+          individual ? null : sNo,
+          desc,
+          lastUpdated,
+          task?.source?.equipment?.serviceType?.name,
+        ),
+        if (task != null && actions.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _buildActionsCard(context, ref, task, actions),
+        ],
+        if (task != null && task.taskId > 0) ...[
+          const SizedBox(height: 20),
+          TaskTimelineCard(taskId: task.taskId),
+        ],
+        const SizedBox(height: 24),
+      ],
+    );
+    final editButton = canEdit
+        ? _buildBottomButtons(context, ref, task, title, loc, stat, company,
+            client, mob, tech, techMob, created, sNo, desc)
+        : null;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Hero Image Header
-                  _buildHeroHeader(context, img),
-
-                  if (task != null && task.attachments.length > 1)
-                    _buildImageGallery(task.attachments),
-
-                  // Task Title
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                        letterSpacing: -0.6,
+      backgroundColor: kIsWeb ? const Color(0xFFF3F7F3) : Colors.white,
+      body: kIsWeb
+          ? Column(
+              children: [
+                if (editButton != null) editButton,
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1040),
+                        child: details,
                       ),
                     ),
                   ),
-
-                  // Location + Status
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.location_on,
-                            color: Color(0xFF125420), size: 16),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            loc,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF125420),
-                              letterSpacing: -0.42,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        _buildStatusBadge(stat),
-                      ],
+                ),
+              ],
+            )
+          : Column(
+              children: [
+                Expanded(child: SingleChildScrollView(child: details)),
+                if (editButton != null) editButton,
+              ],
+            ),
+    );
+                      ),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  if (individual)
-                    _buildContactCard(context, task!)
-                  else
-                    _buildCompanyCard(company, client, mob),
-
-                  const SizedBox(height: 20),
-
-                  _buildTaskDetailsCard(
-                    task?.ticketNo ?? '',
-                    task?.source?.issueTypeLabel ?? '',
-                    tech,
-                    techMob,
-                    created,
-                    individual ? null : sNo,
-                    desc,
-                    lastUpdated,
-                    task?.source?.equipment?.serviceType?.name,
-                  ),
-
-                  if (task != null && actions.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _buildActionsCard(context, ref, task, actions),
-                  ],
-
-                  if (task != null && task.taskId > 0) ...[
-                    const SizedBox(height: 20),
-                    TaskTimelineCard(taskId: task.taskId),
-                  ],
-
-                  const SizedBox(height: 24),
-                ],
-              ),
+                ),
+              ],
+            )
+          : Column(
+              children: [
+                Expanded(child: SingleChildScrollView(child: details)),
+                if (editButton != null) editButton,
+              ],
             ),
-          ),
-          if (canEdit)
-            _buildBottomButtons(context, ref, task, title, loc, stat, company,
-                client, mob, tech, techMob, created, sNo, desc),
-        ],
-      ),
     );
   }
 
@@ -785,6 +802,95 @@ class TaskDetailsScreen extends ConsumerWidget {
     String sNo,
     String desc,
   ) {
+    void editTask() {
+      if (task != null && task.isIndividual) {
+        showEditTaskSheet(context, task);
+        return;
+      }
+      context.push(
+        '${Routes.addTask}/edit',
+        extra: {
+          'isEdit': true,
+          'companyName': company,
+          'editTask': {
+            'taskId': taskId,
+            'taskTitle': title,
+            'location': loc,
+            'status': stat,
+            'companyName': company,
+            'clientName': client,
+            'mobile': mob,
+            'technician': tech,
+            'technicianMobile': techMob,
+            'createdOn': created,
+            'serialNumber': sNo,
+            'description': desc,
+          },
+        },
+      );
+    }
+
+    final button = GestureDetector(
+      onTap: editTask,
+      child: Container(
+        height: 46,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(32),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [_green, Color.lerp(_green, Colors.black, 0.12)!],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _green.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Text(
+          'Edit',
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+
+    if (kIsWeb) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: const Border(top: BorderSide(color: Color(0xFFE2E8E3))),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1040),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(width: 180, child: button),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       decoration: BoxDecoration(
@@ -801,68 +907,7 @@ class TaskDetailsScreen extends ConsumerWidget {
         top: false,
         child: Row(
           children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  if (task != null && task.isIndividual) {
-                    showEditTaskSheet(context, task);
-                    return;
-                  }
-                  context.push(
-                    '${Routes.addTask}/edit',
-                    extra: {
-                      'isEdit': true,
-                      'companyName': company,
-                      'editTask': {
-                        'taskId': taskId,
-                        'taskTitle': title,
-                        'location': loc,
-                        'status': stat,
-                        'companyName': company,
-                        'clientName': client,
-                        'mobile': mob,
-                        'technician': tech,
-                        'technicianMobile': techMob,
-                        'createdOn': created,
-                        'serialNumber': sNo,
-                        'description': desc,
-                      },
-                    },
-                  );
-                },
-                child: Container(
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        _green,
-                        Color.lerp(_green, Colors.black, 0.12)!,
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _green.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Text(
-                    'Edit',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            Expanded(child: button),
           ],
         ),
       ),

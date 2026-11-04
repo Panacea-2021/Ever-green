@@ -56,6 +56,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
   String? _imageUrl;
   bool _uploadingImage = false;
   bool _saving = false;
+  bool _pickingCompany = false;
 
   static const Color _green = Color(0xFF106220);
   static const Color _resetBorder = Color(0x80155622); // rgba(21,86,34,0.5)
@@ -143,29 +144,43 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: kIsWeb ? const Color(0xFFF2F6F2) : Colors.white,
         resizeToAvoidBottomInset: true,
         body: Stack(
           children: [
-            // Faint background
             Positioned.fill(
-              child: Image.asset(
-                'assets/images/home_bg.png',
-                fit: BoxFit.cover,
-                color: Colors.white.withValues(alpha: 0.78),
-                colorBlendMode: BlendMode.srcOver,
-                errorBuilder: (_, __, ___) => Container(color: Colors.white),
-              ),
+              child: kIsWeb
+                  ? const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFF6F9F6),
+                            Color(0xFFEDF4EE),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Image.asset(
+                      'assets/images/home_bg.png',
+                      fit: BoxFit.cover,
+                      color: Colors.white.withValues(alpha: 0.78),
+                      colorBlendMode: BlendMode.srcOver,
+                      errorBuilder: (_, __, ___) =>
+                          Container(color: Colors.white),
+                    ),
             ),
             SafeArea(
               bottom: false,
               child: Column(
                 children: [
                   if (!kIsWeb) _buildHeader(context),
+                  if (kIsWeb) _buildBottomButtons(webTop: true),
                   Expanded(
                     child: kIsWeb
                         ? WebForm.page(
-                            maxWidth: double.infinity,
+                            maxWidth: 1120,
                             [_webFormCard()],
                           )
                         : SingleChildScrollView(
@@ -173,7 +188,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
                             child: _buildFormCard(),
                           ),
                   ),
-                  _buildBottomButtons(),
+                  if (!kIsWeb) _buildBottomButtons(),
                 ],
               ),
             ),
@@ -373,15 +388,26 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
   /// Active service types; the equipment's current one stays listed even if
   /// it was deactivated.
   Widget _buildServiceTypeField() {
-    final types =
-        ref.watch(serviceTypesProvider).valueOrNull ?? const <ServiceType>[];
+    final serviceTypes = ref.watch(serviceTypesProvider);
+    final types = serviceTypes.valueOrNull ?? const <ServiceType>[];
     final names = [
       for (final t in types) t.name,
       if (_serviceTypeName != null && !types.any((t) => t.id == _serviceTypeId))
         _serviceTypeName!,
     ];
+    final isLoading = !serviceTypes.hasValue && serviceTypes.isLoading;
+    final hasError = !serviceTypes.hasValue && serviceTypes.hasError;
+    final hint = !kIsWeb
+        ? 'Service Type'
+        : isLoading
+            ? 'Loading service types...'
+            : hasError
+                ? 'Service Type (tap to retry)'
+                : names.isEmpty
+                    ? 'No service types available'
+                    : 'Service Type';
     return _dropdownField(
-      'Service Type',
+      hint,
       _serviceTypeName,
       [if (_serviceTypeName != null) _noServiceType, ...names],
       (v) => setState(() {
@@ -397,6 +423,15 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
           }
         }
       }),
+      onTapOverride: !kIsWeb
+          ? null
+          : hasError
+              ? () => ref.invalidate(serviceTypesProvider)
+              : isLoading
+                  ? () => _snack('Service types are still loading.')
+                  : names.isEmpty
+                      ? () => _snack('No service types are available.')
+                      : null,
     );
   }
 
@@ -407,21 +442,44 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
     for (final c in companies) {
       if (c.id == _companyId) selected = c;
     }
+    final hasError = !async.hasValue && async.hasError;
     return _dropdownField(
-      async.hasError ? 'Company (tap to retry)' : 'Company',
+      hasError
+          ? kIsWeb
+              ? 'Company'
+              : 'Company (tap to retry)'
+          : kIsWeb && _pickingCompany
+              ? 'Loading companies...'
+              : 'Company',
       selected?.displayName,
       const [],
       (_) {},
-      onTapOverride: async.hasError
-          ? () => ref.invalidate(companiesProvider)
-          : _pickCompany,
+      onTapOverride: kIsWeb
+          ? _pickCompany
+          : hasError
+              ? _retryCompanies
+              : _pickCompany,
     );
   }
 
+  void _retryCompanies() => ref.invalidate(companiesProvider);
+
   Future<void> _pickCompany() async {
-    final picked =
-        await CompanyPickerScreen.open(context, selectedId: _companyId);
-    if (picked != null && mounted) setState(() => _companyId = picked.id);
+    if (_pickingCompany) return;
+    setState(() => _pickingCompany = true);
+    try {
+      if (kIsWeb) {
+        ref.invalidate(companiesProvider);
+      }
+      if (!mounted) return;
+      final picked =
+          await CompanyPickerScreen.open(context, selectedId: _companyId);
+      if (picked != null && mounted) setState(() => _companyId = picked.id);
+    } catch (error) {
+      if (mounted) _snack('Could not load companies: $error', error: true);
+    } finally {
+      if (mounted) setState(() => _pickingCompany = false);
+    }
   }
 
   // Pill-shaped text field with soft shadow, no border
@@ -651,99 +709,145 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
   // ---------------------------------------------------------------------------
   // Bottom buttons
   // ---------------------------------------------------------------------------
-  Widget _buildBottomButtons() {
+  Widget _buildBottomButtons({bool webTop = false}) {
     final showBulkUpload = !widget.isEdit &&
         Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
+    final bulkUploadButton = GestureDetector(
+      onTap: () => context.push(Routes.uploadEquipments),
+      child: Container(
+        height: kIsWeb ? 40 : 46,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: kIsWeb ? const Color(0xFFF4F8F4) : Colors.white,
+          borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
+          border: Border.all(
+            color: kIsWeb ? const Color(0xFFD5E3D7) : _resetBorder,
+            width: 1,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.cloud_upload_outlined,
+                color: const Color(0xFF0E501B),
+                size: kIsWeb ? 16 : 18,
+              ),
+              SizedBox(width: kIsWeb ? 6 : 8),
+              Text(
+                'Bulk Upload',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: kIsWeb ? 13 : 16,
+                  fontWeight: kIsWeb ? FontWeight.w600 : FontWeight.w500,
+                  color: const Color(0xFF0E501B),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    final saveButton = GestureDetector(
+      onTap: _saving ? null : _saveEquipment,
+      child: Container(
+        height: kIsWeb ? 40 : 46,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF138A2A), _green],
+          ),
+          borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
+          boxShadow: kIsWeb
+              ? [
+                  BoxShadow(
+                    color: _green.withValues(alpha: 0.18),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Center(
+          child: _saving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : kIsWeb
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.check_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          widget.isEdit ? 'Update' : 'Save',
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      widget.isEdit ? 'Update' : 'Save',
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+        ),
+      ),
+    );
+    final buttons = Row(
+      children: [
+        if (showBulkUpload) ...[
+          Expanded(child: bulkUploadButton),
+          SizedBox(width: kIsWeb ? 10 : 16),
+        ],
+        Expanded(child: saveButton),
+      ],
+    );
+
     return Container(
       decoration: kIsWeb
-          ? WebForm.barDecoration
+          ? webTop
+              ? const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(bottom: BorderSide(color: WebForm.line)),
+                )
+              : WebForm.barDecoration
           : const BoxDecoration(color: Colors.white),
       padding: kIsWeb
           ? WebForm.barPadding
           : const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: SafeArea(
         top: false,
-        child: WebForm.actions(Row(
-          children: [
-            if (showBulkUpload) ...[
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => context.push(Routes.uploadEquipments),
-                  child: Container(
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(32),
-                      border: Border.all(color: _resetBorder, width: 1),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: const FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.cloud_upload_outlined,
-                            color: Color(0xFF0E501B),
-                            size: 18,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Bulk Upload',
-                            style: TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF0E501B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+        child: kIsWeb
+            ? Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  width: showBulkUpload ? 300 : 180,
+                  child: buttons,
                 ),
-              ),
-              const SizedBox(width: 16),
-            ],
-            // Save (gradient)
-            Expanded(
-              child: GestureDetector(
-                onTap: _saving ? null : _saveEquipment,
-                child: Container(
-                  height: 46,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF138A2A), _green],
-                    ),
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                  child: Center(
-                    child: _saving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            widget.isEdit ? 'Update' : 'Save',
-                            style: const TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),),
+              )
+            : buttons,
       ),
     );
   }
@@ -961,7 +1065,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
     try {
       final url = await ref
           .read(evergreenRepositoryProvider)
-          .uploadFile(file.path, folderName: 'equipment_info');
+          .uploadFile(file, folderName: 'equipment_info');
       if (mounted) setState(() => _imageUrl = url);
     } catch (e) {
       _snack('Image upload failed: $e', error: true);

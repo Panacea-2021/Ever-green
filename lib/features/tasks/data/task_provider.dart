@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/data/evergreen_repository.dart';
 import '../../../core/models/backend_models.dart' hide TaskStatus;
@@ -149,10 +150,10 @@ final technicianStatsProvider =
   return stats;
 });
 
-/// Screenshots a technician has picked for a ticket (local file paths, keyed
+/// Screenshots a technician has picked for a ticket (local files, keyed
 /// by task id). They are uploaded with the work report on "Complete Work".
 final pendingScreenshotsProvider =
-    StateProvider<Map<String, List<String>>>((ref) => const {});
+    StateProvider<Map<String, List<XFile>>>((ref) => const {});
 
 /// A ticket's timeline (`user/getTaskTimeline`), oldest step first.
 final taskTimelineProvider = FutureProvider.autoDispose
@@ -193,10 +194,10 @@ class TaskActions {
     return id;
   }
 
-  Future<List<String>> _upload(List<String> paths, String folder) async {
+  Future<List<String>> _upload(List<XFile> files, String folder) async {
     final urls = <String>[];
-    for (final p in paths) {
-      urls.add(await _repo.uploadFile(p, folderName: folder));
+    for (final file in files) {
+      urls.add(await _repo.uploadFile(file, folderName: folder));
     }
     return urls;
   }
@@ -223,9 +224,9 @@ class TaskActions {
     String? location,
     TaskPriority? priority,
     DateTime? dueDate,
-    List<String> imagePaths = const [],
+    List<XFile> imageFiles = const [],
   }) async {
-    final images = await _upload(imagePaths, 'tasks');
+    final images = await _upload(imageFiles, 'tasks');
     await _post('user/createTask', {
       'equipment_link': equipmentId,
       'name': name,
@@ -273,9 +274,9 @@ class TaskActions {
     required String contactName,
     required String contactPhone,
     required String address,
-    List<String> imagePaths = const [],
+    List<XFile> imageFiles = const [],
   }) async {
-    final images = await _upload(imagePaths, 'tasks');
+    final images = await _upload(imageFiles, 'tasks');
     await _post(
       'user/createTask',
       individualTaskBody(
@@ -399,7 +400,7 @@ class TaskActions {
   }) async {
     final image = imagePath == null
         ? null
-        : (await _upload([imagePath], 'out_images')).first;
+        : (await _upload([XFile(imagePath)], 'out_images')).first;
     await _post('user/updateTaskStatus', {
       'task_user_link': _taskUserLink(t),
       'status': ServiceStatus.hold.key,
@@ -423,7 +424,7 @@ class TaskActions {
   }) async {
     final image = imagePath == null
         ? current.image
-        : (await _upload([imagePath], 'out_images')).first;
+        : (await _upload([XFile(imagePath)], 'out_images')).first;
     await _post('user/updateHoldReasons', {
       'hold_reason_link': current.id,
       'hold_reason': type.key,
@@ -441,10 +442,10 @@ class TaskActions {
     required String actionTaken,
     String requirementDetails = '',
     bool followUp = false,
-    List<String> imagePaths = const [],
+    List<XFile> imageFiles = const [],
     required bool asTechnician,
   }) async {
-    final images = await _upload(imagePaths, 'out_images');
+    final images = await _upload(imageFiles, 'out_images');
     await _post('user/updateTaskFeedback', {
       'task_link': t.taskId,
       'action_taken': actionTaken,

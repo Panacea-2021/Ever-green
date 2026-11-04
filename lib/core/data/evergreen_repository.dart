@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../config/environment_config.dart';
 import '../errors/failures.dart';
@@ -147,10 +149,20 @@ class EvergreenRepository {
   }
 
   /// Uploads one file to `upload-file` and returns the stored URL/path.
-  Future<String> uploadFile(String filePath,
-      {required String folderName}) async {
-    final form =
-        FormData.fromMap({'file': await MultipartFile.fromFile(filePath)});
+  Future<String> uploadFile(XFile file, {required String folderName}) async {
+    final multipartFile = kIsWeb
+        ? MultipartFile.fromBytes(
+            await file.readAsBytes(),
+            filename: file.name.isEmpty ? 'upload' : file.name,
+            contentType: file.mimeType == null
+                ? null
+                : DioMediaType.parse(file.mimeType!),
+          )
+        : await MultipartFile.fromFile(
+            file.path,
+            filename: file.name.isEmpty ? null : file.name,
+          );
+    final form = FormData.fromMap({'file': multipartFile});
     final body = unwrap(
       await api.post<dynamic>(
         'user/upload-file',
