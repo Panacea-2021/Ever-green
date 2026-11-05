@@ -18,6 +18,13 @@ class AnnouncementRecipient {
         role: UserRoleX.fromKey(json['role'] as String?),
       );
 
+  factory AnnouncementRecipient.fromBackend(Map<String, dynamic> json) =>
+      AnnouncementRecipient(
+        id: '${json['id']}',
+        name: json['name']?.toString() ?? '',
+        role: UserRoleX.fromKey(json['role']?.toString()),
+      );
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
@@ -60,6 +67,28 @@ class Announcement {
             .toList(),
       );
 
+  factory Announcement.fromBackend(Map<String, dynamic> json) {
+    final rawRecipients = json['recipients'];
+    return Announcement(
+      id: '${json['id']}',
+      title: json['title']?.toString() ?? '',
+      message: json['message']?.toString() ?? '',
+      senderId: '${json['sender_id']}',
+      senderName: json['sender_name']?.toString() ?? '',
+      createdAt: DateTime.parse(json['created_at'].toString()).toLocal(),
+      recipients: rawRecipients is List
+          ? rawRecipients
+              .whereType<Map>()
+              .map(
+                (recipient) => AnnouncementRecipient.fromBackend(
+                  Map<String, dynamic>.from(recipient),
+                ),
+              )
+              .toList()
+          : const [],
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
@@ -100,6 +129,14 @@ class AnnouncementNotification {
         isRead: json['is_read'] as bool,
       );
 
+  factory AnnouncementNotification.fromBackend(Map<String, dynamic> json) =>
+      AnnouncementNotification(
+        id: json['id']?.toString() ?? '',
+        announcementId: '${json['announcement_id']}',
+        recipientId: '${json['recipient_id']}',
+        isRead: json['is_read'] == true,
+      );
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'announcement_id': announcementId,
@@ -112,10 +149,12 @@ class AnnouncementState {
   const AnnouncementState({
     this.announcements = const [],
     this.notifications = const [],
+    this.recipientDirectory = const [],
   });
 
   final List<Announcement> announcements;
   final List<AnnouncementNotification> notifications;
+  final List<AnnouncementRecipient> recipientDirectory;
 
   factory AnnouncementState.fromJson(Map<String, dynamic> json) =>
       AnnouncementState(
@@ -133,6 +172,13 @@ class AnnouncementState {
               ),
             )
             .toList(),
+        recipientDirectory: (json['recipientDirectory'] as List? ?? const [])
+            .map(
+              (item) => AnnouncementRecipient.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -140,6 +186,8 @@ class AnnouncementState {
             announcements.map((announcement) => announcement.toJson()).toList(),
         'notifications':
             notifications.map((notification) => notification.toJson()).toList(),
+        'recipientDirectory':
+            recipientDirectory.map((recipient) => recipient.toJson()).toList(),
       };
 
   AnnouncementState addAnnouncement({
@@ -187,6 +235,7 @@ class AnnouncementState {
     return AnnouncementState(
       announcements: [announcement, ...announcements],
       notifications: [...newNotifications, ...notifications],
+      recipientDirectory: recipientDirectory,
     );
   }
 
@@ -204,6 +253,7 @@ class AnnouncementState {
     return AnnouncementState(
       announcements: announcements,
       notifications: updated,
+      recipientDirectory: recipientDirectory,
     );
   }
 
