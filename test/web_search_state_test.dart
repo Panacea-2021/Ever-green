@@ -9,6 +9,28 @@ void main() {
     expect(matchesWebSearch('  ', ['any value']), isTrue);
   });
 
+  test('web search matches a phrase in one field', () {
+    expect(
+      matchesWebSearch('north branch', ['North Branch A']),
+      isTrue,
+    );
+    expect(
+      matchesWebSearch('north branch', ['Northwind', 'Branch A']),
+      isFalse,
+    );
+  });
+
+  test('header search matches every word across different fields', () {
+    expect(
+      matchesWebSearchTerms('north branch', ['Northwind', 'Branch A']),
+      isTrue,
+    );
+    expect(
+      matchesWebSearchTerms('north missing', ['Northwind', 'Branch A']),
+      isFalse,
+    );
+  });
+
   test('web page search query is shared through its provider', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);

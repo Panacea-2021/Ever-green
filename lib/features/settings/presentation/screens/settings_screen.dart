@@ -1479,7 +1479,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     if (confirmed == true && mounted) {
       await ref.read(authControllerProvider).logout();
-      if (mounted) context.go(Routes.login);
+      if (mounted) context.go(kIsWeb ? Routes.home : Routes.login);
     }
   }
 }

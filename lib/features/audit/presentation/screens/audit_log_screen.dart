@@ -613,11 +613,15 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
         return false;
       }
       if (searchQuery.isEmpty) return true;
+      final fields = [
+        e.actorName,
+        e.entityName,
+        e.details,
+        e.action.label,
+      ];
+      if (kIsWeb) return matchesWebSearchTerms(searchQuery, fields);
       final q = searchQuery.toLowerCase();
-      return e.actorName.toLowerCase().contains(q) ||
-          e.entityName.toLowerCase().contains(q) ||
-          (e.details ?? '').toLowerCase().contains(q) ||
-          e.action.label.toLowerCase().contains(q);
+      return fields.any((field) => field?.toLowerCase().contains(q) ?? false);
     }).toList();
 
     if (kIsWeb) {

@@ -150,7 +150,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // If not authenticated (signed out, or a 401 expired the session) and
       // trying to access a protected route.
       if (!isAuthenticated && !isPublicRoute) {
-        return Routes.login;
+        return kIsWeb ? Routes.home : Routes.login;
       }
 
       // If authenticated and on auth routes (except splash/getStarted which auto-navigate)

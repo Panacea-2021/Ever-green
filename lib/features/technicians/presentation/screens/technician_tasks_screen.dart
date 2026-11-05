@@ -58,7 +58,7 @@ class _TechnicianTasksScreenState extends ConsumerState<TechnicianTasksScreen> {
     final activeStatus = _tabs[_selectedTab].$2;
     final visible = mine.where((t) {
       if (t.status != activeStatus) return false;
-      return t.matchesQuery(_query) && t.matchesQuery(moduleQuery);
+      return t.matchesQuery(_query) && t.matchesAllQueryTerms(moduleQuery);
     }).toList()
       ..sort((a, b) {
         if (a.priority.rank != b.priority.rank) {
@@ -155,8 +155,11 @@ class _TechnicianTasksScreenState extends ConsumerState<TechnicianTasksScreen> {
                 color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back,
-                  size: 20, color: Color(0xFF1F1F1F),),
+              child: const Icon(
+                Icons.arrow_back,
+                size: 20,
+                color: Color(0xFF1F1F1F),
+              ),
             ),
           ),
           const SizedBox(width: 14),

@@ -9,3 +9,16 @@ bool matchesWebSearch(String query, Iterable<String?> fields) {
     (field) => field?.toLowerCase().contains(normalized) ?? false,
   );
 }
+
+bool matchesWebSearchTerms(String query, Iterable<String?> fields) {
+  final normalized = query.trim().toLowerCase();
+  if (normalized.isEmpty) return true;
+  final terms = normalized.split(RegExp(r'\s+'));
+  final searchableFields = fields
+      .where((field) => field != null && field.trim().isNotEmpty)
+      .map((field) => field!.toLowerCase())
+      .toList();
+  return terms.every(
+    (term) => searchableFields.any((field) => field.contains(term)),
+  );
+}
