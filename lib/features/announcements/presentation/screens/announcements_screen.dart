@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/auth/permissions.dart';
-import '../../../../features/users/data/user_provider.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../../web/theme/web_tokens.dart';
 import '../../../../web/widgets/web_search_state.dart';
@@ -44,9 +43,6 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
     final role = currentUser?.role ?? UserRole.client;
     final canCreate = Permissions.canCreateAnnouncements(role);
     final announcementState = ref.watch(announcementControllerProvider);
-    final directory = canCreate
-        ? ref.watch(usersListProvider)
-        : const AsyncData<List<User>>([]);
 
     return announcementState.when(
       loading: () => const Center(
@@ -54,9 +50,21 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
       ),
       error: (error, _) => _loadError(error),
       data: (data) {
+        final directoryUsers = data.recipientDirectory
+            .map(
+              (recipient) => User(
+                id: recipient.id,
+                email: '',
+                name: recipient.name,
+                role: recipient.role,
+                designation: recipient.role.designation,
+              ),
+            )
+            .toList();
         final recipients = currentUser == null
             ? <User>[]
-            : _eligibleUsers(directory.valueOrNull ?? const [], role);
+            : _eligibleUsers(directoryUsers, role);
+        final directory = AsyncData<List<User>>(recipients);
         final selectedRecipients = _selectedRecipients(recipients);
         final history = data.announcements.where((announcement) {
           return announcement.senderId == currentUser?.id &&
@@ -98,7 +106,6 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                   children: [
                     _pageHeading(data.unreadCountFor(currentUser?.id ?? '')),
                     const SizedBox(height: 18),
-                    const _PrototypeNotice(),
                     if (canCreate) ...[
                       const SizedBox(height: 24),
                       const _SectionHeading(
@@ -237,7 +244,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 32),
               const SizedBox(height: 8),
-              Text('Could not load announcement preview: $error'),
+              Text('Could not load announcements: $error'),
               TextButton(
                 onPressed: () => ref.invalidate(announcementControllerProvider),
                 child: const Text('Retry'),
@@ -328,7 +335,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
 
   Future<void> _send(List<AnnouncementRecipient> recipients) async {
     if (_title.text.trim().isEmpty || _message.text.trim().isEmpty) {
-      _showMessage('Add a title and message before saving.');
+      _showMessage('Add a title and message before sending.');
       return;
     }
     if (recipients.isEmpty) {
@@ -349,9 +356,9 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
         _selectedPeople.clear();
         _excludedPeople.clear();
       });
-      _showMessage('Saved in this browser only. No recipients were notified.');
+      _showMessage('Announcement sent successfully.');
     } catch (error) {
-      _showMessage('Could not save announcement preview: $error');
+      _showMessage('Could not send announcement: $error');
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -364,9 +371,9 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
     try {
       await ref
           .read(announcementControllerProvider.notifier)
-          .markRead(notification.id);
+          .markRead(announcement.id);
     } catch (error) {
-      _showMessage('Could not update notification status: $error');
+      _showMessage('Could not mark announcement as read: $error');
     }
     if (mounted) await _showAnnouncement(announcement);
   }
@@ -551,7 +558,7 @@ class _ComposerCard extends StatelessWidget {
                         ),
                       )
                     : const Icon(Icons.save_outlined),
-                label: Text(sending ? 'Saving preview…' : 'Save preview'),
+                label: Text(sending ? 'Sending…' : 'Send announcement'),
               ),
             ),
           ],
@@ -707,7 +714,7 @@ class _HistoryRow extends StatelessWidget {
               style: WebTokens.bodyText(11),
             ),
             const SizedBox(height: 5),
-            const _StatusPill(label: 'Local preview', color: Color(0xFFB36B00)),
+            const _StatusPill(label: 'Sent', color: WebTokens.green),
           ],
         ),
       );
@@ -837,10 +844,7 @@ class _AnnouncementDetailsDialog extends StatelessWidget {
                       ),
                     ),
                   const SizedBox(height: 8),
-                  const _StatusPill(
-                    label: 'Saved locally · not delivered',
-                    color: Color(0xFFB36B00),
-                  ),
+                  const _StatusPill(label: 'Sent', color: WebTokens.green),
                 ],
               ],
             ),
@@ -852,36 +856,6 @@ class _AnnouncementDetailsDialog extends StatelessWidget {
             child: const Text('Close'),
           ),
         ],
-      );
-}
-
-class _PrototypeNotice extends StatelessWidget {
-  const _PrototypeNotice();
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF5DF),
-          border: Border.all(color: const Color(0xFFEBD59F)),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.info_outline, color: Color(0xFF8A5A00)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Frontend-only preview. Data is saved in this browser; no '
-                'announcement is sent and no recipient is notified. Server '
-                'authorization and manager hierarchy cannot be verified here.',
-                style: WebTokens.bodyText(12, color: const Color(0xFF704B08)),
-              ),
-            ),
-          ],
-        ),
       );
 }
 
