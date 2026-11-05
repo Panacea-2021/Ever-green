@@ -297,25 +297,31 @@ class _TechnicianPerformanceScreenState
                 children: [
                   segment,
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      for (final p in RangePreset.values) ...[
-                        if (p != RangePreset.values.first)
-                          const SizedBox(width: 8),
-                        Expanded(child: _webRangeChip(p, range)),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (final p in RangePreset.values) ...[
+                          if (p != RangePreset.values.first)
+                            const SizedBox(width: 8),
+                          SizedBox(
+                            width: 140,
+                            child: _webRangeChip(p, range),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ],
               );
             }
             return Row(
               children: [
-                Expanded(flex: 9, child: segment),
+                Expanded(flex: 8, child: segment),
                 const SizedBox(width: 12),
                 for (final p in RangePreset.values) ...[
                   if (p != RangePreset.values.first) const SizedBox(width: 10),
-                  Expanded(flex: 3, child: _webRangeChip(p, range)),
+                  Expanded(flex: 4, child: _webRangeChip(p, range)),
                 ],
               ],
             );
@@ -337,7 +343,7 @@ class _TechnicianPerformanceScreenState
           duration: const Duration(milliseconds: 160),
           height: 56,
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
             color: selected ? _green.withValues(alpha: 0.1) : Colors.white,
             borderRadius: BorderRadius.circular(12),
@@ -364,7 +370,7 @@ class _TechnicianPerformanceScreenState
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Montserrat',
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: fg,
                   ),

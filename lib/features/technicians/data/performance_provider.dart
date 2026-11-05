@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -83,9 +84,12 @@ class DateRange {
   int get hashCode => Object.hash(start, end, preset);
 }
 
-/// Currently selected performance window (defaults to This Month).
-final performanceRangeProvider =
-    StateProvider<DateRange>((ref) => DateRange.fromPreset(RangePreset.month));
+/// The performance window defaults to Today on web and This Month on mobile.
+final performanceRangeProvider = StateProvider<DateRange>(
+  (ref) => DateRange.fromPreset(
+    kIsWeb ? RangePreset.today : RangePreset.month,
+  ),
+);
 
 /// Performance metrics for a person within a date range.
 class PerformanceStats {

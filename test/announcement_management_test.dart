@@ -1,14 +1,20 @@
 import 'package:evergreen/core/auth/permissions.dart';
+import 'package:evergreen/core/config/environment_config.dart';
+import 'package:evergreen/core/errors/failures.dart';
+import 'package:evergreen/core/network/api_client.dart';
 import 'package:evergreen/core/router/routes.dart';
 import 'package:evergreen/features/announcements/data/announcement_provider.dart';
 import 'package:evergreen/features/announcements/domain/announcement.dart';
 import 'package:evergreen/features/auth/domain/models/user_model.dart';
 import 'package:evergreen/shared/providers/auth_state_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fpdart/fpdart.dart';
 
 void main() {
+  setUpAll(() => EnvironmentConfig.initialize(Environment.dev));
+
   const fieldEngineer = AnnouncementRecipient(
     id: '42',
     name: 'Field Engineer',
@@ -294,7 +300,7 @@ void main() {
 
   test('manager controller records notifications only for selected users',
       () async {
-    SharedPreferences.setMockInitialValues({});
+    late _FakeApiClient api;
     final container = ProviderContainer(
       overrides: [
         currentUserProvider.overrideWithValue(
@@ -305,6 +311,10 @@ void main() {
             role: UserRole.manager,
           ),
         ),
+        apiClientProvider.overrideWith((ref) {
+          api = _FakeApiClient(ref);
+          return api;
+        }),
       ],
     );
     addTearDown(container.dispose);
@@ -318,39 +328,60 @@ void main() {
 
     final result = container.read(announcementControllerProvider).requireValue;
     expect(result.announcements.single.recipients, hasLength(1));
-    expect(result.notifications, hasLength(1));
-    expect(result.inboxFor('42'), hasLength(1));
-    expect(result.inboxFor('84'), isEmpty);
+    expect(api.posts.single.path, 'announcements');
+    expect(api.posts.single.body['recipient_ids'], [42]);
+    expect(result.notifications, isEmpty);
   });
 
-  test('Super Admin controller can target multiple permitted groups', () async {
-    SharedPreferences.setMockInitialValues({});
+  test('mark-read calls the backend with the announcement ID', () async {
+    late _FakeApiClient api;
     final container = ProviderContainer(
       overrides: [
         currentUserProvider.overrideWithValue(
           const User(
-            id: 'admin-1',
-            email: 'admin@example.com',
-            name: 'Super Admin',
-            role: UserRole.superAdmin,
+            id: '42',
+            email: 'engineer@example.com',
+            name: 'Field Engineer',
+            role: UserRole.technician,
           ),
         ),
+        apiClientProvider.overrideWith((ref) {
+          api = _FakeApiClient(
+            ref,
+            inbox: [
+              {
+                'notification': {
+                  'id': '99:42',
+                  'announcement_id': '99',
+                  'recipient_id': '42',
+                  'is_read': false,
+                },
+                'announcement': {
+                  'id': '99',
+                  'title': 'Service update',
+                  'message': 'A scheduled update.',
+                  'sender_id': '7',
+                  'sender_name': 'Manager',
+                  'created_at': '2026-01-02T00:00:00.000Z',
+                  'recipients': [],
+                },
+              },
+            ],
+          );
+          return api;
+        }),
       ],
     );
     addTearDown(container.dispose);
     await container.read(announcementControllerProvider.future);
 
-    await container.read(announcementControllerProvider.notifier).send(
-      title: 'Workspace update',
-      message: 'Please review this update.',
-      recipients: [manager, fieldEngineer],
-    );
+    await container
+        .read(announcementControllerProvider.notifier)
+        .markRead('99');
 
     final result = container.read(announcementControllerProvider).requireValue;
-    expect(result.announcements.single.recipients, hasLength(2));
-    expect(result.notifications, hasLength(2));
-    expect(result.inboxFor('7'), hasLength(1));
-    expect(result.inboxFor('42'), hasLength(1));
+    expect(api.posts.single.path, 'announcements/99/read');
+    expect(result.inboxFor('42').single.notification.isRead, isTrue);
   });
 
   test('unauthorized roles cannot send through the controller', () async {
@@ -360,7 +391,6 @@ void main() {
       UserRole.clientAdmin,
       UserRole.client,
     ]) {
-      SharedPreferences.setMockInitialValues({});
       final container = ProviderContainer(
         overrides: [
           currentUserProvider.overrideWithValue(
@@ -371,6 +401,7 @@ void main() {
               role: role,
             ),
           ),
+          apiClientProvider.overrideWith((ref) => _FakeApiClient(ref)),
         ],
       );
       addTearDown(container.dispose);
@@ -394,4 +425,82 @@ void main() {
       );
     }
   });
+}
+
+class _FakeApiClient extends ApiClient {
+  _FakeApiClient(super.ref, {List<Map<String, dynamic>> inbox = const []})
+      : _inbox = inbox;
+
+  final List<Map<String, dynamic>> _inbox;
+  final List<({String path, Map<String, dynamic> body})> posts = [];
+  final List<Map<String, dynamic>> _history = [];
+
+  @override
+  Future<Either<Failure, T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    T Function(dynamic data)? parser,
+  }) async {
+    final body = switch (path) {
+      'announcements/recipients' => {
+          'status': 200,
+          'data': [
+            {'id': '42', 'name': 'Field Engineer', 'role': 'technician'},
+            {'id': '84', 'name': 'Client Contact', 'role': 'client'},
+          ],
+        },
+      'announcements/history' => {'status': 200, 'data': _history},
+      'announcements/inbox' => {'status': 200, 'data': _inbox},
+      _ => throw StateError('Unexpected GET $path'),
+    };
+    return Right(body as T);
+  }
+
+  @override
+  Future<Either<Failure, T>> post<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    T Function(dynamic data)? parser,
+  }) async {
+    final body = Map<String, dynamic>.from(data as Map? ?? const {});
+    posts.add((path: path, body: body));
+    if (path == 'announcements') {
+      final recipientIds = (body['recipient_ids'] as List).cast<int>();
+      _history.insert(0, {
+        'id': '99',
+        'title': body['title'],
+        'message': body['message'],
+        'sender_id': '7',
+        'sender_name': 'Manager',
+        'created_at': '2026-01-02T00:00:00.000Z',
+        'recipients': [
+          for (final id in recipientIds)
+            {
+              'id': '$id',
+              'name': id == 42 ? 'Field Engineer' : 'Recipient',
+              'role': id == 42 ? 'technician' : 'client',
+            },
+        ],
+      });
+    } else if (path.endsWith('/read')) {
+      for (final row in _inbox) {
+        final notification = row['notification'] as Map<String, dynamic>;
+        if (notification['announcement_id'] == path.split('/')[1]) {
+          notification['is_read'] = true;
+        }
+      }
+    } else {
+      throw StateError('Unexpected POST $path');
+    }
+    final response = path == 'announcements'
+        ? {'status': 201, 'data': _history.first}
+        : {
+            'status': 200,
+            'data': {'updated': 1},
+          };
+    return Right(response as T);
+  }
 }

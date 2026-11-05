@@ -173,7 +173,9 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     final location = _currentLocation();
     if (location != _location) {
       setState(() => _location = location);
-      ref.read(webModuleSearchQueryProvider.notifier).state = '';
+      if (location != Routes.globalSearch) {
+        ref.read(webModuleSearchQueryProvider.notifier).state = '';
+      }
       _refreshIfStale();
     }
   }
@@ -276,6 +278,11 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                   userName: user?.name ?? role.label,
                   roleLabel: role.label,
                   onNotifications: () => _navigate(Routes.announcements),
+                  onSearch: () {
+                    if (_location != Routes.globalSearch) {
+                      widget.router.go(Routes.globalSearch);
+                    }
+                  },
                 ),
                 Expanded(
                   child: LayoutBuilder(
@@ -533,6 +540,7 @@ class _WebTopBar extends ConsumerStatefulWidget {
     required this.userName,
     required this.roleLabel,
     required this.onNotifications,
+    required this.onSearch,
     this.entry,
   });
 
@@ -541,6 +549,7 @@ class _WebTopBar extends ConsumerStatefulWidget {
   final String userName;
   final String roleLabel;
   final VoidCallback onNotifications;
+  final VoidCallback onSearch;
 
   @override
   ConsumerState<_WebTopBar> createState() => _WebTopBarState();
@@ -784,12 +793,13 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
             child: TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
+              onTap: widget.onSearch,
               onChanged: _updateSearchQuery,
               onSubmitted: (_) => _searchFocusNode.unfocus(),
               textInputAction: TextInputAction.search,
               cursorColor: WebTokens.green,
               decoration: InputDecoration(
-                hintText: 'Search this page',
+                hintText: 'Search all modules',
                 hintStyle: WebTokens.bodyText(13),
                 filled: false,
                 fillColor: Colors.transparent,
