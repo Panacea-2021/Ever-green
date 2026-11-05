@@ -35,7 +35,7 @@ class _TechnicianPerformanceScreenState
       final searchQuery = ref.watch(webModuleSearchQueryProvider);
       final visibleStats = stats
           .where(
-            (item) => matchesWebSearch(searchQuery, [
+            (item) => matchesWebSearchTerms(searchQuery, [
               item.name,
               item.personId?.toString(),
             ]),

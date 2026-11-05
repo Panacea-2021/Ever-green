@@ -103,7 +103,7 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
           if (t.createdAt != null) displayDate(t.createdAt!),
         ];
         return matchesWebSearch(localQuery, fields) &&
-            matchesWebSearch(pageQuery, fields);
+            matchesWebSearchTerms(pageQuery, fields);
       }).toList();
     }
     return tasks.where((t) => _selectedTab.matches(t.status)).toList();

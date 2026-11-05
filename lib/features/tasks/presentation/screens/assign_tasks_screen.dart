@@ -33,7 +33,7 @@ class _AssignTasksScreenState extends ConsumerState<AssignTasksScreen> {
     final visible = all.where((t) {
       if (t.isClosed) return false;
       if (_onlyUnassigned && t.hasAssignee) return false;
-      return t.matchesQuery(_query) && t.matchesQuery(moduleQuery);
+      return t.matchesQuery(_query) && t.matchesAllQueryTerms(moduleQuery);
     }).toList()
       ..sort((a, b) {
         if (a.priority.rank != b.priority.rank) {

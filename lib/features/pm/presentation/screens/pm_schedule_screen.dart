@@ -280,7 +280,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     final pm = async.valueOrNull ?? const PmState();
     final schedules = pm.schedules
         .where(
-          (schedule) => matchesWebSearch(searchQuery, [
+          (schedule) => matchesWebSearchTerms(searchQuery, [
             schedule.equipmentName,
             schedule.companyName,
             schedule.frequency.label,
@@ -290,7 +290,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
         .toList();
     final generated = pm.generated
         .where(
-          (task) => matchesWebSearch(searchQuery, [
+          (task) => matchesWebSearchTerms(searchQuery, [
             task.equipmentName,
             task.companyName,
             task.scheduleId,
@@ -347,7 +347,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
           );
     final visibleItems = items
         .where(
-          (item) => matchesWebSearch(searchQuery, [
+          (item) => matchesWebSearchTerms(searchQuery, [
             item.equipmentName,
             item.companyName,
             item.location,

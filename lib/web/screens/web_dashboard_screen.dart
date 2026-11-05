@@ -96,7 +96,7 @@ class WebDashboardScreen extends ConsumerWidget {
       ),
     ];
     final visibleCards = cards.where(
-      (card) => matchesWebSearch(searchQuery, [
+      (card) => matchesWebSearchTerms(searchQuery, [
         card.label,
         card.caption,
         card.value,
@@ -213,8 +213,10 @@ class _RecentTasks extends StatelessWidget {
   Widget build(BuildContext context) {
     final recent = [...tasks]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final visible =
-        recent.where((task) => task.matchesQuery(query)).take(8).toList();
+    final visible = recent
+        .where((task) => task.matchesAllQueryTerms(query))
+        .take(8)
+        .toList();
 
     return WebPanel(
       title: 'Recent Tasks',
@@ -261,7 +263,7 @@ class _RenewalsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = renewals
         .where(
-          (contract) => matchesWebSearch(query, [
+          (contract) => matchesWebSearchTerms(query, [
             contract.companyName,
             contract.branchName,
             contract.pocName,

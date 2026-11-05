@@ -55,7 +55,8 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
       );
     }
 
-    final searched = scoped.where((task) => task.matchesQuery(searchQuery));
+    final searched =
+        scoped.where((task) => task.matchesAllQueryTerms(searchQuery));
     final visible = searched
         .where((t) => _statusFilter == null || t.status == _statusFilter)
         .toList()
@@ -148,10 +149,25 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
   Widget _filters(List<TaskItem> scoped) {
     const chips = <(String, TaskStatus?, IconData, Color)>[
       ('All', null, Icons.dashboard_outlined, Color(0xFF106220)),
-      ('Open', TaskStatus.open, Icons.radio_button_unchecked, Color(0xFF2E5AAC)),
+      (
+        'Open',
+        TaskStatus.open,
+        Icons.radio_button_unchecked,
+        Color(0xFF2E5AAC)
+      ),
       ('Hold', TaskStatus.hold, Icons.pause_circle_outline, Color(0xFFB7791F)),
-      ('In Progress', TaskStatus.inProgress, Icons.timelapse, Color(0xFFE08600)),
-      ('Closed', TaskStatus.closed, Icons.check_circle_outline, Color(0xFF0F766E)),
+      (
+        'In Progress',
+        TaskStatus.inProgress,
+        Icons.timelapse,
+        Color(0xFFE08600)
+      ),
+      (
+        'Closed',
+        TaskStatus.closed,
+        Icons.check_circle_outline,
+        Color(0xFF0F766E)
+      ),
     ];
     return WebFilterTiles(
       options: [

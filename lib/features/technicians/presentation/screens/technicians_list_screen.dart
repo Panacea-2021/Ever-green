@@ -36,7 +36,7 @@ class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
             tech.email,
             tech.mobile,
           ]) &&
-          matchesWebSearch(moduleQuery, [
+          matchesWebSearchTerms(moduleQuery, [
             tech.name,
             tech.email,
             tech.mobile,
