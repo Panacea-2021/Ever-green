@@ -42,7 +42,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     final user = ref.watch(currentUserProvider);
     final async = ref.watch(taskItemsProvider);
     final searchQuery = ref.watch(webModuleSearchQueryProvider);
-    final all = async.value ?? const <TaskItem>[];
+    final all = async.valueOrNull ?? const <TaskItem>[];
 
     Iterable<TaskItem> scoped = all;
     if (role == UserRole.technician) {

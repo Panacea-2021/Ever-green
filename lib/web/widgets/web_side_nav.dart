@@ -6,6 +6,7 @@ import '../../core/auth/permissions.dart';
 import '../../core/router/routes.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../shared/providers/auth_state_provider.dart';
+import '../theme/web_dashboard_colors.dart';
 import '../../shared/widgets/app_drawer.dart'
     show drawerCompaniesCountProvider, drawerUsersCountProvider;
 import '../theme/web_tokens.dart';
@@ -211,7 +212,10 @@ class WebSideNav extends ConsumerWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF0E501B), WebTokens.greenDeep],
+          colors: [
+            WebDashboardColors.sidebarTop,
+            WebDashboardColors.sidebarBottom,
+          ],
         ),
       ),
       child: Column(
@@ -234,8 +238,11 @@ class WebSideNav extends ConsumerWidget {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child:
-                      const Icon(Icons.eco, color: WebTokens.green, size: 20),
+                  child: const Icon(
+                    Icons.eco,
+                    color: WebDashboardColors.primary,
+                    size: 20,
+                  ),
                 ),
                 if (!collapsed) ...[
                   const SizedBox(width: 12),
@@ -354,7 +361,10 @@ class _WebNavTileState extends State<_WebNavTile> {
             borderRadius: BorderRadius.circular(12),
             border: active
                 ? const Border(
-                    left: BorderSide(color: WebTokens.mint, width: 3),
+                    left: BorderSide(
+                      color: WebDashboardColors.accentPale,
+                      width: 3,
+                    ),
                   )
                 : null,
           ),
@@ -385,7 +395,7 @@ class _WebNavTileState extends State<_WebNavTile> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: entry.badgeColor ?? WebTokens.mint,
+                      color: entry.badgeColor ?? WebDashboardColors.accentPale,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -396,7 +406,7 @@ class _WebNavTileState extends State<_WebNavTile> {
                         fontWeight: FontWeight.w700,
                         color: entry.badgeColor != null
                             ? Colors.white
-                            : WebTokens.greenDeep,
+                            : WebDashboardColors.sidebarBottom,
                       ),
                     ),
                   ),

@@ -35,22 +35,8 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
   Future<AnnouncementState> _load(User user) async {
     final api = ref.read(apiClientProvider);
     final inboxBody = unwrap(await api.get<dynamic>('announcements/inbox'));
-    final inboxRows = dataList(inboxBody);
-    final announcementsById = <String, Announcement>{};
-    final notifications = <AnnouncementNotification>[];
-
-    for (final row in inboxRows) {
-      final notification =
-          Map<String, dynamic>.from(row['notification'] as Map);
-      final announcement =
-          Map<String, dynamic>.from(row['announcement'] as Map);
-      final parsedAnnouncement = Announcement.fromBackend(announcement);
-      announcementsById.putIfAbsent(
-        parsedAnnouncement.id,
-        () => parsedAnnouncement,
-      );
-      notifications.add(AnnouncementNotification.fromBackend(notification));
-    }
+    final inbox = _parseInbox(inboxBody);
+    final announcementsById = inbox.announcementsById;
 
     final recipients = <AnnouncementRecipient>[];
     if (Permissions.canCreateAnnouncements(user.role)) {
@@ -69,8 +55,67 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
 
     return AnnouncementState(
       announcements: announcementsById.values.toList(),
-      notifications: notifications,
+      notifications: inbox.notifications,
       recipientDirectory: recipients,
+    );
+  }
+
+  Future<void> refreshInbox() async {
+    if (_inboxRefreshing || _writing) return;
+    _inboxRefreshing = true;
+    try {
+      if (ref.read(currentUserProvider) == null) return;
+      final current = state.valueOrNull;
+      if (current == null) {
+        await refresh();
+        return;
+      }
+
+      final body = unwrap(
+        await ref.read(apiClientProvider).get<dynamic>('announcements/inbox'),
+      );
+      final inbox = _parseInbox(body);
+      final latest = state.valueOrNull ?? current;
+      final announcementsById = {
+        for (final announcement in latest.announcements)
+          announcement.id: announcement,
+        ...inbox.announcementsById,
+      };
+      state = AsyncData(
+        AnnouncementState(
+          announcements: announcementsById.values.toList(),
+          notifications: inbox.notifications,
+          recipientDirectory: latest.recipientDirectory,
+        ),
+      );
+    } finally {
+      _inboxRefreshing = false;
+    }
+  }
+
+  bool _inboxRefreshing = false;
+
+  ({
+    Map<String, Announcement> announcementsById,
+    List<AnnouncementNotification> notifications,
+  }) _parseInbox(dynamic body) {
+    final announcementsById = <String, Announcement>{};
+    final notifications = <AnnouncementNotification>[];
+    for (final row in dataList(body)) {
+      final notification =
+          Map<String, dynamic>.from(row['notification'] as Map);
+      final announcement =
+          Map<String, dynamic>.from(row['announcement'] as Map);
+      final parsedAnnouncement = Announcement.fromBackend(announcement);
+      announcementsById.putIfAbsent(
+        parsedAnnouncement.id,
+        () => parsedAnnouncement,
+      );
+      notifications.add(AnnouncementNotification.fromBackend(notification));
+    }
+    return (
+      announcementsById: announcementsById,
+      notifications: notifications,
     );
   }
 

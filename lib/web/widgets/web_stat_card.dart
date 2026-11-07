@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 
 /// A compact KPI tile for the web dashboard: icon chip beside a big value and
@@ -53,7 +54,9 @@ class _WebStatCardState extends State<WebStatCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _hover ? accent.withValues(alpha: 0.35) : WebTokens.line,
+              color: _hover
+                  ? accent.withValues(alpha: 0.35)
+                  : WebDashboardColors.line,
             ),
             boxShadow: _hover ? WebTokens.cardShadow : WebTokens.softShadow,
           ),
@@ -141,7 +144,7 @@ class _Placeholder extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: WebTokens.line,
+        color: WebDashboardColors.line,
         borderRadius: BorderRadius.circular(8),
       ),
     );

@@ -335,6 +335,58 @@ void main() {
     expect(result.notifications, isEmpty);
   });
 
+  test('refreshInbox picks up announcements received after the initial load',
+      () async {
+    late _FakeApiClient api;
+    final container = ProviderContainer(
+      overrides: [
+        currentUserProvider.overrideWithValue(
+          const User(
+            id: '42',
+            email: 'manager@example.com',
+            name: 'Manager',
+            role: UserRole.manager,
+          ),
+        ),
+        apiClientProvider.overrideWith((ref) {
+          api = _FakeApiClient(ref);
+          return api;
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(announcementControllerProvider.future);
+
+    api.addInboxRow({
+      'notification': {
+        'id': '99:42',
+        'announcement_id': '99',
+        'recipient_id': '42',
+        'is_read': false,
+      },
+      'announcement': {
+        'id': '99',
+        'title': 'Urgent service update',
+        'message': 'Please review the new schedule.',
+        'sender_id': '1',
+        'sender_name': 'Super Admin',
+        'created_at': '2026-01-03T00:00:00.000Z',
+        'recipients': [],
+      },
+    });
+
+    await container
+        .read(announcementControllerProvider.notifier)
+        .refreshInbox();
+
+    final result = container.read(announcementControllerProvider).requireValue;
+    expect(result.unreadCountFor('42'), 1);
+    expect(
+      result.inboxFor('42').single.announcement.title,
+      'Urgent service update',
+    );
+  });
+
   test('mark-read calls the backend with the announcement ID', () async {
     late _FakeApiClient api;
     final container = ProviderContainer(
@@ -581,13 +633,15 @@ class _FakeApiClient extends ApiClient {
     super.ref, {
     List<Map<String, dynamic>> inbox = const [],
     Failure? getFailure,
-  })  : _inbox = inbox,
+  })  : _inbox = List.of(inbox),
         _getFailure = getFailure;
 
   final List<Map<String, dynamic>> _inbox;
   final Failure? _getFailure;
   final List<({String path, Map<String, dynamic> body})> posts = [];
   final List<Map<String, dynamic>> _history = [];
+
+  void addInboxRow(Map<String, dynamic> row) => _inbox.insert(0, row);
 
   @override
   Future<Either<Failure, T>> get<T>(
