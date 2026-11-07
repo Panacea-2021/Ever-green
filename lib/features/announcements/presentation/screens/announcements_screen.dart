@@ -105,8 +105,12 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _pageHeading(data.unreadCountFor(currentUser?.id ?? '')),
+                    if (canCreate && data.managementError != null) ...[
+                      const SizedBox(height: 18),
+                      _managementLoadError(data.managementError!),
+                    ],
                     const SizedBox(height: 18),
-                    if (canCreate) ...[
+                    if (canCreate && data.managementError == null) ...[
                       const SizedBox(height: 24),
                       const _SectionHeading(
                         title: 'Create announcement',
@@ -155,7 +159,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                       items: inbox,
                       onOpen: _openNotification,
                     ),
-                    if (canCreate) ...[
+                    if (canCreate && data.managementError == null) ...[
                       const SizedBox(height: 22),
                       _LocalTaskNotificationsLink(
                         onTap: () => context.go('/notifications'),
@@ -251,6 +255,34 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
               ),
             ],
           ),
+        ),
+      );
+
+  Widget _managementLoadError(String message) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3F0),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFF0C9C1)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Color(0xFFB34F43)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '${message == 'Access denied' ? 'Access denied. Ask your Super Admin to verify your Manager role and company assignment.' : 'Announcement management could not be loaded: $message.'} '
+                'Your notifications are still available below.',
+                style: WebTokens.bodyText(13, color: WebTokens.ink),
+              ),
+            ),
+            TextButton(
+              onPressed: () =>
+                  ref.read(announcementControllerProvider.notifier).refresh(),
+              child: const Text('Retry'),
+            ),
+          ],
         ),
       );
 

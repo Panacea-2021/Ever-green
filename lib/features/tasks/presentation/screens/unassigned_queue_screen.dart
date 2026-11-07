@@ -12,6 +12,7 @@ import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
 import '../widgets/task_workflow.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Super Admin / Manager view for triaging tickets (membership:
 /// [TaskItem.inQueueTab]; a ticket can be in several tabs):
@@ -30,7 +31,7 @@ class UnassignedQueueScreen extends ConsumerStatefulWidget {
 }
 
 class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   QueueTab _tab = QueueTab.unassigned;
 
   @override

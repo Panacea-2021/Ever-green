@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/task_item.dart';
 import 'task_workflow.dart' show taskImage;
+import '../../../../core/theme/app_colors.dart';
 
 /// Reusable task card matching the Figma "Tasks" design: a square equipment
 /// thumbnail on the left, title + category (wrench) + status pill, icon rows
@@ -38,7 +39,7 @@ class TaskListCard extends StatefulWidget {
 }
 
 class _TaskListCardState extends State<TaskListCard> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   bool _pressed = false;
 
   @override

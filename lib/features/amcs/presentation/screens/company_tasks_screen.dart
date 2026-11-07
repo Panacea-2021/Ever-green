@@ -12,6 +12,7 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../../web/widgets/web_search_state.dart';
 import '../../domain/models/amc_contract.dart';
 import '../widgets/amc_async_states.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// The design's four status tabs. Completed (awaiting client sign-off) is
 /// grouped under Closed.
@@ -72,7 +73,7 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   static const Color _danger = Color(0xFFD32F2F);
 
   @override

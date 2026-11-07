@@ -10,6 +10,7 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../../web/widgets/web_search_state.dart';
 import '../../data/equipment_provider.dart';
 import '../../../pickers/presentation/screens/equipment_picker_screen.dart' show equipmentMatches;
+import '../../../../core/theme/app_colors.dart';
 
 class CompanyEquipmentsScreen extends ConsumerStatefulWidget {
   final String companyId;
@@ -32,8 +33,8 @@ class _CompanyEquipmentsScreenState
   String _query = '';
   final Set<int> _busy = {};
 
-  static const Color _green = Color(0xFF125420);
-  static const Color _addGreen = Color(0xFF106220);
+  static const Color _green = AppColors.modulePrimaryDark;
+  static const Color _addGreen = AppColors.primary;
   static const Color _footerBg = Color(0xFFEBF0EA);
   static const Color _red = Color(0xFFD32F2F);
 

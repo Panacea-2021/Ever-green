@@ -1,14 +1,16 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
+import '../theme/web_dashboard_colors.dart';
+
 /// Shared pieces for the web layout of the create/add forms: a centred
 /// scrolling page, white section cards, two-column rows, the field outline and
 /// a right-aligned action bar.
 class WebForm {
   WebForm._();
 
-  static const line = Color(0xFFE2E8E3);
-  static const fieldBorder = Color(0xFFD9E2DB);
+  static const line = kIsWeb ? WebDashboardColors.line : Color(0xFFE2E8E3);
+  static const fieldBorder = kIsWeb ? Color(0xFFD8D6CF) : Color(0xFFD9E2DB);
   static const gap = 18.0;
 
   /// Field outline: a soft bordered rectangle on web, the pill on mobile.
@@ -22,9 +24,14 @@ class WebForm {
 
   /// Upload drop-zone styling on web (tinted, bordered, flat).
   static BoxDecoration uploadDecoration() => BoxDecoration(
-        color: const Color(0xFFF3F8F4),
+        color:
+            kIsWeb ? WebDashboardColors.secondarySoft : const Color(0xFFF3F8F4),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFB9D5BF), width: 1.2),
+        border: Border.all(
+          color:
+              kIsWeb ? WebDashboardColors.secondary : const Color(0xFFB9D5BF),
+          width: 1.2,
+        ),
       );
 
   /// Scrolling page with the form centred, at most [maxWidth] wide.
@@ -75,10 +82,18 @@ class WebForm {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDCEBDD),
+                    color: kIsWeb
+                        ? WebDashboardColors.primarySoft
+                        : const Color(0xFFDCEBDD),
                     borderRadius: BorderRadius.circular(13),
                   ),
-                  child: Icon(icon, color: const Color(0xFF278245), size: 24),
+                  child: Icon(
+                    icon,
+                    color: kIsWeb
+                        ? WebDashboardColors.primary
+                        : const Color(0xFF278245),
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'task_workflow.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// A compact pill action button with an icon, press-scale animation and a
 /// subtle shadow, used for the role-based task actions.
@@ -23,8 +24,8 @@ class TaskActionButton extends StatefulWidget {
 }
 
 class _TaskActionButtonState extends State<TaskActionButton> {
-  static const Color _green = Color(0xFF106220);
-  static const Color _greenDark = Color(0xFF125420);
+  static const Color _green = AppColors.primary;
+  static const Color _greenDark = AppColors.modulePrimaryDark;
   static const Color _danger = Color(0xFFD32F2F);
 
   bool _pressed = false;

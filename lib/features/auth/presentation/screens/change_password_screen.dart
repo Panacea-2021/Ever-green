@@ -41,8 +41,8 @@ class ChangePasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
-  static const Color _green = Color(0xFF106220);
-  static const Color _green2 = Color(0xFF0D5119);
+  static const Color _green = AppColors.primary;
+  static const Color _green2 = AppColors.modulePrimaryDeep;
   static const Color _ink = Color(0xFF1C2B20);
 
   final _current = TextEditingController();

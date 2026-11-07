@@ -9,6 +9,7 @@ import '../../../../core/models/backend_models.dart';
 import '../../../../web/widgets/web_upload_content.dart';
 import '../../../amcs/data/equipment_provider.dart';
 import '../../data/xlsx_template.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class UploadEquipmentsScreen extends ConsumerStatefulWidget {
   const UploadEquipmentsScreen({super.key});
@@ -27,7 +28,7 @@ class _UploadEquipmentsScreenState
   List<int>? uploadedFileBytes;
   bool isUploading = false;
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   static const Color _lavender = Color(0xFFEBEDFF);
   static const Color _webUploadSurface = Color(0xFFF0F6F0);
 

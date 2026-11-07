@@ -6,6 +6,7 @@ import '../../core/auth/permissions.dart';
 import '../../core/router/routes.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../shared/providers/auth_state_provider.dart';
+import '../theme/web_dashboard_colors.dart';
 import '../../shared/widgets/app_drawer.dart'
     show drawerCompaniesCountProvider, drawerUsersCountProvider;
 import '../theme/web_tokens.dart';
@@ -211,7 +212,10 @@ class WebSideNav extends ConsumerWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF0E501B), WebTokens.greenDeep],
+          colors: [
+            WebDashboardColors.sidebarTop,
+            WebDashboardColors.sidebarBottom,
+          ],
         ),
       ),
       child: Column(
@@ -234,8 +238,11 @@ class WebSideNav extends ConsumerWidget {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child:
-                      const Icon(Icons.eco, color: WebTokens.green, size: 20),
+                  child: const Icon(
+                    Icons.eco,
+                    color: WebDashboardColors.primary,
+                    size: 20,
+                  ),
                 ),
                 if (!collapsed) ...[
                   const SizedBox(width: 12),
@@ -244,7 +251,10 @@ class WebSideNav extends ConsumerWidget {
                       'Evergreen',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: WebTokens.heading(20, color: Colors.white),
+                      style: WebTokens.heading(
+                        20,
+                        color: WebTokens.ink,
+                      ),
                     ),
                   ),
                 ],
@@ -256,7 +266,7 @@ class WebSideNav extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(28, 0, 0, 8),
               child: Text(
                 'MENU',
-                style: WebTokens.eyebrow(color: Colors.white54),
+                style: WebTokens.eyebrow(color: WebTokens.faint),
               ),
             ),
           Expanded(
@@ -318,11 +328,11 @@ class _WebNavTileState extends State<_WebNavTile> {
   Widget build(BuildContext context) {
     final active = widget.active;
     final entry = widget.entry;
-    final fg = active ? Colors.white : Colors.white70;
+    final fg = active ? WebDashboardColors.primaryDark : WebTokens.body;
     final bg = active
-        ? Colors.white.withValues(alpha: 0.16)
+        ? WebDashboardColors.primarySoft
         : _hover
-            ? Colors.white.withValues(alpha: 0.08)
+            ? Colors.white.withValues(alpha: 0.72)
             : Colors.transparent;
 
     final iconWidget = entry.svgIcon != null
@@ -354,7 +364,10 @@ class _WebNavTileState extends State<_WebNavTile> {
             borderRadius: BorderRadius.circular(12),
             border: active
                 ? const Border(
-                    left: BorderSide(color: WebTokens.mint, width: 3),
+                    left: BorderSide(
+                      color: WebDashboardColors.primary,
+                      width: 3,
+                    ),
                   )
                 : null,
           ),
@@ -385,7 +398,7 @@ class _WebNavTileState extends State<_WebNavTile> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: entry.badgeColor ?? WebTokens.mint,
+                      color: entry.badgeColor ?? WebDashboardColors.accentPale,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -396,7 +409,7 @@ class _WebNavTileState extends State<_WebNavTile> {
                         fontWeight: FontWeight.w700,
                         color: entry.badgeColor != null
                             ? Colors.white
-                            : WebTokens.greenDeep,
+                            : WebDashboardColors.primaryDark,
                       ),
                     ),
                   ),

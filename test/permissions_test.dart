@@ -117,6 +117,7 @@ void main() {
       for (final role in UserRole.values) {
         expect(Permissions.canAccessRoute(role, Routes.globalSearch), isTrue);
         expect(Permissions.canAccessRoute(role, Routes.taskBoard), isTrue);
+        expect(Permissions.canAccessRoute(role, Routes.announcements), isTrue);
       }
     });
   });

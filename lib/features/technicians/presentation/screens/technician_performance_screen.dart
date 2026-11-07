@@ -7,6 +7,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../web/widgets/web_search_state.dart';
 import '../../../tasks/data/task_provider.dart';
 import '../../data/performance_provider.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Super Admin / Manager performance report for both technicians and
 /// managers, filterable by Today / This Week / This Month / Custom range.
@@ -20,7 +21,7 @@ class TechnicianPerformanceScreen extends ConsumerStatefulWidget {
 
 class _TechnicianPerformanceScreenState
     extends ConsumerState<TechnicianPerformanceScreen> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   int _tab = 0; // 0 = Technicians, 1 = Managers
 
   @override

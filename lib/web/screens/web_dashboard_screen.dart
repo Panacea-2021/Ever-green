@@ -11,6 +11,7 @@ import '../../features/amcs/domain/models/amc_contract.dart';
 import '../../features/tasks/data/task_provider.dart';
 import '../../features/tasks/domain/models/task_item.dart';
 import '../../shared/providers/auth_state_provider.dart';
+import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 import '../widgets/web_panel.dart';
 import '../widgets/web_stat_card.dart';
@@ -22,11 +23,6 @@ import '../widgets/web_table.dart';
 /// module frame (side navigation + top bar).
 class WebDashboardScreen extends ConsumerWidget {
   const WebDashboardScreen({super.key});
-
-  static const _red = Color(0xFFD32F2F);
-  static const _orange = Color(0xFFE08600);
-  static const _blue = Color(0xFF1565C0);
-  static const _purple = Color(0xFF6A1B9A);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -53,7 +49,7 @@ class WebDashboardScreen extends ConsumerWidget {
         label: 'Open Tasks',
         value: '$openCount',
         icon: Icons.checklist_rtl_outlined,
-        accent: WebTokens.green,
+        accent: WebDashboardColors.primary,
         caption: '${tasks.length} total',
         onTap: open(Routes.tasks),
         loading: tasksLoading,
@@ -62,7 +58,7 @@ class WebDashboardScreen extends ConsumerWidget {
         label: 'Overdue (SLA)',
         value: '${overdue.length}',
         icon: Icons.warning_amber_rounded,
-        accent: _red,
+        accent: WebDashboardColors.coral,
         caption: overdue.isEmpty ? 'All on track' : 'Needs attention',
         onTap: open(Routes.tasks),
         loading: tasksLoading,
@@ -71,7 +67,7 @@ class WebDashboardScreen extends ConsumerWidget {
         label: 'Unassigned',
         value: '$unassigned',
         icon: Icons.person_off_outlined,
-        accent: _orange,
+        accent: WebDashboardColors.amber,
         caption: 'In the queue',
         onTap: open(Routes.ticketQueue),
         loading: tasksLoading,
@@ -80,7 +76,7 @@ class WebDashboardScreen extends ConsumerWidget {
         label: 'Renewals Due',
         value: '${renewals.length}',
         icon: Icons.autorenew,
-        accent: _blue,
+        accent: WebDashboardColors.secondary,
         caption: 'AMC expiring/expired',
         onTap: open(Routes.amcRenewals),
         loading: companiesLoading,
@@ -89,7 +85,7 @@ class WebDashboardScreen extends ConsumerWidget {
         label: 'Equipment',
         value: '$equipmentCount',
         icon: Icons.build_outlined,
-        accent: _purple,
+        accent: WebDashboardColors.blue,
         caption: 'Under service',
         onTap: open(Routes.amcs),
         loading: equipmentLoading,
@@ -104,7 +100,7 @@ class WebDashboardScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: WebTokens.cream,
+      backgroundColor: WebDashboardColors.canvas,
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(28, 26, 28, 36),
         child: Center(
@@ -187,26 +183,26 @@ class _RecentTasks extends StatelessWidget {
   final VoidCallback? onViewAll;
 
   Color _statusColor(TaskItem t) {
-    if (t.isClosed) return WebTokens.green;
+    if (t.isClosed) return WebDashboardColors.success;
     switch (t.status) {
       case TaskStatus.hold:
-        return const Color(0xFFE08600);
+        return WebDashboardColors.amber;
       case TaskStatus.inProgress:
-        return const Color(0xFF1565C0);
+        return WebDashboardColors.secondary;
       case TaskStatus.open:
         return t.hasAssignee
-            ? const Color(0xFFE08600)
-            : const Color(0xFFD32F2F);
+            ? WebDashboardColors.amber
+            : WebDashboardColors.coral;
       case TaskStatus.closed:
-        return WebTokens.green;
+        return WebDashboardColors.success;
     }
   }
 
   Color _priorityColor(TaskPriority p) => switch (p) {
-        TaskPriority.critical => const Color(0xFFD32F2F),
-        TaskPriority.high => const Color(0xFFE08600),
-        TaskPriority.medium => const Color(0xFF1565C0),
-        TaskPriority.low => const Color(0xFF6B6B6B),
+        TaskPriority.critical => WebDashboardColors.coral,
+        TaskPriority.high => WebDashboardColors.amber,
+        TaskPriority.medium => WebDashboardColors.blue,
+        TaskPriority.low => WebTokens.faint,
       };
 
   @override
@@ -316,7 +312,7 @@ class _RenewalsPanel extends StatelessWidget {
           ? Container(
               padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 12),
               decoration: BoxDecoration(
-                color: WebTokens.mintSoft.withValues(alpha: 0.6),
+                color: WebDashboardColors.accentSoft.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -330,7 +326,7 @@ class _RenewalsPanel extends StatelessWidget {
                     ),
                     child: const Icon(
                       Icons.verified_outlined,
-                      color: WebTokens.green,
+                      color: WebDashboardColors.primary,
                       size: 24,
                     ),
                   ),
@@ -363,7 +359,7 @@ class _RenewalRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final expired = contract.status() == AmcStatus.expired;
-    final accent = expired ? const Color(0xFFD32F2F) : const Color(0xFFE08600);
+    final accent = expired ? WebDashboardColors.coral : WebDashboardColors.amber;
     final days = contract.daysUntilExpiry();
     final sub = expired
         ? 'Expired ${-days} day${days == -1 ? '' : 's'} ago'

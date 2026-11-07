@@ -11,6 +11,7 @@ import '../../domain/models/pm_schedule.dart';
 import '../../domain/pm_occurrences.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
 import '../../../../web/widgets/web_search_state.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Upcoming preventive maintenance for all equipment (from each equipment's
 /// PM frequency and the PM schedules), plus schedule management: recurring
@@ -23,7 +24,7 @@ class PmScheduleScreen extends ConsumerStatefulWidget {
 }
 
 class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   static const _months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //

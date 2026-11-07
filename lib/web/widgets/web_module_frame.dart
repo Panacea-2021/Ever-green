@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +12,7 @@ import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../../features/announcements/data/announcement_provider.dart';
+import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 import 'web_side_nav.dart';
 import 'web_search_state.dart';
@@ -258,9 +261,15 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     final bannered = WebModuleFrame._bannerPaths
         .any((p) => _location == p || _location.startsWith('$p/'));
     final title = _titleFor(role);
+    final pageContent = _location == Routes.announcements
+        ? FocusTraversalGroup(
+            policy: WidgetOrderTraversalPolicy(),
+            child: content,
+          )
+        : content;
 
     return Material(
-      color: WebTokens.cream,
+      color: WebDashboardColors.canvas,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -295,7 +304,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                             padding: EdgeInsets.zero,
                             viewPadding: EdgeInsets.zero,
                           ),
-                          child: content,
+                          child: pageContent,
                         );
                       }
 
@@ -374,7 +383,7 @@ class _HeaderCardShell extends StatelessWidget {
   Widget build(BuildContext context) {
     if (compact) {
       return Container(
-        color: const Color(0xFFF3F7F3),
+        color: WebDashboardColors.canvas,
         alignment: Alignment.center,
         child: SizedBox(
           width: width,
@@ -411,7 +420,8 @@ class _HeaderCardShell extends StatelessWidget {
               border: Border.all(color: WebTokens.line),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0A3F15).withValues(alpha: 0.08),
+                  color:
+                      WebDashboardColors.sidebarBottom.withValues(alpha: 0.08),
                   blurRadius: 40,
                   offset: const Offset(0, 16),
                 ),
@@ -425,9 +435,9 @@ class _HeaderCardShell extends StatelessWidget {
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Color(0xFF0A3F15),
-                        Color(0xFF106220),
-                        Color(0xFF5FB36F),
+                        WebDashboardColors.sidebarBottom,
+                        WebDashboardColors.primary,
+                        WebDashboardColors.accentLight,
                       ],
                     ),
                   ),
@@ -460,8 +470,8 @@ class _HeaderCardShell extends StatelessWidget {
             shape: BoxShape.circle,
             gradient: RadialGradient(
               colors: [
-                const Color(0xFF5FB36F).withValues(alpha: alpha),
-                const Color(0xFF5FB36F).withValues(alpha: 0),
+                WebDashboardColors.accentLight.withValues(alpha: alpha),
+                WebDashboardColors.accentLight.withValues(alpha: 0),
               ],
             ),
           ),
@@ -476,7 +486,7 @@ class _WebRestoringSession extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: WebTokens.cream,
+      color: WebDashboardColors.canvas,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -489,7 +499,7 @@ class _WebRestoringSession extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: WebTokens.green.withValues(alpha: 0.18),
+                    color: WebDashboardColors.primary.withValues(alpha: 0.18),
                     blurRadius: 36,
                     offset: const Offset(0, 14),
                   ),
@@ -505,7 +515,7 @@ class _WebRestoringSession extends StatelessWidget {
                   errorBuilder: (_, __, ___) => const Icon(
                     Icons.eco_rounded,
                     size: 40,
-                    color: WebTokens.green,
+                    color: WebDashboardColors.primary,
                   ),
                 ),
               ),
@@ -513,7 +523,8 @@ class _WebRestoringSession extends StatelessWidget {
             const SizedBox(height: 22),
             Text(
               'EverGreen',
-              style: WebTokens.heading(22).copyWith(color: WebTokens.green),
+              style: WebTokens.heading(22)
+                  .copyWith(color: WebDashboardColors.primary),
             ),
             const SizedBox(height: 18),
             const SizedBox(
@@ -522,8 +533,8 @@ class _WebRestoringSession extends StatelessWidget {
                 borderRadius: BorderRadius.all(Radius.circular(4)),
                 child: LinearProgressIndicator(
                   minHeight: 4,
-                  color: WebTokens.green,
-                  backgroundColor: Color(0x1F106220),
+                  color: WebDashboardColors.primary,
+                  backgroundColor: Color(0x1F5A8F87),
                 ),
               ),
             ),
@@ -558,6 +569,7 @@ class _WebTopBar extends ConsumerStatefulWidget {
 class _WebTopBarState extends ConsumerState<_WebTopBar> {
   late final TextEditingController _searchController;
   final _searchFocusNode = FocusNode();
+  Timer? _announcementRefreshTimer;
 
   @override
   void initState() {
@@ -565,13 +577,34 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
     _searchController = TextEditingController(
       text: ref.read(webModuleSearchQueryProvider),
     );
+    _announcementRefreshTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => unawaited(_refreshAnnouncementInbox()),
+    );
   }
 
   @override
   void dispose() {
+    _announcementRefreshTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshAnnouncementInbox() async {
+    if (!mounted || ref.read(currentUserProvider) == null) return;
+    try {
+      await ref.read(announcementControllerProvider.notifier).refreshInbox();
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'announcements',
+          context: ErrorDescription('while refreshing the announcement inbox'),
+        ),
+      );
+    }
   }
 
   void _updateSearchQuery(String value) {
@@ -592,6 +625,24 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
       }
     });
     final userId = ref.watch(currentUserProvider)?.id ?? '';
+    ref.listen(announcementControllerProvider, (previous, next) {
+      final previousState = previous?.valueOrNull;
+      final nextState = next.valueOrNull;
+      if (userId.isEmpty || previousState == null || nextState == null) return;
+      if (nextState.unreadCountFor(userId) <=
+          previousState.unreadCountFor(userId)) {
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: const Text('You have a new announcement.'),
+          action: SnackBarAction(
+            label: 'View',
+            onPressed: widget.onNotifications,
+          ),
+        ),
+      );
+    });
     final unreadCount = ref.watch(announcementControllerProvider).maybeWhen(
           data: (data) => data.unreadCountFor(userId),
           orElse: () => 0,
@@ -615,7 +666,10 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF106220), Color(0xFF0A3F15)],
+                  colors: [
+                    WebDashboardColors.primary,
+                    WebDashboardColors.sidebarBottom,
+                  ],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -685,9 +739,9 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
               height: 42,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: WebTokens.cream,
+                color: WebDashboardColors.canvas,
                 shape: BoxShape.circle,
-                border: Border.all(color: WebTokens.line),
+                border: Border.all(color: WebDashboardColors.line),
               ),
               child: Stack(
                 clipBehavior: Clip.none,
@@ -732,7 +786,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
             const SizedBox(width: 18),
             CircleAvatar(
               radius: 19,
-              backgroundColor: WebTokens.mintSoft,
+              backgroundColor: WebDashboardColors.accentSoft,
               child: Text(
                 widget.userName.isNotEmpty
                     ? widget.userName[0].toUpperCase()
@@ -740,7 +794,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
                 style: const TextStyle(
                   fontFamily: WebTokens.fontFamily,
                   fontWeight: FontWeight.w700,
-                  color: WebTokens.green,
+                  color: WebDashboardColors.primary,
                 ),
               ),
             ),
@@ -778,7 +832,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: WebTokens.cream,
+        color: WebDashboardColors.canvas,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -786,7 +840,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
           const Icon(
             Icons.search_rounded,
             size: 19,
-            color: WebTokens.green,
+            color: WebDashboardColors.primary,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -797,7 +851,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
               onChanged: _updateSearchQuery,
               onSubmitted: (_) => _searchFocusNode.unfocus(),
               textInputAction: TextInputAction.search,
-              cursorColor: WebTokens.green,
+              cursorColor: WebDashboardColors.primary,
               decoration: InputDecoration(
                 hintText: 'Search all modules',
                 hintStyle: WebTokens.bodyText(13),

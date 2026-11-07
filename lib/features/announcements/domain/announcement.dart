@@ -150,11 +150,13 @@ class AnnouncementState {
     this.announcements = const [],
     this.notifications = const [],
     this.recipientDirectory = const [],
+    this.managementError,
   });
 
   final List<Announcement> announcements;
   final List<AnnouncementNotification> notifications;
   final List<AnnouncementRecipient> recipientDirectory;
+  final String? managementError;
 
   factory AnnouncementState.fromJson(Map<String, dynamic> json) =>
       AnnouncementState(
@@ -236,6 +238,7 @@ class AnnouncementState {
       announcements: [announcement, ...announcements],
       notifications: [...newNotifications, ...notifications],
       recipientDirectory: recipientDirectory,
+      managementError: managementError,
     );
   }
 
@@ -254,6 +257,7 @@ class AnnouncementState {
       announcements: announcements,
       notifications: updated,
       recipientDirectory: recipientDirectory,
+      managementError: managementError,
     );
   }
 

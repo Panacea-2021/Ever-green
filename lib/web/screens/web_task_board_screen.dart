@@ -11,6 +11,7 @@ import '../../features/tasks/domain/models/task_item.dart';
 import '../../features/tasks/presentation/widgets/task_action_handler.dart';
 import '../../features/tasks/presentation/widgets/task_workflow.dart';
 import '../../shared/providers/auth_state_provider.dart';
+import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 import '../widgets/web_filter_tiles.dart';
 import '../widgets/web_search_state.dart';
@@ -28,9 +29,9 @@ class WebTaskBoardScreen extends ConsumerStatefulWidget {
 }
 
 class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
-  static const Color _green = Color(0xFF106220);
-  static const Color _red = Color(0xFFD32F2F);
-  static const Color _orange = Color(0xFFE08600);
+  static const Color _green = WebDashboardColors.primary;
+  static const Color _red = WebDashboardColors.coral;
+  static const Color _orange = WebDashboardColors.amber;
 
   late TaskStatus? _statusFilter = widget.initialStatus;
 
@@ -42,7 +43,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     final user = ref.watch(currentUserProvider);
     final async = ref.watch(taskItemsProvider);
     final searchQuery = ref.watch(webModuleSearchQueryProvider);
-    final all = async.value ?? const <TaskItem>[];
+    final all = async.valueOrNull ?? const <TaskItem>[];
 
     Iterable<TaskItem> scoped = all;
     if (role == UserRole.technician) {
@@ -148,25 +149,30 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
 
   Widget _filters(List<TaskItem> scoped) {
     const chips = <(String, TaskStatus?, IconData, Color)>[
-      ('All', null, Icons.dashboard_outlined, Color(0xFF106220)),
+      ('All', null, Icons.dashboard_outlined, WebDashboardColors.primary),
       (
         'Open',
         TaskStatus.open,
         Icons.radio_button_unchecked,
-        Color(0xFF2E5AAC)
+        WebDashboardColors.blue
       ),
-      ('Hold', TaskStatus.hold, Icons.pause_circle_outline, Color(0xFFB7791F)),
+      (
+        'Hold',
+        TaskStatus.hold,
+        Icons.pause_circle_outline,
+        WebDashboardColors.amber
+      ),
       (
         'In Progress',
         TaskStatus.inProgress,
         Icons.timelapse,
-        Color(0xFFE08600)
+        WebDashboardColors.secondary
       ),
       (
         'Closed',
         TaskStatus.closed,
         Icons.check_circle_outline,
-        Color(0xFF0F766E)
+        WebDashboardColors.success
       ),
     ];
     return WebFilterTiles(
@@ -211,16 +217,16 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
   }
 
   Color _statusColor(TaskItem t) {
-    if (t.isClosed) return _green;
+    if (t.isClosed) return WebDashboardColors.success;
     switch (t.status) {
       case TaskStatus.hold:
         return _orange;
       case TaskStatus.inProgress:
-        return const Color(0xFF1565C0);
+        return WebDashboardColors.secondary;
       case TaskStatus.open:
         return t.hasAssignee ? _orange : _red;
       case TaskStatus.closed:
-        return _green;
+        return WebDashboardColors.success;
     }
   }
 
@@ -447,7 +453,7 @@ class _PartyCell extends StatelessWidget {
   const _PartyCell({required this.task});
   final TaskItem task;
 
-  static const Color _darkGreen = Color(0xFF125420);
+  static const Color _darkGreen = WebDashboardColors.primaryDark;
 
   @override
   Widget build(BuildContext context) {
@@ -593,7 +599,7 @@ class _SmallButton extends StatelessWidget {
   final bool filled;
   final VoidCallback onTap;
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = WebDashboardColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -674,9 +680,9 @@ class _WebTaskCard extends StatefulWidget {
 }
 
 class _WebTaskCardState extends State<_WebTaskCard> {
-  static const Color _green = Color(0xFF106220);
-  static const Color _darkGreen = Color(0xFF125420);
-  static const Color _red = Color(0xFFD32F2F);
+  static const Color _green = WebDashboardColors.primary;
+  static const Color _darkGreen = WebDashboardColors.primaryDark;
+  static const Color _red = WebDashboardColors.coral;
   static const String _fallbackImage = 'assets/images/task_img_1.png';
 
   bool _hover = false;
@@ -787,7 +793,7 @@ class _WebTaskCardState extends State<_WebTaskCard> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF7F9F6),
+                  color: WebDashboardColors.secondarySoft,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -926,7 +932,7 @@ class _WebTaskCardState extends State<_WebTaskCard> {
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFEBF0EA),
+        color: WebDashboardColors.successSoft,
         borderRadius: BorderRadius.circular(48),
       ),
       child: Row(

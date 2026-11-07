@@ -8,6 +8,7 @@ import '../../../../web/widgets/web_search_state.dart';
 import '../../../tasks/data/task_provider.dart';
 import '../../../tasks/domain/models/task_item.dart';
 import '../../../tasks/presentation/widgets/task_list_card.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Per-technician task view, backed by the live [taskProvider]. Shows the
 /// selected technician's tasks grouped by status tabs, in the project design.
@@ -27,7 +28,7 @@ class TechnicianTasksScreen extends ConsumerStatefulWidget {
 }
 
 class _TechnicianTasksScreenState extends ConsumerState<TechnicianTasksScreen> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   int _selectedTab = 0;
   String _query = '';
 
