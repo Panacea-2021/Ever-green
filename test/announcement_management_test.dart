@@ -9,6 +9,7 @@ import 'package:evergreen/features/announcements/presentation/screens/mobile_ann
 import 'package:evergreen/features/auth/domain/models/user_model.dart';
 import 'package:evergreen/shared/providers/auth_state_provider.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -335,6 +336,66 @@ void main() {
     expect(result.notifications, isEmpty);
   });
 
+  test(
+    'manager inbox remains available when announcement management is denied',
+    () async {
+      late _FakeApiClient api;
+      final container = ProviderContainer(
+        overrides: [
+          currentUserProvider.overrideWithValue(
+            const User(
+              id: 'manager-1',
+              email: 'manager@example.com',
+              name: 'Manager',
+              role: UserRole.manager,
+            ),
+          ),
+          apiClientProvider.overrideWith((ref) {
+            api = _FakeApiClient(
+              ref,
+              inbox: [
+                {
+                  'notification': {
+                    'id': '99:manager-1',
+                    'announcement_id': '99',
+                    'recipient_id': 'manager-1',
+                    'is_read': false,
+                  },
+                  'announcement': {
+                    'id': '99',
+                    'title': 'Service update',
+                    'message': 'Please review the new schedule.',
+                    'sender_id': '1',
+                    'sender_name': 'Super Admin',
+                    'created_at': '2026-01-03T00:00:00.000Z',
+                    'recipients': [],
+                  },
+                },
+              ],
+              managementFailure: const AuthenticationFailure(
+                message: 'Access denied',
+              ),
+            );
+            return api;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result =
+          await container.read(announcementControllerProvider.future);
+
+      expect(result.managementError, 'Access denied');
+      expect(result.recipientDirectory, isEmpty);
+      expect(result.inboxFor('manager-1'), hasLength(1));
+      expect(
+        result.inboxFor('manager-1').single.announcement.title,
+        'Service update',
+      );
+    },
+    skip: !kIsWeb,
+  );
+
   test('refreshInbox picks up announcements received after the initial load',
       () async {
     late _FakeApiClient api;
@@ -633,11 +694,14 @@ class _FakeApiClient extends ApiClient {
     super.ref, {
     List<Map<String, dynamic>> inbox = const [],
     Failure? getFailure,
+    Failure? managementFailure,
   })  : _inbox = List.of(inbox),
-        _getFailure = getFailure;
+        _getFailure = getFailure,
+        _managementFailure = managementFailure;
 
   final List<Map<String, dynamic>> _inbox;
   final Failure? _getFailure;
+  final Failure? _managementFailure;
   final List<({String path, Map<String, dynamic> body})> posts = [];
   final List<Map<String, dynamic>> _history = [];
 
@@ -650,7 +714,9 @@ class _FakeApiClient extends ApiClient {
     Options? options,
     T Function(dynamic data)? parser,
   }) async {
-    final failure = _getFailure;
+    final failure = path == 'announcements/inbox'
+        ? _getFailure
+        : _managementFailure ?? _getFailure;
     if (failure != null) return Left(failure);
     final body = switch (path) {
       'announcements/recipients' => {

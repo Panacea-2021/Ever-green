@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/permissions.dart';
-import '../../../core/data/evergreen_repository.dart' show unwrap;
+import '../../../core/data/evergreen_repository.dart'
+    show FailureException, unwrap;
 import '../../../core/models/backend_models.dart' show dataList;
 import '../../../core/network/api_client.dart';
 import '../../../shared/providers/auth_state_provider.dart';
@@ -39,17 +41,25 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
     final announcementsById = inbox.announcementsById;
 
     final recipients = <AnnouncementRecipient>[];
+    String? managementError;
     if (Permissions.canCreateAnnouncements(user.role)) {
-      final results = await Future.wait([
-        api.get<dynamic>('announcements/recipients'),
-        api.get<dynamic>('announcements/history'),
-      ]);
-      final recipientRows = dataList(unwrap(results[0]));
-      recipients.addAll(recipientRows.map(AnnouncementRecipient.fromBackend));
+      try {
+        final results = await Future.wait([
+          api.get<dynamic>('announcements/recipients'),
+          api.get<dynamic>('announcements/history'),
+        ]);
+        final recipientRows = dataList(unwrap(results[0]));
+        recipients.addAll(recipientRows.map(AnnouncementRecipient.fromBackend));
 
-      for (final row in dataList(unwrap(results[1]))) {
-        final announcement = Announcement.fromBackend(row);
-        announcementsById.putIfAbsent(announcement.id, () => announcement);
+        for (final row in dataList(unwrap(results[1]))) {
+          final announcement = Announcement.fromBackend(row);
+          announcementsById.putIfAbsent(announcement.id, () => announcement);
+        }
+      } on Exception catch (error) {
+        if (!kIsWeb) rethrow;
+        managementError = error is FailureException
+            ? error.failure.displayMessage
+            : error.toString();
       }
     }
 
@@ -57,6 +67,7 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
       announcements: announcementsById.values.toList(),
       notifications: inbox.notifications,
       recipientDirectory: recipients,
+      managementError: managementError,
     );
   }
 
@@ -86,6 +97,7 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
           announcements: announcementsById.values.toList(),
           notifications: inbox.notifications,
           recipientDirectory: latest.recipientDirectory,
+          managementError: latest.managementError,
         ),
       );
     } finally {
@@ -181,6 +193,7 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
           ],
           notifications: current.notifications,
           recipientDirectory: current.recipientDirectory,
+          managementError: current.managementError,
         ),
       );
     });
