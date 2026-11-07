@@ -5,9 +5,11 @@ import 'package:evergreen/core/network/api_client.dart';
 import 'package:evergreen/core/router/routes.dart';
 import 'package:evergreen/features/announcements/data/announcement_provider.dart';
 import 'package:evergreen/features/announcements/domain/announcement.dart';
+import 'package:evergreen/features/announcements/presentation/screens/mobile_announcements_screen.dart';
 import 'package:evergreen/features/auth/domain/models/user_model.dart';
 import 'package:evergreen/shared/providers/auth_state_provider.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -53,9 +55,9 @@ void main() {
     }
   });
 
-  test('announcement route is unavailable outside the web app', () {
+  test('all supported roles can access the announcement inbox', () {
     for (final role in UserRole.values) {
-      expect(Permissions.canAccessRoute(role, Routes.announcements), isFalse);
+      expect(Permissions.canAccessRoute(role, Routes.announcements), isTrue);
     }
   });
 
@@ -384,6 +386,153 @@ void main() {
     expect(result.inboxFor('42').single.notification.isRead, isTrue);
   });
 
+  testWidgets('mobile inbox marks the current user notification as read',
+      (tester) async {
+    late _FakeApiClient api;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentUserProvider.overrideWithValue(
+            const User(
+              id: '42',
+              email: 'engineer@example.com',
+              name: 'Field Engineer',
+              role: UserRole.technician,
+            ),
+          ),
+          apiClientProvider.overrideWith((ref) {
+            api = _FakeApiClient(
+              ref,
+              inbox: [
+                {
+                  'notification': {
+                    'id': '99:42',
+                    'announcement_id': '99',
+                    'recipient_id': '42',
+                    'is_read': false,
+                  },
+                  'announcement': {
+                    'id': '99',
+                    'title': 'Service update',
+                    'message': 'A scheduled update.',
+                    'sender_id': '7',
+                    'sender_name': 'Manager',
+                    'created_at': '2026-01-02T00:00:00.000Z',
+                    'recipients': [],
+                  },
+                },
+              ],
+            );
+            return api;
+          }),
+        ],
+        child: const MaterialApp(home: MobileAnnouncementsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 unread'), findsOneWidget);
+    await tester.tap(find.text('Service update'));
+    await tester.pumpAndSettle();
+
+    expect(api.posts.single.path, 'announcements/99/read');
+    expect(find.text('A scheduled update.'), findsOneWidget);
+  });
+
+  testWidgets('mobile manager can select recipients and send an announcement',
+      (tester) async {
+    late _FakeApiClient api;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentUserProvider.overrideWithValue(
+            const User(
+              id: '7',
+              email: 'manager@example.com',
+              name: 'Manager',
+              role: UserRole.manager,
+            ),
+          ),
+          apiClientProvider.overrideWith((ref) {
+            api = _FakeApiClient(ref);
+            return api;
+          }),
+        ],
+        child: const MaterialApp(home: MobileAnnouncementsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Create announcement'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'Maintenance notice',
+    );
+    await tester.enterText(
+      find.byType(TextFormField).at(1),
+      'A scheduled service window.',
+    );
+    await tester.ensureVisible(find.text('Recipients'));
+    await tester.tap(find.text('Recipients'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Field Engineer'));
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Send announcement'));
+    await tester.tap(find.text('Send announcement'));
+    await tester.pumpAndSettle();
+
+    expect(api.posts.single.path, 'announcements');
+    expect(api.posts.single.body['recipient_ids'], [42]);
+    expect(find.text('Announcement sent successfully.'), findsOneWidget);
+  });
+
+  testWidgets('mobile inbox gives useful HTTP error messages', (tester) async {
+    final cases = [
+      (
+        Failure.authentication(message: 'Unauthorized'),
+        'Your session is no longer valid. Please sign in again.',
+      ),
+      (
+        Failure.authentication(message: 'Access denied'),
+        'You do not have permission to access this announcement.',
+      ),
+      (
+        Failure.server(message: 'Missing', statusCode: 404),
+        'The announcement service could not find this resource.',
+      ),
+      (
+        Failure.server(message: 'Server error', statusCode: 500),
+        'The announcement service is temporarily unavailable. Try again.',
+      ),
+    ];
+
+    for (final (failure, message) in cases) {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserProvider.overrideWithValue(
+              const User(
+                id: '42',
+                email: 'engineer@example.com',
+                name: 'Field Engineer',
+                role: UserRole.technician,
+              ),
+            ),
+            apiClientProvider.overrideWith(
+              (ref) => _FakeApiClient(ref, getFailure: failure),
+            ),
+          ],
+          child: const MaterialApp(home: MobileAnnouncementsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(message), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    }
+  });
+
   test('unauthorized roles cannot send through the controller', () async {
     for (final role in [
       UserRole.seniorTechnician,
@@ -428,10 +577,15 @@ void main() {
 }
 
 class _FakeApiClient extends ApiClient {
-  _FakeApiClient(super.ref, {List<Map<String, dynamic>> inbox = const []})
-      : _inbox = inbox;
+  _FakeApiClient(
+    super.ref, {
+    List<Map<String, dynamic>> inbox = const [],
+    Failure? getFailure,
+  })  : _inbox = inbox,
+        _getFailure = getFailure;
 
   final List<Map<String, dynamic>> _inbox;
+  final Failure? _getFailure;
   final List<({String path, Map<String, dynamic> body})> posts = [];
   final List<Map<String, dynamic>> _history = [];
 
@@ -442,6 +596,8 @@ class _FakeApiClient extends ApiClient {
     Options? options,
     T Function(dynamic data)? parser,
   }) async {
+    final failure = _getFailure;
+    if (failure != null) return Left(failure);
     final body = switch (path) {
       'announcements/recipients' => {
           'status': 200,

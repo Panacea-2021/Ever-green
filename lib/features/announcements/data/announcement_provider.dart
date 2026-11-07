@@ -23,6 +23,15 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
     return _load(user);
   }
 
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final user = ref.read(currentUserProvider);
+      if (user == null) return const AnnouncementState();
+      return _load(user);
+    });
+  }
+
   Future<AnnouncementState> _load(User user) async {
     final api = ref.read(apiClientProvider);
     final inboxBody = unwrap(await api.get<dynamic>('announcements/inbox'));

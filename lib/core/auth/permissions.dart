@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
-
 import '../../features/auth/domain/models/user_model.dart';
 import '../router/routes.dart';
 
@@ -89,9 +87,9 @@ class Permissions {
   static bool _isAdmin(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
 
-  /// Whether [role] may open [path]. The announcements route is web-only.
+  /// Whether [role] may open [path].
   static bool canAccessRoute(UserRole role, String path) {
-    if (path.startsWith(Routes.announcements)) return kIsWeb;
+    if (path.startsWith(Routes.announcements)) return true;
     if (role == UserRole.superAdmin) return true;
     if (_common.any((r) => path.startsWith(r))) return true;
     final allowed = _roleRoutes[role] ?? const [];

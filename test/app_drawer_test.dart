@@ -65,6 +65,7 @@ void main() {
         expect(t.toLowerCase(), isNot(contains('technician')));
       }
       expect(titles, contains(role.label));
+      expect(titles, contains('Announcements'));
     });
   }
 
