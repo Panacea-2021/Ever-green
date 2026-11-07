@@ -8,12 +8,13 @@ import '../../../../core/models/backend_models.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/analytics_provider.dart';
 import '../../data/dashboard_repository.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Super Admin / Manager analytics overview with a CSV export action.
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
 
   Future<void> _refresh(WidgetRef ref) async {
     ref

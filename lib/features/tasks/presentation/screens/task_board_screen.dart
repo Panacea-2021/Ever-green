@@ -18,6 +18,7 @@ import '../../domain/models/task_item.dart';
 import '../widgets/task_action_handler.dart';
 import '../widgets/task_board_card.dart';
 import '../widgets/task_workflow.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// A role-aware task board backed by [taskItemsProvider]. Cards carry Report
 /// and Assign / Reassign; every other workflow action lives on Task Details.
@@ -46,7 +47,7 @@ class TaskBoardScreen extends ConsumerStatefulWidget {
 }
 
 class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   String _query = '';
   late TaskStatus? _statusFilter = widget.initialStatus;
 
@@ -1052,7 +1053,7 @@ class _WebTaskCard extends StatefulWidget {
 }
 
 class _WebTaskCardState extends State<_WebTaskCard> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   static const Color _red = Color(0xFFD32F2F);
   static const String _fallbackImage = 'assets/images/task_img_1.png';
 

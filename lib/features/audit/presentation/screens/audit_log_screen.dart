@@ -9,6 +9,7 @@ import '../../../../web/widgets/web_search_state.dart';
 import '../../../technicians/data/performance_provider.dart';
 import '../../data/audit_log_provider.dart';
 import '../../domain/models/audit_log_entry.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class AuditLogScreen extends ConsumerStatefulWidget {
   const AuditLogScreen({super.key});
@@ -27,7 +28,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
   // null = All time; otherwise only entries whose timestamp is in this range.
   DateRange? _dateRange;
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
 
   final ScrollController _webScroll = ScrollController();
 

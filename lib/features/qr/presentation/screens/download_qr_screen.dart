@@ -7,6 +7,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../amcs/data/equipment_provider.dart';
 import '../../data/qr_pdf.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Downloads the backend QR sticker PDF for every equipment of a company
 /// branch.
@@ -22,7 +23,7 @@ class _DownloadQrScreenState extends ConsumerState<DownloadQrScreen> {
   String? selectedBranch;
   bool isDownloading = false;
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   static const Color _lavender = Color(0xFFEBEDFF);
 
   static const String _noBranch = 'Main';

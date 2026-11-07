@@ -17,6 +17,7 @@ import '../../../../shared/widgets/custom_menu_icon.dart';
 import '../../data/amc_provider.dart';
 import '../../domain/models/amc_contract.dart';
 import '../widgets/amc_async_states.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Service-type filter chips: label -> predicate.
 enum _TypeFilter {
@@ -194,7 +195,7 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
   //  Company card 3-dots menu
   // ---------------------------------------------------------------------------
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   static const Color _danger = Color(0xFFD32F2F);
 
   Future<void> _showCompanyMenu(Company company, Offset at) async {

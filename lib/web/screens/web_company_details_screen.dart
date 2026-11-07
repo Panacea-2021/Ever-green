@@ -6,10 +6,11 @@ import 'package:go_router/go_router.dart';
 import '../../core/data/evergreen_repository.dart';
 import '../../core/models/backend_models.dart';
 import '../../core/router/routes.dart';
+import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 
 const Color _trendDown = Color(0xFFBF0F0F);
-const Color _trendUp = Color(0xFF106220);
+const Color _trendUp = WebDashboardColors.success;
 
 /// Count for a stat card plus its month-over-month trend, with the loading /
 /// error state.
@@ -271,7 +272,7 @@ class _Banner extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: WebTokens.bodyText(
                               13.5,
-                              color: const Color(0xFF125420),
+                              color: WebDashboardColors.primaryDark,
                               weight: FontWeight.w700,
                               h: 1.2,
                             ),

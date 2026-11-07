@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
+import '../../../../core/theme/app_colors.dart';
 
-const _green = Color(0xFF106220);
+const _green = AppColors.primary;
 const _issueTypeNameMax = 60;
 
 /// The admin-managed name lists: issue types (picked when raising a ticket)

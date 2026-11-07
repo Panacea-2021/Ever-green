@@ -9,6 +9,7 @@ import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
 import '../widgets/task_list_card.dart';
 import '../widgets/task_workflow.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Manager / admin screen for assigning unassigned tickets to technicians.
 /// Backed by the live [taskProvider]; the assign action updates real data.
@@ -20,7 +21,7 @@ class AssignTasksScreen extends ConsumerStatefulWidget {
 }
 
 class _AssignTasksScreenState extends ConsumerState<AssignTasksScreen> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   String _query = '';
   bool _onlyUnassigned = true;
 

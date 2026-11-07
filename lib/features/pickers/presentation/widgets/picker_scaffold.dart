@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_colors.dart';
 
-const Color pickerGreen = Color(0xFF106220);
+const Color pickerGreen = AppColors.primary;
 
 /// Full-page searchable list shared by the company and equipment pickers:
 /// design header, pill search bar, and loading / error / empty states.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
-const Color _green = Color(0xFF106220);
+const Color _green = AppColors.primary;
 
 /// Centered spinner used while company / task data loads.
 class AmcLoadingState extends StatelessWidget {

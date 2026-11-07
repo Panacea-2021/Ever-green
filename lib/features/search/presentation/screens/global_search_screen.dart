@@ -13,8 +13,9 @@ import '../../../../web/widgets/web_search_state.dart';
 import '../../../amcs/domain/models/amc_contract.dart' show displayDate;
 import '../../../auth/domain/models/user_model.dart';
 import '../../domain/global_search.dart';
+import '../../../../core/theme/app_colors.dart';
 
-const _green = Color(0xFF106220);
+const _green = AppColors.primary;
 
 /// One search box over companies, equipment, tasks and service engineers.
 /// Each tab lists the items matching the query (all items when it is blank)

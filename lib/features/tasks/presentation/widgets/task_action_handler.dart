@@ -12,8 +12,9 @@ import '../../data/task_provider.dart';
 import '../../domain/models/task_event.dart';
 import '../../domain/models/task_item.dart';
 import 'task_workflow.dart';
+import '../../../../core/theme/app_colors.dart';
 
-const Color _green = Color(0xFF106220);
+const Color _green = AppColors.primary;
 
 /// Runs the role-based task actions (sheets, dialogs and backend calls) for a
 /// screen. Shared by the Task Board card buttons and the Task Details actions.

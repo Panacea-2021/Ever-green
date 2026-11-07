@@ -13,6 +13,7 @@ import '../widgets/task_timeline.dart';
 import '../widgets/task_action_button.dart';
 import '../widgets/task_action_handler.dart';
 import '../widgets/task_workflow.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Task details screen matching Figma design with:
 /// - Hero image header with title overlay
@@ -56,10 +57,10 @@ class TaskDetailsScreen extends ConsumerWidget {
     this.lastUpdatedOn,
   });
 
-  static const Color _green = Color(0xFF106220);
-  static const Color _greenTitle = Color(0xFF11682E);
+  static const Color _green = AppColors.primary;
+  static const Color _greenTitle = AppColors.modulePrimaryTitleDark;
   static const Color _blueTitle = Color(0xFF5B899E);
-  static const Color _lightGreenBg = Color(0xFFEBF0EA);
+  static const Color _lightGreenBg = AppColors.modulePrimarySoft;
   static const String _defaultImage = 'assets/images/task_img_1.png';
 
   static String _fmt(DateTime? d) {

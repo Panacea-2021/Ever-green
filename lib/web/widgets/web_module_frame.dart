@@ -437,7 +437,7 @@ class _HeaderCardShell extends StatelessWidget {
                       colors: [
                         WebDashboardColors.sidebarBottom,
                         WebDashboardColors.primary,
-                        Color(0xFF7FA1D0),
+                        WebDashboardColors.accentLight,
                       ],
                     ),
                   ),
@@ -470,8 +470,8 @@ class _HeaderCardShell extends StatelessWidget {
             shape: BoxShape.circle,
             gradient: RadialGradient(
               colors: [
-                const Color(0xFF7FA1D0).withValues(alpha: alpha),
-                const Color(0xFF7FA1D0).withValues(alpha: 0),
+                WebDashboardColors.accentLight.withValues(alpha: alpha),
+                WebDashboardColors.accentLight.withValues(alpha: 0),
               ],
             ),
           ),
@@ -534,7 +534,7 @@ class _WebRestoringSession extends StatelessWidget {
                 child: LinearProgressIndicator(
                   minHeight: 4,
                   color: WebDashboardColors.primary,
-                  backgroundColor: Color(0x1F315C9B),
+                  backgroundColor: Color(0x1F5A8F87),
                 ),
               ),
             ),

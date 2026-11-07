@@ -8,6 +8,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../web/widgets/web_upload_content.dart';
 import '../../../amcs/data/amc_provider.dart';
 import '../../data/xlsx_template.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class UploadAmcScreen extends ConsumerStatefulWidget {
   const UploadAmcScreen({super.key});
@@ -23,7 +24,7 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
   bool isUploading = false;
   CompanyUploadResult? _result;
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   static const Color _lavender = Color(0xFFEBEDFF);
   static const Color _webUploadSurface = Color(0xFFF0F6F0);
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 /// Design tokens for the Evergreen **website** UI (distinct from the mobile
@@ -6,19 +7,19 @@ import 'package:flutter/material.dart';
 class WebTokens {
   WebTokens._();
 
-  // --- Brand / palette (from the Figma landing design) ---
-  static const Color green = Color(0xFF106220);
-  static const Color greenDark = Color(0xFF0C4A18);
-  static const Color greenDeep = Color(0xFF0A3D14);
-  static const Color mint = Color(0xFFBFE3C6);
-  static const Color mintSoft = Color(0xFFE8F3EA);
-  static const Color pageGreen = Color(0xFFDDEEDF); // pale green section bg
-  static const Color cream = Color(0xFFF4F7F2);
+  // --- Website palette; non-web values preserve the mobile app theme ---
+  static const Color green = kIsWeb ? Color(0xFF735A78) : Color(0xFF106220);
+  static const Color greenDark = kIsWeb ? Color(0xFF51435B) : Color(0xFF0C4A18);
+  static const Color greenDeep = kIsWeb ? Color(0xFF3D3544) : Color(0xFF0A3D14);
+  static const Color mint = kIsWeb ? Color(0xFFB8D7D0) : Color(0xFFBFE3C6);
+  static const Color mintSoft = kIsWeb ? Color(0xFFF0EBF3) : Color(0xFFE8F3EA);
+  static const Color pageGreen = kIsWeb ? Color(0xFFF2EFE8) : Color(0xFFDDEEDF);
+  static const Color cream = kIsWeb ? Color(0xFFF7F6F2) : Color(0xFFF4F7F2);
 
-  static const Color ink = Color(0xFF14201A); // near-black headings
-  static const Color body = Color(0xFF4B5A50); // muted body text
-  static const Color faint = Color(0xFF8A988E); // captions / eyebrows
-  static const Color line = Color(0xFFE2E8E3);
+  static const Color ink = kIsWeb ? Color(0xFF30383A) : Color(0xFF14201A);
+  static const Color body = kIsWeb ? Color(0xFF626B6A) : Color(0xFF4B5A50);
+  static const Color faint = kIsWeb ? Color(0xFF87908C) : Color(0xFF8A988E);
+  static const Color line = kIsWeb ? Color(0xFFE9E5DC) : Color(0xFFE2E8E3);
   static const Color white = Color(0xFFFFFFFF);
 
   static const Color star = Color(0xFFFFB300);

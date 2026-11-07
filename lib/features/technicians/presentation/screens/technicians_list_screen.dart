@@ -7,6 +7,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../web/widgets/web_search_state.dart';
 import '../../../../core/router/routes.dart';
 import '../../../auth/domain/models/user_model.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Technicians from `user/getAllUser` (admin-only on the backend).
 class TechniciansListScreen extends ConsumerStatefulWidget {
@@ -44,8 +45,8 @@ class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
     }).toList();
   }
 
-  static const Color _green = Color(0xFF125420);
-  static const Color _addGreen = Color(0xFF106220);
+  static const Color _green = AppColors.modulePrimaryDark;
+  static const Color _addGreen = AppColors.primary;
   static const Color _badgeBg = Color(0xFFEBF0EA);
 
   @override

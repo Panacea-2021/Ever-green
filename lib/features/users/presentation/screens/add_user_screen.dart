@@ -35,7 +35,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   bool _sendCredentials = true;
   bool _isSaving = false;
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
 
   @override
   void dispose() {

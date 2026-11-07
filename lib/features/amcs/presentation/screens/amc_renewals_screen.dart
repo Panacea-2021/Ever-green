@@ -14,6 +14,7 @@ import '../../domain/models/amc_contract.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
 import '../../../../web/widgets/web_search_state.dart';
 import '../widgets/amc_async_states.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Super Admin / Manager view of AMC contracts that need attention —
 /// expiring soon or already expired — with one-tap renewal.
@@ -25,7 +26,7 @@ class AmcRenewalsScreen extends ConsumerStatefulWidget {
 }
 
 class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
 
   // null = All flagged; otherwise filter to this status.
   AmcStatus? _filter;
@@ -1170,7 +1171,7 @@ class _RenewAmcDialog extends StatefulWidget {
 }
 
 class _RenewAmcDialogState extends State<_RenewAmcDialog> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
 
   // Preset terms in months; null = custom end date.
   static const List<(String, int?)> _terms = [

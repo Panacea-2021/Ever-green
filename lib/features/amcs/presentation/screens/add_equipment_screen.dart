@@ -13,6 +13,7 @@ import '../../../pickers/presentation/screens/company_picker_screen.dart';
 import '../../data/equipment_provider.dart';
 import '../../../../web/widgets/web_form_kit.dart';
 import '../../domain/models/equipment_item.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class AddEquipmentScreen extends ConsumerStatefulWidget {
   final String companyId;
@@ -58,7 +59,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
   bool _saving = false;
   bool _pickingCompany = false;
 
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
   static const Color _resetBorder = Color(0x80155622); // rgba(21,86,34,0.5)
 
   /// PM frequency labels shown in the form and their backend values.

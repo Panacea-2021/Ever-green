@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
 import '../../data/notifications_provider.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -14,7 +15,7 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
-  static const _green = Color(0xFF2E7D32);
+  static const _green = AppColors.moduleAccent;
 
   void _onNotificationTap(NotificationEntry entry) {
     final n = entry.notification;
@@ -142,7 +143,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   fontFamily: 'Montserrat',
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF125420),
+                  color: AppColors.modulePrimaryDark,
                 ),
               ),
             ),
@@ -403,7 +404,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                             fontFamily: 'Montserrat',
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF125420),
+                            color: AppColors.modulePrimaryDark,
                           ),
                         ),
                       ),
@@ -669,7 +670,7 @@ class NotificationDetailScreen extends StatelessWidget {
                                                 width: 6,
                                                 height: 6,
                                                 decoration: const BoxDecoration(
-                                                  color: Color(0xFF125420),
+                                                  color: AppColors.modulePrimaryDark,
                                                   shape: BoxShape.circle,
                                                 ),
                                               ),
@@ -680,7 +681,7 @@ class NotificationDetailScreen extends StatelessWidget {
                                                   fontFamily: 'Montserrat',
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Color(0xFF125420),
+                                                  color: AppColors.modulePrimaryDark,
                                                 ),
                                               ),
                                             ],
@@ -735,7 +736,7 @@ class NotificationDetailScreen extends StatelessWidget {
                                               fontFamily: 'Montserrat',
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: Color(0xFF125420),
+                                              color: AppColors.modulePrimaryDark,
                                             ),
                                           ),
                                         ),

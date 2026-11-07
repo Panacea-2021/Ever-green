@@ -11,6 +11,7 @@ import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
 import '../../../../web/widgets/web_form_kit.dart';
 import '../widgets/task_workflow.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Raise a ticket for a person rather than a company's equipment
 /// (`user/createTask` without `equipment_link`). Super Admin / Manager only.
@@ -24,7 +25,7 @@ class CreateIndividualTaskScreen extends ConsumerStatefulWidget {
 
 class _CreateIndividualTaskScreenState
     extends ConsumerState<CreateIndividualTaskScreen> {
-  static const Color _green = Color(0xFF106220);
+  static const Color _green = AppColors.primary;
 
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();

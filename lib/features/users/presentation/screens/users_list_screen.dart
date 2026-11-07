@@ -34,8 +34,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   /// User whose active flag / deletion is in flight.
   String? _busyId;
 
-  static const Color _green = Color(0xFF125420);
-  static const Color _addGreen = Color(0xFF106220);
+  static const Color _green = AppColors.modulePrimaryDark;
+  static const Color _addGreen = AppColors.primary;
   static const Color _footerBg = Color(0xFFEBF0EA);
 
   final List<String> _tabs = [

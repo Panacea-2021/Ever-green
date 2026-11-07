@@ -251,7 +251,10 @@ class WebSideNav extends ConsumerWidget {
                       'Evergreen',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: WebTokens.heading(20, color: Colors.white),
+                      style: WebTokens.heading(
+                        20,
+                        color: WebTokens.ink,
+                      ),
                     ),
                   ),
                 ],
@@ -263,7 +266,7 @@ class WebSideNav extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(28, 0, 0, 8),
               child: Text(
                 'MENU',
-                style: WebTokens.eyebrow(color: Colors.white54),
+                style: WebTokens.eyebrow(color: WebTokens.faint),
               ),
             ),
           Expanded(
@@ -325,11 +328,11 @@ class _WebNavTileState extends State<_WebNavTile> {
   Widget build(BuildContext context) {
     final active = widget.active;
     final entry = widget.entry;
-    final fg = active ? Colors.white : Colors.white70;
+    final fg = active ? WebDashboardColors.primaryDark : WebTokens.body;
     final bg = active
-        ? Colors.white.withValues(alpha: 0.16)
+        ? WebDashboardColors.primarySoft
         : _hover
-            ? Colors.white.withValues(alpha: 0.08)
+            ? Colors.white.withValues(alpha: 0.72)
             : Colors.transparent;
 
     final iconWidget = entry.svgIcon != null
@@ -362,7 +365,7 @@ class _WebNavTileState extends State<_WebNavTile> {
             border: active
                 ? const Border(
                     left: BorderSide(
-                      color: WebDashboardColors.accentPale,
+                      color: WebDashboardColors.primary,
                       width: 3,
                     ),
                   )
@@ -406,7 +409,7 @@ class _WebNavTileState extends State<_WebNavTile> {
                         fontWeight: FontWeight.w700,
                         color: entry.badgeColor != null
                             ? Colors.white
-                            : WebDashboardColors.sidebarBottom,
+                            : WebDashboardColors.primaryDark,
                       ),
                     ),
                   ),
