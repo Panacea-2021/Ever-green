@@ -208,16 +208,8 @@ class WebSideNav extends ConsumerWidget {
 
     return Container(
       width: widthFor(screenWidth),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            WebDashboardColors.sidebarTop,
-            WebDashboardColors.sidebarBottom,
-          ],
-        ),
-      ),
+      decoration:
+          const BoxDecoration(color: WebDashboardColors.sideNavBackground),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -235,12 +227,12 @@ class WebSideNav extends ConsumerWidget {
                   width: 34,
                   height: 34,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: WebDashboardColors.sideNavLogoBackground,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.eco,
-                    color: WebDashboardColors.primary,
+                    color: WebDashboardColors.sideNavForeground,
                     size: 20,
                   ),
                 ),
@@ -253,7 +245,7 @@ class WebSideNav extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                       style: WebTokens.heading(
                         20,
-                        color: WebTokens.ink,
+                        color: WebDashboardColors.sideNavForeground,
                       ),
                     ),
                   ),
@@ -266,7 +258,9 @@ class WebSideNav extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(28, 0, 0, 8),
               child: Text(
                 'MENU',
-                style: WebTokens.eyebrow(color: WebTokens.faint),
+                style: WebTokens.eyebrow(
+                  color: WebDashboardColors.sideNavMutedForeground,
+                ),
               ),
             ),
           Expanded(
@@ -328,11 +322,13 @@ class _WebNavTileState extends State<_WebNavTile> {
   Widget build(BuildContext context) {
     final active = widget.active;
     final entry = widget.entry;
-    final fg = active ? WebDashboardColors.primaryDark : WebTokens.body;
+    final fg = active
+        ? WebDashboardColors.sideNavSelectedForeground
+        : WebDashboardColors.sideNavForeground;
     final bg = active
-        ? WebDashboardColors.primarySoft
+        ? WebDashboardColors.sideNavSelectedBackground
         : _hover
-            ? Colors.white.withValues(alpha: 0.72)
+            ? WebDashboardColors.sideNavForeground.withValues(alpha: 0.14)
             : Colors.transparent;
 
     final iconWidget = entry.svgIcon != null
@@ -365,7 +361,7 @@ class _WebNavTileState extends State<_WebNavTile> {
             border: active
                 ? const Border(
                     left: BorderSide(
-                      color: WebDashboardColors.primary,
+                      color: WebDashboardColors.sideNavSelectedForeground,
                       width: 3,
                     ),
                   )
@@ -398,7 +394,8 @@ class _WebNavTileState extends State<_WebNavTile> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: entry.badgeColor ?? WebDashboardColors.accentPale,
+                      color: entry.badgeColor ??
+                          WebDashboardColors.sideNavBadgeBackground,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -409,7 +406,7 @@ class _WebNavTileState extends State<_WebNavTile> {
                         fontWeight: FontWeight.w700,
                         color: entry.badgeColor != null
                             ? Colors.white
-                            : WebDashboardColors.primaryDark,
+                            : WebDashboardColors.sideNavSelectedForeground,
                       ),
                     ),
                   ),

@@ -86,7 +86,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     }
 
     return Scaffold(
-      backgroundColor: WebTokens.cream,
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         color: _green,
         onRefresh: () async {

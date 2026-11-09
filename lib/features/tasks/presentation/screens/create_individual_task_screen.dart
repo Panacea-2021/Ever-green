@@ -873,11 +873,14 @@ class _CreateIndividualTaskScreenState
               height: kIsWeb ? 40 : 46,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF138A2A), _green],
-                ),
+                color: kIsWeb ? const Color(0xFF106220) : null,
+                gradient: kIsWeb
+                    ? null
+                    : const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF138A2A), _green],
+                      ),
                 borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
                 boxShadow: kIsWeb
                     ? [

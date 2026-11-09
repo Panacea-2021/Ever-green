@@ -58,7 +58,7 @@ class AppColors {
 
   // Background colors
   static const Color backgroundLight =
-      kIsWeb ? Color(0xFFF7F6F2) : Color(0xFFF5F5F5);
+      kIsWeb ? Color(0xFFEAF0F3) : Color(0xFFF5F5F5);
   static const Color backgroundDark = Color(0xFF121212);
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color surfaceDark = Color(0xFF1E1E1E);

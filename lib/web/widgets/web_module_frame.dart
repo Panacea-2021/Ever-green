@@ -268,93 +268,98 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
           )
         : content;
 
-    return Material(
-      color: WebDashboardColors.canvas,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          WebSideNav(
-            activeRoute: _location,
-            onNavigate: _navigate,
-            onSignOut: _signOut,
-          ),
-          Expanded(
-            child: Column(
-              children: [
-                _WebTopBar(
-                  title: title,
-                  entry: bannered ? _entryFor(role) : null,
-                  userName: user?.name ?? role.label,
-                  roleLabel: role.label,
-                  onNotifications: () => _navigate(Routes.announcements),
-                  onSearch: () {
-                    if (_location != Routes.globalSearch) {
-                      widget.router.go(Routes.globalSearch);
-                    }
-                  },
-                ),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final mq = MediaQuery.of(context);
-                      if (webDesigned) {
-                        return MediaQuery(
-                          data: mq.copyWith(
-                            size: constraints.biggest,
-                            padding: EdgeInsets.zero,
-                            viewPadding: EdgeInsets.zero,
-                          ),
-                          child: pageContent,
-                        );
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: WebDashboardColors.pageBackground,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            WebSideNav(
+              activeRoute: _location,
+              onNavigate: _navigate,
+              onSignOut: _signOut,
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  _WebTopBar(
+                    title: title,
+                    entry: bannered ? _entryFor(role) : null,
+                    userName: user?.name ?? role.label,
+                    roleLabel: role.label,
+                    onNotifications: () => _navigate(Routes.announcements),
+                    onSearch: () {
+                      if (_location != Routes.globalSearch) {
+                        widget.router.go(Routes.globalSearch);
                       }
-
-                      final hPad = constraints.maxWidth > 900 ? 28.0 : 16.0;
-                      final width = (constraints.maxWidth - hPad * 2)
-                          .clamp(0.0, _contentWidthFor(_location));
-
-                      if (bannered) {
-                        return _HeaderCardShell(
-                          width: width,
-                          mq: mq,
-                          constraints: constraints,
-                          compact: WebModuleFrame._uploadPaths.any(
-                            (p) =>
-                                _location == p || _location.startsWith('$p/'),
-                          ),
-                          child: content,
-                        );
-                      }
-                      final height = constraints.maxHeight - 48;
-                      return Align(
-                        alignment: Alignment.topCenter,
-                        child: Container(
-                          width: width,
-                          height: height,
-                          margin: const EdgeInsets.only(top: 24),
-                          clipBehavior: Clip.antiAlias,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: WebTokens.line),
-                            boxShadow: WebTokens.softShadow,
-                          ),
-                          child: MediaQuery(
+                    },
+                  ),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final mq = MediaQuery.of(context);
+                        if (webDesigned) {
+                          return MediaQuery(
                             data: mq.copyWith(
-                              size: Size(width, height),
+                              size: constraints.biggest,
                               padding: EdgeInsets.zero,
                               viewPadding: EdgeInsets.zero,
                             ),
+                            child: pageContent,
+                          );
+                        }
+
+                        final hPad = constraints.maxWidth > 900 ? 28.0 : 16.0;
+                        final width = (constraints.maxWidth - hPad * 2)
+                            .clamp(0.0, _contentWidthFor(_location));
+
+                        if (bannered) {
+                          return _HeaderCardShell(
+                            width: width,
+                            mq: mq,
+                            constraints: constraints,
+                            compact: WebModuleFrame._uploadPaths.any(
+                              (p) =>
+                                  _location == p || _location.startsWith('$p/'),
+                            ),
                             child: content,
+                          );
+                        }
+                        final height = constraints.maxHeight - 48;
+                        return Align(
+                          alignment: Alignment.topCenter,
+                          child: Container(
+                            width: width,
+                            height: height,
+                            margin: const EdgeInsets.only(top: 24),
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: WebTokens.line),
+                              boxShadow: WebTokens.softShadow,
+                            ),
+                            child: MediaQuery(
+                              data: mq.copyWith(
+                                size: Size(width, height),
+                                padding: EdgeInsets.zero,
+                                viewPadding: EdgeInsets.zero,
+                              ),
+                              child: content,
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

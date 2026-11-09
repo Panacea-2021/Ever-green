@@ -124,7 +124,7 @@ class WebCompanyDetailsScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: WebTokens.cream,
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(28, 26, 28, 36),
         child: Center(

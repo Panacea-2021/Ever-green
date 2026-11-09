@@ -21,7 +21,6 @@ class _CompanyListColors {
 
   static const Color primary = WebDashboardColors.primary;
   static const Color primaryDark = WebDashboardColors.primaryDark;
-  static const Color canvas = WebDashboardColors.canvas;
   static const Color surfaceSoft = Color(0xFFF4F1EB);
   static const Color band = WebDashboardColors.primarySoft;
   static const Color line = WebDashboardColors.line;
@@ -130,7 +129,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
     final all = companiesAsync.valueOrNull ?? const <Company>[];
 
     return Scaffold(
-      backgroundColor: _CompanyListColors.canvas,
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         color: _CompanyListColors.primary,
         onRefresh: () => ref.refresh(companiesProvider.future),

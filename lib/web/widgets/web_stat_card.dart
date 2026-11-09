@@ -38,6 +38,7 @@ class _WebStatCardState extends State<WebStatCard> {
   @override
   Widget build(BuildContext context) {
     final accent = widget.accent;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
     return MouseRegion(
       cursor: widget.onTap != null
           ? SystemMouseCursors.click
@@ -47,15 +48,20 @@ class _WebStatCardState extends State<WebStatCard> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
+          duration:
+              reduceMotion ? Duration.zero : const Duration(milliseconds: 220),
+          transform: Matrix4.translationValues(
+            0,
+            _hover && !reduceMotion ? -2.5 : 0,
+            0,
+          ),
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: _hover ? WebDashboardColors.successSoft : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: _hover
-                  ? accent.withValues(alpha: 0.35)
+                  ? WebDashboardColors.success.withValues(alpha: 0.35)
                   : WebDashboardColors.line,
             ),
             boxShadow: _hover ? WebTokens.cardShadow : WebTokens.softShadow,

@@ -14,7 +14,7 @@ class WebTokens {
   static const Color mint = kIsWeb ? Color(0xFFB8D7D0) : Color(0xFFBFE3C6);
   static const Color mintSoft = kIsWeb ? Color(0xFFF0EBF3) : Color(0xFFE8F3EA);
   static const Color pageGreen = kIsWeb ? Color(0xFFF2EFE8) : Color(0xFFDDEEDF);
-  static const Color cream = kIsWeb ? Color(0xFFF7F6F2) : Color(0xFFF4F7F2);
+  static const Color cream = kIsWeb ? Color(0xFFEAF0F3) : Color(0xFFF4F7F2);
 
   static const Color ink = kIsWeb ? Color(0xFF30383A) : Color(0xFF14201A);
   static const Color body = kIsWeb ? Color(0xFF626B6A) : Color(0xFF4B5A50);

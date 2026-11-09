@@ -17,11 +17,28 @@ class WebDashboardColors {
   static const Color coralSoft = Color(0xFFF7EBE8);
   static const Color success = Color(0xFF39734F);
   static const Color successSoft = Color(0xFFE8F0E9);
-  static const Color sidebarTop = Color(0xFFF6F4EF);
-  static const Color sidebarBottom = Color(0xFFEFECE5);
+  static const Color sidebarTop = Color(0xFF106220);
+  static const Color sidebarBottom = Color(0xFF106220);
+  static const Color sideNavBackground = Color(0xFF106220);
+  static const Color sideNavForeground = Color(0xFFFFFFFF);
+  static const Color sideNavMutedForeground = Color(0xFFDDEEDF);
+  static const Color sideNavSelectedBackground = Color(0xFFBFE3C6);
+  static const Color sideNavSelectedForeground = Color(0xFF0C4A18);
+  static const Color sideNavLogoBackground = Color(0xFF2E7D32);
+  static const Color sideNavBadgeBackground = Color(0xFFBFE3C6);
   static const Color accentSoft = primarySoft;
   static const Color accentPale = Color(0xFFD4C8D9);
-  static const Color canvas = Color(0xFFF7F6F2);
+  static const Color canvas = Color(0xFFEAF0F3);
   static const Color line = Color(0xFFE9E5DC);
   static const Color accentLight = Color(0xFFC7A8C9);
+  static const LinearGradient pageBackground = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFFE8F3EA),
+      Color(0xFFE8F3EA),
+      Color(0xFFE8F3EA),
+    ],
+    stops: [0, 0.52, 1],
+  );
 }

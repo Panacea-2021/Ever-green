@@ -100,7 +100,7 @@ class WebDashboardScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: WebDashboardColors.canvas,
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(28, 26, 28, 36),
         child: Center(

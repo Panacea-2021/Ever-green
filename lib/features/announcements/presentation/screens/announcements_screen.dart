@@ -95,7 +95,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                 .toList();
 
         return ColoredBox(
-          color: WebTokens.cream,
+          color: Colors.transparent,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Center(

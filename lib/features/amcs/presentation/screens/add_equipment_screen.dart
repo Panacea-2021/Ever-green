@@ -757,11 +757,14 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
       child: Container(
         height: kIsWeb ? 40 : 46,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF138A2A), _green],
-          ),
+          color: kIsWeb ? const Color(0xFF106220) : null,
+          gradient: kIsWeb
+              ? null
+              : const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF138A2A), _green],
+                ),
           borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
           boxShadow: kIsWeb
               ? [
