@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "263887414399",
+    "project_id": "evergreen-5f5f6",
+    "storage_bucket": "evergreen-5f5f6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:263887414399:android:b19d7118b841e7670ecb4a",
+        "android_client_info": {
+          "package_name": "com.evergreen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpIr7dTcp0wkrQXQ0-9p1gw48gquX-bqg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:263887414399:android:74aa437eb9a3cfc90ecb4a",
+        "android_client_info": {
+          "package_name": "com.prod.evergreen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpIr7dTcp0wkrQXQ0-9p1gw48gquX-bqg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

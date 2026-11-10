@@ -1,0 +1,17 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="385.441" height="311.949" viewBox="0 0 385.441 311.949" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Service journey glow" filter="url(#filter0_d_0_15)">
+<path d="M10.1789 300.965C120.179 280.965 198.179 58.9651 375.179 10.9651" stroke-width="2" stroke="#9CF4C5"/>
+</g>
+<defs>
+<filter id="filter0_d_0_15" x="1.49012e-08" y="0" width="385.441" height="311.949" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="5"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.423529 0 0 0 0 1 0 0 0 0 0.682353 0 0 0 1 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_15"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_15" result="shape"/>
+</filter>
+</defs>
+</svg>

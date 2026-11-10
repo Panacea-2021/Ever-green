@@ -1,0 +1,1703 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../../core/auth/permissions.dart';
+import '../../../../core/data/evergreen_repository.dart';
+import '../../../../core/models/backend_models.dart';
+import '../../../../core/router/routes.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/password_generator.dart';
+import '../../../../shared/providers/auth_state_provider.dart';
+import '../../../../web/widgets/web_header_actions.dart';
+import '../../../audit/data/audit_logger.dart';
+import '../../../audit/domain/models/audit_log_entry.dart';
+import '../../data/amc_provider.dart';
+import '../../domain/models/amc_contract.dart';
+
+class CreateAmcScreen extends ConsumerStatefulWidget {
+  /// When provided, the screen runs in "edit" mode: the title reads
+  /// "Update Company", the fields are pre-filled from the company, and the
+  /// primary button calls `user/updateCompany/:id`.
+  /// Keys: `company` ([Company]) and/or `companyId` (int or String).
+  final Map<String, dynamic>? editCompany;
+
+  const CreateAmcScreen({super.key, this.editCompany});
+
+  bool get isEdit => editCompany != null;
+
+  @override
+  ConsumerState<CreateAmcScreen> createState() => _CreateAmcScreenState();
+}
+
+class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
+    with WebHeaderActionsMixin {
+  final _formKey = GlobalKey<FormState>();
+
+  static final RegExp _gstPattern =
+      RegExp(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$');
+  static final RegExp _mobilePattern = RegExp(r'^(\+\d{1,3}[- ]?)?\d{10}$');
+
+  // Company Information
+  final _companyController = TextEditingController();
+  final _branchNameController = TextEditingController();
+  final _companyEmailController = TextEditingController();
+  final _gstController = TextEditingController();
+  final _addressController = TextEditingController();
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  // Service classification.
+  CompanyServiceType _serviceType = CompanyServiceType.amc;
+  AmcType? _amcType;
+
+  // Branch selection for web dropdown
+  String? _selectedBranch;
+  static const List<String> _branchOptions = ['Hyderabad', 'Bangalore'];
+
+  /// Only AMC companies carry an AMC type and a contract date range.
+  bool get _isAmc => _serviceType == CompanyServiceType.amc;
+
+  // Client Details
+  final _nameController = TextEditingController();
+  final _mobileController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _isPasswordVisible = false;
+  bool _sendCredentials = true;
+  bool _saving = false;
+
+  /// Newly picked local logo file (uploaded on save).
+  XFile? _selectedImage;
+
+  /// Logo already stored on the company (edit mode).
+  String? _existingLogo;
+
+  Company? _company;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isEdit) {
+      _company = _resolveCompany();
+      _applyEditData();
+    } else {
+      _passwordController.text = generatePassword();
+      _isPasswordVisible = true;
+    }
+  }
+
+  Company? _resolveCompany() {
+    final d = widget.editCompany!;
+    final given = d['company'];
+    if (given is Company) return given;
+    final id = int.tryParse('${d['companyId'] ?? ''}');
+    if (id == null) return null;
+    final companies = ref.read(companiesProvider).valueOrNull ?? const [];
+    for (final c in companies) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
+
+  void _applyEditData() {
+    final c = _company;
+    if (c == null) return;
+    _companyController.text = c.name;
+    _branchNameController.text = c.branchName;
+    // Set the selected branch for dropdown if it matches one of the options
+    if (_branchOptions.contains(c.branchName)) {
+      _selectedBranch = c.branchName;
+    }
+    _companyEmailController.text = c.email;
+    _gstController.text = c.gstNumber ?? '';
+    _addressController.text = c.location ?? '';
+    _nameController.text = c.poc?.name ?? '';
+    _mobileController.text = c.poc?.phone ?? '';
+    _emailController.text = c.pocEmail ?? '';
+    _passwordController.clear();
+    _serviceType = c.serviceType ?? CompanyServiceType.amc;
+    _amcType = c.isAmc ? c.amcType : null;
+    _startDate = c.isAmc ? c.amcStartDay : null;
+    _endDate = c.isAmc ? c.amcEndDay : null;
+    _existingLogo = c.logo;
+    _selectedImage = null;
+  }
+
+  @override
+  void dispose() {
+    _companyController.dispose();
+    _branchNameController.dispose();
+    _companyEmailController.dispose();
+    _gstController.dispose();
+    _addressController.dispose();
+    _nameController.dispose();
+    _mobileController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    final now = DateTime.now();
+    final current = isStartDate ? _startDate : _endDate;
+    final first =
+        isStartDate || _startDate == null ? DateTime(2000) : _startDate!;
+    var initial = current ?? (isStartDate ? now : (_startDate ?? now));
+    if (initial.isBefore(first)) initial = first;
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: first,
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          _startDate = picked;
+          if (_endDate != null && _endDate!.isBefore(picked)) _endDate = null;
+        } else {
+          _endDate = picked;
+        }
+      });
+    }
+  }
+
+  String _formatDate(DateTime? date) => date == null ? '' : displayDate(date);
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: const Color(0xFFD32F2F)),
+    );
+  }
+
+  /// Mirrors the backend's createCompany / updateCompany validation so the
+  /// user gets the message before a round trip.
+  String? _validate() {
+    final name = _companyController.text.trim();
+    final branch = _branchNameController.text.trim();
+    final gst = _gstController.text.trim().toUpperCase();
+    if (name.isEmpty) return 'Please enter company name';
+    if (branch.isEmpty) return 'Please enter branch name';
+    if (gst.isNotEmpty && !_gstPattern.hasMatch(gst)) {
+      return 'Please enter a valid GST number';
+    }
+    if (_isAmc &&
+        _startDate != null &&
+        _endDate != null &&
+        _endDate!.isBefore(_startDate!)) {
+      return 'End date must be after the start date';
+    }
+
+    final admin = [
+      _nameController.text.trim(),
+      _mobileController.text.trim(),
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    ];
+    // A pre-filled password alone doesn't mean a client admin is wanted.
+    final anyAdmin = admin.take(3).any((v) => v.isNotEmpty) ||
+        (widget.isEdit && admin[3].isNotEmpty);
+    final hasLinkedAdmin = _company?.poc != null;
+    if (anyAdmin && !hasLinkedAdmin && admin.any((v) => v.isEmpty)) {
+      return 'Please provide all company manager details or leave them all empty';
+    }
+    if (admin[1].isNotEmpty && !_mobilePattern.hasMatch(admin[1])) {
+      return 'Please enter valid mobile number';
+    }
+    if (admin[3].length > 20) {
+      return 'Password must be at most 20 characters';
+    }
+    return null;
+  }
+
+  /// A new client admin is being created (no POC linked yet), so their
+  /// login details can be emailed.
+  bool get _offersCredentialsEmail => _company?.poc == null;
+
+  bool get _hasAdminDetails => [
+        _nameController,
+        _mobileController,
+        _emailController,
+      ].every((c) => c.text.trim().isNotEmpty);
+
+  Future<void> _handleSave() async {
+    if (_saving) return;
+    if (widget.isEdit && _company == null) {
+      _showError('Company not found. Go back and try again.');
+      return;
+    }
+    final error = _validate();
+    if (error != null) {
+      _showError(error);
+      return;
+    }
+
+    setState(() => _saving = true);
+    final repo = ref.read(amcRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    final company = _companyController.text.trim();
+    final branch = _branchNameController.text.trim();
+    final original = _company;
+
+    // On edit, only send client admin fields that changed so an unchanged
+    // POC isn't rewritten (and the password stays as-is when left blank).
+    String changed(String value, String? before) =>
+        original != null && value.trim() == (before ?? '').trim() ? '' : value;
+
+    try {
+      String? logo;
+      if (_selectedImage != null) {
+        logo = await repo.uploadLogo(_selectedImage!);
+      }
+
+      final input = CompanyInput(
+        name: company,
+        branchName: branch,
+        email: _companyEmailController.text,
+        gstNumber: _gstController.text,
+        address: _addressController.text,
+        serviceType: _serviceType,
+        amcType: _isAmc ? _amcType : null,
+        startDate: _isAmc ? _startDate : null,
+        endDate: _isAmc ? _endDate : null,
+        logo: logo,
+        adminName: changed(_nameController.text, original?.poc?.name),
+        adminPhone: changed(_mobileController.text, original?.poc?.phone),
+        adminEmail: changed(_emailController.text, original?.pocEmail),
+        adminPassword:
+            widget.isEdit || _hasAdminDetails ? _passwordController.text : '',
+        sendCredentials: _sendCredentials,
+      );
+
+      final saved = original != null
+          ? await repo.updateCompany(original.id, input)
+          : await repo.createCompany(input);
+      final emailFailed = _offersCredentialsEmail &&
+          _hasAdminDetails &&
+          _sendCredentials &&
+          !saved.emailSent;
+      ref.invalidate(companiesProvider);
+
+      ref.logAudit(
+        action: original != null ? AuditAction.updated : AuditAction.created,
+        entity: AuditEntity.amc,
+        entityName: company,
+        details:
+            original != null ? 'Company details updated' : 'Branch: $branch',
+      );
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            (original != null
+                    ? 'Company updated successfully!'
+                    : 'Company created successfully!') +
+                (emailFailed
+                    ? ' The login email to the company manager could not be sent.'
+                    : ''),
+          ),
+          backgroundColor:
+              emailFailed ? Colors.orange.shade800 : AppColors.primary,
+        ),
+      );
+      if (mounted) context.pop(true);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        _showError('$e');
+      }
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final file = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      if (file != null && mounted) {
+        setState(() => _selectedImage = file);
+      }
+    } catch (e) {
+      if (mounted) _showError('Could not pick image: $e');
+    }
+  }
+
+  void _handleImageUpload() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Upload Company Image',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (!kIsWeb)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.camera_alt, color: AppColors.primary),
+                ),
+                title: const Text(
+                  'Take Photo',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child:
+                    const Icon(Icons.photo_library, color: AppColors.primary),
+              ),
+              title: const Text(
+                'Choose from Gallery',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb) return _webBuild();
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        resizeToAvoidBottomInset: true,
+        body: Stack(
+          children: [
+            // Faint background
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/home_bg.png',
+                fit: BoxFit.cover,
+                color: Colors.white.withValues(alpha: 0.78),
+                colorBlendMode: BlendMode.srcOver,
+                errorBuilder: (_, __, ___) => Container(color: Colors.white),
+              ),
+            ),
+            SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  if (!kIsWeb) _buildHeader(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            _buildCompanyInfoCard(),
+                            const SizedBox(height: 20),
+                            _buildClientDetailsCard(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: _buildBottomButtons(),
+      ),
+    );
+  }
+
+  static const double _webMaxWidth = double.infinity;
+  static const Color _webLine = Color(0xFFE2E8E3);
+  static const Color _webFieldBorder = Color(0xFFD9E2DB);
+  static const Color _webInk = Color(0xFF14201A);
+
+  Widget _webBuild() {
+    // Register header actions for web
+    final showBulkUpload = !widget.isEdit &&
+        Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
+    setHeaderActions([
+      if (showBulkUpload)
+        WebHeaderAction(
+          label: 'Bulk Upload',
+          icon: Icons.cloud_upload_outlined,
+          onPressed: () => context.push(Routes.uploadAmc),
+          isPrimary: false,
+        ),
+      WebHeaderAction(
+        label: widget.isEdit ? 'Update' : 'Save',
+        icon: Icons.check_rounded,
+        onPressed: _saving ? () {} : _handleSave,
+        isPrimary: true,
+      ),
+    ]);
+
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F8F4),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/home_bg.png',
+                fit: BoxFit.cover,
+                color: const Color(0xFFF5F8F4).withValues(alpha: 0.9),
+                colorBlendMode: BlendMode.srcOver,
+                errorBuilder: (_, __, ___) =>
+                    Container(color: const Color(0xFFF5F8F4)),
+              ),
+            ),
+            Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: _webMaxWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _webSection(
+                          icon: Icons.apartment,
+                          title: 'Company Information',
+                          subtitle: 'Provide basic details of the company',
+                          children: _webCompanyFields(),
+                        ),
+                        const SizedBox(height: 24),
+                        _webSection(
+                          icon: Icons.person_outline,
+                          title: 'Client Details',
+                          subtitle: 'Enter primary contact details',
+                          children: _webClientFields(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webSection({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required List<Widget> children,
+  }) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _webLine),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFE8F4EB), Colors.white],
+              ),
+              border: Border(bottom: BorderSide(color: _webLine)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFCFE3D4)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF278245).withValues(alpha: 0.15),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, size: 27, color: const Color(0xFF278245)),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    color: _webInk,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black.withValues(alpha: 0.45),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 26, 28, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _webPair(Widget a, Widget b) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        if (c.maxWidth < 560) {
+          return Column(children: [a, const SizedBox(height: 18), b]);
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: a),
+            const SizedBox(width: 18),
+            Expanded(child: b),
+          ],
+        );
+      },
+    );
+  }
+
+  List<Widget> _webCompanyFields() {
+    return [
+      _webPair(
+        _webField(
+          controller: _companyController,
+          hint: 'Company Name',
+          icon: Icons.business_outlined,
+        ),
+        _webDropdown(
+          hint: 'Branch Name',
+          icon: Icons.account_tree_outlined,
+          value: _selectedBranch,
+          items: _branchOptions,
+          onChanged: (v) {
+            setState(() {
+              _selectedBranch = v;
+              _branchNameController.text = v ?? '';
+            });
+          },
+        ),
+      ),
+      const SizedBox(height: 18),
+      _webPair(
+        _webField(
+          controller: _companyEmailController,
+          hint: 'Company Email',
+          icon: Icons.mail_outline,
+          keyboardType: TextInputType.emailAddress,
+        ),
+        _webField(
+          controller: _gstController,
+          hint: 'GST Number',
+          icon: Icons.receipt_long_outlined,
+          capitalization: TextCapitalization.characters,
+        ),
+      ),
+      const SizedBox(height: 18),
+      _webField(
+        controller: _addressController,
+        hint: 'Company Address',
+        icon: Icons.location_on_outlined,
+        keyboardType: TextInputType.streetAddress,
+      ),
+      const SizedBox(height: 18),
+      _webPair(
+        _webDropdown(
+          hint: 'Service Type',
+          icon: Icons.design_services_outlined,
+          value: _serviceType.label,
+          items: [for (final t in CompanyServiceType.values) t.label],
+          onChanged: (v) {
+            final type =
+                CompanyServiceType.values.where((t) => t.label == v).firstOrNull;
+            if (type == null) return;
+            setState(() {
+              _serviceType = type;
+              if (!_isAmc) {
+                _amcType = null;
+                _startDate = null;
+                _endDate = null;
+              }
+            });
+          },
+        ),
+        _isAmc
+            ? _webDropdown(
+                hint: 'AMC Category (NC AMC / C AMC)',
+                icon: Icons.category_outlined,
+                value: _amcType?.label,
+                items: [AmcType.ncAmc.label, AmcType.cAmc.label],
+                onChanged: (v) => setState(
+                  () => _amcType =
+                      AmcType.values.where((t) => t.label == v).firstOrNull,
+                ),
+              )
+            : const SizedBox.shrink(),
+      ),
+      if (_isAmc) ...[
+        const SizedBox(height: 18),
+        _webPair(
+          _webDate(
+            hint: 'Start Date',
+            value: _formatDate(_startDate),
+            onTap: () => _selectDate(context, true),
+          ),
+          _webDate(
+            hint: 'End Date',
+            value: _formatDate(_endDate),
+            onTap: () => _selectDate(context, false),
+          ),
+        ),
+      ],
+      const SizedBox(height: 22),
+      _webUploadArea(),
+    ];
+  }
+
+  List<Widget> _webClientFields() {
+    return [
+      _webPair(
+        _webField(
+          controller: _nameController,
+          hint: 'Name',
+          icon: Icons.person_outline,
+        ),
+        _webField(
+          controller: _mobileController,
+          hint: 'Mobile Number',
+          icon: Icons.phone_outlined,
+          keyboardType: TextInputType.phone,
+        ),
+      ),
+      const SizedBox(height: 18),
+      _webPair(
+        _webField(
+          controller: _emailController,
+          hint: 'Email',
+          icon: Icons.alternate_email,
+          keyboardType: TextInputType.emailAddress,
+        ),
+        _webField(
+          controller: _passwordController,
+          hint: 'Password',
+          icon: Icons.lock_outline,
+          isPassword: true,
+        ),
+      ),
+    ];
+  }
+
+  TextStyle get _webHintStyle => TextStyle(
+        fontFamily: 'Montserrat',
+        fontSize: 14.5,
+        fontWeight: FontWeight.w500,
+        color: Colors.black.withValues(alpha: 0.4),
+      );
+
+  static const TextStyle _webValueStyle = TextStyle(
+    fontFamily: 'Montserrat',
+    fontSize: 14.5,
+    fontWeight: FontWeight.w500,
+    color: _webInk,
+  );
+
+  BoxDecoration get _webBoxDecoration => BoxDecoration(
+        color: const Color(0xFFFAFCFA),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _webFieldBorder),
+      );
+
+  Widget _webIcon(IconData icon) =>
+      Icon(icon, size: 20, color: const Color(0xFF278245));
+
+  Widget _webField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool isPassword = false,
+    TextCapitalization capitalization = TextCapitalization.none,
+  }) {
+    OutlineInputBorder border(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: color, width: width),
+        );
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textCapitalization: capitalization,
+      obscureText: isPassword && !_isPasswordVisible,
+      cursorColor: AppColors.primary,
+      textAlignVertical: TextAlignVertical.center,
+      style: _webValueStyle,
+      decoration: InputDecoration(
+        isDense: true,
+        filled: true,
+        fillColor: const Color(0xFFFAFCFA),
+        hintText: hint,
+        hintStyle: _webHintStyle,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        prefixIcon: _webIcon(icon),
+        prefixIconConstraints: const BoxConstraints(minWidth: 46),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _isPasswordVisible
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: Colors.black.withValues(alpha: 0.4),
+                  size: 20,
+                ),
+                onPressed: () =>
+                    setState(() => _isPasswordVisible = !_isPasswordVisible),
+              )
+            : null,
+        enabledBorder: border(_webFieldBorder),
+        border: border(_webFieldBorder),
+        focusedBorder: border(AppColors.primary, 1.5),
+      ),
+    );
+  }
+
+  Widget _webDropdown({
+    required String hint,
+    required IconData icon,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.only(left: 13, right: 12),
+      decoration: _webBoxDecoration,
+      child: Row(
+        children: [
+          _webIcon(icon),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: value,
+                isExpanded: true,
+                borderRadius: BorderRadius.circular(14),
+                icon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Colors.black.withValues(alpha: 0.55),
+                ),
+                hint: Text(hint, style: _webHintStyle),
+                items: items
+                    .map(
+                      (e) => DropdownMenuItem<String>(
+                        value: e,
+                        child: Text(e, style: _webValueStyle),
+                      ),
+                    )
+                    .toList(),
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _webDate({
+    required String hint,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 13),
+          decoration: _webBoxDecoration,
+          child: Row(
+            children: [
+              _webIcon(Icons.calendar_month),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  value.isEmpty ? hint : value,
+                  style: value.isEmpty ? _webHintStyle : _webValueStyle,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webUploadArea() {
+    final hasImage = _selectedImage != null || _existingLogo != null;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _handleImageUpload,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F8F4),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFB9D5BF), width: 1.2),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCFE3D4)),
+                ),
+                child: Icon(
+                  hasImage ? Icons.check_circle : Icons.cloud_upload_outlined,
+                  color: const Color(0xFF278245),
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasImage
+                          ? 'Image Selected'
+                          : 'Please upload Company image here',
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                        color: _webInk,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _selectedImage?.name ?? 'Jpg,Png upto 5MB',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF278245),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webBottomBar() {
+    final showBulkUpload = !widget.isEdit &&
+        Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(top: BorderSide(color: _webLine)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _webMaxWidth),
+          child: Row(
+            children: [
+              const Spacer(),
+              if (showBulkUpload) ...[
+                SizedBox(
+                  width: 170,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(Routes.uploadAmc),
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 17),
+                    label: const Text('Bulk Upload'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 42),
+                      foregroundColor: const Color(0xFF0E501B),
+                      side: const BorderSide(color: Color(0x80155622)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              SizedBox(
+                width: 170,
+                child: MouseRegion(
+                  cursor: _saving
+                      ? SystemMouseCursors.basic
+                      : SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: _saving ? null : _handleSave,
+                    child: Container(
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF138A2A), Color(0xFF106220)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFF138A2A).withValues(alpha: 0.25),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: _saving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                widget.isEdit ? 'Update' : 'Save',
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 10, 16, 10),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => context.pop(),
+            child: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Text(
+            widget.isEdit ? 'Update Company' : 'Create Company',
+            style: const TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+              letterSpacing: -0.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Pill-shaped text field with soft shadow (matches Figma)
+  Widget _pillField({
+    required TextEditingController controller,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+    bool isPassword = false,
+    TextCapitalization capitalization = TextCapitalization.none,
+  }) {
+    return Material(
+      color: Colors.white,
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(32),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        textCapitalization: capitalization,
+        obscureText: isPassword && !_isPasswordVisible,
+        cursorColor: AppColors.primary,
+        textAlignVertical: TextAlignVertical.center,
+        style: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor: Colors.white,
+          hintText: hint,
+          hintStyle: TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: Colors.black.withValues(alpha: 0.4),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _isPasswordVisible
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: Colors.black.withValues(alpha: 0.4),
+                    size: 20,
+                  ),
+                  onPressed: () =>
+                      setState(() => _isPasswordVisible = !_isPasswordVisible),
+                )
+              : null,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(32),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(32),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(32),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Pill-shaped dropdown matching the text fields.
+  Widget _pillDropdown({
+    required String hint,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Material(
+      color: Colors.white,
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(32),
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: value,
+            isExpanded: true,
+            borderRadius: BorderRadius.circular(16),
+            icon: Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.black.withValues(alpha: 0.55),
+            ),
+            hint: Text(
+              hint,
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.black.withValues(alpha: 0.4),
+              ),
+            ),
+            items: items
+                .map(
+                  (e) => DropdownMenuItem<String>(
+                    value: e,
+                    child: Text(
+                      e,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: onChanged,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Pill-shaped date field with calendar icon
+  Widget _pillDateField({
+    required String hint,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Material(
+        color: Colors.white,
+        elevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(32),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  value.isEmpty ? hint : value,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: value.isEmpty
+                        ? Colors.black.withValues(alpha: 0.4)
+                        : Colors.black,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.calendar_month,
+                size: 22,
+                color: Colors.black.withValues(alpha: 0.55),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompanyInfoCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 32,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+        child: Column(
+          children: [
+            // Company Icon - Green circle with building icon
+            Container(
+              width: 51,
+              height: 51,
+              decoration: const BoxDecoration(
+                color: Color(0xFFDCEBDD),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.apartment,
+                size: 26,
+                color: Color(0xFF278245),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Company Information',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                letterSpacing: -0.54,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Provide basic details of the company',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.black.withValues(alpha: 0.4),
+                letterSpacing: -0.45,
+              ),
+            ),
+            const SizedBox(height: 22),
+
+            _pillField(controller: _companyController, hint: 'Company Name *'),
+            const SizedBox(height: 19),
+            _pillField(
+              controller: _branchNameController,
+              hint: 'Branch Name *',
+            ),
+            const SizedBox(height: 19),
+            _pillField(
+              controller: _companyEmailController,
+              hint: 'Company Email (optional)',
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 19),
+            _pillField(
+              controller: _gstController,
+              hint: 'GST Number (optional)',
+              capitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: 19),
+            _pillField(
+              controller: _addressController,
+              hint: 'Company Address (optional)',
+              keyboardType: TextInputType.streetAddress,
+            ),
+            const SizedBox(height: 19),
+
+            // Service Type dropdown (AMC / Non-AMC / Regular).
+            _pillDropdown(
+              hint: 'Service Type',
+              value: _serviceType.label,
+              items: [for (final t in CompanyServiceType.values) t.label],
+              onChanged: (v) {
+                final type = CompanyServiceType.values
+                    .where((t) => t.label == v)
+                    .firstOrNull;
+                if (type == null) return;
+                setState(() {
+                  _serviceType = type;
+                  // AMC type and dates only apply to AMC.
+                  if (!_isAmc) {
+                    _amcType = null;
+                    _startDate = null;
+                    _endDate = null;
+                  }
+                });
+              },
+            ),
+
+            // AMC type + contract dates only apply to AMC.
+            if (_isAmc) ...[
+              const SizedBox(height: 19),
+              _pillDropdown(
+                hint: 'AMC Category (NC AMC / C AMC)',
+                value: _amcType?.label,
+                items: [AmcType.ncAmc.label, AmcType.cAmc.label],
+                onChanged: (v) => setState(
+                  () => _amcType =
+                      AmcType.values.where((t) => t.label == v).firstOrNull,
+                ),
+              ),
+              const SizedBox(height: 19),
+              _pillDateField(
+                hint: 'Start Date',
+                value: _formatDate(_startDate),
+                onTap: () => _selectDate(context, true),
+              ),
+              const SizedBox(height: 19),
+              _pillDateField(
+                hint: 'End Date',
+                value: _formatDate(_endDate),
+                onTap: () => _selectDate(context, false),
+              ),
+            ],
+            const SizedBox(height: 19),
+
+            _buildImageUploadArea(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClientDetailsCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 32,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+        child: Column(
+          children: [
+            // Client icon - green circle
+            Container(
+              width: 51,
+              height: 51,
+              decoration: const BoxDecoration(
+                color: Color(0xFFDCEBDD),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.person_outline,
+                size: 26,
+                color: Color(0xFF278245),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Company Manager Details',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                letterSpacing: -0.54,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Enter primary contact details',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.black.withValues(alpha: 0.4),
+                letterSpacing: -0.45,
+              ),
+            ),
+            const SizedBox(height: 22),
+
+            _pillField(controller: _nameController, hint: 'Name'),
+            const SizedBox(height: 19),
+            _pillField(
+              controller: _mobileController,
+              hint: 'Mobile Number',
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 19),
+            _pillField(
+              controller: _emailController,
+              hint: 'Email',
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 19),
+            _pillField(
+              controller: _passwordController,
+              hint: 'Password',
+              isPassword: true,
+            ),
+            if (!widget.isEdit)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: const Key('regeneratePassword'),
+                  onPressed: () => setState(
+                    () => _passwordController.text = generatePassword(),
+                  ),
+                  icon: const Icon(
+                    Icons.autorenew,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  label: const Text(
+                    'Generate new password',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ),
+            if (_offersCredentialsEmail)
+              CheckboxListTile(
+                key: const Key('sendCredentialsCheckbox'),
+                value: _sendCredentials,
+                onChanged: (v) => setState(() => _sendCredentials = v ?? false),
+                activeColor: AppColors.primary,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text(
+                  'Send the company manager these login details by email',
+                  style: TextStyle(fontFamily: 'Montserrat', fontSize: 14),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageUploadArea() {
+    return GestureDetector(
+      onTap: _handleImageUpload,
+      child: Container(
+        width: double.infinity,
+        height: 150,
+        decoration: BoxDecoration(
+          color: const Color(0xFFEBEDFF),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.06),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: _selectedImage != null || _existingLogo != null
+                    ? const Icon(
+                        Icons.check_circle,
+                        color: Color(0xFF6366F1),
+                        size: 24,
+                      )
+                    : Icon(
+                        Icons.cloud_upload_outlined,
+                        color: Colors.black.withValues(alpha: 0.55),
+                        size: 24,
+                      ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _selectedImage != null || _existingLogo != null
+                  ? 'Image Selected'
+                  : 'Please upload Company image here',
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _selectedImage?.name ?? 'Jpg,Png upto 5MB',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Colors.black.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomButtons() {
+    final showBulkUpload = !widget.isEdit &&
+        Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            if (showBulkUpload) ...[
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => context.push(Routes.uploadAmc),
+                  child: Container(
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(32),
+                      border: Border.all(
+                        color: const Color(0x80155622),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.cloud_upload_outlined,
+                          color: Color(0xFF0E501B),
+                          size: 18,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Bulk Upload',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF0E501B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+            ],
+            // Save Button (gradient)
+            Expanded(
+              child: GestureDetector(
+                onTap: _saving ? null : _handleSave,
+                child: Container(
+                  height: 46,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF138A2A), Color(0xFF106220)],
+                    ),
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: Center(
+                    child: _saving
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            widget.isEdit ? 'Update' : 'Save',
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
