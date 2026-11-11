@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,478 +37,57 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
   Widget _webBuild() {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(32, 24, 32, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Top bar
-            Row(
-              children: [
-                _dateRangePill(),
-                const Spacer(),
-                InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => _showExportDialog(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _green,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _green.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.download_outlined, size: 16, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text(
-                          'Export',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.white),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // KPI row
-            Row(
-              children: [
-                Expanded(child: _webKpiCard('Total Tasks', '128', Icons.description_outlined, const Color(0xFFE8F5E9), const Color(0xFF106220), '+12%')),
-                const SizedBox(width: 12),
-                Expanded(child: _webKpiCard('Completed', '102', Icons.check_circle_outline, const Color(0xFFE8F5E9), const Color(0xFF106220), '+15%')),
-                const SizedBox(width: 12),
-                Expanded(child: _webKpiCard('Pending', '16', Icons.access_time, const Color(0xFFFFF8E1), const Color(0xFFF9A825), '-6%', trendRed: true)),
-                const SizedBox(width: 12),
-                Expanded(child: _webKpiCard('Overdue', '10', Icons.warning_amber_rounded, const Color(0xFFFDECEA), const Color(0xFFE53935), '-20%', trendRed: true)),
-                const SizedBox(width: 12),
-                Expanded(child: _webKpiCard('SLA Compliance', '92%', Icons.shield_outlined, const Color(0xFFE8F5E9), const Color(0xFF106220), '+4%')),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Second row - 3 large cards
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _largeCard('Dashboard', 'Overall service and performance summary.', Icons.bar_chart, _dashboardChart())),
-                const SizedBox(width: 16),
-                Expanded(child: _largeCard('Task Summary', 'Service requests, completion and pending status.', Icons.assignment_outlined, _taskSummaryChart())),
-                const SizedBox(width: 16),
-                Expanded(child: _largeCard('Technician Performance', 'Individual technician productivity and task completion rate.', Icons.people_outline, _techPerformance())),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Third row - 3 large cards
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _largeCard('AMC Status', 'Annual Maintenance Contracts - active, expiring and expired.', Icons.calendar_today_outlined, _amcDonut())),
-                const SizedBox(width: 16),
-                Expanded(child: _largeCard('Equipment Health', 'Equipment condition and maintenance status.', Icons.layers_outlined, _equipmentDonut())),
-                const SizedBox(width: 16),
-                Expanded(child: _largeCard('SLA Compliance', 'Service Level Agreement performance and compliance rate.', Icons.shield_outlined, _slaDonut())),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _dateRangePill() {
-    final range = ref.watch(reportDateRangeProvider);
-    final ranges = [
-      ('This Month (1 Nov - 30 Nov 2026)', ReportDateRange.thisMonth),
-      ('Last Month', ReportDateRange.lastMonth),
-      ('Last 30 Days', ReportDateRange.last30Days),
-      ('Last 90 Days', ReportDateRange.last90Days),
-      ('This Year', ReportDateRange.thisYear),
-    ];
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE3ECE5)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<ReportDateRange>(
-          value: range,
-          icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF6B7280)),
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Montserrat', color: Colors.black),
-          items: [
-            for (final r in ranges)
-              DropdownMenuItem<ReportDateRange>(
-                value: r.$2(),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.calendar_today_outlined, size: 16, color: _green),
-                    const SizedBox(width: 8),
-                    Text(r.$1),
-                  ],
-                ),
-              ),
-          ],
-          onChanged: (v) {
-            if (v != null) ref.read(reportDateRangeProvider.notifier).state = v;
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _webKpiCard(String label, String value, IconData icon, Color iconBg, Color iconColor, String trend, {bool trendRed = false}) {
-    return _HoverCard(
-      background: const Color(0xFFF1F8F1),
-      hoverBackground: const Color(0xFFE8F5E9),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-                  child: Icon(icon, size: 18, color: iconColor),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: trendRed ? const Color(0xFFFDECEA) : const Color(0xFFE8F5E9),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    trend,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: trendRed ? const Color(0xFFE53935) : _green,
-                      fontFamily: 'Montserrat',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Colors.black,
-                fontFamily: 'Montserrat',
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF6B7280),
-                fontFamily: 'Montserrat',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _largeCard(String title, String subtitle, IconData icon, Widget chart) {
-    return _HoverCard(
-      background: const Color(0xFFF7FBF7),
-      hoverBackground: const Color(0xFFEEF5EE),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(color: const Color(0xFFE8F5E9), shape: BoxShape.circle),
-                  child: Icon(icon, size: 18, color: _green),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black,
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: Color(0xFF6B7280),
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            chart,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _dashboardChart() {
-    return SizedBox(
-      height: 160,
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(show: false),
-          titlesData: FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: const [
-                FlSpot(0, 20),
-                FlSpot(1, 35),
-                FlSpot(2, 28),
-                FlSpot(3, 45),
-                FlSpot(4, 40),
-                FlSpot(5, 55),
-                FlSpot(6, 50),
-              ],
-              isCurved: true,
-              color: _green,
-              barWidth: 3,
-              isStrokeCapRound: true,
-              belowBarData: BarAreaData(
-                show: true,
-                color: _green.withValues(alpha: 0.15),
-              ),
-              dotData: FlDotData(show: false),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _taskSummaryChart() {
-    return SizedBox(
-      height: 160,
-      child: BarChart(
-        BarChartData(
-          gridData: FlGridData(show: false),
-          titlesData: FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
-          barGroups: [
-            BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 12, color: _green, width: 14, borderRadius: BorderRadius.circular(4))]),
-            BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 8, color: _green, width: 14, borderRadius: BorderRadius.circular(4))]),
-            BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 15, color: _green, width: 14, borderRadius: BorderRadius.circular(4))]),
-            BarChartGroupData(x: 3, barRods: [BarChartRodData(toY: 10, color: _green, width: 14, borderRadius: BorderRadius.circular(4))]),
-            BarChartGroupData(x: 4, barRods: [BarChartRodData(toY: 6, color: _green, width: 14, borderRadius: BorderRadius.circular(4))]),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _techPerformance() {
-    final items = [
-      ('Technician A', 0.95),
-      ('Technician B', 0.88),
-      ('Technician C', 0.82),
-    ];
-    return Column(
-      children: [
-        for (final (name, pct) in items) ...[
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: const Color(0xFFE8F5E9),
-                child: Text(
-                  name.split(' ').last[0],
-                  style: const TextStyle(fontSize: 11, color: _green, fontWeight: FontWeight.w600),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name, style: const TextStyle(fontSize: 12, fontFamily: 'Montserrat')),
-                    const SizedBox(height: 4),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: pct,
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFFE3ECE5),
-                        valueColor: const AlwaysStoppedAnimation<Color>(_green),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                '${(pct * 100).toInt()}%',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Montserrat'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-        ],
-      ],
-    );
-  }
-
-  Widget _amcDonut() {
-    return SizedBox(
-      height: 160,
-      child: Row(
+      backgroundColor: _cream,
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: PieChart(
-              PieChartData(
-                sectionsSpace: 2,
-                centerSpaceRadius: 40,
-                sections: [
-                  PieChartSectionData(value: 32, color: _green, title: '', radius: 24),
-                  PieChartSectionData(value: 8, color: const Color(0xFFF9A825), title: '', radius: 24),
-                  PieChartSectionData(value: 5, color: const Color(0xFFE53935), title: '', radius: 24),
-                ],
-              ),
+          // Sidebar
+          Container(
+            width: 280,
+            margin: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE3ECE5)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _webSectionLabel('REPORTS'),
+                const SizedBox(height: 12),
+                for (var i = 0; i < _reportTypes.length; i++)
+                  _webSideItem(
+                    label: _reportTypes[i].$1,
+                    icon: _reportTypes[i].$2,
+                    selected: _selectedReport == i,
+                    onTap: () => setState(() => _selectedReport = i),
+                  ),
+                const SizedBox(height: 20),
+                const Divider(color: Color(0xFFE3ECE5)),
+                const SizedBox(height: 16),
+                _webSectionLabel('DATE RANGE'),
+                const SizedBox(height: 12),
+                _webDateRangeSelector(),
+              ],
             ),
           ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _legendItem('Active', '32', _green),
-              const SizedBox(height: 6),
-              _legendItem('Expiring Soon', '8', const Color(0xFFF9A825)),
-              const SizedBox(height: 6),
-              _legendItem('Expired', '5', const Color(0xFFE53935)),
-              const SizedBox(height: 8),
-              const Text('45 Total AMC', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, fontFamily: 'Montserrat')),
-            ],
+          // Main content
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 24, 24, 24),
+              child: _webContent(),
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _equipmentDonut() {
-    return SizedBox(
-      height: 160,
-      child: Row(
-        children: [
-          Expanded(
-            child: PieChart(
-              PieChartData(
-                sectionsSpace: 2,
-                centerSpaceRadius: 40,
-                sections: [
-                  PieChartSectionData(value: 96, color: _green, title: '', radius: 24),
-                  PieChartSectionData(value: 14, color: const Color(0xFFF9A825), title: '', radius: 24),
-                  PieChartSectionData(value: 8, color: const Color(0xFFE53935), title: '', radius: 24),
-                ],
-              ),
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _legendItem('Healthy', '96', _green),
-              const SizedBox(height: 6),
-              _legendItem('Needs Attention', '14', const Color(0xFFF9A825)),
-              const SizedBox(height: 6),
-              _legendItem('Critical', '8', const Color(0xFFE53935)),
-              const SizedBox(height: 8),
-              const Text('118 Total', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, fontFamily: 'Montserrat')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _slaDonut() {
-    return SizedBox(
-      height: 160,
-      child: Row(
-        children: [
-          Expanded(
-            child: PieChart(
-              PieChartData(
-                sectionsSpace: 2,
-                centerSpaceRadius: 40,
-                sections: [
-                  PieChartSectionData(value: 92, color: _green, title: '', radius: 24),
-                  PieChartSectionData(value: 8, color: const Color(0xFFE53935), title: '', radius: 24),
-                ],
-              ),
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _legendItem('Within SLA', '118', _green),
-              const SizedBox(height: 6),
-              _legendItem('Breached', '10', const Color(0xFFE53935)),
-              const SizedBox(height: 8),
-              const Text('92% Compliance', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, fontFamily: 'Montserrat')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _legendItem(String label, String value, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 6),
-        Text('$label ($value)', style: const TextStyle(fontSize: 11, fontFamily: 'Montserrat')),
-      ],
     );
   }
 
@@ -2035,49 +1613,4 @@ class _PieChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
-class _HoverCard extends StatefulWidget {
-  const _HoverCard({
-    required this.child,
-    this.background = Colors.white,
-    this.hoverBackground,
-  });
-
-  final Widget child;
-  final Color background;
-  final Color? hoverBackground;
-
-  @override
-  State<_HoverCard> createState() => _HoverCardState();
-}
-
-class _HoverCardState extends State<_HoverCard> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        decoration: BoxDecoration(
-          color: _hovered
-              ? (widget.hoverBackground ?? widget.background)
-              : widget.background,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: _hovered ? 0.12 : 0.05),
-              blurRadius: _hovered ? 18 : 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: widget.child,
-      ),
-    );
-  }
 }
