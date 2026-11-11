@@ -24,6 +24,9 @@ abstract class Routes {
   static const String addTask = '/add-task';
   static const String taskDetails = '/task-details';
   static const String tasks = '/tasks';
+  // Super Admin personal task views ("My Tasks" / "My Service Tasks").
+  static const String myTasks = '/my-tasks';
+  static const String myServiceTasks = '/my-service-tasks';
   static const String createIndividualTask = '/create-individual-task';
 
   // Feature routes

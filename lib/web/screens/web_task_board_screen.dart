@@ -8,6 +8,8 @@ import '../../core/router/routes.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/tasks/data/task_provider.dart';
 import '../../features/tasks/domain/models/task_item.dart';
+import '../../features/tasks/presentation/screens/task_board_screen.dart'
+    show TaskBoardScope;
 import '../../features/tasks/presentation/widgets/task_action_handler.dart';
 import '../../features/tasks/presentation/widgets/task_workflow.dart';
 import '../../shared/providers/auth_state_provider.dart';
@@ -18,9 +20,13 @@ import '../widgets/web_table.dart';
 /// Web layout of the Task Board: same scoping, filters, sorting, texts and
 /// actions as the mobile board, laid out as a desktop toolbar + card grid.
 class WebTaskBoardScreen extends ConsumerStatefulWidget {
-  const WebTaskBoardScreen({super.key, this.initialStatus});
+  const WebTaskBoardScreen({super.key, this.initialStatus, this.scope});
 
   final TaskStatus? initialStatus;
+
+  /// Optional personal scope (Super Admin "My Tasks" / "My Service Tasks"
+  /// modules). Null keeps the default role-based board.
+  final TaskBoardScope? scope;
 
   @override
   ConsumerState<WebTaskBoardScreen> createState() => _WebTaskBoardScreenState();
@@ -43,7 +49,15 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     final all = async.value ?? const <TaskItem>[];
 
     Iterable<TaskItem> scoped = all;
-    if (role == UserRole.technician) {
+    if (widget.scope == TaskBoardScope.assignedToMe) {
+      scoped = all.where(
+        (t) => t.technicianId != null && t.technicianId == user?.backendId,
+      );
+    } else if (widget.scope == TaskBoardScope.raisedByMe) {
+      scoped = all.where(
+        (t) => t.clientId != null && t.clientId == user?.backendId,
+      );
+    } else if (role == UserRole.technician) {
       scoped = all.where(
         (t) => t.technicianId != null && t.technicianId == user?.backendId,
       );

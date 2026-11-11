@@ -54,7 +54,8 @@ class UsersRepository {
 
   /// `PUT user/updateUser/:id`. Self-updates may change name, email,
   /// location, bio, date of birth and avatar; the backend ignores role/company
-  /// changes then.
+  /// changes then. [password] (Super Admin only in the Users List) is hashed
+  /// by the backend; pass null/empty to leave the current password unchanged.
   Future<Either<Failure, String>> updateUser(
     int id, {
     String? name,
@@ -66,6 +67,7 @@ class UsersRepository {
     String? bio,
     DateTime? dateOfBirth,
     String? avatarUrl,
+    String? password,
   }) async {
     final result = await _api.put<dynamic>(
       'user/updateUser/$id',
@@ -85,6 +87,7 @@ class UsersRepository {
             dateOfBirth.day,
           ).toIso8601String(),
         if (avatarUrl != null) 'avatar_url': avatarUrl,
+        if (password != null && password.isNotEmpty) 'password': password,
       },
     );
     return result.map((body) => _message(body, 'Profile updated'));
