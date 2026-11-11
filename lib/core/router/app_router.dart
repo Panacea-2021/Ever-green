@@ -337,6 +337,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      // Super Admin personal task modules ("My Tasks" / "My Service Tasks").
+      GoRoute(
+        path: Routes.myTasks,
+        name: 'myTasks',
+        builder: (context, state) => kIsWeb
+            ? const WebTaskBoardScreen(scope: TaskBoardScope.assignedToMe)
+            : const TaskBoardScreen(scope: TaskBoardScope.assignedToMe),
+      ),
+      GoRoute(
+        path: Routes.myServiceTasks,
+        name: 'myServiceTasks',
+        builder: (context, state) => kIsWeb
+            ? const WebTaskBoardScreen(scope: TaskBoardScope.raisedByMe)
+            : const TaskBoardScreen(scope: TaskBoardScope.raisedByMe),
+      ),
       GoRoute(
         path: Routes.verifiedEquipments,
         name: 'verifiedEquipments',

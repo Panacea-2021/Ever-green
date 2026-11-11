@@ -100,12 +100,17 @@ void main() {
 
   testWidgets('service engineer drawer has Activity History + Change Password',
       (tester) async {
-    for (final role in [UserRole.seniorTechnician, UserRole.technician]) {
+    for (final role in [
+      UserRole.seniorTechnician,
+      UserRole.technician,
+      UserRole.coldRoomTechnician,
+    ]) {
       final titles = await _drawerTitles(tester, role);
       expect(titles, contains('Activity History'), reason: '$role');
       expect(titles, contains('Change Password'), reason: '$role');
       expect(titles, isNot(contains('Users List')), reason: '$role');
-      expect(titles, isNot(contains('AMC Renewals')), reason: '$role');
+      // Service engineers may read the renewals of the companies they serve.
+      expect(titles, contains('AMC Renewals'), reason: '$role');
     }
   });
 

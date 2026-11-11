@@ -13,6 +13,7 @@ import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/data/repositories/auth_repository_impl.dart';
 import '../../data/user_provider.dart';
 import '../../data/users_repository.dart';
+import '../widgets/edit_user_dialog.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
 import '../../../../web/widgets/web_header_actions.dart';
 
@@ -34,6 +35,11 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
 
   /// User whose active flag / deletion is in flight.
   String? _busyId;
+
+  /// Ensures the list never opens silently empty: once the first batch of
+  /// users arrives, if the tab the screen opened on has no users but another
+  /// tab does, land on the first populated tab instead.
+  bool _autoSelectedTab = false;
 
   static const Color _green = Color(0xFF125420);
   static const Color _addGreen = Color(0xFF106220);
@@ -79,10 +85,30 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     }).toList();
   }
 
+  /// The screen opens on the tab from [widget.initialTab] (Company Managers
+  /// by default). If that tab has no users but another one does — e.g. a
+  /// workspace that has no client-side users yet — land on the first
+  /// populated tab so the Users List is never silently empty.
+  void _maybeAutoSelectTab(List<User>? all) {
+    if (all == null || all.isEmpty || _autoSelectedTab) return;
+    _autoSelectedTab = true;
+    if (_webTabCount(all, _selectedTab) > 0) return;
+    for (var i = 0; i < _tabs.length; i++) {
+      if (_webTabCount(all, i) > 0) {
+        final tab = i;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _selectedTab = tab);
+        });
+        return;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final usersAsync = ref.watch(usersListProvider);
     final users = _filterUsers(usersAsync.valueOrNull ?? const []);
+    _maybeAutoSelectTab(usersAsync.valueOrNull);
 
     if (kIsWeb) return _webBuild(usersAsync, users);
     return GestureDetector(
@@ -1098,7 +1124,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
         if (canEdit)
           const PopupMenuItem(
             value: 'edit',
-            child: Text('Edit user', style: TextStyle(fontFamily: 'Montserrat')),
+            child:
+                Text('Edit user', style: TextStyle(fontFamily: 'Montserrat')),
           ),
         if (canToggle)
           PopupMenuItem(
@@ -1125,9 +1152,12 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   }
 
   Future<void> _editUser(AppUser user) async {
-    final phone = TextEditingController(text: user.mobile);
-    final email = TextEditingController(text: user.email);
-    final roleChoices = ref.read(currentUserRoleProvider) == UserRole.superAdmin
+    // Super Admin may set a new password for any user. Stored passwords are
+    // bcrypt hashes and cannot be shown, so the field starts empty: leaving it
+    // empty keeps the current password, typing or generating one replaces it.
+    final viewerIsSuperAdmin =
+        ref.read(currentUserRoleProvider) == UserRole.superAdmin;
+    final roleChoices = viewerIsSuperAdmin
         ? UserRole.values
         : const [
             UserRole.technician,
@@ -1136,114 +1166,37 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
             UserRole.clientAdmin,
             UserRole.client,
           ];
-    var selectedRole = user.role;
     final selectedCompanies = user.companies.map((c) => c.id).toSet();
     List<backend.Company> companies;
     try {
       companies = await ref.read(repo.companiesProvider.future);
     } catch (e) {
       if (mounted) _snack('Could not load companies: $e', error: true);
-      phone.dispose();
-      email.dispose();
       return;
     }
-    if (!mounted) {
-      phone.dispose();
-      email.dispose();
-      return;
-    }
-    final saved = await showDialog<bool>(
+    if (!mounted) return;
+    final edit = await showDialog<EditUserDialogResult>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text('Edit ${user.name}'),
-          content: SizedBox(
-            width: 420,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: phone,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(labelText: 'Mobile number'),
-                  ),
-                  TextField(
-                    controller: email,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(labelText: 'Email address'),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<UserRole>(
-                    initialValue: selectedRole,
-                    decoration: const InputDecoration(labelText: 'Access type'),
-                    items: [
-                      for (final role in roleChoices)
-                        DropdownMenuItem(value: role, child: Text(role.label)),
-                    ],
-                    onChanged: (role) {
-                      if (role != null) setDialogState(() => selectedRole = role);
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  const Text('Assign to company / AMC'),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    height: 190,
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: [
-                        for (final company in companies)
-                          CheckboxListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(company.displayName),
-                            value: selectedCompanies.contains(company.id),
-                            onChanged: (selected) => setDialogState(() {
-                              if (selected == true) {
-                                selectedCompanies.add(company.id);
-                              } else {
-                                selectedCompanies.remove(company.id);
-                              }
-                            }),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Save'),
-            ),
-          ],
-        ),
+      builder: (dialogContext) => EditUserDialog(
+        userName: user.name,
+        initialPhone: user.mobile,
+        initialEmail: user.email,
+        initialRole: user.role,
+        roleChoices: roleChoices,
+        companies: companies,
+        initialCompanyIds: selectedCompanies,
+        showPassword: viewerIsSuperAdmin,
       ),
     );
-    final updatedPhone = phone.text.trim();
-    final updatedEmail = email.text.trim();
-    phone.dispose();
-    email.dispose();
-    if (saved != true || !mounted) return;
-    if (updatedPhone.isEmpty) {
-      _snack('Mobile number is required', error: true);
-      return;
-    }
+    if (edit == null || !mounted) return;
     setState(() => _busyId = user.id);
     final result = await ref.read(usersRepositoryProvider).updateUser(
           user.backendId,
-          phone: updatedPhone,
-          email: updatedEmail,
-          role: selectedRole,
-          companyIds: selectedCompanies.toList(),
+          phone: edit.phone,
+          email: edit.email,
+          role: edit.role,
+          companyIds: edit.companyIds,
+          password: edit.password,
         );
     if (!mounted) return;
     setState(() => _busyId = null);
@@ -1255,13 +1208,13 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
         if (signedIn?.id == user.id) {
           ref.read(authStateProvider.notifier).updateUser(
                 signedIn!.copyWith(
-                  phone: updatedPhone,
-                  email: updatedEmail,
-                  role: selectedRole,
-                  designation: selectedRole.designation,
+                  phone: edit.phone,
+                  email: edit.email,
+                  role: edit.role,
+                  designation: edit.role.designation,
                   companies: [
                     for (final company in companies)
-                      if (selectedCompanies.contains(company.id))
+                      if (edit.companyIds.contains(company.id))
                         UserCompany(
                           id: company.id,
                           name: company.name,
@@ -1270,7 +1223,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                   ],
                 ),
               );
-          if (signedIn.phone != updatedPhone) {
+          if (signedIn.phone != edit.phone) {
             _snack('Mobile number updated. Sign in again with the new number.');
             await ref.read(authRepositoryProvider).logout();
             ref.read(authStateProvider.notifier).logout();

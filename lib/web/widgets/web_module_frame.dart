@@ -72,6 +72,8 @@ class WebModuleFrame extends ConsumerStatefulWidget {
   static const _webDesignedPaths = {
     Routes.webDashboard,
     Routes.tasks,
+    Routes.myTasks,
+    Routes.myServiceTasks,
     Routes.amcs,
     Routes.amcRenewals,
     Routes.pmSchedule,
@@ -111,6 +113,8 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.addTask: 'Create Task',
     Routes.notifications: 'Notifications',
     Routes.announcements: 'Announcements',
+    Routes.myTasks: 'My Tasks',
+    Routes.myServiceTasks: 'My Service Tasks',
     Routes.editProfile: 'Edit Profile',
     Routes.addUser: 'Add User',
     Routes.technicianTasks: 'Service Engineer Tasks',

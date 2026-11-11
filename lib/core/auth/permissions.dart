@@ -63,14 +63,17 @@ class Permissions {
       Routes.assignTasks,
       Routes.ticketQueue,
       Routes.technicianPerformance,
+      Routes.amcRenewals,
     ],
     UserRole.technician: [
       Routes.tasks,
       Routes.technicianTasks,
+      Routes.amcRenewals,
     ],
     UserRole.coldRoomTechnician: [
       Routes.tasks,
       Routes.technicianTasks,
+      Routes.amcRenewals,
     ],
     // Client Admin: a client-side administrator — same read scope as a client
     // plus renewals and managing their own company's POCs/users.
@@ -150,10 +153,15 @@ class Permissions {
   /// entries with search and date filters.
   static bool canFilterAuditByEntity(UserRole role) => _isAdmin(role);
 
+  /// Renewals are readable by admins, client admins and field technicians —
+  /// each technician only ever sees the companies (and therefore renewals)
+  /// linked to them by the backend. Renewing stays admin-only
+  /// ([canManageAmcs]).
   static bool canViewRenewals(UserRole role) =>
       role == UserRole.superAdmin ||
       role == UserRole.manager ||
-      role == UserRole.clientAdmin;
+      role == UserRole.clientAdmin ||
+      role.isTechnicianLevel;
 
   // ---- Bottom navigation / home layout ----
 
