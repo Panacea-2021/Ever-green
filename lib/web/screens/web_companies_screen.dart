@@ -12,7 +12,6 @@ import '../../features/amcs/presentation/widgets/amc_async_states.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
 import '../widgets/web_filter_tiles.dart';
-import '../widgets/web_search_state.dart';
 import '../widgets/web_table.dart';
 
 enum _TypeFilter {
@@ -67,26 +66,12 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
 
   _TypeFilter _typeFilter = _TypeFilter.all;
 
-  List<Company> _visible(List<Company> companies, String query) =>
-      companies.where((company) {
-        return _typeFilter.matches(company) &&
-            matchesWebSearchTerms(query, [
-              company.name,
-              company.branchName,
-              company.location,
-              company.email,
-              company.pocEmail,
-              company.poc?.name,
-              company.poc?.phone,
-              company.gstNumber,
-              company.serviceLabel,
-            ]);
-      }).toList();
+  List<Company> _visible(List<Company> companies) =>
+      companies.where(_typeFilter.matches).toList();
 
   @override
   Widget build(BuildContext context) {
     final companiesAsync = ref.watch(companiesProvider);
-    final searchQuery = ref.watch(webModuleSearchQueryProvider);
     final canManage =
         Permissions.canManageAmcs(ref.watch(currentUserRoleProvider));
 
@@ -101,7 +86,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
         ),
       ),
       data: (companies) {
-        final visible = _visible(companies, searchQuery);
+        final visible = _visible(companies);
         if (visible.isEmpty) {
           return _StateBox(
             child: AmcEmptyState(

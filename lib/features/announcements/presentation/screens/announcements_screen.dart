@@ -105,8 +105,12 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _pageHeading(data.unreadCountFor(currentUser?.id ?? '')),
+                    if (canCreate && data.managementError != null) ...[
+                      const SizedBox(height: 18),
+                      _managementLoadError(data.managementError!),
+                    ],
                     const SizedBox(height: 18),
-                    if (canCreate) ...[
+                    if (canCreate && data.managementError == null) ...[
                       const SizedBox(height: 24),
                       const _SectionHeading(
                         title: 'Create announcement',
@@ -155,7 +159,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                       items: inbox,
                       onOpen: _openNotification,
                     ),
-                    if (canCreate) ...[
+                    if (canCreate && data.managementError == null) ...[
                       const SizedBox(height: 22),
                       _LocalTaskNotificationsLink(
                         onTap: () => context.go('/notifications'),
@@ -251,6 +255,34 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
               ),
             ],
           ),
+        ),
+      );
+
+  Widget _managementLoadError(String message) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3F0),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFF0C9C1)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Color(0xFFB34F43)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '${message == 'Access denied' ? 'Access denied. Ask your Super Admin to verify your Manager role and company assignment.' : 'Announcement management could not be loaded: $message.'} '
+                'Your notifications are still available below.',
+                style: WebTokens.bodyText(13, color: WebTokens.ink),
+              ),
+            ),
+            TextButton(
+              onPressed: () =>
+                  ref.read(announcementControllerProvider.notifier).refresh(),
+              child: const Text('Retry'),
+            ),
+          ],
         ),
       );
 
@@ -624,16 +656,21 @@ class _RecipientList extends StatelessWidget {
               selectedPeople.contains(user.id) ||
               AnnouncementRecipientFilter.matchesAny(selectedFilters, user);
           final selected = included && !excludedPeople.contains(user.id);
-          return CheckboxListTile(
-            value: selected,
-            activeColor: WebTokens.green,
-            controlAffinity: ListTileControlAffinity.leading,
-            title: Text(user.name, style: WebTokens.bodyText(13)),
-            subtitle: Text(
-              '${user.role.label}${user.email.isEmpty ? '' : ' · ${user.email}'}',
-              style: WebTokens.bodyText(11),
+          return Material(
+            // The bordered list box paints around the tile, so the tile gets
+            // its own transparent Material for ink effects.
+            type: MaterialType.transparency,
+            child: CheckboxListTile(
+              value: selected,
+              activeColor: WebTokens.green,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text(user.name, style: WebTokens.bodyText(13)),
+              subtitle: Text(
+                '${user.role.label}${user.email.isEmpty ? '' : ' · ${user.email}'}',
+                style: WebTokens.bodyText(11),
+              ),
+              onChanged: (value) => onToggle(user, selected),
             ),
-            onChanged: (value) => onToggle(user, selected),
           );
         },
       ),
@@ -682,40 +719,46 @@ class _HistoryRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-        onTap: onTap,
-        title: Text(
-          announcement.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: WebTokens.bodyText(
-            14,
-            color: WebTokens.ink,
-            weight: FontWeight.w700,
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 5),
-          child: Text(
-            '${_preview(announcement.message)}\n'
-            '${announcement.senderName} · ${_formatDate(announcement.createdAt)}',
-            maxLines: 2,
+  Widget build(BuildContext context) => Material(
+        // The card paints its own background, so give the tile a transparency
+        // Material of its own for ink/hover effects (avoids the "ListTile
+        // background color or ink splashes may be invisible" assertion).
+        type: MaterialType.transparency,
+        child: ListTile(
+          onTap: onTap,
+          title: Text(
+            announcement.title,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: WebTokens.bodyText(12),
-          ),
-        ),
-        isThreeLine: true,
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${announcement.recipients.length} recipients',
-              style: WebTokens.bodyText(11),
+            style: WebTokens.bodyText(
+              14,
+              color: WebTokens.ink,
+              weight: FontWeight.w700,
             ),
-            const SizedBox(height: 5),
-            const _StatusPill(label: 'Sent', color: WebTokens.green),
-          ],
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Text(
+              '${_preview(announcement.message)}\n'
+              '${announcement.senderName} · ${_formatDate(announcement.createdAt)}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: WebTokens.bodyText(12),
+            ),
+          ),
+          isThreeLine: true,
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${announcement.recipients.length} recipients',
+                style: WebTokens.bodyText(11),
+              ),
+              const SizedBox(height: 5),
+              const _StatusPill(label: 'Sent', color: WebTokens.green),
+            ],
+          ),
         ),
       );
 }
@@ -764,37 +807,42 @@ class _InboxRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-        onTap: onTap,
-        leading: Icon(
-          item.notification.isRead
-              ? Icons.mark_email_read_outlined
-              : Icons.mark_email_unread_outlined,
-          color: item.notification.isRead ? WebTokens.faint : WebTokens.green,
-        ),
-        title: Text(
-          item.announcement.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: WebTokens.bodyText(
-            14,
-            color: WebTokens.ink,
-            weight:
-                item.notification.isRead ? FontWeight.w500 : FontWeight.w700,
+  Widget build(BuildContext context) => Material(
+        // See _HistoryRow: the card supplies the background, so the tile needs
+        // its own transparent Material ancestor for ink effects.
+        type: MaterialType.transparency,
+        child: ListTile(
+          onTap: onTap,
+          leading: Icon(
+            item.notification.isRead
+                ? Icons.mark_email_read_outlined
+                : Icons.mark_email_unread_outlined,
+            color: item.notification.isRead ? WebTokens.faint : WebTokens.green,
           ),
+          title: Text(
+            item.announcement.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: WebTokens.bodyText(
+              14,
+              color: WebTokens.ink,
+              weight:
+                  item.notification.isRead ? FontWeight.w500 : FontWeight.w700,
+            ),
+          ),
+          subtitle: Text(
+            '${item.announcement.senderName} · '
+            '${_formatDate(item.announcement.createdAt)}\n'
+            '${_preview(item.announcement.message)}',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: WebTokens.bodyText(12),
+          ),
+          isThreeLine: true,
+          trailing: item.notification.isRead
+              ? const _StatusPill(label: 'Read', color: WebTokens.faint)
+              : const _StatusPill(label: 'Unread', color: WebTokens.green),
         ),
-        subtitle: Text(
-          '${item.announcement.senderName} · '
-          '${_formatDate(item.announcement.createdAt)}\n'
-          '${_preview(item.announcement.message)}',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: WebTokens.bodyText(12),
-        ),
-        isThreeLine: true,
-        trailing: item.notification.isRead
-            ? const _StatusPill(label: 'Read', color: WebTokens.faint)
-            : const _StatusPill(label: 'Unread', color: WebTokens.green),
       );
 }
 

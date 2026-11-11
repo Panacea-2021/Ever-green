@@ -330,11 +330,11 @@ class ServiceReportService {
           if (e != null) ...[
             row([
               cell('Name', _dash(t.equipment)),
-              cell('Make', _dash(e.make))
+              cell('Make', _dash(e.make)),
             ]),
             row([
               cell('Model', _dash(e.model)),
-              cell('Serial No.', _dash(serial))
+              cell('Serial No.', _dash(serial)),
             ]),
           ],
           row([

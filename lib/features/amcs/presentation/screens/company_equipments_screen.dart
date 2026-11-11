@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +6,6 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
-import '../../../../web/widgets/web_search_state.dart';
 import '../../data/equipment_provider.dart';
 import '../../../pickers/presentation/screens/equipment_picker_screen.dart' show equipmentMatches;
 
@@ -47,7 +45,6 @@ class _CompanyEquipmentsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final moduleQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     final canManage = canManageEquipment(ref.watch(currentUserRoleProvider));
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -72,7 +69,7 @@ class _CompanyEquipmentsScreenState
                 children: [
                   _buildHeader(context, canManage),
                   _buildSearchBar(),
-                  Expanded(child: _buildBody(canManage, moduleQuery)),
+                  Expanded(child: _buildBody(canManage)),
                 ],
               ),
             ),
@@ -82,7 +79,7 @@ class _CompanyEquipmentsScreenState
     );
   }
 
-  Widget _buildBody(bool canManage, String moduleQuery) {
+  Widget _buildBody(bool canManage) {
     final companyId = _companyId;
     if (companyId == null) {
       return _message('Unknown company', 'This company could not be found.');
@@ -98,13 +95,8 @@ class _CompanyEquipmentsScreenState
         onRetry: () => ref.invalidate(equipmentsProvider(companyId)),
       ),
       data: (items) {
-        final filtered = items
-            .where(
-              (e) =>
-                  equipmentMatches(e, _query) &&
-                  equipmentMatches(e, moduleQuery),
-            )
-            .toList();
+        final filtered =
+            items.where((e) => equipmentMatches(e, _query)).toList();
         return RefreshIndicator(
           color: _addGreen,
           onRefresh: () => ref.refresh(equipmentsProvider(companyId).future),

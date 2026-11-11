@@ -71,7 +71,7 @@ class _FaqSectionState extends State<FaqSection> {
     return _faqs
         .where((faq) =>
             faq.question.toLowerCase().contains(q) ||
-            faq.answer.toLowerCase().contains(q))
+            faq.answer.toLowerCase().contains(q),)
         .toList();
   }
 

@@ -436,7 +436,7 @@ class _PickerScaffoldState<T> extends State<PickerScaffold<T>> {
   }
 
   Widget _message(IconData icon, String title, String subtitle,
-      {Widget? action}) {
+      {Widget? action,}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),

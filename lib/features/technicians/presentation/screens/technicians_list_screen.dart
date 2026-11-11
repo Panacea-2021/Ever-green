@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
-import '../../../../web/widgets/web_search_state.dart';
 import '../../../../core/router/routes.dart';
 import '../../../auth/domain/models/user_model.dart';
 
@@ -26,21 +24,13 @@ class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
     super.dispose();
   }
 
-  List<TechnicianInfo> _filter(
-    List<TechnicianInfo> all,
-    String moduleQuery,
-  ) {
+  List<TechnicianInfo> _filter(List<TechnicianInfo> all) {
+    if (_searchQuery.isEmpty) return all;
+    final q = _searchQuery.toLowerCase();
     return all.where((tech) {
-      return matchesWebSearch(_searchQuery, [
-            tech.name,
-            tech.email,
-            tech.mobile,
-          ]) &&
-          matchesWebSearchTerms(moduleQuery, [
-            tech.name,
-            tech.email,
-            tech.mobile,
-          ]);
+      return tech.name.toLowerCase().contains(q) ||
+          tech.email.toLowerCase().contains(q) ||
+          tech.mobile.contains(_searchQuery);
     }).toList();
   }
 
@@ -50,11 +40,9 @@ class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final moduleQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     final async = ref.watch(techniciansProvider);
     final technicians = _filter(
       (async.valueOrNull ?? const <User>[]).map(TechnicianInfo.fromUser).toList(),
-      moduleQuery,
     );
 
     Widget body;
@@ -63,11 +51,7 @@ class _TechniciansListScreenState extends ConsumerState<TechniciansListScreen> {
     } else if (!async.hasValue && async.hasError) {
       body = _message('${async.error}', retry: true);
     } else if (technicians.isEmpty) {
-      body = _message(
-        _searchQuery.isEmpty && moduleQuery.isEmpty
-            ? 'No service engineers yet'
-            : 'No matching service engineers',
-      );
+      body = _message(_searchQuery.isEmpty ? 'No service engineers yet' : 'No matching service engineers');
     } else {
       body = RefreshIndicator(
         color: _addGreen,

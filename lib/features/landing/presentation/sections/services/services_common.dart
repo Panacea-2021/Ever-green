@@ -164,7 +164,7 @@ class SvcEyebrow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: light ? Colors.white.withOpacity(0.1) : SvcColors.mintStrong,
+        color: light ? Colors.white.withValues(alpha: 0.1) : SvcColors.mintStrong,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -239,7 +239,7 @@ class SvcBody extends StatelessWidget {
       style: svcText(
         size: size,
         height: 1.6,
-        color: light ? Colors.white.withOpacity(0.75) : SvcColors.body,
+        color: light ? Colors.white.withValues(alpha: 0.75) : SvcColors.body,
       ),
     );
   }
@@ -319,14 +319,14 @@ class _SvcButtonState extends State<SvcButton> {
       case SvcButtonVariant.outline:
         bg = _hovered ? widget.hoverColor ?? SvcColors.mint : Colors.white;
         fg = SvcColors.primary;
-        border = SvcColors.primary.withOpacity(0.35);
+        border = SvcColors.primary.withValues(alpha: 0.35);
       case SvcButtonVariant.white:
         bg = _hovered ? widget.hoverColor ?? SvcColors.mint : Colors.white;
         fg = SvcColors.primary;
       case SvcButtonVariant.outlineLight:
-        bg = _hovered ? Colors.white.withOpacity(0.12) : Colors.transparent;
+        bg = _hovered ? Colors.white.withValues(alpha: 0.12) : Colors.transparent;
         fg = Colors.white;
-        border = Colors.white.withOpacity(0.6);
+        border = Colors.white.withValues(alpha: 0.6);
     }
 
     return SelectionContainer.disabled(
@@ -408,7 +408,7 @@ class SvcImage extends StatelessWidget {
             alignment: Alignment.center,
             child: Icon(
               Icons.kitchen_outlined,
-              color: SvcColors.primary.withOpacity(0.4),
+              color: SvcColors.primary.withValues(alpha: 0.4),
             ),
           ),
         ),
@@ -456,7 +456,7 @@ class _SvcCardState extends State<SvcCard> {
             boxShadow: [
               BoxShadow(
                 color:
-                    const Color(0xFF0B3B1E).withOpacity(_hovered ? 0.12 : 0.05),
+                    const Color(0xFF0B3B1E).withValues(alpha: _hovered ? 0.12 : 0.05),
                 blurRadius: _hovered ? 28 : 16,
                 offset: Offset(0, _hovered ? 12 : 6),
               ),
@@ -540,7 +540,7 @@ class SvcGrid extends StatelessWidget {
           child: index < children.length
               ? children[index]
               : const SizedBox.shrink(),
-        ));
+        ),);
       }
       if (rows.isNotEmpty) rows.add(SizedBox(height: runSpacing));
       rows.add(IntrinsicHeight(
@@ -548,7 +548,7 @@ class SvcGrid extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: cells,
         ),
-      ));
+      ),);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

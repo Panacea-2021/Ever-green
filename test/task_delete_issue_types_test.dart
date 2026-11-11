@@ -154,7 +154,7 @@ void main() {
       expect(result, 'unset');
 
       await tester.enterText(
-          find.byKey(const Key('deleteReasonField')), '  Duplicate ticket ');
+          find.byKey(const Key('deleteReasonField')), '  Duplicate ticket ',);
       await tester.pump();
       await tester.tap(delete);
       await tester.pumpAndSettle();

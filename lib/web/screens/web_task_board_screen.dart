@@ -13,7 +13,6 @@ import '../../features/tasks/presentation/widgets/task_workflow.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
 import '../widgets/web_filter_tiles.dart';
-import '../widgets/web_search_state.dart';
 import '../widgets/web_table.dart';
 
 /// Web layout of the Task Board: same scoping, filters, sorting, texts and
@@ -41,7 +40,6 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     final role = ref.watch(currentUserRoleProvider);
     final user = ref.watch(currentUserProvider);
     final async = ref.watch(taskItemsProvider);
-    final searchQuery = ref.watch(webModuleSearchQueryProvider);
     final all = async.value ?? const <TaskItem>[];
 
     Iterable<TaskItem> scoped = all;
@@ -55,9 +53,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
       );
     }
 
-    final searched =
-        scoped.where((task) => task.matchesAllQueryTerms(searchQuery));
-    final visible = searched
+    final visible = scoped
         .where((t) => _statusFilter == null || t.status == _statusFilter)
         .toList()
       ..sort((a, b) {
@@ -103,7 +99,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: _filters(searched.toList())),
+                      Expanded(child: _filters(scoped.toList())),
                       const SizedBox(width: 12),
                       _addButton(role),
                     ],
@@ -149,25 +145,10 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
   Widget _filters(List<TaskItem> scoped) {
     const chips = <(String, TaskStatus?, IconData, Color)>[
       ('All', null, Icons.dashboard_outlined, Color(0xFF106220)),
-      (
-        'Open',
-        TaskStatus.open,
-        Icons.radio_button_unchecked,
-        Color(0xFF2E5AAC)
-      ),
+      ('Open', TaskStatus.open, Icons.radio_button_unchecked, Color(0xFF2E5AAC)),
       ('Hold', TaskStatus.hold, Icons.pause_circle_outline, Color(0xFFB7791F)),
-      (
-        'In Progress',
-        TaskStatus.inProgress,
-        Icons.timelapse,
-        Color(0xFFE08600)
-      ),
-      (
-        'Closed',
-        TaskStatus.closed,
-        Icons.check_circle_outline,
-        Color(0xFF0F766E)
-      ),
+      ('In Progress', TaskStatus.inProgress, Icons.timelapse, Color(0xFFE08600)),
+      ('Closed', TaskStatus.closed, Icons.check_circle_outline, Color(0xFF0F766E)),
     ];
     return WebFilterTiles(
       options: [
@@ -225,6 +206,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
   }
 
   Widget _taskTable(List<TaskItem> tasks, UserRole role) {
+    final user = ref.watch(currentUserProvider);
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -240,7 +222,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
           WebColumn('Status', flex: 3),
           WebColumn('Created', flex: 3),
           WebColumn('', flex: 1),
-          WebColumn('Actions', flex: 4),
+          WebColumn('Actions', flex: 6),
         ],
         onRowTap: (i) => context.push('${Routes.taskDetails}/${tasks[i].id}'),
         rows: [
@@ -267,7 +249,8 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
               ),
               Row(
                 children: [
-                  Expanded(
+                  SizedBox(
+                    width: 70,
                     child: _SmallButton(
                       label: 'Report',
                       filled: true,
@@ -276,7 +259,8 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
                   ),
                   if (canAssignFromCard(t, role)) ...[
                     const SizedBox(width: 8),
-                    Expanded(
+                    SizedBox(
+                      width: 80,
                       child: _SmallButton(
                         label: t.hasAssignee ? 'Reassign' : 'Assign',
                         filled: false,
@@ -285,6 +269,13 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
                       ),
                     ),
                   ],
+                  const SizedBox(width: 6),
+                  _TaskActionsMenu(
+                    task: t,
+                    user: user,
+                    handler: _handler,
+                    onDeleted: () => ref.invalidate(tasksProvider),
+                  ),
                 ],
               ),
             ],
@@ -565,9 +556,7 @@ class _StarButton extends StatelessWidget {
       color: filled ? Colors.amber : Colors.grey,
       size: 21,
     );
-    if (onTap == null) {
-      return Align(alignment: Alignment.centerLeft, child: icon);
-    }
+    if (onTap == null) return Align(alignment: Alignment.centerLeft, child: icon);
     return Align(
       alignment: Alignment.centerLeft,
       child: MouseRegion(
@@ -1021,6 +1010,145 @@ class _WebTaskCardState extends State<_WebTaskCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 3-dots action menu for task rows in the table view.
+/// Shows all available actions based on user role and task state.
+class _TaskActionsMenu extends StatelessWidget {
+  const _TaskActionsMenu({
+    required this.task,
+    required this.user,
+    required this.handler,
+    required this.onDeleted,
+  });
+
+  final TaskItem task;
+  final User? user;
+  final TaskActionHandler handler;
+  final VoidCallback onDeleted;
+
+  static const Color _green = Color(0xFF106220);
+  static const Color _danger = Color(0xFFD32F2F);
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = taskButtonsFor(task, user);
+    // Filter out serviceReport since it's already shown as a button
+    final menuActions = actions
+        .where((b) => b.action != TaskAction.serviceReport)
+        .toList();
+
+    // Add delete action if user can delete (Super Admin / Manager)
+    final role = user?.role ?? UserRole.client;
+    final canDelete = role == UserRole.superAdmin || role == UserRole.manager;
+
+    return PopupMenuButton<TaskAction>(
+      icon: const Icon(
+        Icons.more_vert,
+        color: Color(0xFF5A6B5E),
+        size: 22,
+      ),
+      tooltip: 'More actions',
+      offset: const Offset(0, 40),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      color: Colors.white,
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      constraints: const BoxConstraints(minWidth: 200, maxWidth: 260),
+      itemBuilder: (context) => [
+        // Header
+        PopupMenuItem<TaskAction>(
+          enabled: false,
+          height: 42,
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: _green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.settings, color: _green, size: 16),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Actions',
+                style: TextStyle(
+                  fontFamily: WebTokens.fontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF14201A),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(height: 1),
+        // Action items
+        for (final button in menuActions)
+          PopupMenuItem<TaskAction>(
+            value: button.action,
+            height: 44,
+            child: _ActionMenuItem(
+              icon: button.action.icon,
+              label: button.action.label,
+              color: button.kind == TaskButtonKind.danger ? _danger : null,
+            ),
+          ),
+        // Add delete if allowed and not already in the list
+        if (canDelete &&
+            !menuActions.any((b) => b.action == TaskAction.delete)) ...[
+          const PopupMenuDivider(height: 1),
+          const PopupMenuItem<TaskAction>(
+            value: TaskAction.delete,
+            height: 44,
+            child: const _ActionMenuItem(
+              icon: Icons.delete_outline,
+              label: 'Delete Task',
+              color: _danger,
+            ),
+          ),
+        ],
+      ],
+      onSelected: (action) => handler.run(task, action, onDeleted: onDeleted),
+    );
+  }
+}
+
+/// Single menu item row with icon and label.
+class _ActionMenuItem extends StatelessWidget {
+  const _ActionMenuItem({
+    required this.icon,
+    required this.label,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? const Color(0xFF3A4A3E);
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: c),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: WebTokens.fontFamily,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: c,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

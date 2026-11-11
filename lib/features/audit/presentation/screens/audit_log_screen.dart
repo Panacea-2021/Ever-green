@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/auth/permissions.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
-import '../../../../web/widgets/web_search_state.dart';
+import '../../../../web/widgets/web_header_actions.dart';
 import '../../../technicians/data/performance_provider.dart';
 import '../../data/audit_log_provider.dart';
 import '../../domain/models/audit_log_entry.dart';
@@ -17,7 +17,8 @@ class AuditLogScreen extends ConsumerStatefulWidget {
   ConsumerState<AuditLogScreen> createState() => _AuditLogScreenState();
 }
 
-class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
+class _AuditLogScreenState extends ConsumerState<AuditLogScreen>
+    with WebHeaderActionsMixin {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
@@ -28,6 +29,8 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
   DateRange? _dateRange;
 
   static const Color _green = Color(0xFF106220);
+  static const Color _cream = Color(0xFFFBFCFA);
+  static const Color _line = Color(0xFFE3ECE5);
 
   final ScrollController _webScroll = ScrollController();
 
@@ -38,570 +41,29 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
     super.dispose();
   }
 
-  static const _webEntityFilters = <(String, AuditEntity?, IconData)>[
-    ('All', null, Icons.apps_rounded),
-    ('Users', AuditEntity.user, Icons.people_outline),
-    ('Tasks', AuditEntity.task, Icons.assignment_outlined),
+  static const _entityFilters = <(String, AuditEntity?, IconData)>[
+    ('All', null, Icons.grid_view_rounded),
+    ('Users', AuditEntity.user, Icons.people_outline_rounded),
+    ('Tasks', AuditEntity.task, Icons.task_alt_rounded),
     ('AMCs', AuditEntity.amc, Icons.handshake_outlined),
     ('Equipment', AuditEntity.equipment, Icons.precision_manufacturing_outlined),
   ];
 
-  static const _webDateFilters = <(String, RangePreset?, IconData)>[
-    ('All time', null, Icons.all_inclusive),
-    ('Today', RangePreset.today, Icons.today_outlined),
-    ('This Week', RangePreset.week, Icons.date_range_outlined),
-    ('This Month', RangePreset.month, Icons.calendar_month_outlined),
-    ('Custom', RangePreset.custom, Icons.calendar_today),
+  static const _dateFilters = <(String, RangePreset?, IconData)>[
+    ('All time', null, Icons.all_inclusive_rounded),
+    ('Today', RangePreset.today, Icons.today_rounded),
+    ('This Week', RangePreset.week, Icons.date_range_rounded),
+    ('This Month', RangePreset.month, Icons.calendar_month_rounded),
+    ('Custom', RangePreset.custom, Icons.edit_calendar_rounded),
   ];
-
-  Widget _webBuild(
-    AsyncValue<AuditLogFeed> async,
-    List<AuditLogEntry> filtered,
-    bool canFilterEntity,
-    String searchQuery,
-  ) {
-    final feed = async.valueOrNull;
-    final side = _webSidePanel(canFilterEntity);
-    final main = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _webListHeader(filtered.length, feed?.total ?? 0, searchQuery),
-        const SizedBox(height: 14),
-        Expanded(
-          child: RefreshIndicator(
-            color: _green,
-            onRefresh: _refresh,
-            child: _webList(async, filtered),
-          ),
-        ),
-      ],
-    );
-    return Material(
-      color: Colors.white,
-      child: LayoutBuilder(
-        builder: (context, c) {
-          if (c.maxWidth < 760) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _webCompactFilters(canFilterEntity),
-                  const SizedBox(height: 14),
-                  Expanded(child: main),
-                ],
-              ),
-            );
-          }
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(width: 250, child: side),
-                const SizedBox(width: 24),
-                Expanded(child: main),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _webSidePanel(bool canFilterEntity) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE3ECE5)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (canFilterEntity) ...[
-              for (final f in _webEntityFilters)
-                _webSideItem(
-                  label: f.$1,
-                  icon: f.$3,
-                  selected: _entityFilter == f.$2,
-                  onTap: () => setState(() => _entityFilter = f.$2),
-                ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                child: Divider(height: 1, color: Colors.grey.shade300),
-              ),
-            ],
-            for (final f in _webDateFilters)
-              _webSideItem(
-                label: f.$2 == RangePreset.custom &&
-                        _dateRange?.preset == RangePreset.custom
-                    ? _dateRange!.summary
-                    : f.$1,
-                icon: f.$3,
-                selected: (f.$2 == null && _dateRange == null) ||
-                    (f.$2 != null && _dateRange?.preset == f.$2),
-                onTap: () => _onDateChipTap(f.$2),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _webSideItem({
-    required String label,
-    required IconData icon,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          gradient: selected
-              ? const LinearGradient(
-                  colors: [Color(0xFF106220), Color(0xFF1A801A)],
-                )
-              : null,
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: _green.withValues(alpha: 0.28),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
-                  ),
-                ]
-              : null,
-        ),
-        child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          hoverColor: _green.withValues(alpha: 0.06),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-            child: Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: selected
-                        ? Colors.white.withValues(alpha: 0.18)
-                        : const Color(0xFFF2F7F3),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 17,
-                    color: selected ? Colors.white : _green,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: selected
-                          ? Colors.white
-                          : Colors.black.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        ),
-      ),
-    );
-  }
-
-  Widget _webCompactFilters(bool canFilterEntity) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (canFilterEntity) ...[
-          _buildFilters(),
-          const SizedBox(height: 10),
-        ],
-        _buildDateFilters(),
-      ],
-    );
-  }
-
-  Widget _webListHeader(int count, int total, String searchQuery) {
-    final rangeLabel = _dateRange == null ? 'All time' : _dateRange!.summary;
-    final filtered =
-        _dateRange != null || _entityFilter != null || searchQuery.isNotEmpty;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0A3F15), Color(0xFF1A801A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: _green.withValues(alpha: 0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.event_note_outlined,
-              size: 19,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              '$count ${count == 1 ? 'entry' : 'entries'} • $rangeLabel',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          if (filtered) ...[
-            MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () => setState(() {
-                  _dateRange = null;
-                  _entityFilter = null;
-                  _query = '';
-                  _searchController.clear();
-                  if (kIsWeb) {
-                    ref.read(webModuleSearchQueryProvider.notifier).state = '';
-                  }
-                }),
-                child: Text(
-                  'Clear',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white.withValues(alpha: 0.9),
-                    decoration: TextDecoration.underline,
-                    decorationColor: Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-          ],
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.history, size: 15, color: _green),
-                const SizedBox(width: 6),
-                Text(
-                  '$total',
-                  style: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: _green,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  bool _onWebScroll(ScrollNotification n) {
-    if (n.depth == 0 &&
-        n is ScrollUpdateNotification &&
-        (n.scrollDelta ?? 0) > 0 &&
-        n.metrics.extentAfter < 300) {
-      ref.read(auditLogProvider(_entityFilter).notifier).loadMore();
-    }
-    return false;
-  }
-
-  Widget _webList(AsyncValue<AuditLogFeed> async, List<AuditLogEntry> filtered) {
-    final feed = async.valueOrNull;
-    if (feed == null) {
-      if (async.hasError) {
-        return _scrollableCenter(_buildErrorState(async.error!));
-      }
-      return const Center(child: CircularProgressIndicator(color: _green));
-    }
-    if (filtered.isEmpty && !feed.hasMore) {
-      return _scrollableCenter(_buildEmptyState());
-    }
-    final showFooter = feed.hasMore || feed.loadMoreError != null;
-    return NotificationListener<ScrollNotification>(
-      onNotification: _onWebScroll,
-      child: ListView.builder(
-        key: const PageStorageKey('audit-log-web'),
-        controller: _webScroll,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(4, 4, 4, 32),
-        itemCount: filtered.length + (showFooter ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index < filtered.length) {
-            return _webTimelineEntry(
-              filtered[index],
-              isFirst: index == 0,
-              isLast: index == filtered.length - 1 && !showFooter,
-            );
-          }
-          if (feed.loadMoreError != null) {
-            return Center(
-              child: TextButton(
-                onPressed: () => ref
-                    .read(auditLogProvider(_entityFilter).notifier)
-                    .loadMore(),
-                child: const Text(
-                  'Retry loading more',
-                  style: TextStyle(fontFamily: 'Montserrat', color: _green),
-                ),
-              ),
-            );
-          }
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2, color: _green),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _webTimelineEntry(
-    AuditLogEntry e, {
-    required bool isFirst,
-    required bool isLast,
-  }) {
-    final color = _actionColor(e.action);
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 56,
-            child: Stack(
-              alignment: Alignment.topCenter,
-              children: [
-                Positioned(
-                  top: isFirst ? 22 : 0,
-                  bottom: isLast ? null : 0,
-                  height: isLast ? 22 : null,
-                  child: Container(width: 2, color: const Color(0xFFE1EBE3)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          color,
-                          Color.lerp(color, Colors.black, 0.25)!,
-                        ],
-                      ),
-                      border: Border.all(color: Colors.white, width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.30),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      _actionIcon(e.action),
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _WebHoverCard(
-                accent: color,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _pill('${e.action.label} ${e.entity.label}', color),
-                        const Spacer(),
-                        Icon(
-                          Icons.schedule,
-                          size: 13,
-                          color: Colors.black.withValues(alpha: 0.35),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _relativeTime(e.timestamp),
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black.withValues(alpha: 0.45),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      e.entityName,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF14201A),
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    if (e.displayDetails.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        e.displayDetails,
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black.withValues(alpha: 0.55),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF6F9F6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              color: _green.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.person, size: 15, color: _green),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: RichText(
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              text: TextSpan(
-                                style: const TextStyle(
-                                  fontFamily: 'Montserrat',
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: e.actorName,
-                                    style: const TextStyle(color: Colors.black),
-                                  ),
-                                  if (e.actorRole.isNotEmpty)
-                                    TextSpan(
-                                      text: '  •  ${e.actorRole}',
-                                      style: TextStyle(
-                                        color: Colors.black.withValues(alpha: 0.4),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _fullTime(e.timestamp),
-                            style: TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black.withValues(alpha: 0.4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    final searchQuery = kIsWeb
-        ? ref.watch(webModuleSearchQueryProvider)
-        : _query;
+    // Clear header actions on web - this screen has no header buttons
+    if (kIsWeb) {
+      setHeaderActions([]);
+    }
+
     final canFilterEntity =
         Permissions.canFilterAuditByEntity(ref.watch(currentUserRoleProvider));
     final async = ref.watch(auditLogProvider(_entityFilter));
@@ -612,21 +74,15 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
       if (_dateRange != null && !_dateRange!.contains(e.timestamp)) {
         return false;
       }
-      if (searchQuery.isEmpty) return true;
-      final fields = [
-        e.actorName,
-        e.entityName,
-        e.details,
-        e.action.label,
-      ];
-      if (kIsWeb) return matchesWebSearchTerms(searchQuery, fields);
-      final q = searchQuery.toLowerCase();
-      return fields.any((field) => field?.toLowerCase().contains(q) ?? false);
+      if (_query.isEmpty) return true;
+      final q = _query.toLowerCase();
+      return e.actorName.toLowerCase().contains(q) ||
+          e.entityName.toLowerCase().contains(q) ||
+          (e.details ?? '').toLowerCase().contains(q) ||
+          e.action.label.toLowerCase().contains(q);
     }).toList();
 
-    if (kIsWeb) {
-      return _webBuild(async, filtered, canFilterEntity, searchQuery);
-    }
+    if (kIsWeb) return _webBuild(async, filtered, canFilterEntity, feed?.total ?? 0);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -676,6 +132,526 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
       ),
     );
   }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // WEB BUILD
+  // ════════════════════════════════════════════════════════════════════════════
+
+  Widget _webBuild(
+    AsyncValue<AuditLogFeed> async,
+    List<AuditLogEntry> filtered,
+    bool canFilterEntity,
+    int total,
+  ) {
+    return Scaffold(
+      backgroundColor: _cream,
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(28, 20, 28, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Unified Filter Bar ─────────────────────────────────────────
+            _webFilterBar(canFilterEntity, total),
+            const SizedBox(height: 20),
+            // ── Search Bar ─────────────────────────────────────────────────
+            _webSearchBar(),
+            const SizedBox(height: 20),
+            // ── Activity List ──────────────────────────────────────────────
+            Expanded(
+              child: RefreshIndicator(
+                color: _green,
+                onRefresh: _refresh,
+                child: _webList(async, filtered),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webFilterBar(bool canFilterEntity, int total) {
+    final hasFilters = _entityFilter != null || _dateRange != null || _query.isNotEmpty;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _line),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Type and Date Filters in a single row
+          Row(
+            children: [
+              // Entity type filters
+              if (canFilterEntity) ...[
+                _buildFilterSection(
+                  'Type',
+                  _entityFilters.map((f) => _WebChip(
+                    label: f.$1,
+                    icon: f.$3,
+                    selected: _entityFilter == f.$2,
+                    onTap: () => setState(() => _entityFilter = f.$2),
+                  )).toList(),
+                ),
+                const SizedBox(width: 16),
+                Container(width: 1, height: 40, color: _line),
+                const SizedBox(width: 16),
+              ],
+              // Date filters
+              Expanded(
+                child: _buildFilterSection(
+                  'Time',
+                  _dateFilters.map((f) => _WebChip(
+                    label: f.$2 == RangePreset.custom && _dateRange?.preset == RangePreset.custom
+                        ? _dateRange!.summary
+                        : f.$1,
+                    icon: f.$3,
+                    selected: (f.$2 == null && _dateRange == null) ||
+                        (f.$2 != null && _dateRange?.preset == f.$2),
+                    onTap: () => _onDateChipTap(f.$2),
+                  )).toList(),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(width: 1, height: 40, color: _line),
+              const SizedBox(width: 16),
+              // Stats badge
+              _webStatsBadge(total, hasFilters),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterSection(String label, List<Widget> chips) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Colors.black.withValues(alpha: 0.35),
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(width: 12),
+        ...chips.map((chip) => Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: chip,
+        )),
+      ],
+    );
+  }
+
+  Widget _webStatsBadge(int total, bool hasFilters) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hasFilters) ...[
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () => setState(() {
+                _dateRange = null;
+                _entityFilter = null;
+                _query = '';
+                _searchController.clear();
+              }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.filter_alt_off_rounded, size: 14, color: Colors.red.shade700),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Clear',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0A3F15), Color(0xFF1A801A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: _green.withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.history_rounded, size: 16, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                '$total entries',
+                style: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _webSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _line),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        cursorColor: _green,
+        onChanged: (v) => setState(() => _query = v),
+        style: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor: Colors.white,
+          hintText: 'Search by name, action, or details...',
+          hintStyle: TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black.withValues(alpha: 0.35),
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 16, right: 12),
+            child: Icon(
+              Icons.search_rounded,
+              size: 20,
+              color: Colors.black.withValues(alpha: 0.4),
+            ),
+          ),
+          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+          suffixIcon: _query.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: Colors.black.withValues(alpha: 0.4),
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _query = '');
+                  },
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: _green, width: 1.5),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool _onWebScroll(ScrollNotification n) {
+    if (n.depth == 0 &&
+        n is ScrollUpdateNotification &&
+        (n.scrollDelta ?? 0) > 0 &&
+        n.metrics.extentAfter < 300) {
+      ref.read(auditLogProvider(_entityFilter).notifier).loadMore();
+    }
+    return false;
+  }
+
+  Widget _webList(AsyncValue<AuditLogFeed> async, List<AuditLogEntry> filtered) {
+    final feed = async.valueOrNull;
+    if (feed == null) {
+      if (async.hasError) {
+        return _scrollableCenter(_buildErrorState(async.error!));
+      }
+      return const Center(child: CircularProgressIndicator(color: _green));
+    }
+    if (filtered.isEmpty && !feed.hasMore) {
+      return _scrollableCenter(_buildEmptyState());
+    }
+    final showFooter = feed.hasMore || feed.loadMoreError != null;
+    return NotificationListener<ScrollNotification>(
+      onNotification: _onWebScroll,
+      child: ListView.builder(
+        key: const PageStorageKey('audit-log-web'),
+        controller: _webScroll,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
+        itemCount: filtered.length + (showFooter ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index < filtered.length) {
+            return _webActivityCard(filtered[index]);
+          }
+          if (feed.loadMoreError != null) {
+            return Center(
+              child: TextButton(
+                onPressed: () => ref
+                    .read(auditLogProvider(_entityFilter).notifier)
+                    .loadMore(),
+                child: const Text(
+                  'Retry loading more',
+                  style: TextStyle(fontFamily: 'Montserrat', color: _green),
+                ),
+              ),
+            );
+          }
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2, color: _green),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _webActivityCard(AuditLogEntry e) {
+    final color = _actionColor(e.action);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _WebActivityHoverCard(
+        accent: color,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Action icon
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    color,
+                    Color.lerp(color, Colors.black, 0.2)!,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(
+                _actionIcon(e.action),
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Action badge and time
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: color.withValues(alpha: 0.2)),
+                        ),
+                        child: Text(
+                          '${e.action.label} ${e.entity.label}',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 13,
+                        color: Colors.black.withValues(alpha: 0.35),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _relativeTime(e.timestamp),
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black.withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Entity name
+                  Text(
+                    e.entityName,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF14201A),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  if (e.displayDetails.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      e.displayDetails,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  // Actor row
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(10, 8, 14, 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF6F9F6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: _green.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.person_rounded, size: 16, color: _green),
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: RichText(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            text: TextSpan(
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: e.actorName,
+                                  style: const TextStyle(color: Color(0xFF14201A)),
+                                ),
+                                if (e.actorRole.isNotEmpty)
+                                  TextSpan(
+                                    text: '  •  ${e.actorRole}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black.withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _fullTime(e.timestamp),
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // MOBILE BUILD HELPERS
+  // ════════════════════════════════════════════════════════════════════════════
 
   Future<void> _refresh() async {
     ref.invalidate(auditLogProvider(_entityFilter));
@@ -801,8 +777,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
           if (!kIsWeb) ...[
             GestureDetector(
               onTap: () => context.pop(),
-              child:
-                  const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+              child: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
             ),
             const SizedBox(width: 14),
             const Text(
@@ -940,9 +915,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                   fontFamily: 'Montserrat',
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : Colors.black.withValues(alpha: 0.6),
+                  color: isSelected ? Colors.white : Colors.black.withValues(alpha: 0.6),
                   letterSpacing: -0.3,
                 ),
               ),
@@ -954,7 +927,6 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
   }
 
   Widget _buildDateFilters() {
-    // "All time" => null range; the rest map to DateRange presets.
     final chips = <MapEntry<String, RangePreset?>>[
       const MapEntry('All time', null),
       const MapEntry('Today', RangePreset.today),
@@ -1157,7 +1129,6 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Action icon tile
           Container(
             width: 42,
             height: 42,
@@ -1172,7 +1143,6 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Action + entity pills + time
                 Row(
                   children: [
                     _pill('${e.action.label} ${e.entity.label}', color),
@@ -1189,7 +1159,6 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                   ],
                 ),
                 const SizedBox(height: 7),
-                // Entity name
                 Text(
                   e.entityName,
                   style: const TextStyle(
@@ -1213,7 +1182,6 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                   ),
                 ],
                 const SizedBox(height: 8),
-                // Actor row
                 Row(
                   children: [
                     Icon(
@@ -1306,17 +1274,17 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
   IconData _actionIcon(AuditAction action) {
     switch (action) {
       case AuditAction.created:
-        return Icons.add_circle_outline;
+        return Icons.add_circle_outline_rounded;
       case AuditAction.updated:
         return Icons.edit_outlined;
       case AuditAction.deleted:
-        return Icons.delete_outline;
+        return Icons.delete_outline_rounded;
       case AuditAction.assigned:
         return Icons.assignment_ind_outlined;
       case AuditAction.loggedIn:
-        return Icons.login;
+        return Icons.login_rounded;
       case AuditAction.loggedOut:
-        return Icons.logout;
+        return Icons.logout_rounded;
     }
   }
 
@@ -1339,17 +1307,111 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
   }
 }
 
-class _WebHoverCard extends StatefulWidget {
-  const _WebHoverCard({required this.accent, required this.child});
+// ══════════════════════════════════════════════════════════════════════════════
+// WEB COMPONENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Modern chip for web filters
+class _WebChip extends StatefulWidget {
+  const _WebChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  State<_WebChip> createState() => _WebChipState();
+}
+
+class _WebChipState extends State<_WebChip> {
+  bool _hover = false;
+
+  static const _green = Color(0xFF106220);
+
+  @override
+  Widget build(BuildContext context) {
+    final sel = widget.selected;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: sel
+                ? const LinearGradient(
+                    colors: [Color(0xFF138A2A), Color(0xFF106220)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: sel
+                ? null
+                : _hover
+                    ? const Color(0xFFEAF3EB)
+                    : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: sel ? _green : const Color(0xFFD4E3D6),
+              width: sel ? 0 : 1,
+            ),
+            boxShadow: sel
+                ? [
+                    BoxShadow(
+                      color: _green.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                widget.icon,
+                size: 14,
+                color: sel ? Colors.white : _green,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 12,
+                  fontWeight: sel ? FontWeight.w700 : FontWeight.w600,
+                  color: sel ? Colors.white : const Color(0xFF14201A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Hover card for activity entries
+class _WebActivityHoverCard extends StatefulWidget {
+  const _WebActivityHoverCard({required this.accent, required this.child});
 
   final Color accent;
   final Widget child;
 
   @override
-  State<_WebHoverCard> createState() => _WebHoverCardState();
+  State<_WebActivityHoverCard> createState() => _WebActivityHoverCardState();
 }
 
-class _WebHoverCardState extends State<_WebHoverCard> {
+class _WebActivityHoverCardState extends State<_WebActivityHoverCard> {
   bool _hover = false;
 
   @override
@@ -1360,38 +1422,25 @@ class _WebHoverCardState extends State<_WebHoverCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         transform: Matrix4.translationValues(0, _hover ? -2 : 0, 0),
-        clipBehavior: Clip.antiAlias,
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: _hover
-                ? widget.accent.withValues(alpha: 0.35)
+                ? widget.accent.withValues(alpha: 0.3)
                 : const Color(0xFFE3ECE5),
           ),
           boxShadow: [
             BoxShadow(
               color: (_hover ? widget.accent : Colors.black)
                   .withValues(alpha: _hover ? 0.12 : 0.04),
-              blurRadius: _hover ? 22 : 12,
-              offset: const Offset(0, 6),
+              blurRadius: _hover ? 20 : 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(width: 4, color: widget.accent),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                  child: widget.child,
-                ),
-              ),
-            ],
-          ),
-        ),
+        child: widget.child,
       ),
     );
   }

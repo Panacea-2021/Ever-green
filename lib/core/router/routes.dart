@@ -85,6 +85,9 @@ abstract class Routes {
   // Preventive-maintenance auto-scheduling
   static const String pmSchedule = '/pm-schedule';
 
+  // Reports & Analytics center
+  static const String reports = '/reports';
+
   // Unauthorized / access-denied fallback
   static const String unauthorized = '/unauthorized';
 

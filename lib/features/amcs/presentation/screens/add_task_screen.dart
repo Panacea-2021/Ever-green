@@ -8,6 +8,7 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart' hide TaskStatus;
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../../web/widgets/web_form_kit.dart';
+import '../../../../web/widgets/web_header_actions.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../pickers/presentation/screens/location_picker_screen.dart';
 import '../../../pickers/presentation/screens/company_picker_screen.dart';
@@ -54,7 +55,8 @@ class AddTaskScreen extends ConsumerStatefulWidget {
   ConsumerState<AddTaskScreen> createState() => _AddTaskScreenState();
 }
 
-class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
+class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
+    with WebHeaderActionsMixin {
   /// Selected company name; each backend company row is one branch of it.
   String? _companyName;
 
@@ -448,7 +450,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                   child: waitingForEdit
                       ? const Center(
                           child: CircularProgressIndicator(
-                              color: Color(0xFF106220)),
+                              color: Color(0xFF106220),),
                         )
                       : SingleChildScrollView(
                           padding: const EdgeInsets.all(16),
@@ -541,6 +543,22 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
     List<IssueType> issueTypes,
     ActiveEquipmentTask? activeTask,
   ) {
+    // Register header actions for the page header bar
+    setHeaderActions([
+      WebHeaderAction(
+        label: 'Reset',
+        icon: Icons.refresh_rounded,
+        onPressed: _resetForm,
+        isPrimary: false,
+      ),
+      WebHeaderAction(
+        label: 'Save',
+        icon: Icons.check_rounded,
+        onPressed: () => _saveTask(editing, issueTypes, activeTask),
+        isPrimary: true,
+      ),
+    ]);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F7),
       body: Stack(
@@ -555,77 +573,74 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
               ),
             ),
           ),
-          Column(
-            children: [
-              _buildBottomButtons(editing, issueTypes, activeTask),
-              Expanded(
-                child: waitingForEdit
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF106220),
-                        ),
-                      )
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              maxWidth: 960,
+          // Content without the buttons bar (buttons are now in header)
+          waitingForEdit
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF106220),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: 960,
+                      ),
+                      child: WebForm.split(
+                        _webSection(
+                          header: true,
+                          children: [
+                            _webLabelled(
+                              'Company',
+                              _companyField(companies, _companyLocked),
+                              Icons.apartment_rounded,
                             ),
-                            child: WebForm.split(
-                              _webSection(
-                                header: true,
-                                children: [
-                                  _webLabelled(
-                                    'Company',
-                                    _companyField(companies, _companyLocked),
-                                    Icons.apartment_rounded,
-                                  ),
-                                  const SizedBox(height: 18),
-                                  _webLabelled(
-                                    'Branch',
-                                    _branchDropdown(
-                                      companies,
-                                      _companyLocked,
-                                    ),
-                                    Icons.account_tree_rounded,
-                                  ),
-                                  const SizedBox(height: 18),
-                                  _webLabelled(
-                                    'Location',
-                                    ValueListenableBuilder<TextEditingValue>(
-                                      valueListenable: _locationController,
-                                      builder: (context, value, _) =>
-                                          _pickerField(
-                                        label:
-                                            'Location (e.g. Block B, 2nd floor)',
-                                        value: value.text.trim().isEmpty
-                                            ? null
-                                            : value.text.trim(),
-                                        onTap: _pickLocation,
-                                      ),
-                                    ),
-                                    Icons.location_on_outlined,
-                                  ),
-                                  const SizedBox(height: 18),
-                                  _webLabelled(
-                                    'Equipment',
-                                    _equipmentField(
-                                      equipments,
-                                      selectedEquipment,
-                                    ),
-                                    Icons.layers_outlined,
-                                  ),
-                                  if (activeTask != null) ...[
-                                    const SizedBox(height: 12),
-                                    _activeTaskBanner(activeTask),
-                                  ],
-                                  if (selectedEquipment != null) ...[
-                                    const SizedBox(height: 18),
-                                    _buildEquipmentSpecifications(
-                                      selectedEquipment,
-                                    ),
-                                  ],
+                            const SizedBox(height: 18),
+                            _webLabelled(
+                              'Branch',
+                              _branchDropdown(
+                                companies,
+                                _companyLocked,
+                              ),
+                              Icons.account_tree_rounded,
+                            ),
+                            const SizedBox(height: 18),
+                            _webLabelled(
+                              'Location',
+                              ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: _locationController,
+                                builder: (context, value, _) =>
+                                    _pickerField(
+                                  label:
+                                      'Location (e.g. Block B, 2nd floor)',
+                                  value: value.text.trim().isEmpty
+                                      ? null
+                                      : value.text.trim(),
+                                  onTap: _pickLocation,
+                                ),
+                              ),
+                              Icons.location_on_outlined,
+                            ),
+                            const SizedBox(height: 18),
+                            _webLabelled(
+                              'Equipment',
+                              _equipmentField(
+                                equipments,
+                                selectedEquipment,
+                              ),
+                              Icons.layers_outlined,
+                            ),
+                            if (activeTask != null) ...[
+                              const SizedBox(height: 12),
+                              _activeTaskBanner(activeTask),
+                            ],
+                            if (selectedEquipment != null) ...[
+                              const SizedBox(height: 18),
+                              _buildEquipmentSpecifications(
+                                selectedEquipment,
+                              ),
+                            ],
                                 ],
                               ),
                               _webSection(
@@ -684,9 +699,6 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                           ),
                         ),
                       ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -1598,7 +1610,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.check_rounded,
-                              size: 18, color: Colors.white),
+                              size: 18, color: Colors.white,),
                           SizedBox(width: 7),
                           Text(
                             'Save',

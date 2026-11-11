@@ -11,9 +11,9 @@ const _issueTypeNameMax = 60;
 /// and service types (set on equipment).
 enum ManagedTypeKind {
   issue('Issue Types', 'issue type', 'Issue type', 'issueType',
-      'e.g. Installation', Icons.build_circle_outlined),
+      'e.g. Installation', Icons.build_circle_outlined,),
   service('Service Types', 'service type', 'Service type', 'serviceType',
-      'e.g. Chiller AMC', Icons.miscellaneous_services_outlined);
+      'e.g. Chiller AMC', Icons.miscellaneous_services_outlined,);
 
   const ManagedTypeKind(
     this.title,

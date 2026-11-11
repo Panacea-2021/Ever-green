@@ -111,9 +111,9 @@ class MonthlyStats {
     return MonthlyStats(
       months: months,
       current: MonthStats.fromJson(map['current'],
-          month: DateTime(now.year, now.month)),
+          month: DateTime(now.year, now.month),),
       previous: MonthStats.fromJson(map['previous'],
-          month: DateTime(now.year, now.month - 1)),
+          month: DateTime(now.year, now.month - 1),),
     );
   }
 
@@ -140,7 +140,7 @@ class DashboardRepository {
 
   Future<TaskCounts> getTaskCounts() async {
     final body = unwrap(
-        await _repo.api.post<dynamic>('user/getAllTasksCount', data: {}));
+        await _repo.api.post<dynamic>('user/getAllTasksCount', data: {}),);
     return TaskCounts.fromJson(body is Map ? body['data'] : null);
   }
 

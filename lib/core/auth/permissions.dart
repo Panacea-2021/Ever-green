@@ -50,6 +50,9 @@ class Permissions {
       Routes.uploadAmc,
       Routes.issueTypes,
       Routes.serviceTypes,
+      Routes.reports,
+      Routes.usersList,
+      Routes.addUser,
     ],
     // Senior Technician: a field lead — their own tasks plus the ability to
     // assign/reassign to junior technicians and see technician performance.
@@ -89,8 +92,9 @@ class Permissions {
   static bool _isAdmin(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
 
-  /// Whether [role] may open [path]. The announcements route is web-only.
+  /// Whether [role] is allowed to open [path]. Super Admin always can.
   static bool canAccessRoute(UserRole role, String path) {
+    // The announcements inbox is a web-only module.
     if (path.startsWith(Routes.announcements)) return kIsWeb;
     if (role == UserRole.superAdmin) return true;
     if (_common.any((r) => path.startsWith(r))) return true;
@@ -100,10 +104,13 @@ class Permissions {
 
   // ---- Capability helpers (used to show/hide actions & menu items) ----
 
-  /// Super Admin manages all users. Client Admin manages only their own
-  /// company's POCs/users.
+  /// Super Admin manages all users. Manager (EverGreen admin) manages users
+  /// across the workspace. Client Admin manages only their own company's
+  /// POCs/users.
   static bool canManageUsers(UserRole role) =>
-      role == UserRole.superAdmin || role == UserRole.clientAdmin;
+      role == UserRole.superAdmin ||
+      role == UserRole.manager ||
+      role == UserRole.clientAdmin;
 
   static bool canManageAmcs(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
@@ -170,6 +177,9 @@ class Permissions {
   static bool canManageIssueTypes(UserRole role) => _isAdmin(role);
 
   static bool canViewAnalytics(UserRole role) =>
+      role == UserRole.superAdmin || role == UserRole.manager;
+
+  static bool canViewReports(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
 
   static bool canViewTechnicianPerformance(UserRole role) =>

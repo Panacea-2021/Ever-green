@@ -11,6 +11,7 @@ import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/password_generator.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
+import '../../../../web/widgets/web_header_actions.dart';
 import '../../../audit/data/audit_logger.dart';
 import '../../../audit/domain/models/audit_log_entry.dart';
 import '../../data/amc_provider.dart';
@@ -31,7 +32,8 @@ class CreateAmcScreen extends ConsumerStatefulWidget {
   ConsumerState<CreateAmcScreen> createState() => _CreateAmcScreenState();
 }
 
-class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
+class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
+    with WebHeaderActionsMixin {
   final _formKey = GlobalKey<FormState>();
 
   static final RegExp _gstPattern =
@@ -50,6 +52,10 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
   // Service classification.
   CompanyServiceType _serviceType = CompanyServiceType.amc;
   AmcType? _amcType;
+
+  // Branch selection for web dropdown
+  String? _selectedBranch;
+  static const List<String> _branchOptions = ['Hyderabad', 'Bangalore'];
 
   /// Only AMC companies carry an AMC type and a contract date range.
   bool get _isAmc => _serviceType == CompanyServiceType.amc;
@@ -102,6 +108,10 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
     if (c == null) return;
     _companyController.text = c.name;
     _branchNameController.text = c.branchName;
+    // Set the selected branch for dropdown if it matches one of the options
+    if (_branchOptions.contains(c.branchName)) {
+      _selectedBranch = c.branchName;
+    }
     _companyEmailController.text = c.email;
     _gstController.text = c.gstNumber ?? '';
     _addressController.text = c.location ?? '';
@@ -458,6 +468,25 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
   static const Color _webInk = Color(0xFF14201A);
 
   Widget _webBuild() {
+    // Register header actions for web
+    final showBulkUpload = !widget.isEdit &&
+        Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
+    setHeaderActions([
+      if (showBulkUpload)
+        WebHeaderAction(
+          label: 'Bulk Upload',
+          icon: Icons.cloud_upload_outlined,
+          onPressed: () => context.push(Routes.uploadAmc),
+          isPrimary: false,
+        ),
+      WebHeaderAction(
+        label: widget.isEdit ? 'Update' : 'Save',
+        icon: Icons.check_rounded,
+        onPressed: _saving ? () {} : _handleSave,
+        isPrimary: true,
+      ),
+    ]);
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -505,7 +534,6 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
             ),
           ],
         ),
-        bottomNavigationBar: _webBottomBar(),
       ),
     );
   }
@@ -625,10 +653,17 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen> {
           hint: 'Company Name',
           icon: Icons.business_outlined,
         ),
-        _webField(
-          controller: _branchNameController,
+        _webDropdown(
           hint: 'Branch Name',
           icon: Icons.account_tree_outlined,
+          value: _selectedBranch,
+          items: _branchOptions,
+          onChanged: (v) {
+            setState(() {
+              _selectedBranch = v;
+              _branchNameController.text = v ?? '';
+            });
+          },
         ),
       ),
       const SizedBox(height: 18),

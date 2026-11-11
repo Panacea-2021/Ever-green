@@ -104,7 +104,7 @@ void main() {
     test('Awaiting lists open tickets with no engineer after 15 min', () {
       // Raised 2026-10-01T10:00Z.
       expect(
-          ids(QueueTab.awaiting, DateTime.utc(2026, 10, 1, 10, 14)), isEmpty);
+          ids(QueueTab.awaiting, DateTime.utc(2026, 10, 1, 10, 14)), isEmpty,);
       expect(
         ids(QueueTab.awaiting, DateTime.utc(2026, 10, 1, 10, 15)),
         unorderedEquals(['1', '2']),

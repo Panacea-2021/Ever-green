@@ -554,7 +554,7 @@ class _DeleteTaskDialogState extends State<_DeleteTaskDialog> {
         child: Material(
           color: Colors.transparent,
           child: ConstrainedBox(
-            constraints: BoxConstraints(
+            constraints: const BoxConstraints(
               maxWidth: kIsWeb ? 640 : double.infinity,
             ),
             child: Container(
@@ -569,7 +569,7 @@ class _DeleteTaskDialogState extends State<_DeleteTaskDialog> {
                   ),
                 ],
               ),
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 kIsWeb ? 30 : 24,
                 kIsWeb ? 28 : 26,
                 kIsWeb ? 30 : 24,

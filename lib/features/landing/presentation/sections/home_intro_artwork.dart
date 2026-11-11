@@ -189,7 +189,7 @@ class _IntroCopy extends StatelessWidget {
             runSpacing: 16,
             children: [
               _Point(
-                  Icons.bolt_rounded, 'Quick booking', 'In just a few minutes'),
+                  Icons.bolt_rounded, 'Quick booking', 'In just a few minutes',),
               _Point(
                 Icons.verified_user_outlined,
                 'Verified technicians',
@@ -426,23 +426,14 @@ class _RepairPhoto extends StatelessWidget {
   }
 }
 
-class _Steps extends StatefulWidget {
+class _Steps extends StatelessWidget {
   const _Steps({required this.isMobile, required this.steps});
 
   final bool isMobile;
   final List<_Step> steps;
 
   @override
-  State<_Steps> createState() => _StepsState();
-}
-
-class _StepsState extends State<_Steps> {
-  int _selected = 0;
-
-  @override
   Widget build(BuildContext context) {
-    final isMobile = widget.isMobile;
-    final steps = widget.steps;
     return Padding(
       padding:
           EdgeInsets.fromLTRB(isMobile ? 16 : 28, 12, isMobile ? 16 : 28, 40),
@@ -484,11 +475,7 @@ class _StepsState extends State<_Steps> {
           const SizedBox(height: 28),
           if (isMobile)
             for (var i = 0; i < steps.length; i++) ...[
-              _StepCard(
-                step: steps[i],
-                selected: i == _selected,
-                onTap: () => setState(() => _selected = i),
-              ),
+              _StepCard(step: steps[i]),
               const SizedBox(height: 16),
             ]
           else
@@ -512,11 +499,7 @@ class _StepsState extends State<_Steps> {
                       ),
                     ),
                   Expanded(
-                    child: _StepCard(
-                      step: steps[i],
-                      selected: i == _selected,
-                      onTap: () => setState(() => _selected = i),
-                    ),
+                    child: _StepCard(step: steps[i]),
                   ),
                 ],
               ],
@@ -527,32 +510,42 @@ class _StepsState extends State<_Steps> {
   }
 }
 
-class _StepCard extends StatelessWidget {
+class _StepCard extends StatefulWidget {
   const _StepCard({
     required this.step,
-    required this.selected,
-    required this.onTap,
   });
 
   final _Step step;
-  final bool selected;
-  final VoidCallback onTap;
+
+  @override
+  State<_StepCard> createState() => _StepCardState();
+}
+
+class _StepCardState extends State<_StepCard> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final dark = selected;
+    // Only highlight on hover
+    final dark = _isHovered;
     final fg = dark ? Colors.white : const Color(0xFF142117);
     final muted = dark ? const Color(0xE6FFFFFF) : const Color(0xFF5C6B62);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Container(
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
               width: double.infinity,
-              constraints: const BoxConstraints(minHeight: 280),
+              // Increased height by 10% (280 * 1.1 = 308)
+              constraints: const BoxConstraints(minHeight: 308),
               padding: const EdgeInsets.fromLTRB(16, 36, 16, 16),
               decoration: BoxDecoration(
                 color: dark ? LandingColors.primary : Colors.white,
@@ -561,12 +554,12 @@ class _StepCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(step.icon,
+                  Icon(widget.step.icon,
                       color: dark ? Colors.white : LandingColors.primary,
-                      size: 26),
+                      size: 26,),
                   const SizedBox(height: 14),
                   Text(
-                    step.title,
+                    widget.step.title,
                     style: TextStyle(
                       fontFamily: LandingTypography.fontFamily,
                       fontSize: 16,
@@ -577,7 +570,7 @@ class _StepCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    step.body,
+                    widget.step.body,
                     style: TextStyle(
                       fontFamily: LandingTypography.fontFamily,
                       fontSize: 13.5,
@@ -586,7 +579,8 @@ class _StepCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  Container(
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
@@ -610,7 +604,8 @@ class _StepCard extends StatelessWidget {
             Positioned(
               top: -12,
               left: 16,
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 width: 32,
                 height: 32,
                 alignment: Alignment.center,
@@ -622,7 +617,7 @@ class _StepCard extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  step.number,
+                  widget.step.number,
                   style: TextStyle(
                     fontFamily: LandingTypography.fontFamily,
                     fontSize: 11,

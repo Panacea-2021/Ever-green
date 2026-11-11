@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -66,7 +65,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           SafeArea(
             child: Column(
               children: [
-                if (!kIsWeb) _buildHeader(context, hasUnread),
+                // Header
+                _buildHeader(context, hasUnread),
                 // Notifications List
                 Expanded(
                   child: RefreshIndicator(

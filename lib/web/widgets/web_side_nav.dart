@@ -172,6 +172,18 @@ class WebSideNav extends ConsumerWidget {
           route: Routes.auditLog,
           icon: Icons.history,
         ),
+      if (Permissions.canViewAnalytics(role))
+        const WebNavEntry(
+          label: 'Analytics',
+          route: Routes.analytics,
+          icon: Icons.bar_chart_outlined,
+        ),
+      if (Permissions.canViewReports(role))
+        const WebNavEntry(
+          label: 'Reports & Export',
+          route: Routes.reports,
+          icon: Icons.assessment_outlined,
+        ),
       if (Permissions.hasProfileTab(role))
         const WebNavEntry(
           label: 'Profile',
@@ -223,9 +235,8 @@ class WebSideNav extends ConsumerWidget {
               vertical: 24,
             ),
             child: Row(
-              mainAxisAlignment: collapsed
-                  ? MainAxisAlignment.center
-                  : MainAxisAlignment.start,
+              mainAxisAlignment:
+                  collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 Container(
                   width: 34,

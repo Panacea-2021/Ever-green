@@ -119,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
 
                     _sectionHeader(
-                        showOrgOverview ? 'Task Status' : 'My Task Status'),
+                        showOrgOverview ? 'Task Status' : 'My Task Status',),
                     const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1328,7 +1328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       fontWeight: FontWeight.w700,
                       color: deltaColor,
                     ),
-                  )),
+                  ),),
                 ),
               ],
             )

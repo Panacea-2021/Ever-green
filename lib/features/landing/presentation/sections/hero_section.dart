@@ -208,10 +208,10 @@ class _HeroButtonState extends State<_HeroButton> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           decoration: BoxDecoration(
             color: widget.isPrimary
-                ? (_isHovered ? Colors.white.withOpacity(0.9) : Colors.white)
+                ? (_isHovered ? Colors.white.withValues(alpha: 0.9) : Colors.white)
                 : (_isHovered
-                    ? Colors.black.withOpacity(0.25)
-                    : Colors.black.withOpacity(0.15)),
+                    ? Colors.black.withValues(alpha: 0.25)
+                    : Colors.black.withValues(alpha: 0.15)),
             borderRadius: BorderRadius.circular(LandingRadius.pill),
           ),
           child: Text(

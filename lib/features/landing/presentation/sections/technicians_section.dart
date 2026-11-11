@@ -121,7 +121,9 @@ class _TechniciansSectionState extends State<TechniciansSection> {
         final cardWidth = compact ? 260.0 : 270.0;
         final cardExtent = cardWidth + _cardGap;
         final imageHeight = cardWidth * 0.68;
-        final cardHeight = imageHeight + 235;
+        // Card height: image + padding (12+14) + name row (20) + spacing (7) + specialty (34) 
+        // + spacing (9) + tags (61) + spacing (9) + description (54) + extra padding (16)
+        final cardHeight = imageHeight + 260;
 
         return Container(
           width: double.infinity,
@@ -422,60 +424,59 @@ class _TechnicianCardState extends State<_TechnicianCard> {
                     filterQuality: FilterQuality.high,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              technician.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                technician.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: LandingTypography.fontFamily,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: LandingColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const Icon(Icons.star,
+                                size: 15, color: Color(0xFFFFAC18),),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${technician.rating} ',
                               style: const TextStyle(
-                                fontFamily: LandingTypography.fontFamily,
-                                fontSize: 16,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: LandingColors.textPrimary,
                               ),
                             ),
-                          ),
-                          const Icon(Icons.star,
-                              size: 15, color: Color(0xFFFFAC18),),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${technician.rating} ',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: LandingColors.textPrimary,
+                            Text(
+                              '(${technician.reviews})',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF1F2D25),
+                              ),
                             ),
-                          ),
-                          Text(
-                            '(${technician.reviews})',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF1F2D25),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.calendar_month_outlined,
+                              size: 14,
+                              color: LandingColors.primary,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 7),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.calendar_month_outlined,
-                            size: 14,
-                            color: LandingColors.primary,
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: SizedBox(
-                              height: 34,
+                            const SizedBox(width: 5),
+                            Expanded(
                               child: Text(
                                 technician.specialty,
                                 maxLines: 2,
@@ -488,41 +489,46 @@ class _TechnicianCardState extends State<_TechnicianCard> {
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 9),
-                      SizedBox(
-                        height: 61,
-                        width: double.infinity,
-                        child: Align(
-                          alignment: Alignment.topLeft,
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 5,
-                            children: [
-                              for (final tag in technician.tags)
-                                _TagChip(label: tag),
-                            ],
-                          ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 9),
-                      SizedBox(
-                        height: 54,
-                        child: Text(
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final tag in technician.tags)
+                              _TagChip(label: tag),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
                           technician.description,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 12.5,
-                            height: 1.35,
+                            height: 1.4,
                             fontWeight: FontWeight.w500,
                             color: Color(0xFF1F2D25),
                           ),
                         ),
-                      ),
-                    ],
+                        const Spacer(),
+                      ],
+                    ),
+                  ),
+                ),
+                // Bottom accent bar - green line at the bottom of the card
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: _hover || technician.selected
+                        ? LandingColors.primary
+                        : const Color(0xFFD5E8DA),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
                   ),
                 ),
               ],

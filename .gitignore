@@ -14,3 +14,9 @@ android/app/release/
 android/key.properties
 *.jks
 *.keystore
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+!.env.example

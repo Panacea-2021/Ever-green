@@ -20,13 +20,9 @@ class AuthInterceptor extends Interceptor {
     if (_apiKeyRoutes.contains(path)) {
       options.headers['api-key'] = EnvironmentConfig.apiKey;
     } else {
-      final accessToken =
-          await _ref.read(tokenStorageProvider).getAccessToken();
-      final token = accessToken?.trim();
-      if (token != null && token.isNotEmpty) {
-        options.headers['Authorization'] = 'Bear' 'er $token';
-      } else {
-        options.headers.remove('Authorization');
+      final accessToken = await _ref.read(tokenStorageProvider).getAccessToken();
+      if (accessToken != null && accessToken.isNotEmpty) {
+        options.headers['Authorization'] = 'Bearer $accessToken';
       }
     }
     handler.next(options);

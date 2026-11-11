@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -61,7 +62,8 @@ class _DownloadQrScreenState extends ConsumerState<DownloadQrScreen> {
               bottom: false,
               child: Column(
                 children: [
-                  _buildHeader(),
+                  // Hide header on web since title is in the top bar
+                  if (!kIsWeb) _buildHeader(),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),

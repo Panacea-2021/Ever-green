@@ -60,6 +60,7 @@ import '../../features/audit/presentation/screens/audit_log_screen.dart';
 import '../../features/issue_types/presentation/screens/issue_types_screen.dart';
 import '../../features/amcs/presentation/screens/amc_renewals_screen.dart';
 import '../../features/pm/presentation/screens/pm_schedule_screen.dart';
+import '../../features/reports/presentation/screens/reports_screen.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../../shared/widgets/unauthorized_screen.dart';
 import '../auth/permissions.dart';
@@ -150,7 +151,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // If not authenticated (signed out, or a 401 expired the session) and
       // trying to access a protected route.
       if (!isAuthenticated && !isPublicRoute) {
-        return kIsWeb ? Routes.home : Routes.login;
+        return Routes.login;
       }
 
       // If authenticated and on auth routes (except splash/getStarted which auto-navigate)
@@ -370,6 +371,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.analytics,
         name: 'analytics',
         builder: (context, state) => const AnalyticsScreen(),
+      ),
+      GoRoute(
+        path: Routes.reports,
+        name: 'reports',
+        builder: (context, state) => const ReportsScreen(),
       ),
       GoRoute(
         path: Routes.editProfile,

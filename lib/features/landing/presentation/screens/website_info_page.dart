@@ -197,7 +197,7 @@ class _InfoHeroCard extends StatelessWidget {
                               description,
                               style: svcText(
                                 size: mobile ? 15 : 17,
-                                color: Colors.white.withOpacity(0.92),
+                                color: Colors.white.withValues(alpha: 0.92),
                                 height: 1.6,
                               ),
                             ),
@@ -211,10 +211,10 @@ class _InfoHeroCard extends StatelessWidget {
                         width: 116,
                         height: 116,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                           ),
                         ),
                         child: Icon(

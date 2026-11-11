@@ -125,11 +125,11 @@ class _UploadEquipmentsScreenState
                 ? const Color(0xFF173B22).withValues(alpha: 0.08)
                 : Colors.black.withValues(alpha: 0.1),
             blurRadius: compact ? 24 : 32,
-            offset: Offset(0, compact ? 8 : 4),
+            offset: const Offset(0, compact ? 8 : 4),
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         compact ? 20 : 16,
         compact ? 12 : 20,
         compact ? 20 : 16,
@@ -149,7 +149,7 @@ class _UploadEquipmentsScreenState
               color: Color(0xFF42A5F5),
             ),
           ),
-          SizedBox(height: compact ? 6 : 16),
+          const SizedBox(height: compact ? 6 : 16),
 
           // Company + branch dropdowns
           ref.watch(companiesProvider).when(
@@ -172,15 +172,15 @@ class _UploadEquipmentsScreenState
                 ),
                 data: _buildCompanyPickers,
               ),
-          SizedBox(height: compact ? 8 : 19),
+          const SizedBox(height: compact ? 8 : 19),
 
           // Download Sample Excel
           _buildDownloadTemplateCard(),
-          SizedBox(height: compact ? 8 : 19),
+          const SizedBox(height: compact ? 8 : 19),
 
           // File upload box
           _buildFileUploadArea(),
-          SizedBox(height: compact ? 10 : 24),
+          const SizedBox(height: compact ? 10 : 24),
 
           // Submit button
           _buildSubmitButton(),
@@ -213,7 +213,7 @@ class _UploadEquipmentsScreenState
             selectedBranch = options.length == 1 ? options.first : null;
           }),
         ),
-        SizedBox(height: kIsWeb ? 8 : 19),
+        const SizedBox(height: kIsWeb ? 8 : 19),
         _pillDropdown(
           key: ValueKey('branch-$selectedCompany'),
           hint: 'Branch Name',
@@ -260,7 +260,7 @@ class _UploadEquipmentsScreenState
           filled: true,
           fillColor: Colors.white,
           contentPadding:
-              EdgeInsets.symmetric(horizontal: 16, vertical: kIsWeb ? 8 : 14),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: kIsWeb ? 8 : 14),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(32),
             borderSide: BorderSide.none,
@@ -326,7 +326,7 @@ class _UploadEquipmentsScreenState
       onTap: _downloadTemplate,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.all(kIsWeb ? 10 : 16),
+        padding: const EdgeInsets.all(kIsWeb ? 10 : 16),
         decoration: BoxDecoration(
           color: kIsWeb ? _webUploadSurface : _lavender,
           borderRadius: BorderRadius.circular(16),
@@ -363,7 +363,7 @@ class _UploadEquipmentsScreenState
                 ),
               ),
             ),
-            SizedBox(width: kIsWeb ? 10 : 14),
+            const SizedBox(width: kIsWeb ? 10 : 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,7 +377,7 @@ class _UploadEquipmentsScreenState
                       color: Colors.black,
                     ),
                   ),
-                  SizedBox(height: kIsWeb ? 2 : 4),
+                  const SizedBox(height: kIsWeb ? 2 : 4),
                   Text(
                     'Click to Download',
                     style: TextStyle(
@@ -390,7 +390,7 @@ class _UploadEquipmentsScreenState
                 ],
               ),
             ),
-            Icon(Icons.download, color: Colors.black, size: kIsWeb ? 20 : 24),
+            const Icon(Icons.download, color: Colors.black, size: kIsWeb ? 20 : 24),
           ],
         ),
       ),
@@ -402,7 +402,7 @@ class _UploadEquipmentsScreenState
       onTap: _pickFile,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           vertical: kIsWeb ? 10 : 28,
           horizontal: 20,
         ),
@@ -426,7 +426,7 @@ class _UploadEquipmentsScreenState
                 size: 24,
               ),
             ),
-            SizedBox(height: kIsWeb ? 6 : 14),
+            const SizedBox(height: kIsWeb ? 6 : 14),
             if (uploadedFileName != null) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -515,7 +515,7 @@ class _UploadEquipmentsScreenState
       if (file == null) return;
       if (kIsWeb && file.bytes == null) {
         _snack('Could not read the selected file. Please try again.',
-            error: true);
+            error: true,);
         return;
       }
       if (!kIsWeb && file.path == null) return;
@@ -539,7 +539,7 @@ class _UploadEquipmentsScreenState
       );
       if (path != null) {
         _snack(
-            'Sample Excel saved. Replace the example rows with your equipment.');
+            'Sample Excel saved. Replace the example rows with your equipment.',);
       }
     } catch (e) {
       _snack('Could not save the sample Excel: $e', error: true);

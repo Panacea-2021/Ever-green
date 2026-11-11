@@ -59,7 +59,7 @@ class FooterSection extends StatelessWidget {
           const SizedBox(height: 36),
 
           // Copyright
-          Text(
+          const Text(
             '© 2026 Ever Green. All rights reserved.',
             style: LandingTypography.copyright,
           ),
@@ -74,7 +74,7 @@ class FooterSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Brand name
-        Text(
+        const Text(
           'Ever Green',
           style: LandingTypography.footerBrand,
         ),
@@ -254,7 +254,7 @@ class FooterSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Feel free to reach us at:',
           style: LandingTypography.footerCaption,
         ),
@@ -265,7 +265,7 @@ class FooterSection extends StatelessWidget {
           onTap: () {},
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'Locations:',
           style: LandingTypography.footerCaption,
         ),
@@ -308,7 +308,7 @@ class FooterSection extends StatelessWidget {
                   }
                 },
               ),
-            )),
+            ),),
       ],
     );
   }
@@ -345,7 +345,7 @@ class FooterSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'ALL SERVICES',
           style: LandingTypography.footerHeading,
         ),
@@ -393,7 +393,7 @@ class FooterSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'ALL CITIES',
           style: LandingTypography.footerHeading,
         ),
@@ -483,7 +483,7 @@ class _FooterLinkState extends State<_FooterLink> {
           style: widget.isGreen
               ? LandingTypography.footerLinkGreen.copyWith(
                   color: _isHovered
-                      ? LandingColors.accentGreen.withOpacity(0.8)
+                      ? LandingColors.accentGreen.withValues(alpha: 0.8)
                       : LandingColors.accentGreen,
                 )
               : LandingTypography.footerLink.copyWith(

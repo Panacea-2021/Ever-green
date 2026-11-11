@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/permissions.dart';
-import '../../../core/data/evergreen_repository.dart' show unwrap;
+import '../../../core/data/evergreen_repository.dart'
+    show FailureException, unwrap;
 import '../../../core/models/backend_models.dart' show dataList;
 import '../../../core/network/api_client.dart';
 import '../../../shared/providers/auth_state_provider.dart';
@@ -23,14 +25,95 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
     return _load(user);
   }
 
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final user = ref.read(currentUserProvider);
+      if (user == null) return const AnnouncementState();
+      return _load(user);
+    });
+  }
+
   Future<AnnouncementState> _load(User user) async {
     final api = ref.read(apiClientProvider);
     final inboxBody = unwrap(await api.get<dynamic>('announcements/inbox'));
-    final inboxRows = dataList(inboxBody);
+    final inbox = _parseInbox(inboxBody);
+    final announcementsById = inbox.announcementsById;
+
+    final recipients = <AnnouncementRecipient>[];
+    String? managementError;
+    if (Permissions.canCreateAnnouncements(user.role)) {
+      try {
+        final results = await Future.wait([
+          api.get<dynamic>('announcements/recipients'),
+          api.get<dynamic>('announcements/history'),
+        ]);
+        final recipientRows = dataList(unwrap(results[0]));
+        recipients.addAll(recipientRows.map(AnnouncementRecipient.fromBackend));
+
+        for (final row in dataList(unwrap(results[1]))) {
+          final announcement = Announcement.fromBackend(row);
+          announcementsById.putIfAbsent(announcement.id, () => announcement);
+        }
+      } on Exception catch (error) {
+        if (!kIsWeb) rethrow;
+        managementError = error is FailureException
+            ? error.failure.displayMessage
+            : error.toString();
+      }
+    }
+
+    return AnnouncementState(
+      announcements: announcementsById.values.toList(),
+      notifications: inbox.notifications,
+      recipientDirectory: recipients,
+      managementError: managementError,
+    );
+  }
+
+  Future<void> refreshInbox() async {
+    if (_inboxRefreshing || _writing) return;
+    _inboxRefreshing = true;
+    try {
+      if (ref.read(currentUserProvider) == null) return;
+      final current = state.valueOrNull;
+      if (current == null) {
+        await refresh();
+        return;
+      }
+
+      final body = unwrap(
+        await ref.read(apiClientProvider).get<dynamic>('announcements/inbox'),
+      );
+      final inbox = _parseInbox(body);
+      final latest = state.valueOrNull ?? current;
+      final announcementsById = {
+        for (final announcement in latest.announcements)
+          announcement.id: announcement,
+        ...inbox.announcementsById,
+      };
+      state = AsyncData(
+        AnnouncementState(
+          announcements: announcementsById.values.toList(),
+          notifications: inbox.notifications,
+          recipientDirectory: latest.recipientDirectory,
+          managementError: latest.managementError,
+        ),
+      );
+    } finally {
+      _inboxRefreshing = false;
+    }
+  }
+
+  bool _inboxRefreshing = false;
+
+  ({
+    Map<String, Announcement> announcementsById,
+    List<AnnouncementNotification> notifications,
+  }) _parseInbox(dynamic body) {
     final announcementsById = <String, Announcement>{};
     final notifications = <AnnouncementNotification>[];
-
-    for (final row in inboxRows) {
+    for (final row in dataList(body)) {
       final notification =
           Map<String, dynamic>.from(row['notification'] as Map);
       final announcement =
@@ -42,26 +125,9 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
       );
       notifications.add(AnnouncementNotification.fromBackend(notification));
     }
-
-    final recipients = <AnnouncementRecipient>[];
-    if (Permissions.canCreateAnnouncements(user.role)) {
-      final results = await Future.wait([
-        api.get<dynamic>('announcements/recipients'),
-        api.get<dynamic>('announcements/history'),
-      ]);
-      final recipientRows = dataList(unwrap(results[0]));
-      recipients.addAll(recipientRows.map(AnnouncementRecipient.fromBackend));
-
-      for (final row in dataList(unwrap(results[1]))) {
-        final announcement = Announcement.fromBackend(row);
-        announcementsById.putIfAbsent(announcement.id, () => announcement);
-      }
-    }
-
-    return AnnouncementState(
-      announcements: announcementsById.values.toList(),
+    return (
+      announcementsById: announcementsById,
       notifications: notifications,
-      recipientDirectory: recipients,
     );
   }
 
@@ -127,6 +193,7 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
           ],
           notifications: current.notifications,
           recipientDirectory: current.recipientDirectory,
+          managementError: current.managementError,
         ),
       );
     });

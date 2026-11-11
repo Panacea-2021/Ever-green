@@ -154,7 +154,7 @@ class _ReviewsSectionState extends State<ReviewsSection> {
       ),
       child: Column(
         children: [
-          Text(
+          const Text(
             'CUSTOMER REVIEWS',
             style: LandingTypography.eyebrowWhite,
           ),
@@ -287,7 +287,7 @@ class _ReviewsSectionState extends State<ReviewsSection> {
             decoration: BoxDecoration(
               color: isActive
                   ? LandingColors.primary
-                  : LandingColors.primary.withOpacity(0.35),
+                  : LandingColors.primary.withValues(alpha: 0.35),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -337,7 +337,7 @@ class _SideCard extends StatelessWidget {
                 imagePath,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
-                  color: LandingColors.primary.withOpacity(0.2),
+                  color: LandingColors.primary.withValues(alpha: 0.2),
                 ),
               ),
             ),
@@ -413,7 +413,7 @@ class _MainReviewCard extends StatelessWidget {
               errorBuilder: (_, __, ___) => Container(
                 width: 336,
                 height: 332,
-                color: LandingColors.primary.withOpacity(0.2),
+                color: LandingColors.primary.withValues(alpha: 0.2),
               ),
             ),
           ),
@@ -521,7 +521,7 @@ class _MobileReviewCard extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
                 height: 180,
-                color: LandingColors.primary.withOpacity(0.2),
+                color: LandingColors.primary.withValues(alpha: 0.2),
               ),
             ),
           ),
