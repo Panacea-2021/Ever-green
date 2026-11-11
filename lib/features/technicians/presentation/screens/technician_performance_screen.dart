@@ -1289,9 +1289,10 @@ class _TechnicianPerformanceScreenState
             const SizedBox(width: 12),
             Container(width: 1, height: 36, color: _webLine),
             const SizedBox(width: 12),
-            // Date filters - use Expanded to take remaining space
+            // Date filters - right aligned
             Expanded(
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   for (final p in RangePreset.values) ...[
                     if (p != RangePreset.values.first) const SizedBox(width: 6),
@@ -1624,25 +1625,7 @@ class _TechnicianPerformanceScreenState
                   ),
                 ),
               ),
-              if (s.overdue > 0)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDE8E8),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${s.overdue} overdue',
-                    style: const TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFD32F2F),
-                    ),
-                  ),
-                )
-              else if (s.isOverloaded)
+              if (s.isOverloaded)
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

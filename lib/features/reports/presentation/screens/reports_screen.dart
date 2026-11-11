@@ -45,10 +45,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Top bar
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 _dateRangePill(),
-                const Spacer(),
                 InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () => _showExportDialog(),
@@ -141,6 +144,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       ('Last 90 Days', ReportDateRange.last90Days),
       ('This Year', ReportDateRange.thisYear),
     ];
+    int selectedIndex = 0;
+    for (var i = 0; i < ranges.length; i++) {
+      if (_isSameRange(range, ranges[i].$2())) {
+        selectedIndex = i;
+        break;
+      }
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -152,26 +162,26 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         ],
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<ReportDateRange>(
-          value: range,
+        child: DropdownButton<int>(
+          value: selectedIndex,
           icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF6B7280)),
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Montserrat', color: Colors.black),
           items: [
-            for (final r in ranges)
-              DropdownMenuItem<ReportDateRange>(
-                value: r.$2(),
+            for (var i = 0; i < ranges.length; i++)
+              DropdownMenuItem<int>(
+                value: i,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.calendar_today_outlined, size: 16, color: _green),
                     const SizedBox(width: 8),
-                    Text(r.$1),
+                    Text(ranges[i].$1),
                   ],
                 ),
               ),
           ],
           onChanged: (v) {
-            if (v != null) ref.read(reportDateRangeProvider.notifier).state = v;
+            if (v != null) ref.read(reportDateRangeProvider.notifier).state = ranges[v].$2();
           },
         ),
       ),
@@ -199,7 +209,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: trendRed ? const Color(0xFFFDECEA) : const Color(0xFFE8F5E9),
+                    color: trendRed ? const Color(0xFFF2F2F2) : const Color(0xFFE8F5E9),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -207,7 +217,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: trendRed ? const Color(0xFFE53935) : _green,
+                      color: trendRed ? const Color(0xFF6B7280) : _green,
                       fontFamily: 'Montserrat',
                     ),
                   ),

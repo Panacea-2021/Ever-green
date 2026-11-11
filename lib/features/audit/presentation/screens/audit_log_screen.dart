@@ -222,9 +222,9 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen>
                   )).toList(),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 24),
               Container(width: 1, height: 40, color: _line),
-              const SizedBox(width: 16),
+              const SizedBox(width: 24),
               // Stats badge
               _webStatsBadge(total, hasFilters),
             ],
@@ -297,7 +297,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen>
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 20),
         ],
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

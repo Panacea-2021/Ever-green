@@ -127,6 +127,15 @@ class ReportDateRange {
 
   const ReportDateRange({required this.from, required this.to});
 
+  @override
+  bool operator ==(Object other) =>
+      other is ReportDateRange &&
+      from == other.from &&
+      to == other.to;
+
+  @override
+  int get hashCode => Object.hash(from, to);
+
   static ReportDateRange thisMonth() {
     final now = DateTime.now();
     return ReportDateRange(
