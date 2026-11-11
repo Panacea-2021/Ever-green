@@ -122,10 +122,10 @@ void main() {
   });
 
   group('RBAC — capability helpers', () {
-    test('only Super Admin manages users; Super Admin + Manager bulk upload',
-        () {
+    test('Super Admin + Manager manage users; both bulk upload', () {
       expect(Permissions.canManageUsers(UserRole.superAdmin), isTrue);
-      expect(Permissions.canManageUsers(UserRole.manager), isFalse);
+      expect(Permissions.canManageUsers(UserRole.manager), isTrue);
+      expect(Permissions.canManageUsers(UserRole.clientAdmin), isTrue);
       expect(Permissions.canBulkUpload(UserRole.manager), isTrue);
       expect(Permissions.canBulkUpload(UserRole.superAdmin), isTrue);
       for (final role in [
