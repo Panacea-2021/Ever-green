@@ -3,10 +3,11 @@ name: Build APK
 on:
   push:
     branches:
-      - pushpa
+      - main
+  workflow_dispatch:
 
 concurrency:
-  group: build-apk-pushpa
+  group: build-apk-main
   cancel-in-progress: false
 
 permissions:
@@ -33,11 +34,14 @@ jobs:
 
       - run: flutter pub get
 
-      - run: flutter build apk --release
+      - run: >
+          flutter build apk --release
+          --dart-define=API_BASE_URL=https://evergreen-backend-lgmy.onrender.com/
+          --dart-define=API_KEY=${{ secrets.API_KEY }}
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: pushpa-latest
-          name: Pushpa APK (latest)
+          tag_name: main-latest
+          name: Main APK (latest)
           files: build/app/outputs/flutter-apk/app-release.apk
