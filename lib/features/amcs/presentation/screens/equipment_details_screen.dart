@@ -11,7 +11,6 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../qr/data/qr_pdf.dart';
 import '../../../scanner/presentation/widgets/foreign_equipment_notice.dart';
 import '../../data/equipment_provider.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class EquipmentDetailsScreen extends ConsumerStatefulWidget {
   /// Equipment id (or EG serial / serial number; the backend resolves both).
@@ -48,8 +47,8 @@ class EquipmentDetailsScreen extends ConsumerStatefulWidget {
 
 class _EquipmentDetailsScreenState
     extends ConsumerState<EquipmentDetailsScreen> {
-  static const Color _green = AppColors.modulePrimaryDark;
-  static const Color _greenTitle = AppColors.modulePrimaryTitle;
+  static const Color _green = Color(0xFF125420);
+  static const Color _greenTitle = Color(0xFF278245);
   static const Color _badgeBg = Color(0xFFEBF0EA);
 
   bool _downloading = false;

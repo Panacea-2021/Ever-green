@@ -212,7 +212,7 @@ class DownloadAppSection extends StatelessWidget {
     return Column(
       children: [
         // Feature cards
-        _FeatureCard(
+        const _FeatureCard(
           icon: LandingAssets.iconMagnifier,
           title: 'Find the machine',
           description:
@@ -223,7 +223,7 @@ class DownloadAppSection extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        _FeatureCard(
+        const _FeatureCard(
           icon: LandingAssets.iconShieldApp,
           title: 'Price before the panel',
           description:
@@ -235,7 +235,7 @@ class DownloadAppSection extends StatelessWidget {
         const SizedBox(height: 32),
 
         // Phone mockup
-        _PhoneMockup(scale: 0.8),
+        const _PhoneMockup(scale: 0.8),
 
         const SizedBox(height: 24),
 
@@ -387,7 +387,7 @@ class _FeatureCardState extends State<_FeatureCard> {
             Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: LandingColors.bgIconGreen,
                 shape: BoxShape.circle,
               ),
@@ -463,7 +463,7 @@ class _PhoneMockup extends StatelessWidget {
                 width: 148 * scale,
                 height: 98 * scale,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(

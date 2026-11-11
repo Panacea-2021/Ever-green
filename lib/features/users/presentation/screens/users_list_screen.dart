@@ -14,7 +14,7 @@ import '../../../auth/data/repositories/auth_repository_impl.dart';
 import '../../data/user_provider.dart';
 import '../../data/users_repository.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
-import '../../../../web/widgets/web_search_state.dart';
+import '../../../../web/widgets/web_header_actions.dart';
 
 class UsersListScreen extends ConsumerStatefulWidget {
   const UsersListScreen({super.key, this.initialTab = 0});
@@ -26,7 +26,8 @@ class UsersListScreen extends ConsumerStatefulWidget {
   ConsumerState<UsersListScreen> createState() => _UsersListScreenState();
 }
 
-class _UsersListScreenState extends ConsumerState<UsersListScreen> {
+class _UsersListScreenState extends ConsumerState<UsersListScreen>
+    with WebHeaderActionsMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   late int _selectedTab = widget.initialTab.clamp(0, _tabs.length - 1);
@@ -34,8 +35,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   /// User whose active flag / deletion is in flight.
   String? _busyId;
 
-  static const Color _green = AppColors.modulePrimaryDark;
-  static const Color _addGreen = AppColors.primary;
+  static const Color _green = Color(0xFF125420);
+  static const Color _addGreen = Color(0xFF106220);
   static const Color _footerBg = Color(0xFFEBF0EA);
 
   final List<String> _tabs = [
@@ -66,23 +67,24 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     }
   }
 
-  List<AppUser> _filterUsers(List<User> all, String moduleQuery) {
-    final q = _searchQuery.trim().toLowerCase();
+  List<AppUser> _filterUsers(List<User> all) {
+    final q = _searchQuery.toLowerCase();
     return all.map(AppUser.fromUser).where((u) {
       if (!_inTab(u.role)) return false;
-      final fields = [u.name, u.email, u.mobile, u.companyNames];
-      return matchesWebSearch(q, fields) &&
-          matchesWebSearchTerms(moduleQuery, fields);
+      if (q.isEmpty) return true;
+      return u.name.toLowerCase().contains(q) ||
+          u.email.toLowerCase().contains(q) ||
+          u.mobile.toLowerCase().contains(q) ||
+          u.companyNames.toLowerCase().contains(q);
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final moduleQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     final usersAsync = ref.watch(usersListProvider);
-    final users = _filterUsers(usersAsync.valueOrNull ?? const [], moduleQuery);
+    final users = _filterUsers(usersAsync.valueOrNull ?? const []);
 
-    if (kIsWeb) return _webBuild(usersAsync, users, moduleQuery);
+    if (kIsWeb) return _webBuild(usersAsync, users);
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -188,21 +190,29 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     }
   }
 
-  int _webTabCount(List<User> all, int tab, String moduleQuery) {
+  int _webTabCount(List<User> all, int tab) {
     final q = _searchQuery.toLowerCase();
     return all.map(AppUser.fromUser).where((u) {
       if (!_webInTab(u.role, tab)) return false;
-      final fields = [u.name, u.email, u.mobile, u.companyNames];
-      return matchesWebSearch(q, fields) &&
-          matchesWebSearchTerms(moduleQuery, fields);
+      if (q.isEmpty) return true;
+      return u.name.toLowerCase().contains(q) ||
+          u.email.toLowerCase().contains(q) ||
+          u.mobile.toLowerCase().contains(q) ||
+          u.companyNames.toLowerCase().contains(q);
     }).length;
   }
 
-  Widget _webBuild(
-    AsyncValue<List<User>> usersAsync,
-    List<AppUser> users,
-    String moduleQuery,
-  ) {
+  Widget _webBuild(AsyncValue<List<User>> usersAsync, List<AppUser> users) {
+    // Set "+ Add" button in header
+    setHeaderActions([
+      WebHeaderAction(
+        label: 'Add',
+        icon: Icons.add_rounded,
+        isPrimary: true,
+        onPressed: () => context.push(Routes.addUser),
+      ),
+    ]);
+
     final all = usersAsync.valueOrNull;
     Widget body;
     if (usersAsync.isLoading && !usersAsync.hasValue) {
@@ -275,9 +285,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                       icon: _webTabMeta[i].$1,
                       color: _webTabMeta[i].$2,
                       selected: _selectedTab == i,
-                      count: all == null
-                          ? null
-                          : _webTabCount(all, i, moduleQuery),
+                      count: all == null ? null : _webTabCount(all, i),
                       onTap: () => setState(() => _selectedTab = i),
                     ),
                 ],
@@ -311,82 +319,53 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              cursorColor: _addGreen,
-              textAlignVertical: TextAlignVertical.center,
-              onChanged: (v) => setState(() => _searchQuery = v),
-              style: const TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 14.5,
-                fontWeight: FontWeight.w500,
-                color: _webInk,
-              ),
-              decoration: InputDecoration(
-                isDense: true,
-                filled: true,
-                fillColor: const Color(0xFFF7FAF8),
-                hintText: 'Search Users',
-                hintStyle: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black.withValues(alpha: 0.35),
-                ),
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                  size: 21,
-                  color: _addGreen,
-                ),
-                suffixIcon: _searchQuery.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        color: Colors.black45,
-                        onPressed: () => setState(() {
-                          _searchController.clear();
-                          _searchQuery = '';
-                        }),
-                      ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: _webLine),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: _addGreen, width: 1.4),
-                ),
-              ),
-            ),
+      child: TextField(
+        controller: _searchController,
+        cursorColor: _addGreen,
+        textAlignVertical: TextAlignVertical.center,
+        onChanged: (v) => setState(() => _searchQuery = v),
+        style: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 14.5,
+          fontWeight: FontWeight.w500,
+          color: _webInk,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor: const Color(0xFFF7FAF8),
+          hintText: 'Search Users',
+          hintStyle: TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 14.5,
+            fontWeight: FontWeight.w500,
+            color: Colors.black.withValues(alpha: 0.35),
           ),
-          const SizedBox(width: 10),
-          ElevatedButton.icon(
-            onPressed: () => context.push(Routes.addUser),
-            icon: const Icon(Icons.add_rounded, size: 20, color: Colors.white),
-            label: const Text(
-              'Add',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 14.5,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _addGreen,
-              elevation: 0,
-              minimumSize: const Size(120, 48),
-              padding: const EdgeInsets.symmetric(horizontal: 22),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            size: 21,
+            color: _addGreen,
           ),
-        ],
+          suffixIcon: _searchQuery.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  color: Colors.black45,
+                  onPressed: () => setState(() {
+                    _searchController.clear();
+                    _searchQuery = '';
+                  }),
+                ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: _webLine),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: _addGreen, width: 1.4),
+          ),
+        ),
       ),
     );
   }
@@ -1197,7 +1176,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<UserRole>(
-                    value: selectedRole,
+                    initialValue: selectedRole,
                     decoration: const InputDecoration(labelText: 'Access type'),
                     items: [
                       for (final role in roleChoices)
@@ -1291,7 +1270,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                   ],
                 ),
               );
-          if (signedIn!.phone != updatedPhone) {
+          if (signedIn.phone != updatedPhone) {
             _snack('Mobile number updated. Sign in again with the new number.');
             await ref.read(authRepositoryProvider).logout();
             ref.read(authStateProvider.notifier).logout();

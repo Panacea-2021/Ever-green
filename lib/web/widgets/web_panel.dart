@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 
 /// A white web card with a title row (optional count badge and action) above
@@ -32,7 +31,7 @@ class WebPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: WebDashboardColors.line),
+        border: Border.all(color: WebTokens.line),
         boxShadow: WebTokens.softShadow,
       ),
       child: Column(
@@ -61,14 +60,14 @@ class WebPanel extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: WebDashboardColors.accentSoft,
+                            color: WebTokens.mintSoft,
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             '$count',
                             style: WebTokens.bodyText(
                               11.5,
-                              color: WebDashboardColors.primary,
+                              color: WebTokens.green,
                               weight: FontWeight.w700,
                               h: 1.3,
                             ),
@@ -82,7 +81,7 @@ class WebPanel extends StatelessWidget {
                   TextButton(
                     onPressed: onAction,
                     style: TextButton.styleFrom(
-                      foregroundColor: WebDashboardColors.primary,
+                      foregroundColor: WebTokens.green,
                       textStyle: const TextStyle(
                         fontFamily: WebTokens.fontFamily,
                         fontSize: 13,

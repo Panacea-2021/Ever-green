@@ -8,7 +8,6 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../web/widgets/web_upload_content.dart';
 import '../../../amcs/data/amc_provider.dart';
 import '../../data/xlsx_template.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class UploadAmcScreen extends ConsumerStatefulWidget {
   const UploadAmcScreen({super.key});
@@ -24,7 +23,7 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
   bool isUploading = false;
   CompanyUploadResult? _result;
 
-  static const Color _green = AppColors.primary;
+  static const Color _green = Color(0xFF106220);
   static const Color _lavender = Color(0xFFEBEDFF);
   static const Color _webUploadSurface = Color(0xFFF0F6F0);
 
@@ -108,11 +107,11 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
                 ? const Color(0xFF173B22).withValues(alpha: 0.08)
                 : Colors.black.withValues(alpha: 0.1),
             blurRadius: compact ? 24 : 32,
-            offset: Offset(0, compact ? 8 : 4),
+            offset: const Offset(0, compact ? 8 : 4),
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         compact ? 20 : 16,
         compact ? 12 : 20,
         compact ? 20 : 16,
@@ -132,21 +131,21 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
               color: Color(0xFF42A5F5),
             ),
           ),
-          SizedBox(height: compact ? 8 : 16),
+          const SizedBox(height: compact ? 8 : 16),
 
           // Download Sample Excel
           _buildDownloadTemplateCard(),
-          SizedBox(height: compact ? 8 : 19),
+          const SizedBox(height: compact ? 8 : 19),
 
           // File upload box
           _buildFileUploadArea(),
-          SizedBox(height: compact ? 10 : 24),
+          const SizedBox(height: compact ? 10 : 24),
 
           // Submit button
           _buildSubmitButton(),
 
           if (_result != null) ...[
-            SizedBox(height: compact ? 10 : 20),
+            const SizedBox(height: compact ? 10 : 20),
             _buildResult(_result!),
           ],
         ],
@@ -159,7 +158,7 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
       onTap: _downloadTemplate,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.all(kIsWeb ? 10 : 16),
+        padding: const EdgeInsets.all(kIsWeb ? 10 : 16),
         decoration: BoxDecoration(
           color: kIsWeb ? _webUploadSurface : _lavender,
           borderRadius: BorderRadius.circular(16),
@@ -196,7 +195,7 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
                 ),
               ),
             ),
-            SizedBox(width: kIsWeb ? 10 : 14),
+            const SizedBox(width: kIsWeb ? 10 : 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,7 +209,7 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
                       color: Colors.black,
                     ),
                   ),
-                  SizedBox(height: kIsWeb ? 2 : 4),
+                  const SizedBox(height: kIsWeb ? 2 : 4),
                   Text(
                     'Click to Download',
                     style: TextStyle(
@@ -223,7 +222,7 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
                 ],
               ),
             ),
-            Icon(Icons.download, color: Colors.black, size: kIsWeb ? 20 : 24),
+            const Icon(Icons.download, color: Colors.black, size: kIsWeb ? 20 : 24),
           ],
         ),
       ),
@@ -265,7 +264,7 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
       onTap: isUploading ? null : _pickFile,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           vertical: kIsWeb ? 10 : 28,
           horizontal: 20,
         ),
@@ -289,7 +288,7 @@ class _UploadAmcScreenState extends ConsumerState<UploadAmcScreen> {
                 size: 24,
               ),
             ),
-            SizedBox(height: kIsWeb ? 6 : 14),
+            const SizedBox(height: kIsWeb ? 6 : 14),
             if (uploadedFileName != null) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

@@ -18,7 +18,6 @@ import '../../domain/models/task_item.dart';
 import '../widgets/task_action_handler.dart';
 import '../widgets/task_board_card.dart';
 import '../widgets/task_workflow.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// A role-aware task board backed by [taskItemsProvider]. Cards carry Report
 /// and Assign / Reassign; every other workflow action lives on Task Details.
@@ -47,7 +46,7 @@ class TaskBoardScreen extends ConsumerStatefulWidget {
 }
 
 class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
-  static const Color _green = AppColors.primary;
+  static const Color _green = Color(0xFF106220);
   String _query = '';
   late TaskStatus? _statusFilter = widget.initialStatus;
 
@@ -406,29 +405,64 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
   Widget _webStatusTiles(List<TaskItem> searched) {
     int countFor(TaskStatus? s) =>
         s == null ? searched.length : searched.where((t) => t.status == s).length;
-    return LayoutBuilder(
-      builder: (context, c) {
-        final perRow = c.maxWidth >= 900 ? 5 : (c.maxWidth >= 560 ? 3 : 2);
-        final tileWidth = (c.maxWidth - 14 * (perRow - 1)) / perRow;
-        return Wrap(
-          spacing: 14,
-          runSpacing: 14,
-          children: [
-            for (final f in _webFilters)
-              SizedBox(
-                width: tileWidth,
-                child: _WebStatusTile(
-                  label: f.$1,
-                  icon: f.$3,
-                  color: f.$4,
-                  count: countFor(f.$2),
-                  selected: _statusFilter == f.$2,
-                  onTap: () => setState(() => _statusFilter = f.$2),
-                ),
-              ),
-          ],
-        );
-      },
+    // Always show all 5 cards in a single row with equal width
+    return Row(
+      children: [
+        Expanded(
+          child: _WebStatusTile(
+            label: 'All',
+            icon: Icons.dashboard_outlined,
+            color: const Color(0xFF106220),
+            count: countFor(null),
+            selected: _statusFilter == null,
+            onTap: () => setState(() => _statusFilter = null),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _WebStatusTile(
+            label: 'Open',
+            icon: Icons.radio_button_unchecked,
+            color: const Color(0xFF2E5AAC),
+            count: countFor(TaskStatus.open),
+            selected: _statusFilter == TaskStatus.open,
+            onTap: () => setState(() => _statusFilter = TaskStatus.open),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _WebStatusTile(
+            label: 'Hold',
+            icon: Icons.pause_circle_outline,
+            color: const Color(0xFFB7791F),
+            count: countFor(TaskStatus.hold),
+            selected: _statusFilter == TaskStatus.hold,
+            onTap: () => setState(() => _statusFilter = TaskStatus.hold),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _WebStatusTile(
+            label: 'In Progress',
+            icon: Icons.timelapse,
+            color: const Color(0xFFE08600),
+            count: countFor(TaskStatus.inProgress),
+            selected: _statusFilter == TaskStatus.inProgress,
+            onTap: () => setState(() => _statusFilter = TaskStatus.inProgress),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _WebStatusTile(
+            label: 'Closed',
+            icon: Icons.check_circle_outline,
+            color: const Color(0xFF0F766E),
+            count: countFor(TaskStatus.closed),
+            selected: _statusFilter == TaskStatus.closed,
+            onTap: () => setState(() => _statusFilter = TaskStatus.closed),
+          ),
+        ),
+      ],
     );
   }
 
@@ -745,7 +779,7 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
       children: [
         if (notAssigned.isNotEmpty) ...[
           _sectionHeader(
-              'Not Assigned', notAssigned.length, const Color(0xFFD32F2F)),
+              'Not Assigned', notAssigned.length, const Color(0xFFD32F2F),),
           for (final t in notAssigned) _taskCard(t, role),
         ],
         if (assigned.isNotEmpty) ...[
@@ -965,61 +999,122 @@ class _WebStatusTileState extends State<_WebStatusTile> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          duration: const Duration(milliseconds: 180),
+          height: 82,
+          clipBehavior: Clip.antiAlias,
+          transform: Matrix4.translationValues(0, _hover && !sel ? -3 : 0, 0),
           decoration: BoxDecoration(
-            color: sel ? c : Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            color: sel ? null : Colors.white,
+            gradient: sel
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [c, Color.lerp(c, Colors.black, 0.2)!],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: sel ? c : (_hover ? c.withValues(alpha: 0.4) : WebTokens.line),
+              color: sel
+                  ? Colors.transparent
+                  : (_hover ? c.withValues(alpha: 0.5) : WebTokens.line),
+              width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: (sel ? c : Colors.black)
-                    .withValues(alpha: sel ? 0.25 : (_hover ? 0.07 : 0.04)),
-                blurRadius: sel || _hover ? 18 : 10,
-                offset: const Offset(0, 6),
+                color: sel
+                    ? c.withValues(alpha: 0.35)
+                    : Colors.black.withValues(alpha: _hover ? 0.08 : 0.04),
+                blurRadius: sel ? 16 : (_hover ? 14 : 8),
+                offset: const Offset(0, 5),
               ),
             ],
           ),
-          child: Row(
+          child: Stack(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: sel
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : c.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+              // Decorative circle
+              Positioned(
+                right: -18,
+                top: -18,
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: sel
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : c.withValues(alpha: 0.06),
+                  ),
                 ),
-                child: Icon(widget.icon, size: 20, color: sel ? Colors.white : c),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Checkmark for selected
+              if (sel)
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Row(
                   children: [
-                    Text(
-                      '${widget.count}',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: sel ? Colors.white : WebTokens.ink,
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: sel
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : c.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Icon(
+                        widget.icon,
+                        size: 22,
+                        color: sel ? Colors.white : c,
                       ),
                     ),
-                    Text(
-                      widget.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: sel
-                            ? Colors.white.withValues(alpha: 0.9)
-                            : WebTokens.body,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${widget.count}',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              height: 1.1,
+                              color: sel ? Colors.white : WebTokens.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            widget.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: sel
+                                  ? Colors.white.withValues(alpha: 0.92)
+                                  : WebTokens.body,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1053,7 +1148,7 @@ class _WebTaskCard extends StatefulWidget {
 }
 
 class _WebTaskCardState extends State<_WebTaskCard> {
-  static const Color _green = AppColors.primary;
+  static const Color _green = Color(0xFF106220);
   static const Color _red = Color(0xFFD32F2F);
   static const String _fallbackImage = 'assets/images/task_img_1.png';
 
@@ -1496,7 +1591,7 @@ class DeletedTaskCard extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.delete_outline,
-                  size: 18, color: Color(0xFFD32F2F)),
+                  size: 18, color: Color(0xFFD32F2F),),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(

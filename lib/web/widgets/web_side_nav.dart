@@ -6,7 +6,6 @@ import '../../core/auth/permissions.dart';
 import '../../core/router/routes.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../shared/providers/auth_state_provider.dart';
-import '../theme/web_dashboard_colors.dart';
 import '../../shared/widgets/app_drawer.dart'
     show drawerCompaniesCountProvider, drawerUsersCountProvider;
 import '../theme/web_tokens.dart';
@@ -173,6 +172,18 @@ class WebSideNav extends ConsumerWidget {
           route: Routes.auditLog,
           icon: Icons.history,
         ),
+      if (Permissions.canViewAnalytics(role))
+        const WebNavEntry(
+          label: 'Analytics',
+          route: Routes.analytics,
+          icon: Icons.bar_chart_outlined,
+        ),
+      if (Permissions.canViewReports(role))
+        const WebNavEntry(
+          label: 'Reports & Export',
+          route: Routes.reports,
+          icon: Icons.assessment_outlined,
+        ),
       if (Permissions.hasProfileTab(role))
         const WebNavEntry(
           label: 'Profile',
@@ -208,8 +219,13 @@ class WebSideNav extends ConsumerWidget {
 
     return Container(
       width: widthFor(screenWidth),
-      decoration:
-          const BoxDecoration(color: WebDashboardColors.sideNavBackground),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0E501B), WebTokens.greenDeep],
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -219,22 +235,18 @@ class WebSideNav extends ConsumerWidget {
               vertical: 24,
             ),
             child: Row(
-              mainAxisAlignment: collapsed
-                  ? MainAxisAlignment.center
-                  : MainAxisAlignment.start,
+              mainAxisAlignment:
+                  collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 Container(
                   width: 34,
                   height: 34,
                   decoration: const BoxDecoration(
-                    color: WebDashboardColors.sideNavLogoBackground,
+                    color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.eco,
-                    color: WebDashboardColors.sideNavForeground,
-                    size: 20,
-                  ),
+                  child:
+                      const Icon(Icons.eco, color: WebTokens.green, size: 20),
                 ),
                 if (!collapsed) ...[
                   const SizedBox(width: 12),
@@ -243,10 +255,7 @@ class WebSideNav extends ConsumerWidget {
                       'Evergreen',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: WebTokens.heading(
-                        20,
-                        color: WebDashboardColors.sideNavForeground,
-                      ),
+                      style: WebTokens.heading(20, color: Colors.white),
                     ),
                   ),
                 ],
@@ -258,9 +267,7 @@ class WebSideNav extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(28, 0, 0, 8),
               child: Text(
                 'MENU',
-                style: WebTokens.eyebrow(
-                  color: WebDashboardColors.sideNavMutedForeground,
-                ),
+                style: WebTokens.eyebrow(color: Colors.white54),
               ),
             ),
           Expanded(
@@ -322,13 +329,11 @@ class _WebNavTileState extends State<_WebNavTile> {
   Widget build(BuildContext context) {
     final active = widget.active;
     final entry = widget.entry;
-    final fg = active
-        ? WebDashboardColors.sideNavSelectedForeground
-        : WebDashboardColors.sideNavForeground;
+    final fg = active ? Colors.white : Colors.white70;
     final bg = active
-        ? WebDashboardColors.sideNavSelectedBackground
+        ? Colors.white.withValues(alpha: 0.16)
         : _hover
-            ? WebDashboardColors.sideNavForeground.withValues(alpha: 0.14)
+            ? Colors.white.withValues(alpha: 0.08)
             : Colors.transparent;
 
     final iconWidget = entry.svgIcon != null
@@ -360,10 +365,7 @@ class _WebNavTileState extends State<_WebNavTile> {
             borderRadius: BorderRadius.circular(12),
             border: active
                 ? const Border(
-                    left: BorderSide(
-                      color: WebDashboardColors.sideNavSelectedForeground,
-                      width: 3,
-                    ),
+                    left: BorderSide(color: WebTokens.mint, width: 3),
                   )
                 : null,
           ),
@@ -394,8 +396,7 @@ class _WebNavTileState extends State<_WebNavTile> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: entry.badgeColor ??
-                          WebDashboardColors.sideNavBadgeBackground,
+                      color: entry.badgeColor ?? WebTokens.mint,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -406,7 +407,7 @@ class _WebNavTileState extends State<_WebNavTile> {
                         fontWeight: FontWeight.w700,
                         color: entry.badgeColor != null
                             ? Colors.white
-                            : WebDashboardColors.sideNavSelectedForeground,
+                            : WebTokens.greenDeep,
                       ),
                     ),
                   ),

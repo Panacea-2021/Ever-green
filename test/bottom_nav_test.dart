@@ -36,7 +36,7 @@ Future<void> _pumpShell(
       ),
       GoRoute(path: Routes.scanner, builder: (_, __) => page(Routes.scanner)),
       GoRoute(
-          path: Routes.createAmc, builder: (_, __) => page(Routes.createAmc)),
+          path: Routes.createAmc, builder: (_, __) => page(Routes.createAmc),),
       GoRoute(
         path: '${Routes.addEquipment}/:id',
         builder: (_, __) => page(Routes.addEquipment),
@@ -64,7 +64,7 @@ void main() {
       final bar = tester.getSize(find.byType(SafeArea).last);
       expect(bar.height, lessThan(120), reason: '$role');
       expect(find.text('page:${Routes.home}').hitTestable(), findsOneWidget,
-          reason: '$role');
+          reason: '$role',);
     }
   });
 
@@ -94,7 +94,7 @@ void main() {
       for (final role in _admins) {
         final actions = ScaffoldWithBottomNav.quickActionsFor(role);
         expect(actions.map((a) => a.label),
-            ['Add Company', 'Add Equipment', 'Add Task']);
+            ['Add Company', 'Add Equipment', 'Add Task'],);
         expect(actions.map((a) => a.route), [
           Routes.createAmc,
           '${Routes.addEquipment}/new',

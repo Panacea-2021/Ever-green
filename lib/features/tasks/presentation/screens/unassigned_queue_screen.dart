@@ -6,13 +6,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/router/routes.dart';
+import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
-import '../../../../web/widgets/web_search_state.dart';
+import '../../../../web/widgets/web_header_actions.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
+import '../widgets/task_action_handler.dart';
 import '../widgets/task_workflow.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Super Admin / Manager view for triaging tickets (membership:
 /// [TaskItem.inQueueTab]; a ticket can be in several tabs):
@@ -30,29 +31,43 @@ class UnassignedQueueScreen extends ConsumerStatefulWidget {
       _UnassignedQueueScreenState();
 }
 
-class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
-  static const Color _green = AppColors.primary;
+class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
+    with WebHeaderActionsMixin {
+  static const Color _green = Color(0xFF106220);
   QueueTab _tab = QueueTab.unassigned;
+
+  TaskActionHandler get _handler => TaskActionHandler(context, ref);
 
   @override
   Widget build(BuildContext context) {
+    // Clear header actions on web - this screen has no header buttons
+    if (kIsWeb) {
+      setHeaderActions([]);
+    }
     final async = ref.watch(taskItemsProvider);
     final all = ref.watch(taskProvider);
     final tabs = ref.watch(queueTabsProvider);
-    final searchQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     final noEngineer = ref.watch(unassignedCountProvider);
 
-    final visibleTabs = {
-      for (final tab in QueueTab.values)
-        tab: tabs[tab]!
-            .where((task) => task.matchesAllQueryTerms(searchQuery))
-            .toList(),
-    };
-    final list = visibleTabs[_tab]!;
+    final list = tabs[_tab]!;
     final overdueOpen =
-        visibleTabs[QueueTab.unassigned]!.where((t) => t.isOverdue()).length;
-    final awaitingCount = visibleTabs[QueueTab.awaiting]!.length;
-    final escalationCount = visibleTabs[QueueTab.escalation]!.length;
+        tabs[QueueTab.unassigned]!.where((t) => t.isOverdue()).length;
+    final awaitingCount = tabs[QueueTab.awaiting]!.length;
+    final escalationCount = tabs[QueueTab.escalation]!.length;
+
+    // Use dedicated web layout
+    if (kIsWeb) {
+      return _webBuild(
+        async: async,
+        all: all,
+        tabs: tabs,
+        list: list,
+        noEngineer: noEngineer,
+        overdueOpen: overdueOpen,
+        awaitingCount: awaitingCount,
+        escalationCount: escalationCount,
+      );
+    }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -91,7 +106,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                     _overdueBanner(
                       '$escalationCount ticket${escalationCount == 1 ? '' : 's'} escalated or stuck in the same status for ${TaskItem.staleStatusHours}h+',
                     ),
-                  _tabs(visibleTabs),
+                  _tabs(tabs),
                   const SizedBox(height: 16),
                   Expanded(
                     child: RefreshIndicator(
@@ -124,8 +139,6 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                                         ),
                                       ),
                                     )
-                                  : kIsWeb
-                                  ? _webGrid(list)
                                   : ListView.builder(
                                       physics:
                                           const AlwaysScrollableScrollPhysics(),
@@ -141,6 +154,142 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Dedicated web layout for proper rendering in the web frame.
+  Widget _webBuild({
+    required AsyncValue<List<TaskItem>> async,
+    required List<TaskItem> all,
+    required Map<QueueTab, List<TaskItem>> tabs,
+    required List<TaskItem> list,
+    required int noEngineer,
+    required int overdueOpen,
+    required int awaitingCount,
+    required int escalationCount,
+  }) {
+    const cream = Color(0xFFFBFCFA);
+
+    Widget content;
+    if (all.isEmpty && async.isLoading) {
+      content = const Center(
+        child: Padding(
+          padding: EdgeInsets.only(top: 100),
+          child: CircularProgressIndicator(color: _green),
+        ),
+      );
+    } else if (all.isEmpty && async.hasError) {
+      content = _error(async.error);
+    } else if (list.isEmpty) {
+      content = _empty();
+    } else {
+      content = _webGrid(list);
+    }
+
+    return Scaffold(
+      backgroundColor: cream,
+      body: RefreshIndicator(
+        color: _green,
+        onRefresh: () async {
+          ref.invalidate(tasksProvider);
+          await ref.read(tasksProvider.future);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(28, 20, 28, 36),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1400),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header with unassigned count
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: noEngineer > 0
+                              ? const Color(0xFFD32F2F)
+                              : _green,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '$noEngineer unassigned',
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Overdue banner
+                  if (_tab == QueueTab.unassigned && overdueOpen > 0)
+                    _webOverdueBanner(
+                      '$overdueOpen open ticket${overdueOpen == 1 ? '' : 's'} past SLA',
+                    ),
+                  if (_tab == QueueTab.awaiting && awaitingCount > 0)
+                    _webOverdueBanner(
+                      '$awaitingCount ticket${awaitingCount == 1 ? '' : 's'} with no Service Engineer for over ${TaskItem.unassignedWaitMinutes} min — assign now',
+                    ),
+                  if (_tab == QueueTab.escalation && escalationCount > 0)
+                    _webOverdueBanner(
+                      '$escalationCount ticket${escalationCount == 1 ? '' : 's'} escalated or stuck in the same status for ${TaskItem.staleStatusHours}h+',
+                    ),
+                  // Filter tiles
+                  _webTabs(tabs),
+                  const SizedBox(height: 22),
+                  // Content
+                  content,
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webOverdueBanner(String message) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFDE8E8),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFD32F2F)),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: Color(0xFFD32F2F),
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF8A1A1A),
+                ),
               ),
             ),
           ],
@@ -386,10 +535,10 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
               [
                 if (t.isIndividual) ...[
                   t.contactName,
-                  t.address
+                  t.address,
                 ] else ...[
                   t.equipment,
-                  t.companyName
+                  t.companyName,
                 ],
               ].where((s) => s.isNotEmpty).join('  •  '),
               maxLines: 2,
@@ -407,12 +556,12 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
               children: [
                 _tag('Ticket #${t.ticketNo}', const Color(0xFFEBF0EA), _green),
                 _tag(_statusLabel(t), const Color(0xFFF1F1F1),
-                    const Color(0xFF545454)),
+                    const Color(0xFF545454),),
                 if (t.isIndividual)
                   _tag('Individual', const Color(0xFFEBF0EA), _green),
                 if (t.escalated)
                   _tag('Escalated', const Color(0xFFFDE8E8),
-                      const Color(0xFFD32F2F)),
+                      const Color(0xFFD32F2F),),
                 if (t.clientName.isNotEmpty)
                   _tag(
                     'Raised by ${t.clientName}',
@@ -459,33 +608,28 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
         final cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
         const gap = 18.0;
         final rows = (list.length + cols - 1) ~/ cols;
-        return ListView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
-          itemCount: rows,
-          itemBuilder: (context, r) {
-            final cells = <Widget>[];
-            for (var j = 0; j < cols; j++) {
-              if (j > 0) cells.add(const SizedBox(width: gap));
-              final k = r * cols + j;
-              cells.add(
-                Expanded(
-                  child: k < list.length
-                      ? _WebQueueHover(child: _webCard(list[k]))
-                      : const SizedBox.shrink(),
-                ),
-              );
-            }
-            return Padding(
-              padding: const EdgeInsets.only(bottom: gap),
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: cells,
+        return Column(
+          children: [
+            for (var r = 0; r < rows; r++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: gap),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var j = 0; j < cols; j++) ...[
+                        if (j > 0) const SizedBox(width: gap),
+                        Expanded(
+                          child: (r * cols + j) < list.length
+                              ? _WebQueueHover(child: _webCard(list[r * cols + j]))
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-            );
-          },
+          ],
         );
       },
     );
@@ -667,14 +811,16 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                     const Spacer(),
                     if (canAct) ...[
                       const SizedBox(height: 14),
-                      if (!t.hasAssignee)
-                        _primaryButton(
-                          'Assign to Service Engineer',
-                          () => _assignSheet(t),
-                        )
-                      else
-                        Row(
-                          children: [
+                      Row(
+                        children: [
+                          if (!t.hasAssignee)
+                            Expanded(
+                              child: _primaryButton(
+                                'Assign',
+                                () => _assignSheet(t),
+                              ),
+                            )
+                          else ...[
                             Expanded(
                               child: _primaryButton(
                                 'Reassign',
@@ -684,7 +830,14 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                             const SizedBox(width: 10),
                             _outlineButton('Unassign', () => _unassign(t)),
                           ],
-                        ),
+                          const SizedBox(width: 8),
+                          _TicketActionsMenu(
+                            task: t,
+                            handler: _handler,
+                            onDeleted: () => ref.invalidate(tasksProvider),
+                          ),
+                        ],
+                      ),
                     ],
                   ],
                 ),
@@ -776,13 +929,15 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
-          minimumSize: kIsWeb ? const Size(0, 40) : null,
-          side: const BorderSide(color: Color(0xFFD32F2F)),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          side: const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontFamily: 'Montserrat',
             fontSize: 14,
@@ -799,6 +954,90 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
   void _assignSheet(TaskItem t) {
     final isReassign = !t.isUnassigned;
 
+    // On web, show as a dialog for better UX
+    if (kIsWeb) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.4),
+        builder: (dialogContext) => Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 450, maxHeight: 550),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isReassign
+                                  ? 'Reassign Service Engineer'
+                                  : 'Assign Service Engineer',
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF14201A),
+                              ),
+                            ),
+                            if (isReassign) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Currently: ${t.assignee}',
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 13,
+                                  color: Color(0xFF6B6B6B),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        icon: const Icon(Icons.close, color: Color(0xFF8A988E)),
+                        tooltip: 'Close',
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 20),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                    child: TechnicianChoices(
+                      builder: (techs, stats) => Column(
+                        children: [
+                          for (final tech in techs)
+                            _webTechnicianTile(
+                              dialogContext,
+                              t,
+                              tech,
+                              statsFor(tech, stats),
+                              isReassign,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Mobile: use bottom sheet
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -884,7 +1123,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
                                 Navigator.pop(sheetContext);
                                 if (overloaded) {
                                   final ok = await _confirmOverload(
-                                      tech.name, s.active);
+                                      tech.name, s.active,);
                                   if (ok != true || !mounted) return;
                                 }
                                 _doAssign(t, tech, isReassign);
@@ -896,6 +1135,79 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _webTechnicianTile(
+    BuildContext dialogContext,
+    TaskItem t,
+    User tech,
+    TechnicianStats s,
+    bool isReassign,
+  ) {
+    final isCurrent = tech.backendId == t.technicianId;
+    final overloaded = s.isOverloaded;
+    return MouseRegion(
+      cursor: isCurrent ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        enabled: !isCurrent,
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFFEBF0EA),
+          child: Text(
+            tech.name.isNotEmpty ? tech.name[0] : '?',
+            style: const TextStyle(
+              color: _green,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        title: Text(
+          tech.name,
+          style: const TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          isCurrent ? 'Current assignee' : '${s.active} active task(s)',
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 12,
+            color: overloaded ? const Color(0xFFD32F2F) : const Color(0xFF6B6B6B),
+          ),
+        ),
+        trailing: isCurrent
+            ? const Icon(Icons.check, color: _green)
+            : overloaded
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDE8E8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Busy',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        color: Color(0xFFD32F2F),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                : const Icon(Icons.chevron_right, color: Color(0xFFB0B0B0)),
+        onTap: isCurrent
+            ? null
+            : () async {
+                Navigator.pop(dialogContext);
+                if (overloaded) {
+                  final ok = await _confirmOverload(tech.name, s.active);
+                  if (ok != true || !mounted) return;
+                }
+                _doAssign(t, tech, isReassign);
+              },
       ),
     );
   }
@@ -1100,6 +1412,153 @@ class _WebQueueHoverState extends State<_WebQueueHover> {
         ),
         child: widget.child,
       ),
+    );
+  }
+}
+
+/// 3-dots action menu for ticket queue cards.
+/// Shows all available actions based on user role and task state.
+class _TicketActionsMenu extends ConsumerWidget {
+  const _TicketActionsMenu({
+    required this.task,
+    required this.handler,
+    required this.onDeleted,
+  });
+
+  final TaskItem task;
+  final TaskActionHandler handler;
+  final VoidCallback onDeleted;
+
+  static const Color _green = Color(0xFF106220);
+  static const Color _danger = Color(0xFFD32F2F);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final actions = taskButtonsFor(task, user);
+    // Filter out serviceReport since we'll show it separately
+    final menuActions = actions
+        .where((b) => b.action != TaskAction.serviceReport)
+        .toList();
+
+    // Add delete action if user can delete (Super Admin / Manager)
+    final role = user?.role ?? UserRole.client;
+    final canDelete = role == UserRole.superAdmin || role == UserRole.manager;
+
+    return PopupMenuButton<TaskAction>(
+      icon: const Icon(
+        Icons.more_vert,
+        color: Color(0xFF5A6B5E),
+        size: 22,
+      ),
+      tooltip: 'More actions',
+      offset: const Offset(0, 40),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      color: Colors.white,
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      constraints: const BoxConstraints(minWidth: 200, maxWidth: 260),
+      itemBuilder: (context) => [
+        // Header
+        PopupMenuItem<TaskAction>(
+          enabled: false,
+          height: 42,
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: _green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.settings, color: _green, size: 16),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Actions',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF14201A),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(height: 1),
+        // Service Report always first
+        const PopupMenuItem<TaskAction>(
+          value: TaskAction.serviceReport,
+          height: 44,
+          child: const _ActionMenuItem(
+            icon: Icons.description_outlined,
+            label: 'Service Report',
+          ),
+        ),
+        // Action items
+        for (final button in menuActions)
+          PopupMenuItem<TaskAction>(
+            value: button.action,
+            height: 44,
+            child: _ActionMenuItem(
+              icon: button.action.icon,
+              label: button.action.label,
+              color: button.kind == TaskButtonKind.danger ? _danger : null,
+            ),
+          ),
+        // Add delete if allowed and not already in the list
+        if (canDelete &&
+            !menuActions.any((b) => b.action == TaskAction.delete)) ...[
+          const PopupMenuDivider(height: 1),
+          const PopupMenuItem<TaskAction>(
+            value: TaskAction.delete,
+            height: 44,
+            child: const _ActionMenuItem(
+              icon: Icons.delete_outline,
+              label: 'Delete Task',
+              color: _danger,
+            ),
+          ),
+        ],
+      ],
+      onSelected: (action) => handler.run(task, action, onDeleted: onDeleted),
+    );
+  }
+}
+
+/// Single menu item row with icon and label.
+class _ActionMenuItem extends StatelessWidget {
+  const _ActionMenuItem({
+    required this.icon,
+    required this.label,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? const Color(0xFF3A4A3E);
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: c),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: c,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

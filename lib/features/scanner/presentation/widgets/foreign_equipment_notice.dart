@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../amcs/data/equipment_provider.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Shown instead of equipment details when a client-side user scans or opens
 /// equipment of a company they are not linked to.
@@ -16,7 +15,7 @@ class ForeignEquipmentNotice extends StatelessWidget {
   });
 
   static const Color _red = Color(0xFFD32F2F);
-  static const Color _green = AppColors.primary;
+  static const Color _green = Color(0xFF106220);
 
   @override
   Widget build(BuildContext context) {

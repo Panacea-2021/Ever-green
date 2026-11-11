@@ -32,8 +32,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen>
     with WidgetsBindingObserver {
-  static const Color _green = AppColors.primary;
-  static const Color _green2 = AppColors.modulePrimaryDeep;
+  static const Color _green = Color(0xFF106220);
+  static const Color _green2 = Color(0xFF0D5119);
 
   /// Mirrors the OS notification permission for this app.
   bool _pushNotifications = false;
@@ -1479,7 +1479,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     if (confirmed == true && mounted) {
       await ref.read(authControllerProvider).logout();
-      if (mounted) context.go(kIsWeb ? Routes.home : Routes.login);
+      if (mounted) context.go(Routes.login);
     }
   }
 }
@@ -1497,8 +1497,8 @@ class _ChangePasswordBody extends StatefulWidget {
 }
 
 class _ChangePasswordBodyState extends State<_ChangePasswordBody> {
-  static const Color _green = AppColors.primary;
-  static const Color _green2 = AppColors.modulePrimaryDeep;
+  static const Color _green = Color(0xFF106220);
+  static const Color _green2 = Color(0xFF0D5119);
   final _current = TextEditingController();
   final _next = TextEditingController();
   final _confirm = TextEditingController();

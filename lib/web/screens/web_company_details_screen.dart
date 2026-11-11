@@ -6,11 +6,10 @@ import 'package:go_router/go_router.dart';
 import '../../core/data/evergreen_repository.dart';
 import '../../core/models/backend_models.dart';
 import '../../core/router/routes.dart';
-import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 
 const Color _trendDown = Color(0xFFBF0F0F);
-const Color _trendUp = WebDashboardColors.success;
+const Color _trendUp = Color(0xFF106220);
 
 /// Count for a stat card plus its month-over-month trend, with the loading /
 /// error state.
@@ -124,7 +123,7 @@ class WebCompanyDetailsScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: WebTokens.cream,
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(28, 26, 28, 36),
         child: Center(
@@ -272,7 +271,7 @@ class _Banner extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: WebTokens.bodyText(
                               13.5,
-                              color: WebDashboardColors.primaryDark,
+                              color: const Color(0xFF125420),
                               weight: FontWeight.w700,
                               h: 1.2,
                             ),

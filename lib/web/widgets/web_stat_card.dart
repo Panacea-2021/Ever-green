@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 
 /// A compact KPI tile for the web dashboard: icon chip beside a big value and
@@ -38,7 +37,6 @@ class _WebStatCardState extends State<WebStatCard> {
   @override
   Widget build(BuildContext context) {
     final accent = widget.accent;
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
     return MouseRegion(
       cursor: widget.onTap != null
           ? SystemMouseCursors.click
@@ -48,21 +46,14 @@ class _WebStatCardState extends State<WebStatCard> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration:
-              reduceMotion ? Duration.zero : const Duration(milliseconds: 220),
-          transform: Matrix4.translationValues(
-            0,
-            _hover && !reduceMotion ? -2.5 : 0,
-            0,
-          ),
+          duration: const Duration(milliseconds: 160),
+          transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
           decoration: BoxDecoration(
-            color: _hover ? WebDashboardColors.successSoft : Colors.white,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _hover
-                  ? WebDashboardColors.success.withValues(alpha: 0.35)
-                  : WebDashboardColors.line,
+              color: _hover ? accent.withValues(alpha: 0.35) : WebTokens.line,
             ),
             boxShadow: _hover ? WebTokens.cardShadow : WebTokens.softShadow,
           ),
@@ -150,7 +141,7 @@ class _Placeholder extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: WebDashboardColors.line,
+        color: WebTokens.line,
         borderRadius: BorderRadius.circular(8),
       ),
     );

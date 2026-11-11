@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,10 +8,8 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
-import '../../../../web/widgets/web_search_state.dart';
 import '../../domain/models/amc_contract.dart';
 import '../widgets/amc_async_states.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// The design's four status tabs. Completed (awaiting client sign-off) is
 /// grouped under Closed.
@@ -73,7 +70,7 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  static const Color _green = AppColors.primary;
+  static const Color _green = Color(0xFF106220);
   static const Color _danger = Color(0xFFD32F2F);
 
   @override
@@ -87,13 +84,12 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
   List<ServiceTask> _companyTasks(List<ServiceTask> all) =>
       all.where((t) => t.company?.id == _companyId).toList();
 
-  List<ServiceTask> _filtered(List<ServiceTask> tasks, String moduleQuery) {
+  List<ServiceTask> _filtered(List<ServiceTask> tasks) {
     // When searching, search across all tasks; otherwise filter by tab
-    if (_searchQuery.isNotEmpty || moduleQuery.isNotEmpty) {
-      final localQuery = _searchQuery.trim().toLowerCase();
-      final pageQuery = moduleQuery.trim().toLowerCase();
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
       return tasks.where((t) {
-        final fields = [
+        return [
           t.ticketNo,
           _title(t),
           _location(t),
@@ -102,9 +98,7 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
           t.equipment?.egSerialNumber ?? '',
           _statusLabel(t.status),
           if (t.createdAt != null) displayDate(t.createdAt!),
-        ];
-        return matchesWebSearch(localQuery, fields) &&
-            matchesWebSearchTerms(pageQuery, fields);
+        ].any((v) => v.toLowerCase().contains(q));
       }).toList();
     }
     return tasks.where((t) => _selectedTab.matches(t.status)).toList();
@@ -112,7 +106,6 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final moduleQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
     final tasksAsync = ref.watch(tasksProvider);
     final companyTasks = _companyTasks(tasksAsync.valueOrNull ?? const []);
     return Scaffold(
@@ -149,9 +142,7 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
                       error: e,
                       onRetry: () => ref.invalidate(tasksProvider),
                     ),
-                    data: (all) => _buildTaskList(
-                      _filtered(_companyTasks(all), moduleQuery),
-                    ),
+                    data: (all) => _buildTaskList(_filtered(_companyTasks(all))),
                   ),
                 ),
               ],

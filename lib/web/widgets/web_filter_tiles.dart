@@ -30,24 +30,18 @@ class WebFilterTiles extends StatelessWidget {
 
   final List<WebFilterOption> options;
 
-  static const double _gap = 14;
+  static const double _gap = 12;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        final n = options.length;
-        final perRow = c.maxWidth >= 180.0 * n ? n : (c.maxWidth >= 560 ? 3 : 2);
-        final width = (c.maxWidth - _gap * (perRow - 1)) / perRow;
-        return Wrap(
-          spacing: _gap,
-          runSpacing: _gap,
-          children: [
-            for (final o in options)
-              SizedBox(width: width, child: _FilterTile(option: o)),
-          ],
-        );
-      },
+    // Always show all tiles in a single row with equal widths
+    return Row(
+      children: [
+        for (var i = 0; i < options.length; i++) ...[
+          if (i > 0) const SizedBox(width: _gap),
+          Expanded(child: _FilterTile(option: options[i])),
+        ],
+      ],
     );
   }
 }

@@ -7,38 +7,40 @@ import '../landing_theme.dart';
 class WhyChooseUsSection extends StatelessWidget {
   const WhyChooseUsSection({super.key});
 
-  static const _bannerSize = Size(1600, 569);
+  // Height increased by 20% total from original: 569 * 1.2 = 683
+  static const _bannerSize = Size(1600, 689);
   static const _bodyColor = Color(0xFF2F3B34);
   static const _cardColor = Color(0xFFFEFEFE);
 
+  // Vertical positions scaled by 1.21 from original to match new height
   static const _features = [
     (
-      patch: Rect.fromLTRB(846, 276, 996, 377),
-      text: Rect.fromLTRB(828, 284, 994, 376),
+      patch: Rect.fromLTRB(846, 334, 996, 456),
+      text: Rect.fromLTRB(828, 344, 994, 455),
       title: 'Verified\nprofessionals',
       body: 'Licensed, background-checked, and experienced technicians.',
     ),
     (
-      patch: Rect.fromLTRB(1100, 276, 1272, 377),
-      text: Rect.fromLTRB(1104, 279, 1266, 373),
+      patch: Rect.fromLTRB(1100, 334, 1272, 456),
+      text: Rect.fromLTRB(1104, 338, 1266, 451),
       title: 'Transparent\npricing',
       body: 'You approve the price before any work starts. No hidden fees.',
     ),
     (
-      patch: Rect.fromLTRB(1380, 276, 1536, 377),
-      text: Rect.fromLTRB(1385, 279, 1530, 373),
+      patch: Rect.fromLTRB(1380, 334, 1536, 456),
+      text: Rect.fromLTRB(1385, 338, 1530, 451),
       title: 'Convenient\nscheduling',
       body: 'Pick a time window that fits your routine.',
     ),
     (
-      patch: Rect.fromLTRB(880, 418, 1082, 519),
-      text: Rect.fromLTRB(887, 422, 1077, 515),
+      patch: Rect.fromLTRB(880, 506, 1082, 628),
+      text: Rect.fromLTRB(887, 511, 1077, 623),
       title: 'Applicable\nwarranty',
       body: 'Repairs covered under service warranty for peace of mind.',
     ),
     (
-      patch: Rect.fromLTRB(1200, 418, 1410, 519),
-      text: Rect.fromLTRB(1206, 426, 1404, 515),
+      patch: Rect.fromLTRB(1200, 506, 1410, 628),
+      text: Rect.fromLTRB(1206, 516, 1404, 623),
       title: 'Service support',
       body: 'A dedicated support team from booking to repair completion.',
     ),
@@ -121,9 +123,10 @@ class WhyChooseUsSection extends StatelessWidget {
 
   List<Widget> _chip() {
     return [
-      _patch(const Rect.fromLTRB(814, 46, 932, 66), const Color(0xFFDFF4E5)),
+      // Vertical positions scaled by 1.21 from original
+      _patch(const Rect.fromLTRB(814, 56, 932, 80), const Color(0xFFDFF4E5)),
       _textBox(
-        const Rect.fromLTRB(818, 47, 932, 66),
+        const Rect.fromLTRB(818, 57, 932, 80),
         Text(
           'WHY CHOOSE US',
           style: LandingTypography.eyebrow.copyWith(
@@ -142,9 +145,10 @@ class WhyChooseUsSection extends StatelessWidget {
 
   List<Widget> _subtitle() {
     return [
-      _patch(const Rect.fromLTRB(778, 144, 1258, 188), const Color(0xFFF5FBF7)),
+      // Vertical positions scaled by 1.21 from original
+      _patch(const Rect.fromLTRB(778, 174, 1258, 228), const Color(0xFFF5FBF7)),
       _textBox(
-        const Rect.fromLTRB(782, 145, 1256, 187),
+        const Rect.fromLTRB(782, 175, 1256, 226),
         const Text(
           'Everything you need for a smooth and hassle-free kitchen repair\n'
           'experience — all in one place.',

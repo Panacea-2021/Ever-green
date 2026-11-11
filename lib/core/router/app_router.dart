@@ -32,7 +32,6 @@ import '../../features/dashboard/presentation/screens/home_screen.dart';
 import '../../features/dashboard/presentation/screens/analytics_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/announcements/presentation/screens/announcements_screen.dart';
-import '../../features/announcements/presentation/screens/mobile_announcements_screen.dart';
 import '../../features/onboarding/presentation/screens/get_started_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -61,6 +60,7 @@ import '../../features/audit/presentation/screens/audit_log_screen.dart';
 import '../../features/issue_types/presentation/screens/issue_types_screen.dart';
 import '../../features/amcs/presentation/screens/amc_renewals_screen.dart';
 import '../../features/pm/presentation/screens/pm_schedule_screen.dart';
+import '../../features/reports/presentation/screens/reports_screen.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../../shared/widgets/unauthorized_screen.dart';
 import '../auth/permissions.dart';
@@ -151,7 +151,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // If not authenticated (signed out, or a 401 expired the session) and
       // trying to access a protected route.
       if (!isAuthenticated && !isPublicRoute) {
-        return kIsWeb ? Routes.home : Routes.login;
+        return Routes.login;
       }
 
       // If authenticated and on auth routes (except splash/getStarted which auto-navigate)
@@ -260,13 +260,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'notifications',
         builder: (context, state) => const NotificationsScreen(),
       ),
-      GoRoute(
-        path: Routes.announcements,
-        name: 'announcements',
-        builder: (context, state) => kIsWeb
-            ? const AnnouncementsScreen()
-            : const MobileAnnouncementsScreen(),
-      ),
+      if (kIsWeb)
+        GoRoute(
+          path: Routes.announcements,
+          name: 'announcements',
+          builder: (context, state) => const AnnouncementsScreen(),
+        ),
       GoRoute(
         path: Routes.scanner,
         name: 'scanner',
@@ -372,6 +371,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.analytics,
         name: 'analytics',
         builder: (context, state) => const AnalyticsScreen(),
+      ),
+      GoRoute(
+        path: Routes.reports,
+        name: 'reports',
+        builder: (context, state) => const ReportsScreen(),
       ),
       GoRoute(
         path: Routes.editProfile,

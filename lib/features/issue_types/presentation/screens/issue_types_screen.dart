@@ -3,18 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
-import '../../../../core/theme/app_colors.dart';
 
-const _green = AppColors.primary;
+const _green = Color(0xFF106220);
 const _issueTypeNameMax = 60;
 
 /// The admin-managed name lists: issue types (picked when raising a ticket)
 /// and service types (set on equipment).
 enum ManagedTypeKind {
   issue('Issue Types', 'issue type', 'Issue type', 'issueType',
-      'e.g. Installation', Icons.build_circle_outlined),
+      'e.g. Installation', Icons.build_circle_outlined,),
   service('Service Types', 'service type', 'Service type', 'serviceType',
-      'e.g. Chiller AMC', Icons.miscellaneous_services_outlined);
+      'e.g. Chiller AMC', Icons.miscellaneous_services_outlined,);
 
   const ManagedTypeKind(
     this.title,

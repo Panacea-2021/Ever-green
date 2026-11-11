@@ -162,15 +162,31 @@ class _DesktopBar extends StatelessWidget {
                       active: activeNav == 'Services',
                     ),
                     if (!isCompact)
-                      _NavLink(label: 'Industries', onTap: onIndustries),
-                    _NavLink(label: 'About', onTap: onAbout),
-                    _NavLink(label: 'How it works', onTap: onHowItWorks),
+                      _NavLink(
+                        label: 'Industries',
+                        onTap: onIndustries,
+                        active: activeNav == 'Industries',
+                      ),
+                    _NavLink(
+                      label: 'About',
+                      onTap: onAbout,
+                      active: activeNav == 'About',
+                    ),
+                    _NavLink(
+                      label: 'How it works',
+                      onTap: onHowItWorks,
+                      active: activeNav == 'How it works',
+                    ),
                     _NavLink(
                       label: 'Privacy Policy',
                       onTap: onPrivacy,
                       active: activeNav == 'Privacy Policy',
                     ),
-                    _NavLink(label: 'Contact', onTap: onContact),
+                    _NavLink(
+                      label: 'Contact',
+                      onTap: onContact,
+                      active: activeNav == 'Contact',
+                    ),
                   ],
                 ),
               ),
@@ -393,7 +409,8 @@ class _NavLinkState extends State<_NavLink> {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.active || _hover
+    final isActive = widget.active;
+    final color = isActive || _hover
         ? LandingColors.textDark
         : const Color(0xFF4A534C);
 
@@ -407,14 +424,31 @@ class _NavLinkState extends State<_NavLink> {
         behavior: HitTestBehavior.opaque,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Text(
-            widget.label,
-            style: TextStyle(
-              fontFamily: LandingTypography.fontFamily,
-              fontSize: 14,
-              fontWeight: widget.active ? FontWeight.w600 : FontWeight.w500,
-              color: color,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontFamily: LandingTypography.fontFamily,
+                  fontSize: 14,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 4),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 2,
+                width: isActive ? 24 : (_hover ? 16 : 0),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? LandingColors.primary
+                      : (_hover ? const Color(0xFF4A534C) : Colors.transparent),
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -368,7 +368,7 @@ class TaskActions {
   /// [hold] for the transitions that carry hold-reason data.
   /// [note] is shown on the ticket's timeline (e.g. why it was closed).
   Future<void> setStatus(TaskItem t, ServiceStatus status,
-      {String? note}) async {
+      {String? note,}) async {
     await _post('user/updateTaskStatus', {
       'task_user_link': _taskUserLink(t),
       'status': status.key,
@@ -491,7 +491,7 @@ class TaskActions {
     final encoded = body is Map ? body['pdf_base64']?.toString() : null;
     if (encoded == null || encoded.isEmpty) {
       throw const RepositoryException(
-          'The service report could not be generated');
+          'The service report could not be generated',);
     }
     return base64Decode(encoded);
   }

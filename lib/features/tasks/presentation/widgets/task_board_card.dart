@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/task_item.dart';
 import 'task_workflow.dart' show taskImage;
-import '../../../../core/theme/app_colors.dart';
 
 /// Task Board card from the new design: large image, title + priority star,
 /// location / status row, Equipment / Company / Ticket ID rows, Created At, and
@@ -28,8 +27,8 @@ class TaskBoardCard extends StatelessWidget {
   /// Null makes the star read-only.
   final VoidCallback? onToggleStar;
 
-  static const Color _green = AppColors.primary;
-  static const Color _darkGreen = AppColors.modulePrimaryDark;
+  static const Color _green = Color(0xFF106220);
+  static const Color _darkGreen = Color(0xFF125420);
   static const Color _red = Color(0xFFD32F2F);
   static const String _fallbackImage = 'assets/images/task_img_1.png';
 

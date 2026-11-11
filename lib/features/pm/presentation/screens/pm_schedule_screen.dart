@@ -10,8 +10,6 @@ import '../../data/pm_provider.dart';
 import '../../domain/models/pm_schedule.dart';
 import '../../domain/pm_occurrences.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
-import '../../../../web/widgets/web_search_state.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Upcoming preventive maintenance for all equipment (from each equipment's
 /// PM frequency and the PM schedules), plus schedule management: recurring
@@ -24,7 +22,7 @@ class PmScheduleScreen extends ConsumerStatefulWidget {
 }
 
 class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
-  static const Color _green = AppColors.primary;
+  static const Color _green = Color(0xFF106220);
   static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   static const _months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
@@ -42,9 +40,13 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final searchQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
+    // Use dedicated web layout
+    if (kIsWeb) {
+      return _webBuild();
+    }
+
     return Scaffold(
-      backgroundColor: kIsWeb ? Colors.transparent : Colors.white,
+      backgroundColor: Colors.white,
       floatingActionButton: _schedulesView && _tab == 0
           ? FloatingActionButton.extended(
               backgroundColor: _green,
@@ -64,23 +66,87 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
         bottom: false,
         child: Column(
           children: [
-            if (!kIsWeb) _header(),
-            if (kIsWeb) ...[
-              const SizedBox(height: 22),
-              _webViewTabs(),
-              const SizedBox(height: 18),
-            ] else ...[
-              _viewTabs(),
-              const SizedBox(height: 8),
-            ],
+            _header(),
+            _viewTabs(),
+            const SizedBox(height: 8),
             Expanded(
-              child: _schedulesView
-                  ? _schedulesSection(searchQuery)
-                  : _upcomingSection(searchQuery),
+              child: _schedulesView ? _schedulesSection() : _upcomingSection(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// Dedicated web layout for proper rendering.
+  Widget _webBuild() {
+    const cream = Color(0xFFFBFCFA);
+    return Scaffold(
+      backgroundColor: cream,
+      floatingActionButton: _schedulesView && _tab == 0
+          ? FloatingActionButton.extended(
+              backgroundColor: _green,
+              onPressed: _openAddSheet,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'New Schedule',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            )
+          : null,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: _webViewTabs(),
+          ),
+          const SizedBox(height: 18),
+          Expanded(
+            child: _schedulesView
+                ? _webSchedulesSection()
+                : _upcomingSection(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Web-specific schedules section with proper layout.
+  Widget _webSchedulesSection() {
+    final async = ref.watch(pmProvider);
+    final pm = async.valueOrNull ?? const PmState();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _generateBar(pm.schedules),
+        _tabs(pm.schedules.length, pm.generated.length),
+        const SizedBox(height: 4),
+        Expanded(
+          child: async.hasValue
+              ? RefreshIndicator(
+                  color: _green,
+                  onRefresh: () => ref.refresh(pmProvider.future),
+                  child: _tab == 0
+                      ? _schedulesList(pm.schedules)
+                      : _generatedList(pm.generated),
+                )
+              : async.hasError
+                  ? _empty(
+                      'Could not load schedules',
+                      '${async.error}',
+                      onRetry: () => ref.invalidate(pmProvider),
+                    )
+                  : const Center(
+                      child: CircularProgressIndicator(color: _green),
+                    ),
+        ),
+      ],
     );
   }
 
@@ -160,25 +226,22 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
       ).length;
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: WebFilterTiles(
-        options: [
-          for (var i = 0; i < labels.length; i++)
-            WebFilterOption(
-              label: labels[i],
-              icon: _webTileMeta[i].$1,
-              color: _webTileMeta[i].$2,
-              selected:
-                  _view == i && (_range == null || i == labels.length - 1),
-              count: countFor(i),
-              onTap: () => setState(() {
-                _view = i;
-                if (i < PmWindow.values.length) _range = null;
-              }),
-            ),
-        ],
-      ),
+    return WebFilterTiles(
+      options: [
+        for (var i = 0; i < labels.length; i++)
+          WebFilterOption(
+            label: labels[i],
+            icon: _webTileMeta[i].$1,
+            color: _webTileMeta[i].$2,
+            selected:
+                _view == i && (_range == null || i == labels.length - 1),
+            count: countFor(i),
+            onTap: () => setState(() {
+              _view = i;
+              if (i < PmWindow.values.length) _range = null;
+            }),
+          ),
+      ],
     );
   }
 
@@ -276,29 +339,9 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     );
   }
 
-  Widget _schedulesSection(String searchQuery) {
+  Widget _schedulesSection() {
     final async = ref.watch(pmProvider);
     final pm = async.valueOrNull ?? const PmState();
-    final schedules = pm.schedules
-        .where(
-          (schedule) => matchesWebSearchTerms(searchQuery, [
-            schedule.equipmentName,
-            schedule.companyName,
-            schedule.frequency.label,
-            schedule.id,
-          ]),
-        )
-        .toList();
-    final generated = pm.generated
-        .where(
-          (task) => matchesWebSearchTerms(searchQuery, [
-            task.equipmentName,
-            task.companyName,
-            task.scheduleId,
-            task.taskId?.toString(),
-          ]),
-        )
-        .toList();
     return Column(
       children: [
         _generateBar(pm.schedules),
@@ -310,8 +353,8 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                   color: _green,
                   onRefresh: () => ref.refresh(pmProvider.future),
                   child: _tab == 0
-                      ? _schedulesList(schedules)
-                      : _generatedList(generated),
+                      ? _schedulesList(pm.schedules)
+                      : _generatedList(pm.generated),
                 )
               : async.hasError
                   ? _empty(
@@ -327,7 +370,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     );
   }
 
-  Widget _upcomingSection(String searchQuery) {
+  Widget _upcomingSection() {
     final async = ref.watch(pmDueSourcesProvider);
     final now = DateTime.now();
     final window = PmWindow.values[_view];
@@ -346,27 +389,16 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
             today: now,
             includeOverdue: range == null && window.includesOverdue,
           );
-    final visibleItems = items
-        .where(
-          (item) => matchesWebSearchTerms(searchQuery, [
-            item.equipmentName,
-            item.companyName,
-            item.location,
-            item.frequencyLabel,
-            item.equipmentId?.toString(),
-          ]),
-        )
-        .toList();
     return Column(
       children: [
-        _rangeRow(visibleItems.length, sources != null),
+        _rangeRow(items.length, sources != null),
         const SizedBox(height: 8),
         Expanded(
           child: sources != null
               ? RefreshIndicator(
                   color: _green,
                   onRefresh: _refreshUpcoming,
-                  child: _upcomingList(visibleItems, now),
+                  child: _upcomingList(items, now),
                 )
               : async.hasError
                   ? _empty(
@@ -1247,7 +1279,11 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        child: SizedBox(height: constraints.maxHeight, child: child),
+        child: SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: child,
+        ),
       ),
     );
   }

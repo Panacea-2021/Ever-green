@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 
 /// A lightweight data table for the web dashboard: a header row + body rows
@@ -35,10 +34,10 @@ class WebTable extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
           decoration: const BoxDecoration(
-            color: WebDashboardColors.canvas,
+            color: WebTokens.cream,
             border: Border(
-              top: BorderSide(color: WebDashboardColors.line),
-              bottom: BorderSide(color: WebDashboardColors.line),
+              top: BorderSide(color: WebTokens.line),
+              bottom: BorderSide(color: WebTokens.line),
             ),
           ),
           child: Row(
@@ -69,9 +68,7 @@ class WebTable extends StatelessWidget {
               decoration: BoxDecoration(
                 border: i == 4
                     ? null
-                    : const Border(
-                        bottom: BorderSide(color: WebDashboardColors.line),
-                      ),
+                    : const Border(bottom: BorderSide(color: WebTokens.line)),
               ),
               child: Row(
                 children: [
@@ -83,7 +80,7 @@ class WebTable extends StatelessWidget {
                         child: Container(
                           height: 12,
                           decoration: BoxDecoration(
-                            color: WebDashboardColors.line,
+                            color: WebTokens.line,
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
@@ -145,13 +142,11 @@ class _WebTableRowState extends State<_WebTableRow> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
             color: _hover && widget.onTap != null
-                ? WebDashboardColors.accentSoft.withValues(alpha: 0.55)
+                ? WebTokens.mintSoft.withValues(alpha: 0.55)
                 : Colors.transparent,
             border: widget.last
                 ? null
-                : const Border(
-                    bottom: BorderSide(color: WebDashboardColors.line),
-                  ),
+                : const Border(bottom: BorderSide(color: WebTokens.line)),
           ),
           child: Row(
             children: [

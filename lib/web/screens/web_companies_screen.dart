@@ -10,21 +10,9 @@ import '../../features/amcs/data/amc_provider.dart';
 import '../../features/amcs/domain/models/amc_contract.dart';
 import '../../features/amcs/presentation/widgets/amc_async_states.dart';
 import '../../shared/providers/auth_state_provider.dart';
-import '../theme/web_dashboard_colors.dart';
 import '../theme/web_tokens.dart';
 import '../widgets/web_filter_tiles.dart';
-import '../widgets/web_search_state.dart';
 import '../widgets/web_table.dart';
-
-class _CompanyListColors {
-  _CompanyListColors._();
-
-  static const Color primary = WebDashboardColors.primary;
-  static const Color primaryDark = WebDashboardColors.primaryDark;
-  static const Color surfaceSoft = Color(0xFFF4F1EB);
-  static const Color band = WebDashboardColors.primarySoft;
-  static const Color line = WebDashboardColors.line;
-}
 
 enum _TypeFilter {
   all('All'),
@@ -45,11 +33,11 @@ enum _TypeFilter {
       };
 
   Color get color => switch (this) {
-        _TypeFilter.all => WebDashboardColors.primaryDark,
-        _TypeFilter.cAmc => WebDashboardColors.blue,
-        _TypeFilter.ncAmc => WebDashboardColors.secondary,
-        _TypeFilter.nonAmc => WebDashboardColors.amber,
-        _TypeFilter.regular => WebDashboardColors.coral,
+        _TypeFilter.all => const Color(0xFF106220),
+        _TypeFilter.cAmc => const Color(0xFF2E5AAC),
+        _TypeFilter.ncAmc => const Color(0xFF0F766E),
+        _TypeFilter.nonAmc => const Color(0xFFB7791F),
+        _TypeFilter.regular => const Color(0xFF7B4FB0),
       };
 
   bool matches(Company c) => switch (this) {
@@ -68,34 +56,22 @@ class WebCompaniesScreen extends ConsumerStatefulWidget {
   const WebCompaniesScreen({super.key});
 
   @override
-  ConsumerState<WebCompaniesScreen> createState() => _WebCompaniesScreenState();
+  ConsumerState<WebCompaniesScreen> createState() =>
+      _WebCompaniesScreenState();
 }
 
 class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
-  static const Color _danger = WebDashboardColors.coral;
+  static const Color _green = Color(0xFF106220);
+  static const Color _danger = Color(0xFFD32F2F);
 
   _TypeFilter _typeFilter = _TypeFilter.all;
 
-  List<Company> _visible(List<Company> companies, String query) =>
-      companies.where((company) {
-        return _typeFilter.matches(company) &&
-            matchesWebSearchTerms(query, [
-              company.name,
-              company.branchName,
-              company.location,
-              company.email,
-              company.pocEmail,
-              company.poc?.name,
-              company.poc?.phone,
-              company.gstNumber,
-              company.serviceLabel,
-            ]);
-      }).toList();
+  List<Company> _visible(List<Company> companies) =>
+      companies.where(_typeFilter.matches).toList();
 
   @override
   Widget build(BuildContext context) {
     final companiesAsync = ref.watch(companiesProvider);
-    final searchQuery = ref.watch(webModuleSearchQueryProvider);
     final canManage =
         Permissions.canManageAmcs(ref.watch(currentUserRoleProvider));
 
@@ -110,7 +86,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
         ),
       ),
       data: (companies) {
-        final visible = _visible(companies, searchQuery);
+        final visible = _visible(companies);
         if (visible.isEmpty) {
           return _StateBox(
             child: AmcEmptyState(
@@ -129,9 +105,9 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
     final all = companiesAsync.valueOrNull ?? const <Company>[];
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: WebTokens.cream,
       body: RefreshIndicator(
-        color: _CompanyListColors.primary,
+        color: _green,
         onRefresh: () => ref.refresh(companiesProvider.future),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -176,7 +152,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _CompanyListColors.line),
+        border: Border.all(color: WebTokens.line),
         boxShadow: WebTokens.softShadow,
       ),
       child: WebTable(
@@ -203,9 +179,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
               _contractCell(c),
               WebCellPill(
                 c.isActive ? 'Active' : 'Inactive',
-                c.isActive
-                    ? WebDashboardColors.success
-                    : const Color(0xFF8A8A8A),
+                c.isActive ? const Color(0xFF125420) : const Color(0xFF8A8A8A),
               ),
               if (canManage)
                 Align(
@@ -252,8 +226,9 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
                 child: _WebCompanyCard(
                   company: company,
                   onTap: () => _openCompany(company),
-                  onMenu:
-                      canManage ? (at) => _showCompanyMenu(company, at) : null,
+                  onMenu: canManage
+                      ? (at) => _showCompanyMenu(company, at)
+                      : null,
                 ),
               ),
           ],
@@ -327,11 +302,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
       height: 44,
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: danger ? _danger : _CompanyListColors.primary,
-          ),
+          Icon(icon, size: 18, color: danger ? _danger : _green),
           const SizedBox(width: 12),
           Text(
             label,
@@ -351,7 +322,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
     Company company, {
     required bool activate,
   }) async {
-    final accent = activate ? _CompanyListColors.primary : _danger;
+    final accent = activate ? _green : _danger;
     final confirmed = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.4),
@@ -430,19 +401,17 @@ class _ServiceCell extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
             decoration: BoxDecoration(
-              color: i == 0 ? WebDashboardColors.primarySoft : Colors.white,
+              color: i == 0 ? WebTokens.mintSoft : Colors.white,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: i == 0
-                    ? WebDashboardColors.accentPale
-                    : _CompanyListColors.line,
+                color: i == 0 ? WebTokens.mint : WebTokens.line,
               ),
             ),
             child: Text(
               parts[i],
               style: WebTokens.bodyText(
                 11.5,
-                color: i == 0 ? _CompanyListColors.primaryDark : WebTokens.ink,
+                color: i == 0 ? WebTokens.green : WebTokens.ink,
                 weight: FontWeight.w700,
                 h: 1.2,
               ),
@@ -511,8 +480,8 @@ class _WebCompanyCard extends StatefulWidget {
 }
 
 class _WebCompanyCardState extends State<_WebCompanyCard> {
-  static const Color _primary = WebDashboardColors.secondary;
-  static const Color _primaryDark = _CompanyListColors.primaryDark;
+  static const Color _green = Color(0xFF106220);
+  static const Color _darkGreen = Color(0xFF125420);
   static const Color _inactive = Color(0xFF8A8A8A);
 
   bool _hover = false;
@@ -538,9 +507,7 @@ class _WebCompanyCardState extends State<_WebCompanyCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: _hover
-                  ? _primary.withValues(alpha: 0.35)
-                  : _CompanyListColors.line,
+              color: _hover ? _green.withValues(alpha: 0.35) : WebTokens.line,
             ),
             boxShadow: _hover ? WebTokens.cardShadow : WebTokens.softShadow,
           ),
@@ -580,7 +547,7 @@ class _WebCompanyCardState extends State<_WebCompanyCard> {
                             children: [
                               const Icon(
                                 Icons.location_on,
-                                color: _primary,
+                                color: _darkGreen,
                                 size: 15,
                               ),
                               const SizedBox(width: 4),
@@ -593,7 +560,7 @@ class _WebCompanyCardState extends State<_WebCompanyCard> {
                                     fontFamily: WebTokens.fontFamily,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: _primaryDark,
+                                    color: _darkGreen,
                                   ),
                                 ),
                               ),
@@ -612,7 +579,7 @@ class _WebCompanyCardState extends State<_WebCompanyCard> {
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _CompanyListColors.surfaceSoft,
+                  color: const Color(0xFFF7F9F6),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -638,7 +605,7 @@ class _WebCompanyCardState extends State<_WebCompanyCard> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: const BoxDecoration(
-                  color: _CompanyListColors.band,
+                  color: Color(0xFFEBF0EA),
                 ),
                 child: Row(
                   children: [
@@ -681,13 +648,12 @@ class _WebCompanyCardState extends State<_WebCompanyCard> {
   }
 
   Widget _statusPill(bool active) {
-    final color = active ? WebDashboardColors.success : _inactive;
+    final color = active ? _darkGreen : _inactive;
     return Container(
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color:
-            active ? WebDashboardColors.successSoft : const Color(0xFFF0F0F0),
+        color: active ? const Color(0xFFEBF0EA) : const Color(0xFFF0F0F0),
         borderRadius: BorderRadius.circular(48),
       ),
       child: Row(

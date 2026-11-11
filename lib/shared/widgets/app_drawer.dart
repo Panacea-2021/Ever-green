@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/permissions.dart';
 import '../../core/data/evergreen_repository.dart';
 import '../../core/router/routes.dart';
-import '../../features/announcements/data/announcement_provider.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
@@ -48,13 +47,6 @@ class AppDrawer extends ConsumerWidget {
     final usersCount = Permissions.canManageUsers(role)
         ? ref.watch(drawerUsersCountProvider).valueOrNull
         : null;
-    final announcementUnreadCount =
-        user == null || !Permissions.canAccessRoute(role, Routes.announcements)
-            ? null
-            : ref.watch(announcementControllerProvider).maybeWhen(
-                  data: (data) => data.unreadCountFor(user.id),
-                  orElse: () => null,
-                );
 
     return Drawer(
       backgroundColor: Colors.white,
@@ -125,25 +117,6 @@ class AppDrawer extends ConsumerWidget {
                             context.go(Routes.home);
                           },
                         ),
-                        if (Permissions.canAccessRoute(
-                          role,
-                          Routes.announcements,
-                        ))
-                          _buildMenuItem(
-                            context,
-                            icon: Icons.campaign_outlined,
-                            title: 'Announcements',
-                            badge: announcementUnreadCount != null &&
-                                    announcementUnreadCount > 0
-                                ? announcementUnreadCount.toString()
-                                : null,
-                            badgeColor: const Color(0xFF125420),
-                            isSelected: location == Routes.announcements,
-                            onTap: () {
-                              Navigator.pop(context);
-                              context.push(Routes.announcements);
-                            },
-                          ),
                         if (Permissions.canAccessRoute(role, Routes.amcs))
                           _buildMenuItem(
                             context,

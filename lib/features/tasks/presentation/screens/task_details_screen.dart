@@ -13,7 +13,6 @@ import '../widgets/task_timeline.dart';
 import '../widgets/task_action_button.dart';
 import '../widgets/task_action_handler.dart';
 import '../widgets/task_workflow.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Task details screen matching Figma design with:
 /// - Hero image header with title overlay
@@ -57,10 +56,10 @@ class TaskDetailsScreen extends ConsumerWidget {
     this.lastUpdatedOn,
   });
 
-  static const Color _green = AppColors.primary;
-  static const Color _greenTitle = AppColors.modulePrimaryTitleDark;
+  static const Color _green = Color(0xFF106220);
+  static const Color _greenTitle = Color(0xFF11682E);
   static const Color _blueTitle = Color(0xFF5B899E);
-  static const Color _lightGreenBg = AppColors.modulePrimarySoft;
+  static const Color _lightGreenBg = Color(0xFFEBF0EA);
   static const String _defaultImage = 'assets/images/task_img_1.png';
 
   static String _fmt(DateTime? d) {
@@ -202,7 +201,7 @@ class TaskDetailsScreen extends ConsumerWidget {
     );
     final editButton = canEdit
         ? _buildBottomButtons(context, ref, task, title, loc, stat, company,
-            client, mob, tech, techMob, created, sNo, desc)
+            client, mob, tech, techMob, created, sNo, desc,)
         : null;
 
     return Scaffold(
@@ -274,7 +273,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                   GestureDetector(
                     onTap: () => context.pop(),
                     child: const Icon(Icons.arrow_back,
-                        color: Colors.white, size: 24),
+                        color: Colors.white, size: 24,),
                   ),
                   const SizedBox(width: 12),
                   const Text(
@@ -336,7 +335,7 @@ class TaskDetailsScreen extends ConsumerWidget {
             width: 6,
             height: 6,
             decoration: const BoxDecoration(
-                color: Color(0xFF125420), shape: BoxShape.circle),
+                color: Color(0xFF125420), shape: BoxShape.circle,),
           ),
           const SizedBox(width: 6),
           Text(
@@ -489,7 +488,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Flexible(
-                            child: _infoField('Mobile', phone, link: true)),
+                            child: _infoField('Mobile', phone, link: true),),
                         const SizedBox(width: 6),
                         const Icon(Icons.copy_rounded, size: 16, color: _green),
                       ],
@@ -548,7 +547,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.build_outlined,
-                      color: _blueTitle, size: 24),
+                      color: _blueTitle, size: 24,),
                 ),
                 const SizedBox(height: 12),
 
@@ -568,14 +567,14 @@ class TaskDetailsScreen extends ConsumerWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: _infoField(
-                      'Ticket ID', ticketNo.isEmpty ? '-' : ticketNo),
+                      'Ticket ID', ticketNo.isEmpty ? '-' : ticketNo,),
                 ),
                 const SizedBox(height: 12),
 
                 Align(
                   alignment: Alignment.centerLeft,
                   child: _infoField(
-                      'Issue Type', issueType.isEmpty ? '-' : issueType),
+                      'Issue Type', issueType.isEmpty ? '-' : issueType,),
                 ),
                 const SizedBox(height: 12),
 
@@ -601,7 +600,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: _infoField(
-                      'Mobile', techMobile.isEmpty ? '-' : techMobile),
+                      'Mobile', techMobile.isEmpty ? '-' : techMobile,),
                 ),
                 const SizedBox(height: 12),
 
@@ -609,7 +608,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: _infoField(
-                      'Created on', createdOn.isEmpty ? '-' : createdOn),
+                      'Created on', createdOn.isEmpty ? '-' : createdOn,),
                 ),
                 const SizedBox(height: 12),
 
@@ -617,7 +616,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: _infoField(
-                        'Equipment S.No', serialNo.isEmpty ? '-' : serialNo),
+                        'Equipment S.No', serialNo.isEmpty ? '-' : serialNo,),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -626,7 +625,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: _infoField(
-                      'Description', description.isEmpty ? '-' : description),
+                      'Description', description.isEmpty ? '-' : description,),
                 ),
                 const SizedBox(height: 20),
               ],
@@ -657,7 +656,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                     text: 'Last Updated on : ',
                     style: TextStyle(
                         color: Colors.black.withValues(alpha: 0.4),
-                        fontStyle: FontStyle.italic),
+                        fontStyle: FontStyle.italic,),
                   ),
                   TextSpan(
                     text: lastUpdated.isEmpty ? '-' : lastUpdated,

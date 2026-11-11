@@ -65,11 +65,11 @@ class WhyChooseSection extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(f.$2,
                       style: svcText(
-                          size: 13.5, weight: FontWeight.w700, height: 1.3)),
+                          size: 13.5, weight: FontWeight.w700, height: 1.3,),),
                   const SizedBox(height: 6),
                   Text(f.$3,
                       style: svcText(
-                          size: 12, color: SvcColors.body, height: 1.5)),
+                          size: 12, color: SvcColors.body, height: 1.5,),),
                 ],
               ),
           ],
@@ -136,7 +136,7 @@ class _PlansSectionState extends State<PlansSection> {
         'Preventive maintenance',
         'Emergency repair support',
         'Compliance checks',
-        'Detailed reports'
+        'Detailed reports',
       ],
       true,
     ),
@@ -147,7 +147,7 @@ class _PlansSectionState extends State<PlansSection> {
         '24/7 priority support',
         'Dedicated engineer',
         'Equipment upgrades',
-        'Customized service plans'
+        'Customized service plans',
       ],
       false,
     ),
@@ -224,7 +224,7 @@ class _PlanCard extends StatelessWidget {
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: SvcColors.primary.withOpacity(0.3),
+                      color: SvcColors.primary.withValues(alpha: 0.3),
                       blurRadius: 32,
                       offset: const Offset(0, 16),
                     ),
@@ -239,12 +239,12 @@ class _PlanCard extends StatelessWidget {
                   Expanded(
                     child: Text(name,
                         style: svcText(
-                            size: 18, weight: FontWeight.w800, color: fg)),
+                            size: 18, weight: FontWeight.w800, color: fg,),),
                   ),
                   if (popular)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                          horizontal: 10, vertical: 4,),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(LandingRadius.pill),
@@ -254,7 +254,7 @@ class _PlanCard extends StatelessWidget {
                         style: svcText(
                             size: 10.5,
                             weight: FontWeight.w700,
-                            color: SvcColors.primary),
+                            color: SvcColors.primary,),
                       ),
                     ),
                 ],
@@ -279,7 +279,7 @@ class _PlanCard extends StatelessWidget {
                           style: svcText(
                             size: 13,
                             color: selected
-                                ? Colors.white.withOpacity(0.9)
+                                ? Colors.white.withValues(alpha: 0.9)
                                 : SvcColors.body,
                           ),
                         ),
@@ -364,13 +364,13 @@ class CaseStudiesSection extends StatelessWidget {
                         children: [
                           Text(c.$2,
                               style:
-                                  svcText(size: 14, weight: FontWeight.w700)),
+                                  svcText(size: 14, weight: FontWeight.w700),),
                           const SizedBox(height: 6),
                           Text(c.$3,
                               style: svcText(
                                   size: 12.5,
                                   color: SvcColors.body,
-                                  height: 1.5)),
+                                  height: 1.5,),),
                         ],
                       ),
                     ),
@@ -414,7 +414,7 @@ class TestimonialsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(Icons.format_quote_rounded,
-              size: 30, color: SvcColors.highlight),
+              size: 30, color: SvcColors.highlight,),
           const SizedBox(height: 8),
           Text(
             'Evergreen has been our trusted partner for kitchen maintenance '
@@ -435,9 +435,9 @@ class TestimonialsSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Facilities Manager',
-                      style: svcText(size: 13, weight: FontWeight.w700)),
+                      style: svcText(size: 13, weight: FontWeight.w700),),
                   Text('Leading IT Company',
-                      style: svcText(size: 12, color: SvcColors.body)),
+                      style: svcText(size: 12, color: SvcColors.body),),
                 ],
               ),
             ],
@@ -604,18 +604,18 @@ class _FaqTile extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(question,
-                            style: svcText(size: 14, weight: FontWeight.w600)),
+                            style: svcText(size: 14, weight: FontWeight.w600),),
                       ),
                       const SizedBox(width: 12),
                       Icon(open ? Icons.remove : Icons.add,
-                          size: 20, color: SvcColors.primary),
+                          size: 20, color: SvcColors.primary,),
                     ],
                   ),
                   if (open) ...[
                     const SizedBox(height: 10),
                     Text(answer,
                         style: svcText(
-                            size: 13, color: SvcColors.body, height: 1.6)),
+                            size: 13, color: SvcColors.body, height: 1.6,),),
                   ],
                 ],
               ),
@@ -641,15 +641,15 @@ class ServicesCtaSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final desktop = SvcLayout.isDesktop(context);
 
-    final text = Column(
+    const text = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SvcEyebrow('Ready to get started', light: true),
-        const SizedBox(height: 14),
-        const SvcHeading(
-            title: "Let's keep your kitchen running.", light: true),
-        const SizedBox(height: 12),
-        const SvcBody(
+        SvcEyebrow('Ready to get started', light: true),
+        SizedBox(height: 14),
+        SvcHeading(
+            title: "Let's keep your kitchen running.", light: true,),
+        SizedBox(height: 12),
+        SvcBody(
           'Get reliable maintenance, repairs and AMC for your commercial '
           'kitchen equipment. Request a free site assessment today.',
           light: true,
@@ -686,7 +686,7 @@ class ServicesCtaSection extends StatelessWidget {
       child: desktop
           ? Row(
               children: [
-                Expanded(child: text),
+                const Expanded(child: text),
                 const SizedBox(width: 40),
                 buttons,
               ],
@@ -734,7 +734,7 @@ class ServicesFooter extends StatelessWidget {
         'Emergency Repairs',
         'Equipment Installation',
         'Deep Cleaning',
-        'AMC & Compliance'
+        'AMC & Compliance',
       ]
     ),
     (
@@ -744,7 +744,7 @@ class ServicesFooter extends StatelessWidget {
         'Corporate Cafeterias',
         'Hostels & Universities',
         'Hotels & Resorts',
-        'Hospitals'
+        'Hospitals',
       ]
     ),
     (
@@ -755,7 +755,7 @@ class ServicesFooter extends StatelessWidget {
         'AMC Plans',
         'Case Studies',
         'FAQs',
-        'Privacy Policy'
+        'Privacy Policy',
       ]
     ),
   ];
@@ -774,7 +774,7 @@ class ServicesFooter extends StatelessWidget {
           'Reliable maintenance, repairs and AMC for commercial kitchens '
           'across India.',
           style: svcText(
-              size: 13, height: 1.6, color: Colors.white.withOpacity(0.6)),
+              size: 13, height: 1.6, color: Colors.white.withValues(alpha: 0.6),),
         ),
         const SizedBox(height: 18),
         Row(
@@ -792,7 +792,7 @@ class ServicesFooter extends StatelessWidget {
                   height: 32,
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
+                    color: Colors.white.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
                   child: SvgPicture.asset(
@@ -816,7 +816,7 @@ class ServicesFooter extends StatelessWidget {
                   size: 12,
                   weight: FontWeight.w700,
                   letterSpacing: 1.2,
-                  color: Colors.white),
+                  color: Colors.white,),
             ),
             const SizedBox(height: 14),
             for (final link in links)
@@ -830,7 +830,7 @@ class ServicesFooter extends StatelessWidget {
                       link,
                       style: svcText(
                         size: 13,
-                        color: Colors.white.withOpacity(0.65),
+                        color: Colors.white.withValues(alpha: 0.65),
                       ),
                     ),
                   ),
@@ -848,7 +848,7 @@ class ServicesFooter extends StatelessWidget {
               size: 12,
               weight: FontWeight.w700,
               letterSpacing: 1.2,
-              color: Colors.white),
+              color: Colors.white,),
         ),
         const SizedBox(height: 14),
         MouseRegion(
@@ -860,7 +860,7 @@ class ServicesFooter extends StatelessWidget {
               style: svcText(
                   size: 13,
                   weight: FontWeight.w600,
-                  color: SvcColors.highlightLight),
+                  color: SvcColors.highlightLight,),
             ),
           ),
         ),
@@ -876,11 +876,11 @@ class ServicesFooter extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.location_on_outlined,
-                        size: 15, color: Colors.white.withOpacity(0.65)),
+                        size: 15, color: Colors.white.withValues(alpha: 0.65),),
                     const SizedBox(width: 6),
                     Text(city,
                         style: svcText(
-                            size: 13, color: Colors.white.withOpacity(0.65))),
+                            size: 13, color: Colors.white.withValues(alpha: 0.65),),),
                   ],
                 ),
               ),
@@ -890,7 +890,7 @@ class ServicesFooter extends StatelessWidget {
     );
 
     final bottomText =
-        svcText(size: 12.5, color: Colors.white.withOpacity(0.5));
+        svcText(size: 12.5, color: Colors.white.withValues(alpha: 0.5));
 
     return Container(
       width: double.infinity,
@@ -926,7 +926,7 @@ class ServicesFooter extends StatelessWidget {
                     ],
                   ),
                 const SizedBox(height: 36),
-                Divider(color: Colors.white.withOpacity(0.12), height: 1),
+                Divider(color: Colors.white.withValues(alpha: 0.12), height: 1),
                 const SizedBox(height: 20),
                 Wrap(
                   alignment: WrapAlignment.spaceBetween,
@@ -935,7 +935,7 @@ class ServicesFooter extends StatelessWidget {
                   children: [
                     Text(
                         '© ${DateTime.now().year} Evergreen. All rights reserved.',
-                        style: bottomText),
+                        style: bottomText,),
                     Wrap(
                       spacing: 24,
                       children: [

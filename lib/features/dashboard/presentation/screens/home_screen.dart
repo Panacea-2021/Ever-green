@@ -22,15 +22,14 @@ import '../../data/analytics_history_provider.dart';
 import '../../data/analytics_provider.dart';
 import '../../data/dashboard_repository.dart';
 import '../widgets/video_hero.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Which metric series the Reports combined chart is showing.
 enum _ReportMetric { users, tasks, equipment }
 
 /// Palette + shared style tokens for the dashboard.
 class _Palette {
-  static const green = AppColors.primary;
-  static const greenDark = AppColors.modulePrimaryDeep;
+  static const green = Color(0xFF106220);
+  static const greenDark = Color(0xFF0D5119);
   static const accentBlue = Color(0xFF344BFD);
   static const up = Color(0xFF04AD2F);
   static const down = Color(0xFFBF0F0F);
@@ -120,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
 
                     _sectionHeader(
-                        showOrgOverview ? 'Task Status' : 'My Task Status'),
+                        showOrgOverview ? 'Task Status' : 'My Task Status',),
                     const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1329,7 +1328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       fontWeight: FontWeight.w700,
                       color: deltaColor,
                     ),
-                  )),
+                  ),),
                 ),
               ],
             )

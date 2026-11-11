@@ -3,6 +3,7 @@
 /// Marketing website landing page with all sections:
 /// Hero, How It Works, Task Steps, Technicians, Why Choose Us,
 /// Reviews, FAQ, Download App, and Footer.
+library;
 
 // Main page
 export 'presentation/screens/landing_page.dart';

@@ -9,11 +9,11 @@ import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
+import '../../../../web/widgets/web_header_actions.dart';
 import '../../../pickers/presentation/screens/company_picker_screen.dart';
 import '../../data/equipment_provider.dart';
 import '../../../../web/widgets/web_form_kit.dart';
 import '../../domain/models/equipment_item.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class AddEquipmentScreen extends ConsumerStatefulWidget {
   final String companyId;
@@ -41,7 +41,8 @@ class AddEquipmentScreen extends ConsumerStatefulWidget {
   ConsumerState<AddEquipmentScreen> createState() => _AddEquipmentScreenState();
 }
 
-class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
+class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
+    with WebHeaderActionsMixin {
   final _equipmentNameController = TextEditingController();
   final _makeController = TextEditingController();
   final _modelController = TextEditingController();
@@ -59,7 +60,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
   bool _saving = false;
   bool _pickingCompany = false;
 
-  static const Color _green = AppColors.primary;
+  static const Color _green = Color(0xFF106220);
   static const Color _resetBorder = Color(0x80155622); // rgba(21,86,34,0.5)
 
   /// PM frequency labels shown in the form and their backend values.
@@ -142,6 +143,27 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Register header actions for web
+    if (kIsWeb) {
+      final showBulkUpload = !widget.isEdit &&
+          Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
+      setHeaderActions([
+        if (showBulkUpload)
+          WebHeaderAction(
+            label: 'Bulk Upload',
+            icon: Icons.cloud_upload_outlined,
+            onPressed: () => context.push(Routes.uploadEquipments),
+            isPrimary: false,
+          ),
+        WebHeaderAction(
+          label: widget.isEdit ? 'Update' : 'Save',
+          icon: Icons.check_rounded,
+          onPressed: _saving ? () {} : _saveEquipment,
+          isPrimary: true,
+        ),
+      ]);
+    }
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -177,7 +199,6 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
               child: Column(
                 children: [
                   if (!kIsWeb) _buildHeader(context),
-                  if (kIsWeb) _buildBottomButtons(webTop: true),
                   Expanded(
                     child: kIsWeb
                         ? WebForm.page(
@@ -398,15 +419,19 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
     ];
     final isLoading = !serviceTypes.hasValue && serviceTypes.isLoading;
     final hasError = !serviceTypes.hasValue && serviceTypes.hasError;
+
+    // Hide the field entirely when no service types are available (field is optional)
+    if (!isLoading && !hasError && names.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final hint = !kIsWeb
         ? 'Service Type'
         : isLoading
             ? 'Loading service types...'
             : hasError
                 ? 'Service Type (tap to retry)'
-                : names.isEmpty
-                    ? 'No service types available'
-                    : 'Service Type';
+                : 'Service Type';
     return _dropdownField(
       hint,
       _serviceTypeName,
@@ -430,9 +455,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
               ? () => ref.invalidate(serviceTypesProvider)
               : isLoading
                   ? () => _snack('Service types are still loading.')
-                  : names.isEmpty
-                      ? () => _snack('No service types are available.')
-                      : null,
+                  : null,
     );
   }
 
@@ -632,7 +655,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
       onTap: _uploadingImage ? null : _showImagePickerDialog,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: kIsWeb ? 28 : 20),
+        padding: const EdgeInsets.symmetric(vertical: kIsWeb ? 28 : 20),
         decoration: kIsWeb
             ? WebForm.uploadDecoration()
             : BoxDecoration(
@@ -727,14 +750,14 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: FittedBox(
+        child: const FittedBox(
           fit: BoxFit.scaleDown,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.cloud_upload_outlined,
-                color: const Color(0xFF0E501B),
+                color: Color(0xFF0E501B),
                 size: kIsWeb ? 16 : 18,
               ),
               SizedBox(width: kIsWeb ? 6 : 8),
@@ -744,7 +767,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
                   fontFamily: 'Montserrat',
                   fontSize: kIsWeb ? 13 : 16,
                   fontWeight: kIsWeb ? FontWeight.w600 : FontWeight.w500,
-                  color: const Color(0xFF0E501B),
+                  color: Color(0xFF0E501B),
                 ),
               ),
             ],
@@ -757,14 +780,11 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
       child: Container(
         height: kIsWeb ? 40 : 46,
         decoration: BoxDecoration(
-          color: kIsWeb ? const Color(0xFF106220) : null,
-          gradient: kIsWeb
-              ? null
-              : const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF138A2A), _green],
-                ),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF138A2A), _green],
+          ),
           borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
           boxShadow: kIsWeb
               ? [
@@ -823,7 +843,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen> {
       children: [
         if (showBulkUpload) ...[
           Expanded(child: bulkUploadButton),
-          SizedBox(width: kIsWeb ? 10 : 16),
+          const SizedBox(width: kIsWeb ? 10 : 16),
         ],
         Expanded(child: saveButton),
       ],

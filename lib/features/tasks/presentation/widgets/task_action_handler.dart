@@ -12,9 +12,8 @@ import '../../data/task_provider.dart';
 import '../../domain/models/task_event.dart';
 import '../../domain/models/task_item.dart';
 import 'task_workflow.dart';
-import '../../../../core/theme/app_colors.dart';
 
-const Color _green = AppColors.primary;
+const Color _green = Color(0xFF106220);
 
 /// Runs the role-based task actions (sheets, dialogs and backend calls) for a
 /// screen. Shared by the Task Board card buttons and the Task Details actions.
@@ -31,7 +30,7 @@ class TaskActionHandler {
 
   /// Dispatches [action] for [t]. [onDeleted] runs after a successful delete.
   Future<void> run(TaskItem t, TaskAction action,
-      {VoidCallback? onDeleted}) async {
+      {VoidCallback? onDeleted,}) async {
     switch (action) {
       case TaskAction.serviceReport:
         await serviceReport(t);
@@ -61,7 +60,7 @@ class TaskActionHandler {
         await runTaskAction(
           context,
           () => _actions.escalate(t,
-              reason: 'Overdue by ${-t.hoursToSla()}h (SLA)'),
+              reason: 'Overdue by ${-t.hoursToSla()}h (SLA)',),
           success: '${t.title} escalated to Manager',
         );
       case TaskAction.accept:
@@ -532,7 +531,7 @@ class TaskActionHandler {
                 Row(
                   children: [
                     Icon(Icons.image_outlined,
-                        size: 18, color: Colors.grey.shade600),
+                        size: 18, color: Colors.grey.shade600,),
                     const SizedBox(width: 8),
                     Text(
                       '${t.attachments.length + pending.length} '
@@ -547,7 +546,7 @@ class TaskActionHandler {
                     TextButton.icon(
                       onPressed: () => _addScreenshot(t),
                       icon: const Icon(Icons.add_a_photo_outlined,
-                          size: 18, color: _green),
+                          size: 18, color: _green,),
                       label: const Text(
                         'Add',
                         style: TextStyle(
@@ -569,7 +568,7 @@ class TaskActionHandler {
                       if (notes.isEmpty) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
                           const SnackBar(
-                              content: Text('Please describe the work done')),
+                              content: Text('Please describe the work done'),),
                         );
                         return;
                       }
@@ -578,7 +577,7 @@ class TaskActionHandler {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _green,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),),
                     ),
                     child: const Text(
                       'Submit & Close',
@@ -677,7 +676,7 @@ class TaskActionHandler {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _green,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),),
                   ),
                   child: const Text(
                     'Submit',
@@ -717,10 +716,64 @@ class TaskActionHandler {
       MediaQuery.of(ctx).viewInsets.bottom + bottomInset;
 
   /// A titled bottom sheet of choices returning the picked value.
+  /// On web, shows as a centered dialog instead of bottom sheet.
   Future<T?> _pickSheet<T>({
     required String title,
     required List<Widget> Function(BuildContext ctx) tiles,
   }) {
+    // On web, show as a dialog for better UX
+    if (kIsWeb) {
+      return showDialog<T>(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.4),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380, maxHeight: 500),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 12, 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close, color: Color(0xFF8A988E)),
+                        tooltip: 'Close',
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: tiles(ctx),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    // On mobile, use bottom sheet
     return showModalBottomSheet<T>(
       context: context,
       backgroundColor: Colors.white,

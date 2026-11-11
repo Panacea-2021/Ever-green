@@ -12,9 +12,8 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../data/amc_provider.dart';
 import '../../domain/models/amc_contract.dart';
 import '../../../../web/widgets/web_filter_tiles.dart';
-import '../../../../web/widgets/web_search_state.dart';
+import '../../../../web/widgets/web_header_actions.dart';
 import '../widgets/amc_async_states.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Super Admin / Manager view of AMC contracts that need attention —
 /// expiring soon or already expired — with one-tap renewal.
@@ -25,15 +24,20 @@ class AmcRenewalsScreen extends ConsumerStatefulWidget {
   ConsumerState<AmcRenewalsScreen> createState() => _AmcRenewalsScreenState();
 }
 
-class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
-  static const Color _green = AppColors.primary;
+class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
+    with WebHeaderActionsMixin {
+  static const Color _green = Color(0xFF106220);
 
   // null = All flagged; otherwise filter to this status.
   AmcStatus? _filter;
 
   @override
   Widget build(BuildContext context) {
-    final searchQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
+    // Clear any header actions from previous screens
+    if (kIsWeb) {
+      setHeaderActions([]);
+    }
+
     final companiesAsync = ref.watch(companiesProvider);
     final all = amcContractsFrom(companiesAsync.valueOrNull ?? const [])
         .where((c) => c.company?.isActive != false)
@@ -44,18 +48,9 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
     final expiredCount =
         all.where((c) => c.status() == AmcStatus.expired).length;
 
-    final visible = flagged.where((contract) {
-      return (_filter == null || contract.status() == _filter) &&
-          matchesWebSearchTerms(searchQuery, [
-            contract.companyName,
-            contract.branchName,
-            contract.pocName,
-            contract.mobile,
-            contract.email,
-            contract.serviceType,
-            contract.amcCategory,
-          ]);
-    }).toList();
+    final visible = _filter == null
+        ? flagged
+        : flagged.where((c) => c.status() == _filter).toList();
     final canRenew =
         Permissions.canManageAmcs(ref.watch(currentUserRoleProvider));
 
@@ -183,8 +178,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
               builder: (context, c) {
                 final filters = WebFilterTiles(
                   options: [
-                    for (final f
-                        in <(String, AmcStatus?, int, IconData, Color)>[
+                    for (final f in <(String, AmcStatus?, int, IconData, Color)>[
                       ('All', null, dueCount, Icons.dashboard_outlined, _green),
                       (
                         'Expiring Soon',
@@ -223,10 +217,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
                 }
                 return Row(
                   children: [
-                    SizedBox(
-                      width: (c.maxWidth - 44) / 4,
-                      child: _webDueTile(dueCount),
-                    ),
+                    SizedBox(width: 280, child: _webDueTile(dueCount)),
                     const SizedBox(width: 16),
                     Expanded(child: filters),
                   ],
@@ -243,8 +234,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
 
   Widget _webDueTile(int count) {
     return Container(
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -264,21 +254,21 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: const Icon(Icons.autorenew, color: Colors.white, size: 21),
+            child: const Icon(Icons.autorenew, color: Colors.white, size: 26),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
               '$count due',
               style: const TextStyle(
                 fontFamily: 'Montserrat',
-                fontSize: 21,
+                fontSize: 26,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
               ),
@@ -290,18 +280,8 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
   }
 
   static const _webMonths = [
-    'JAN',
-    'FEB',
-    'MAR',
-    'APR',
-    'MAY',
-    'JUN',
-    'JUL',
-    'AUG',
-    'SEP',
-    'OCT',
-    'NOV',
-    'DEC',
+    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
   ];
 
   /// Tear-off calendar block showing the contract end date.
@@ -389,8 +369,9 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen> {
                   for (var j = i; j < i + cols; j++) ...[
                     if (j > i) const SizedBox(width: gap),
                     Expanded(
-                      child:
-                          j < cards.length ? cards[j] : const SizedBox.shrink(),
+                      child: j < cards.length
+                          ? cards[j]
+                          : const SizedBox.shrink(),
                     ),
                   ],
                 ],
@@ -1171,7 +1152,7 @@ class _RenewAmcDialog extends StatefulWidget {
 }
 
 class _RenewAmcDialogState extends State<_RenewAmcDialog> {
-  static const Color _green = AppColors.primary;
+  static const Color _green = Color(0xFF106220);
 
   // Preset terms in months; null = custom end date.
   static const List<(String, int?)> _terms = [

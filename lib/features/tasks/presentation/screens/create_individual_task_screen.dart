@@ -7,11 +7,11 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart' show IssueType;
+import '../../../../web/widgets/web_header_actions.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
 import '../../../../web/widgets/web_form_kit.dart';
 import '../widgets/task_workflow.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Raise a ticket for a person rather than a company's equipment
 /// (`user/createTask` without `equipment_link`). Super Admin / Manager only.
@@ -24,8 +24,9 @@ class CreateIndividualTaskScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateIndividualTaskScreenState
-    extends ConsumerState<CreateIndividualTaskScreen> {
-  static const Color _green = AppColors.primary;
+    extends ConsumerState<CreateIndividualTaskScreen>
+    with WebHeaderActionsMixin {
+  static const Color _green = Color(0xFF106220);
 
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -153,8 +154,24 @@ class _CreateIndividualTaskScreenState
         textCapitalization: TextCapitalization.sentences,
       );
 
-  /// Web layout: centred task form with a top action bar.
+  /// Web layout: centred task form with header actions.
   Widget _webBuild() {
+    // Register header actions for the page header bar
+    setHeaderActions([
+      WebHeaderAction(
+        label: 'Reset',
+        icon: Icons.refresh_rounded,
+        onPressed: _resetForm,
+        isPrimary: false,
+      ),
+      WebHeaderAction(
+        label: 'Save',
+        icon: Icons.check_rounded,
+        onPressed: _save,
+        isPrimary: true,
+      ),
+    ]);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6F2),
       body: DecoratedBox(
@@ -195,51 +212,45 @@ class _CreateIndividualTaskScreenState
                 ),
               ),
             ),
-            Column(
-              children: [
-                _buildBottomButtons(webTop: true),
-                Expanded(
-                  child: WebForm.page(
-                    [
-                      WebForm.split(
-                        _individualTaskSection(
-                          icon: Icons.person_outline,
-                          title: 'Contact Information',
-                          subtitle: 'Who and where the work is for',
-                          children: [
-                            _nameField(),
-                            const SizedBox(height: WebForm.gap),
-                            _phoneField(),
-                            const SizedBox(height: WebForm.gap),
-                            _addressField(),
-                          ],
-                        ),
-                        _individualTaskSection(
-                          children: [
-                            WebForm.row(_issueTypeField(), _priorityField()),
-                            const SizedBox(height: WebForm.gap),
-                            _buildTextField(
-                              controller: _titleController,
-                              hintText: 'Task title *',
-                            ),
-                            const SizedBox(height: WebForm.gap),
-                            _buildTextField(
-                              controller: _descriptionController,
-                              hintText: 'Enter description',
-                              maxLines: 4,
-                            ),
-                            const SizedBox(height: 20),
-                            _buildImageUploadSection(),
-                          ],
-                        ),
-                        leftFlex: 2,
-                        rightFlex: 3,
-                      ),
+            // Content without the buttons bar (buttons are now in header)
+            WebForm.page(
+              [
+                WebForm.split(
+                  _individualTaskSection(
+                    icon: Icons.person_outline,
+                    title: 'Contact Information',
+                    subtitle: 'Who and where the work is for',
+                    children: [
+                      _nameField(),
+                      const SizedBox(height: WebForm.gap),
+                      _phoneField(),
+                      const SizedBox(height: WebForm.gap),
+                      _addressField(),
                     ],
-                    maxWidth: 1120,
                   ),
+                  _individualTaskSection(
+                    children: [
+                      WebForm.row(_issueTypeField(), _priorityField()),
+                      const SizedBox(height: WebForm.gap),
+                      _buildTextField(
+                        controller: _titleController,
+                        hintText: 'Task title *',
+                      ),
+                      const SizedBox(height: WebForm.gap),
+                      _buildTextField(
+                        controller: _descriptionController,
+                        hintText: 'Enter description',
+                        maxLines: 4,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildImageUploadSection(),
+                    ],
+                  ),
+                  leftFlex: 2,
+                  rightFlex: 3,
                 ),
               ],
+              maxWidth: 1120,
             ),
           ],
         ),
@@ -840,7 +851,7 @@ class _CreateIndividualTaskScreenState
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.refresh_rounded,
-                            size: 16, color: Color(0xFF416B49)),
+                            size: 16, color: Color(0xFF416B49),),
                         SizedBox(width: 6),
                         Text(
                           'Reset',
@@ -865,7 +876,7 @@ class _CreateIndividualTaskScreenState
             ),
           ),
         ),
-        SizedBox(width: kIsWeb ? 10 : 16),
+        const SizedBox(width: kIsWeb ? 10 : 16),
         Expanded(
           child: GestureDetector(
             onTap: _save,
@@ -873,14 +884,11 @@ class _CreateIndividualTaskScreenState
               height: kIsWeb ? 40 : 46,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: kIsWeb ? const Color(0xFF106220) : null,
-                gradient: kIsWeb
-                    ? null
-                    : const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF138A2A), _green],
-                      ),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF138A2A), _green],
+                ),
                 borderRadius: BorderRadius.circular(kIsWeb ? 12 : 32),
                 boxShadow: kIsWeb
                     ? [
@@ -897,7 +905,7 @@ class _CreateIndividualTaskScreenState
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.check_rounded,
-                            size: 16, color: Colors.white),
+                            size: 16, color: Colors.white,),
                         SizedBox(width: 6),
                         Text(
                           'Save',

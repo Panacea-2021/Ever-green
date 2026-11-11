@@ -59,7 +59,7 @@ class EvergreenRepository {
 
   /// The equipment's ticket that is not closed or deleted, or null.
   Future<ActiveEquipmentTask?> getActiveTaskForEquipment(
-      int equipmentId) async {
+      int equipmentId,) async {
     final body = unwrap(
       await api.post<dynamic>(
         'user/getActiveTaskForEquipment',
@@ -85,7 +85,7 @@ class EvergreenRepository {
 
   Future<void> createIssueType(String name) async {
     unwrap(
-        await api.post<dynamic>('user/createIssueType', data: {'name': name}));
+        await api.post<dynamic>('user/createIssueType', data: {'name': name}),);
   }
 
   Future<void> updateIssueType(int id, {String? name, bool? isActive}) async {
@@ -135,7 +135,7 @@ class EvergreenRepository {
 
   /// Admin-only on the backend.
   Future<List<User>> getUsers(
-      {String? accessLevel, String? designation}) async {
+      {String? accessLevel, String? designation,}) async {
     final body = unwrap(
       await api.post<dynamic>(
         'user/getAllUser',

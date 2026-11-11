@@ -1,11 +1,9 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
 import '../../data/notifications_provider.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -15,7 +13,7 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
-  static const _green = AppColors.moduleAccent;
+  static const _green = Color(0xFF2E7D32);
 
   void _onNotificationTap(NotificationEntry entry) {
     final n = entry.notification;
@@ -67,7 +65,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           SafeArea(
             child: Column(
               children: [
-                if (!kIsWeb) _buildHeader(context, hasUnread),
+                // Header
+                _buildHeader(context, hasUnread),
                 // Notifications List
                 Expanded(
                   child: RefreshIndicator(
@@ -143,7 +142,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   fontFamily: 'Montserrat',
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.modulePrimaryDark,
+                  color: Color(0xFF125420),
                 ),
               ),
             ),
@@ -404,7 +403,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                             fontFamily: 'Montserrat',
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.modulePrimaryDark,
+                            color: Color(0xFF125420),
                           ),
                         ),
                       ),
@@ -670,7 +669,7 @@ class NotificationDetailScreen extends StatelessWidget {
                                                 width: 6,
                                                 height: 6,
                                                 decoration: const BoxDecoration(
-                                                  color: AppColors.modulePrimaryDark,
+                                                  color: Color(0xFF125420),
                                                   shape: BoxShape.circle,
                                                 ),
                                               ),
@@ -681,7 +680,7 @@ class NotificationDetailScreen extends StatelessWidget {
                                                   fontFamily: 'Montserrat',
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
-                                                  color: AppColors.modulePrimaryDark,
+                                                  color: Color(0xFF125420),
                                                 ),
                                               ),
                                             ],
@@ -736,7 +735,7 @@ class NotificationDetailScreen extends StatelessWidget {
                                               fontFamily: 'Montserrat',
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: AppColors.modulePrimaryDark,
+                                              color: Color(0xFF125420),
                                             ),
                                           ),
                                         ),

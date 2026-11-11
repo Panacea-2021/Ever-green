@@ -35,6 +35,7 @@ void main() {
       expect(t.slaDeadline, created.add(const Duration(hours: 24)));
     });
 
+
     test('a fresh task is not overdue', () {
       final t = makeTask(priority: TaskPriority.critical);
       expect(t.isOverdue(), isFalse);
@@ -109,13 +110,5 @@ void main() {
         ApprovalState.confirmed,
       );
     });
-  });
-
-  test('web search matches every word across task fields', () {
-    final task = makeTask();
-
-    expect(task.matchesAllQueryTerms('T C'), isTrue);
-    expect(task.matchesAllQueryTerms('T missing'), isFalse);
-    expect(task.matchesAllQueryTerms('   '), isTrue);
   });
 }

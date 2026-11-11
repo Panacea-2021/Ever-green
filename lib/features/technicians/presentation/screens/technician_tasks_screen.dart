@@ -1,14 +1,11 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
-import '../../../../web/widgets/web_search_state.dart';
 import '../../../tasks/data/task_provider.dart';
 import '../../../tasks/domain/models/task_item.dart';
 import '../../../tasks/presentation/widgets/task_list_card.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Per-technician task view, backed by the live [taskProvider]. Shows the
 /// selected technician's tasks grouped by status tabs, in the project design.
@@ -28,7 +25,7 @@ class TechnicianTasksScreen extends ConsumerStatefulWidget {
 }
 
 class _TechnicianTasksScreenState extends ConsumerState<TechnicianTasksScreen> {
-  static const Color _green = AppColors.primary;
+  static const Color _green = Color(0xFF106220);
   int _selectedTab = 0;
   String _query = '';
 
@@ -45,7 +42,6 @@ class _TechnicianTasksScreenState extends ConsumerState<TechnicianTasksScreen> {
     final techId = int.tryParse(widget.technicianId ?? '');
     final async = ref.watch(taskItemsProvider);
     final all = ref.watch(taskProvider);
-    final moduleQuery = kIsWeb ? ref.watch(webModuleSearchQueryProvider) : '';
 
     // All tasks owned by this technician.
     final mine = all
@@ -59,7 +55,12 @@ class _TechnicianTasksScreenState extends ConsumerState<TechnicianTasksScreen> {
     final activeStatus = _tabs[_selectedTab].$2;
     final visible = mine.where((t) {
       if (t.status != activeStatus) return false;
-      return t.matchesQuery(_query) && t.matchesAllQueryTerms(moduleQuery);
+      if (_query.isEmpty) return true;
+      final q = _query.toLowerCase();
+      return t.title.toLowerCase().contains(q) ||
+          t.equipment.toLowerCase().contains(q) ||
+          t.companyName.toLowerCase().contains(q) ||
+          t.ticketNo.toLowerCase().contains(q);
     }).toList()
       ..sort((a, b) {
         if (a.priority.rank != b.priority.rank) {
@@ -156,11 +157,8 @@ class _TechnicianTasksScreenState extends ConsumerState<TechnicianTasksScreen> {
                 color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.arrow_back,
-                size: 20,
-                color: Color(0xFF1F1F1F),
-              ),
+              child: const Icon(Icons.arrow_back,
+                  size: 20, color: Color(0xFF1F1F1F),),
             ),
           ),
           const SizedBox(width: 14),

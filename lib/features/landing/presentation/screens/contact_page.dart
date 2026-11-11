@@ -103,7 +103,7 @@ class _ContactHero extends StatelessWidget {
           ),
           DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.38),
+              color: Colors.black.withValues(alpha: 0.38),
             ),
           ),
           Center(
@@ -136,7 +136,7 @@ class _ContactHero extends StatelessWidget {
                       fontFamily: LandingTypography.fontFamily,
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
-                      color: Colors.white.withOpacity(0.78),
+                      color: Colors.white.withValues(alpha: 0.78),
                     ),
                   ),
                 ],

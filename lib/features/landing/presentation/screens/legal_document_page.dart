@@ -125,7 +125,7 @@ class _LegalHero extends StatelessWidget {
           ),
           DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.38),
+              color: Colors.black.withValues(alpha: 0.38),
             ),
           ),
           Center(
@@ -158,7 +158,7 @@ class _LegalHero extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.72),
+                      color: Colors.black.withValues(alpha: 0.72),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -167,7 +167,7 @@ class _LegalHero extends StatelessWidget {
                         fontFamily: LandingTypography.fontFamily,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: Colors.white.withOpacity(0.92),
+                        color: Colors.white.withValues(alpha: 0.92),
                       ),
                     ),
                   ),

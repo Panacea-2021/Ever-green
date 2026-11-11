@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/task_provider.dart';
 import '../../domain/models/task_event.dart';
-import '../../../../core/theme/app_colors.dart';
 
-const _green = AppColors.primary;
+const _green = Color(0xFF106220);
 const _blueTitle = Color(0xFF2B4C7E);
 const _muted = Color(0xFF6B7280);
 

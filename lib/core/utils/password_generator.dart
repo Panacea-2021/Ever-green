@@ -11,7 +11,7 @@ const _symbols = '@#\$%&*!';
 String generatePassword({int length = 10, Random? random}) {
   final rng = random ?? Random.secure();
   String pick(String from) => from[rng.nextInt(from.length)];
-  final all = _letters + _digits + _symbols;
+  const all = _letters + _digits + _symbols;
   final chars = [
     pick(_letters),
     pick(_digits),

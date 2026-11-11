@@ -41,8 +41,8 @@ class ChangePasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
-  static const Color _green = AppColors.primary;
-  static const Color _green2 = AppColors.modulePrimaryDeep;
+  static const Color _green = Color(0xFF106220);
+  static const Color _green2 = Color(0xFF0D5119);
   static const Color _ink = Color(0xFF1C2B20);
 
   final _current = TextEditingController();
@@ -78,7 +78,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       _error = null;
     });
     final result = await ref.read(usersRepositoryProvider).changePassword(
-        currentPassword: _current.text, newPassword: _next.text);
+        currentPassword: _current.text, newPassword: _next.text,);
     if (!mounted) return;
     result.fold(
       (failure) => setState(() {
@@ -510,7 +510,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             BoxShadow(
               color: _green.withValues(alpha: 0.3),
               blurRadius: kIsWeb ? 12 : 16,
-              offset: Offset(0, kIsWeb ? 4 : 6),
+              offset: const Offset(0, kIsWeb ? 4 : 6),
             ),
           ],
         ),

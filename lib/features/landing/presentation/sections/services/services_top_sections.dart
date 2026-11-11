@@ -81,7 +81,7 @@ class ServicesHeader extends StatelessWidget {
                   for (final item in items) _NavLink(item: item),
                   const SizedBox(width: 20),
                   SvcButton(
-                      label: 'Book a service', compact: true, onTap: onBook),
+                      label: 'Book a service', compact: true, onTap: onBook,),
                 ] else ...[
                   SvcButton(
                     label: 'Book',
@@ -211,12 +211,12 @@ class ServicesHero extends StatelessWidget {
           runSpacing: 16,
           children: [
             _HeroFeature(
-                Icons.verified_outlined, 'Certified & trained\ntechnicians'),
+                Icons.verified_outlined, 'Certified & trained\ntechnicians',),
             _HeroFeature(
-                Icons.support_agent_outlined, '24/7 emergency\nsupport'),
+                Icons.support_agent_outlined, '24/7 emergency\nsupport',),
             _HeroFeature(Icons.public_outlined, 'Pan-India\nservice coverage'),
             _HeroFeature(
-                Icons.handshake_outlined, 'Trusted by leading\norganizations'),
+                Icons.handshake_outlined, 'Trusted by leading\norganizations',),
           ],
         ),
       ],
@@ -329,7 +329,7 @@ class _HeroStats extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0B3B1E).withOpacity(0.14),
+            color: const Color(0xFF0B3B1E).withValues(alpha: 0.14),
             blurRadius: 36,
             offset: const Offset(0, 16),
           ),
@@ -737,7 +737,7 @@ class IndustriesSection extends StatelessWidget {
                               item.$3,
                               style: svcText(
                                 size: 11.5,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                           ],
@@ -826,7 +826,7 @@ class ProcessSection extends StatelessWidget {
                       Expanded(
                         child: i < _steps.length - 1
                             ? Container(
-                                height: 1.5, color: SvcColors.mintStrong)
+                                height: 1.5, color: SvcColors.mintStrong,)
                             : const SizedBox.shrink(),
                       ),
                     ],

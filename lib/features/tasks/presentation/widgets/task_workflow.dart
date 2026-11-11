@@ -11,9 +11,8 @@ import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
 import '../../domain/models/task_item.dart';
-import '../../../../core/theme/app_colors.dart';
 
-const Color _green = AppColors.primary;
+const Color _green = Color(0xFF106220);
 const Color _danger = Color(0xFFD32F2F);
 
 /// Visual style of a task action button.
@@ -555,7 +554,7 @@ class _DeleteTaskDialogState extends State<_DeleteTaskDialog> {
         child: Material(
           color: Colors.transparent,
           child: ConstrainedBox(
-            constraints: BoxConstraints(
+            constraints: const BoxConstraints(
               maxWidth: kIsWeb ? 640 : double.infinity,
             ),
             child: Container(
@@ -570,7 +569,7 @@ class _DeleteTaskDialogState extends State<_DeleteTaskDialog> {
                   ),
                 ],
               ),
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 kIsWeb ? 30 : 24,
                 kIsWeb ? 28 : 26,
                 kIsWeb ? 30 : 24,
