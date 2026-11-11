@@ -223,9 +223,9 @@ final dashboardUsersProvider =
       case UserRole.clientAdmin:
         return await repo.getUsers();
       case UserRole.seniorTechnician:
+        return await repo.getUsers(accessLevel: 'technician');
       case UserRole.technician:
       case UserRole.coldRoomTechnician:
-        return await repo.getUsers(accessLevel: 'technician');
       case UserRole.client:
         return null;
     }

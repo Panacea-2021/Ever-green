@@ -72,12 +72,15 @@ class WebModuleFrame extends ConsumerStatefulWidget {
   static const _webDesignedPaths = {
     Routes.webDashboard,
     Routes.tasks,
+    Routes.myTasks,
+    Routes.myServiceTasks,
     Routes.amcs,
     Routes.amcRenewals,
     Routes.pmSchedule,
     Routes.taskBoard,
     Routes.ticketQueue,
     Routes.reports,
+    Routes.announcements,
   };
 
   /// Module pages shown in a card with their own icon-and-title header
@@ -109,6 +112,9 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.addEquipment: 'Add Equipment',
     Routes.addTask: 'Create Task',
     Routes.notifications: 'Notifications',
+    Routes.announcements: 'Announcements',
+    Routes.myTasks: 'My Tasks',
+    Routes.myServiceTasks: 'My Service Tasks',
     Routes.editProfile: 'Edit Profile',
     Routes.addUser: 'Add User',
     Routes.technicianTasks: 'Service Engineer Tasks',
@@ -589,6 +595,10 @@ class _NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // No `tooltip:` here on purpose: WebModuleFrame is rendered by
+    // MaterialApp.builder (see app.dart), i.e. *above* the Navigator, so a
+    // Tooltip would look up an Overlay ancestor and fail with
+    // "No Overlay widget found" on the web dashboard.
     return IconButton(
       icon: Badge(
         isLabelVisible: count > 0,
@@ -597,7 +607,6 @@ class _NotificationBell extends StatelessWidget {
         child: const Icon(Icons.notifications_outlined, size: 24),
       ),
       onPressed: () => context.push(Routes.notifications),
-      tooltip: 'Notifications',
     );
   }
 }

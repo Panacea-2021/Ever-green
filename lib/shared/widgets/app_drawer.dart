@@ -143,6 +143,30 @@ class AppDrawer extends ConsumerWidget {
                             context.go(Routes.tasks);
                           },
                         ),
+                        // Super Admin also gets the personal task views
+                        // other roles have.
+                        if (role == UserRole.superAdmin) ...[
+                          _buildMenuItem(
+                            context,
+                            icon: Icons.task_alt_outlined,
+                            title: 'My Tasks',
+                            isSelected: location == Routes.myTasks,
+                            onTap: () {
+                              Navigator.pop(context);
+                              context.go(Routes.myTasks);
+                            },
+                          ),
+                          _buildMenuItem(
+                            context,
+                            icon: Icons.home_repair_service_outlined,
+                            title: 'My Service Tasks',
+                            isSelected: location == Routes.myServiceTasks,
+                            onTap: () {
+                              Navigator.pop(context);
+                              context.go(Routes.myServiceTasks);
+                            },
+                          ),
+                        ],
                         _buildMenuItem(
                           context,
                           svgIcon: 'assets/images/menu_qr_scanner.svg',

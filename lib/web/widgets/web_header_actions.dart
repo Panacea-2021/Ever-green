@@ -60,6 +60,11 @@ mixin WebHeaderActionsMixin<T extends ConsumerStatefulWidget>
     on ConsumerState<T> {
   String get _pageKey => '${widget.runtimeType}_$hashCode';
 
+  /// Notifier cached while the page is mounted. `dispose()` may not touch
+  /// `ref` (Riverpod forbids it once the element is disposed), so the
+  /// reference is captured here instead.
+  WebHeaderActionsNotifier? _cachedNotifier;
+
   /// Sets the header actions for this page. Call this when the page is built.
   /// Actions are set synchronously - if called during build, they will be
   /// visible immediately.
@@ -67,7 +72,9 @@ mixin WebHeaderActionsMixin<T extends ConsumerStatefulWidget>
     // Schedule the action update for after the current build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(webHeaderActionsProvider).setActions(actions, pageKey: _pageKey);
+        final notifier = ref.read(webHeaderActionsProvider);
+        _cachedNotifier = notifier;
+        notifier.setActions(actions, pageKey: _pageKey);
       }
     });
   }
@@ -75,12 +82,15 @@ mixin WebHeaderActionsMixin<T extends ConsumerStatefulWidget>
   @override
   void dispose() {
     // Clear actions when the page is disposed, but only if we're still
-    // the active page (pageKey matches)
-    final notifier = ref.read(webHeaderActionsProvider);
+    // the active page (pageKey matches). Uses the cached notifier because
+    // `ref` cannot be read after the widget is disposed.
+    final notifier = _cachedNotifier;
     final key = _pageKey;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      notifier.clearActions(pageKey: key);
-    });
+    if (notifier != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifier.clearActions(pageKey: key);
+      });
+    }
     super.dispose();
   }
 }

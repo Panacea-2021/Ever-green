@@ -12,7 +12,7 @@ import '../../../../core/utils/password_generator.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
-import '../../data/user_provider.dart';
+import '../../../../features/users/data/user_provider.dart';
 import '../../data/users_repository.dart';
 
 class AddUserScreen extends ConsumerStatefulWidget {
@@ -28,6 +28,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   final _mobileController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController(text: generatePassword());
+  final _companyController = TextEditingController();
 
   UserRole? _selectedRole;
   int? _selectedCompanyId;
@@ -43,6 +44,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     _mobileController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _companyController.dispose();
     super.dispose();
   }
 
@@ -294,20 +296,136 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     final companiesAsync = ref.watch(repo.companiesProvider);
     final companies = [...companiesAsync.valueOrNull ?? const <Company>[]]
       ..sort((a, b) => a.displayName.compareTo(b.displayName));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildDropdownField<int>(
-          value: companies.any((c) => c.id == _selectedCompanyId)
-              ? _selectedCompanyId
-              : null,
-          hintText: _selectedRole?.isTechnicianLevel == true
-              ? 'Allocated Site (optional)'
-              : 'Assign to AMC',
-          items: {for (final c in companies) c.id: c.displayName},
-          validator: (v) =>
-              _needsCompany && v == null ? 'Please select an AMC' : null,
-          onChanged: (value) => setState(() => _selectedCompanyId = value),
+        Autocomplete<Company>(
+          displayStringForOption: (c) => c.displayName,
+          optionsBuilder: (textEditingValue) {
+            final q = textEditingValue.text.trim().toLowerCase();
+            if (q.isEmpty) return companies;
+            return companies.where((c) {
+              return [c.name, c.branchName, c.location ?? '', c.gstNumber ?? '']
+                  .any((f) => f.toLowerCase().contains(q));
+            });
+          },
+          onSelected: (c) {
+            setState(() {
+              _selectedCompanyId = c.id;
+              _companyController.text = c.displayName;
+            });
+          },
+          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+            // Keep our controller in sync with the autocomplete controller.
+            if (controller.text != _companyController.text &&
+                !_companyController.selection.isValid) {
+              _companyController.text = controller.text;
+            }
+            return TextFormField(
+              controller: controller,
+              focusNode: focusNode,
+              onChanged: (v) {
+                _companyController.text = v;
+                // Clear selection if user edits the text.
+                if (_selectedCompanyId != null &&
+                    v.trim() != companies
+                        .firstWhere(
+                          (c) => c.id == _selectedCompanyId,
+                          orElse: () => companies.first,
+                        )
+                        .displayName) {
+                  setState(() => _selectedCompanyId = null);
+                }
+              },
+              validator: (v) => _needsCompany && _selectedCompanyId == null
+                  ? 'Please select an AMC'
+                  : null,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              decoration: InputDecoration(
+                hintText: _selectedRole?.isTechnicianLevel == true
+                    ? 'Allocated Site (optional)'
+                    : 'Search and select AMC',
+                hintStyle: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey.shade400,
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: _green,
+                    width: 1.5,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                suffixIcon: Icon(
+                  Icons.search,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            );
+          },
+          optionsViewBuilder: (context, onSelected, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(12),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 240, maxWidth: 420),
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    itemBuilder: (context, index) {
+                      final c = options.elementAt(index);
+                      return ListTile(
+                        dense: true,
+                        title: Text(
+                          c.displayName,
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: c.location == null || c.location!.isEmpty
+                            ? null
+                            : Text(
+                                c.location!,
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                        onTap: () => onSelected(c),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
         ),
         if (companiesAsync.hasError)
           TextButton.icon(

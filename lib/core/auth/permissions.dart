@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import '../../features/auth/domain/models/user_model.dart';
 import '../router/routes.dart';
 
@@ -49,6 +51,8 @@ class Permissions {
       Routes.issueTypes,
       Routes.serviceTypes,
       Routes.reports,
+      Routes.usersList,
+      Routes.addUser,
     ],
     // Senior Technician: a field lead — their own tasks plus the ability to
     // assign/reassign to junior technicians and see technician performance.
@@ -59,14 +63,17 @@ class Permissions {
       Routes.assignTasks,
       Routes.ticketQueue,
       Routes.technicianPerformance,
+      Routes.amcRenewals,
     ],
     UserRole.technician: [
       Routes.tasks,
       Routes.technicianTasks,
+      Routes.amcRenewals,
     ],
     UserRole.coldRoomTechnician: [
       Routes.tasks,
       Routes.technicianTasks,
+      Routes.amcRenewals,
     ],
     // Client Admin: a client-side administrator — same read scope as a client
     // plus renewals and managing their own company's POCs/users.
@@ -90,6 +97,8 @@ class Permissions {
 
   /// Whether [role] is allowed to open [path]. Super Admin always can.
   static bool canAccessRoute(UserRole role, String path) {
+    // The announcements inbox is a web-only module.
+    if (path.startsWith(Routes.announcements)) return kIsWeb;
     if (role == UserRole.superAdmin) return true;
     if (_common.any((r) => path.startsWith(r))) return true;
     final allowed = _roleRoutes[role] ?? const [];
@@ -98,10 +107,13 @@ class Permissions {
 
   // ---- Capability helpers (used to show/hide actions & menu items) ----
 
-  /// Super Admin manages all users. Client Admin manages only their own
-  /// company's POCs/users.
+  /// Super Admin manages all users. Manager (EverGreen admin) manages users
+  /// across the workspace. Client Admin manages only their own company's
+  /// POCs/users.
   static bool canManageUsers(UserRole role) =>
-      role == UserRole.superAdmin || role == UserRole.clientAdmin;
+      role == UserRole.superAdmin ||
+      role == UserRole.manager ||
+      role == UserRole.clientAdmin;
 
   static bool canManageAmcs(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
@@ -117,6 +129,9 @@ class Permissions {
       role == UserRole.client;
 
   static bool canCreateIndividualTask(UserRole role) =>
+      role == UserRole.superAdmin || role == UserRole.manager;
+
+  static bool canCreateAnnouncements(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
 
   /// Super Admin and Manager assign freely; a Senior Technician can assign or
@@ -138,10 +153,15 @@ class Permissions {
   /// entries with search and date filters.
   static bool canFilterAuditByEntity(UserRole role) => _isAdmin(role);
 
+  /// Renewals are readable by admins, client admins and field technicians —
+  /// each technician only ever sees the companies (and therefore renewals)
+  /// linked to them by the backend. Renewing stays admin-only
+  /// ([canManageAmcs]).
   static bool canViewRenewals(UserRole role) =>
       role == UserRole.superAdmin ||
       role == UserRole.manager ||
-      role == UserRole.clientAdmin;
+      role == UserRole.clientAdmin ||
+      role.isTechnicianLevel;
 
   // ---- Bottom navigation / home layout ----
 
