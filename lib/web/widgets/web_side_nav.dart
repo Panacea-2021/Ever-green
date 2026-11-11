@@ -78,10 +78,28 @@ class WebSideNav extends ConsumerWidget {
         route: Routes.tasks,
         svgIcon: 'assets/images/menu_tasks_list.svg',
       ),
+      // Super Admin also gets the personal task views other roles have.
+      if (role == UserRole.superAdmin) ...[
+        const WebNavEntry(
+          label: 'My Tasks',
+          route: Routes.myTasks,
+          icon: Icons.task_alt_outlined,
+        ),
+        const WebNavEntry(
+          label: 'My Service Tasks',
+          route: Routes.myServiceTasks,
+          icon: Icons.home_repair_service_outlined,
+        ),
+      ],
       const WebNavEntry(
         label: 'Search',
         route: Routes.globalSearch,
         svgIcon: 'assets/images/menu_qr_scanner.svg',
+      ),
+      const WebNavEntry(
+        label: 'Announcements',
+        route: Routes.announcements,
+        icon: Icons.campaign_outlined,
       ),
       if (Permissions.canRaiseTasks(role))
         const WebNavEntry(

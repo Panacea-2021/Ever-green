@@ -19,6 +19,11 @@ import '../widgets/task_action_handler.dart';
 import '../widgets/task_board_card.dart';
 import '../widgets/task_workflow.dart';
 
+/// Personal task-board scopes for Super Admin: "My Tasks" shows only
+/// tickets assigned to the signed-in admin and "My Service Tasks" only the
+/// tickets they raised, mirroring the technician and client views.
+enum TaskBoardScope { assignedToMe, raisedByMe }
+
 /// A role-aware task board backed by [taskItemsProvider]. Cards carry Report
 /// and Assign / Reassign; every other workflow action lives on Task Details.
 ///
@@ -35,10 +40,15 @@ class TaskBoardScreen extends ConsumerStatefulWidget {
   /// Tab selected when the screen opens (null = All).
   final TaskStatus? initialStatus;
 
+  /// Optional personal scope (Super Admin "My Tasks" / "My Service Tasks"
+  /// modules). Null keeps the default role-based board.
+  final TaskBoardScope? scope;
+
   const TaskBoardScreen({
     super.key,
     this.isRootTab = false,
     this.initialStatus,
+    this.scope,
   });
 
   @override
@@ -69,7 +79,21 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
     final all = async.value ?? const <TaskItem>[];
 
     Iterable<TaskItem> scoped = all;
-    if (role.isTechnicianLevel && role != UserRole.seniorTechnician) {
+    // Super Admin personal modules ("My Tasks" / "My Service Tasks") apply
+    // an explicit scope instead of the role-based default.
+    bool taskInScope(TaskItem t) {
+      if (widget.scope == TaskBoardScope.assignedToMe) {
+        return t.technicianId != null && t.technicianId == user?.backendId;
+      }
+      if (widget.scope == TaskBoardScope.raisedByMe) {
+        return t.clientId != null && t.clientId == user?.backendId;
+      }
+      return true;
+    }
+
+    if (widget.scope != null) {
+      scoped = all.where(taskInScope);
+    } else if (role.isTechnicianLevel && role != UserRole.seniorTechnician) {
       scoped = all.where(
         (t) => t.technicianId != null && t.technicianId == user?.backendId,
       );
@@ -102,7 +126,7 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
             .watch(deletedTasksProvider)
             .valueOrNull
             ?.map(TaskItem.fromService)
-            .where((t) => t.matchesQuery(_query))
+            .where((t) => taskInScope(t) && t.matchesQuery(_query))
             .length
         : null;
     final loaded = async.hasValue;
@@ -119,13 +143,17 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
             : _statusChips.firstWhere((c) => c.$2 == _statusFilter).$1;
     final selectedCount = counts[selectedLabel];
 
-    final title = role.isTechnicianLevel && role != UserRole.seniorTechnician
+    final title = widget.scope == TaskBoardScope.assignedToMe
         ? 'My Tasks'
-        : role.isClientSide
+        : widget.scope == TaskBoardScope.raisedByMe
             ? 'My Service Tasks'
-            : role == UserRole.seniorTechnician
-                ? 'Team Tasks'
-                : 'Task Board';
+            : role.isTechnicianLevel && role != UserRole.seniorTechnician
+                ? 'My Tasks'
+                : role.isClientSide
+                    ? 'My Service Tasks'
+                    : role == UserRole.seniorTechnician
+                        ? 'Team Tasks'
+                        : 'Task Board';
 
     if (kIsWeb) {
       final searched = scoped.where((t) => t.matchesQuery(_query)).toList();

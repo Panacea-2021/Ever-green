@@ -62,6 +62,13 @@ void main() {
         ),
         isTrue,
       );
+      expect(
+        Permissions.canAccessRoute(
+          UserRole.technician,
+          Routes.amcRenewals,
+        ),
+        isTrue,
+      );
     });
 
     test('Client cannot manage users or AMCs', () {
@@ -122,10 +129,10 @@ void main() {
   });
 
   group('RBAC — capability helpers', () {
-    test('only Super Admin manages users; Super Admin + Manager bulk upload',
-        () {
+    test('Super Admin + Manager manage users; both bulk upload', () {
       expect(Permissions.canManageUsers(UserRole.superAdmin), isTrue);
-      expect(Permissions.canManageUsers(UserRole.manager), isFalse);
+      expect(Permissions.canManageUsers(UserRole.manager), isTrue);
+      expect(Permissions.canManageUsers(UserRole.clientAdmin), isTrue);
       expect(Permissions.canBulkUpload(UserRole.manager), isTrue);
       expect(Permissions.canBulkUpload(UserRole.superAdmin), isTrue);
       for (final role in [
@@ -158,13 +165,17 @@ void main() {
       expect(Permissions.canManageTasks(UserRole.client), isFalse);
     });
 
-    test('renewals visible to admin/manager/client admin only', () {
+    test('renewals visible to admins, client admins and technicians', () {
       expect(Permissions.canViewRenewals(UserRole.superAdmin), isTrue);
       expect(Permissions.canViewRenewals(UserRole.manager), isTrue);
       expect(Permissions.canViewRenewals(UserRole.clientAdmin), isTrue);
       expect(Permissions.canViewRenewals(UserRole.client), isFalse);
-      expect(Permissions.canViewRenewals(UserRole.technician), isFalse);
-      expect(Permissions.canViewRenewals(UserRole.seniorTechnician), isFalse);
+      expect(Permissions.canViewRenewals(UserRole.technician), isTrue);
+      expect(Permissions.canViewRenewals(UserRole.seniorTechnician), isTrue);
+      expect(Permissions.canViewRenewals(UserRole.coldRoomTechnician), isTrue);
+      // Reading renewals is not the same as renewing them.
+      expect(Permissions.canManageAmcs(UserRole.technician), isFalse);
+      expect(Permissions.canManageAmcs(UserRole.seniorTechnician), isFalse);
     });
   });
 

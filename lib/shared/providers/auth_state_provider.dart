@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/data/evergreen_repository.dart';
 import '../../core/push/push_service.dart';
 import '../../core/storage/token_storage.dart';
 import '../../features/auth/domain/models/user_model.dart';
@@ -79,7 +80,20 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: isLoading, errorMessage: null);
   }
 
+  /// Drops cached reads that were scoped to the previous session. Those
+  /// providers keep their value for a while after their last listener leaves;
+  /// without this a technician signing in right after an admin would briefly
+  /// see the admin's companies/AMC renewals.
+  void _clearSessionScopedCaches() {
+    _ref.invalidate(companiesProvider);
+    _ref.invalidate(tasksProvider);
+    _ref.invalidate(deletedTasksProvider);
+    _ref.invalidate(equipmentsProvider);
+    _ref.invalidate(techniciansProvider);
+  }
+
   void setAuthenticated(User user) {
+    _clearSessionScopedCaches();
     state = AuthState(
       status: AuthStatus.authenticated,
       isLoading: false,
@@ -89,6 +103,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   }
 
   void setUnauthenticated([String? errorMessage]) {
+    _clearSessionScopedCaches();
     state = AuthState(
       status: AuthStatus.unauthenticated,
       isLoading: false,
@@ -102,6 +117,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   }
 
   void logout() {
+    _clearSessionScopedCaches();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 

@@ -33,14 +33,6 @@ class WebLoginPopup extends ConsumerStatefulWidget {
 }
 
 class _WebLoginPopupState extends ConsumerState<WebLoginPopup> {
-  static const _websiteAllowedPhones = {
-    '9963477567',
-    '8688193983',
-    '6300662566',
-    '9963917712',
-    '1234567890',
-  };
-
   final _formKey = GlobalKey<FormState>();
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -126,15 +118,6 @@ class _WebLoginPopupState extends ConsumerState<WebLoginPopup> {
     if (!_formKey.currentState!.validate()) return;
 
     final phone = _mobileController.text.trim();
-    if (!_websiteAllowedPhones.contains(phone)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This account is not authorized for website sign-in.'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
 
     await ref.read(authControllerProvider).login(
           email: phone,
