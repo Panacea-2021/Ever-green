@@ -1480,7 +1480,7 @@ class _TaskStatusChart extends StatelessWidget {
     final data = [
       _ChartData('Open', open, WebDashboardScreen._orange),
       _ChartData('In Progress', inProgress, WebDashboardScreen._blue),
-      _ChartData('On Hold', hold, const Color(0xFF9E9E9E)),
+      _ChartData('Hold', hold, const Color(0xFF9E9E9E)),
       _ChartData('Closed', closed, WebDashboardScreen._green),
     ];
 

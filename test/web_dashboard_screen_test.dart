@@ -95,6 +95,11 @@ void main() {
     expect(find.text('Users by Access Level'), findsOneWidget);
     expect(find.text('Company Managers'), findsWidgets);
     expect(find.text('Clients'), findsNothing);
+    expect(find.text('Task Status Overview'), findsOneWidget);
+    expect(find.text('Priority Distribution'), findsOneWidget);
+    expect(find.text('Recent Tasks'), findsOneWidget);
+    expect(find.text('Hold'), findsWidgets);
+    expect(find.text('On Hold'), findsNothing);
   });
 
   testWidgets('non-admin does not request or see organization analytics',
