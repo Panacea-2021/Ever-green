@@ -25,14 +25,14 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Bump Gradle and AGP in CI only
+      - name: Patch Gradle, AGP and Kotlin mode (CI only)
         run: |
           sed -i 's/gradle-[0-9.]*-\(all\|bin\)\.zip/gradle-9.5.0-\1.zip/' android/gradle/wrapper/gradle-wrapper.properties
           sed -i -E 's/(id *\(? *"com\.android\.application"\)? *version *)"[0-9.]+"/\1"9.1.1"/' android/settings.gradle
-          grep -n "com.android" android/settings.gradle
-
-      - name: Remove stale generated registrant
-        run: rm -f android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+          echo "" >> android/gradle.properties
+          echo "android.builtInKotlin=false" >> android/gradle.properties
+          echo "android.newDsl=false" >> android/gradle.properties
+          cat android/gradle.properties
 
       - name: Install dependencies
         run: flutter pub get
