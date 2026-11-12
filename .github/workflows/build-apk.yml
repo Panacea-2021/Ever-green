@@ -25,11 +25,11 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Flutter version
-        run: flutter --version
-
-      - name: Bump Gradle in CI only
-        run: sed -i 's/gradle-[0-9.]*-\(all\|bin\)\.zip/gradle-9.3.1-\1.zip/' android/gradle/wrapper/gradle-wrapper.properties
+      - name: Bump Gradle and AGP in CI only
+        run: |
+          sed -i 's/gradle-[0-9.]*-\(all\|bin\)\.zip/gradle-9.5.0-\1.zip/' android/gradle/wrapper/gradle-wrapper.properties
+          sed -i -E 's/(id *\(? *"com\.android\.application"\)? *version *)"[0-9.]+"/\1"9.1.1"/' android/settings.gradle
+          grep -n "com.android" android/settings.gradle
 
       - name: Install dependencies
         run: flutter pub get
