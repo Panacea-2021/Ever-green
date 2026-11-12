@@ -1,8 +1,10 @@
-name: Build APK
+
+name: Build Evergreen APK
 
 on:
   push:
-    branches: [main, staging]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -10,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Main Branch
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -25,32 +27,14 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Patch Gradle, AGP and Kotlin mode (CI only)
-        run: |
-          sed -i 's/gradle-[0-9.]*-\(all\|bin\)\.zip/gradle-9.5.0-\1.zip/' android/gradle/wrapper/gradle-wrapper.properties
-          sed -i -E 's/(id *\(? *"com\.android\.application"\)? *version *)"[0-9.]+"/\1"9.1.1"/' android/settings.gradle
-          echo "" >> android/gradle.properties
-          echo "android.builtInKotlin=false" >> android/gradle.properties
-          echo "android.newDsl=false" >> android/gradle.properties
-          cat android/gradle.properties
-          
-          - name: Install dependencies
-          run: |
-          flutter pub upgrade --major-version
-          flutter pub get
+      - name: Install Dependencies
+        run: flutter pub get
 
-      - name: Build release APK
-        run: |
-          flutter build apk --release \
-            --dart-define=API_BASE_URL=https://evergreen-backend-lgmy.onrender.com \
-            --dart-define=API_KEY=${{ secrets.API_KEY }}
+      - name: Build Release APK
+        run: flutter build apk --release
 
-      - name: Check output
-        if: always()
-        run: ls -R build/app/outputs/ || true
-
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: evergreen-release-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          name: evergreen-main-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
