@@ -36,7 +36,7 @@ jobs:
 
       - run: >
           flutter build apk --release
-          --dart-define=API_BASE_URL=https://evergreen-backend-lgmy.onrender.com/
+          --dart-define=API_BASE_URL=https://evergreen-backend-lgmy.onrender.com
           --dart-define=API_KEY=${{ secrets.API_KEY }}
 
       - name: Publish release
