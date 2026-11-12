@@ -33,9 +33,11 @@ jobs:
           echo "android.builtInKotlin=false" >> android/gradle.properties
           echo "android.newDsl=false" >> android/gradle.properties
           cat android/gradle.properties
-
-      - name: Install dependencies
-        run: flutter pub get
+          
+          - name: Install dependencies
+          run: |
+          flutter pub upgrade --major-version
+          flutter pub get
 
       - name: Build release APK
         run: |
