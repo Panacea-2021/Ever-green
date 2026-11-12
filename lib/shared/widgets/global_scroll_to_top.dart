@@ -23,10 +23,8 @@ class _GlobalScrollToTopState extends State<GlobalScrollToTop>
   static const double _threshold = 280;
 
   final ValueNotifier<bool> _visible = ValueNotifier(false);
-  final FocusNode _webFocusNode = FocusNode();
   ScrollPosition? _position;
   BuildContext? _scrollableContext;
-  bool _webFocusReady = !kIsWeb;
 
   late final AnimationController _bob = AnimationController(
     vsync: this,
@@ -38,24 +36,9 @@ class _GlobalScrollToTopState extends State<GlobalScrollToTop>
   );
 
   @override
-  void initState() {
-    super.initState();
-    if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() => _webFocusReady = true);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _webFocusNode.requestFocus();
-        });
-      });
-    }
-  }
-
-  @override
   void dispose() {
     _visible.dispose();
     _bob.dispose();
-    _webFocusNode.dispose();
     super.dispose();
   }
 
@@ -154,9 +137,7 @@ class _GlobalScrollToTopState extends State<GlobalScrollToTop>
         return false;
       },
       child: Focus(
-        focusNode: _webFocusNode,
-        autofocus: false,
-        canRequestFocus: _webFocusReady,
+        autofocus: kIsWeb,
         onKeyEvent: _handleWebScrollKeys,
         child: Stack(
           children: [

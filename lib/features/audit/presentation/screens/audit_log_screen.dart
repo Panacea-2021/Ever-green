@@ -52,8 +52,8 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen>
   static const _dateFilters = <(String, RangePreset?, IconData)>[
     ('All time', null, Icons.all_inclusive_rounded),
     ('Today', RangePreset.today, Icons.today_rounded),
-    ('This week', RangePreset.week, Icons.date_range_rounded),
-    ('Month', RangePreset.month, Icons.calendar_month_rounded),
+    ('This Week', RangePreset.week, Icons.date_range_rounded),
+    ('This Month', RangePreset.month, Icons.calendar_month_rounded),
     ('Custom', RangePreset.custom, Icons.edit_calendar_rounded),
   ];
 
@@ -170,130 +170,89 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen>
     );
   }
 
-  Widget _webScrollableCenter(Widget child) {
-    return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: child,
-        ),
-      ),
-    );
-  }
-
   Widget _webFilterBar(bool canFilterEntity, int total) {
-    final hasFilters =
-        _entityFilter != null || _dateRange != null || _query.isNotEmpty;
-    final typeSection = _buildFilterSection(
-      'Type',
-      _entityFilters.map(
-        (f) => _WebChip(
-          label: f.$1,
-          icon: f.$3,
-          selected: _entityFilter == f.$2,
-          onTap: () => setState(() => _entityFilter = f.$2),
-        ),
-      )
-          .toList(),
-    );
-    final timeSection = _buildFilterSection(
-      'Time',
-      _dateFilters.map(
-        (f) => _WebChip(
-          label: f.$2 == RangePreset.custom &&
-                  _dateRange?.preset == RangePreset.custom
-              ? _dateRange!.summary
-              : f.$1,
-          icon: f.$3,
-          selected: (f.$2 == null && _dateRange == null) ||
-              (f.$2 != null && _dateRange?.preset == f.$2),
-          onTap: () => _onDateChipTap(f.$2),
-        ),
-      )
-          .toList(),
-    );
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 760;
-        final primarySection = canFilterEntity ? typeSection : timeSection;
-        final secondarySection = canFilterEntity ? timeSection : null;
-        final statsBadge = _webStatsBadge(total, hasFilters);
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _line),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    final hasFilters = _entityFilter != null || _dateRange != null || _query.isNotEmpty;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _line),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        ],
+      ),
+      child: Column(
+        children: [
+          // Type and Date Filters in a single row
+          Row(
             children: [
-              if (compact) ...[
-                primarySection,
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: statsBadge,
+              // Entity type filters
+              if (canFilterEntity) ...[
+                _buildFilterSection(
+                  'Type',
+                  _entityFilters.map((f) => _WebChip(
+                    label: f.$1,
+                    icon: f.$3,
+                    selected: _entityFilter == f.$2,
+                    onTap: () => setState(() => _entityFilter = f.$2),
+                  )).toList(),
                 ),
-              ] else
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(child: primarySection),
-                    const SizedBox(width: 16),
-                    statsBadge,
-                  ],
-                ),
-              if (secondarySection != null) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1, color: _line),
-                ),
-                secondarySection,
+                const SizedBox(width: 16),
+                Container(width: 1, height: 40, color: _line),
+                const SizedBox(width: 16),
               ],
+              // Date filters
+              Expanded(
+                child: _buildFilterSection(
+                  'Time',
+                  _dateFilters.map((f) => _WebChip(
+                    label: f.$2 == RangePreset.custom && _dateRange?.preset == RangePreset.custom
+                        ? _dateRange!.summary
+                        : f.$1,
+                    icon: f.$3,
+                    selected: (f.$2 == null && _dateRange == null) ||
+                        (f.$2 != null && _dateRange?.preset == f.$2),
+                    onTap: () => _onDateChipTap(f.$2),
+                  )).toList(),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(width: 1, height: 40, color: _line),
+              const SizedBox(width: 16),
+              // Stats badge
+              _webStatsBadge(total, hasFilters),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
   Widget _buildFilterSection(String label, List<Widget> chips) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 44,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Colors.black.withValues(alpha: 0.35),
-              letterSpacing: 0.5,
-            ),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Colors.black.withValues(alpha: 0.35),
+            letterSpacing: 0.5,
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: chips,
-          ),
-        ),
+        const SizedBox(width: 12),
+        ...chips.map((chip) => Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: chip,
+        )),
       ],
     );
   }
@@ -338,7 +297,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen>
               ),
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 12),
         ],
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -467,12 +426,12 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen>
     final feed = async.valueOrNull;
     if (feed == null) {
       if (async.hasError) {
-        return _webScrollableCenter(_buildErrorState(async.error!));
+        return _scrollableCenter(_buildErrorState(async.error!));
       }
       return const Center(child: CircularProgressIndicator(color: _green));
     }
     if (filtered.isEmpty && !feed.hasMore) {
-      return _webScrollableCenter(_buildEmptyState());
+      return _scrollableCenter(_buildEmptyState());
     }
     final showFooter = feed.hasMore || feed.loadMoreError != null;
     return NotificationListener<ScrollNotification>(
