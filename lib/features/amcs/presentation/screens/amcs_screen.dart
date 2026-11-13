@@ -51,6 +51,12 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
   _TypeFilter _serviceTypeFilter = _TypeFilter.all;
 
   @override
+  void initState() {
+    super.initState();
+    ref.invalidate(companiesProvider);
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -81,6 +87,8 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
   @override
   Widget build(BuildContext context) {
     final companiesAsync = ref.watch(companiesProvider);
+    final canManage =
+        Permissions.canManageAmcs(ref.watch(currentUserRoleProvider));
     final searched = _searched(companiesAsync.valueOrNull ?? const []);
     final counts = {
       for (final t in _TypeFilter.values) t: searched.where(t.matches).length,
@@ -157,7 +165,9 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
                                       height: 260,
                                       child: AmcEmptyState(
                                         message: companies.isEmpty
-                                            ? 'No companies yet'
+                                            ? canManage
+                                                ? 'No companies yet'
+                                                : 'No companies are linked to your account. Ask your administrator to link your user to the company.'
                                             : 'No companies found',
                                       ),
                                     ),
@@ -594,9 +604,11 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
   }
 
   Widget _buildCompanyCard(Company company) {
-    final place = company.branchName.isNotEmpty
-        ? company.branchName
-        : (company.location ?? '');
+    final place = [company.branchName, company.location]
+        .whereType<String>()
+        .where((value) => value.trim().isNotEmpty)
+        .toSet()
+        .join(' · ');
     final start = company.amcStartDay;
     final end = company.amcEndDay;
     final canManage =
@@ -782,8 +794,8 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
               right: 12,
               child: _infoRow(
                 Icons.email,
-                'Email',
-                company.pocEmail ?? company.email,
+                'Company email',
+                company.email,
               ),
             ),
 
