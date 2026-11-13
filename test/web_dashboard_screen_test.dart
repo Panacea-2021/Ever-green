@@ -62,7 +62,6 @@ Widget _dashboard(
           model.TaskStatus.closed: 2,
         }),
       ),
-      tasksProvider.overrideWith((ref) async => const <model.ServiceTask>[]),
       companiesProvider.overrideWith((ref) async => const <model.Company>[]),
       amcRenewalsProvider.overrideWithValue(const <AmcContract>[]),
       dashboardAnalyticsProvider.overrideWith((ref) async {
@@ -95,7 +94,10 @@ void main() {
     expect(find.text('Clients'), findsNothing);
     expect(find.text('Task Status Overview'), findsOneWidget);
     expect(find.text('Priority Distribution'), findsNothing);
-    expect(find.text('Recent Tasks'), findsOneWidget);
+    expect(find.text('Tasks by priority level'), findsNothing);
+    expect(find.text('Recent Tasks'), findsNothing);
+    expect(find.text('No tasks yet'), findsNothing);
+    expect(find.text('AMC Renewals Due'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('web-dashboard-open-tasks-card')),
       findsNothing,
