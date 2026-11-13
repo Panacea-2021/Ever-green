@@ -12,6 +12,7 @@ import '../../features/amcs/presentation/widgets/amc_async_states.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
 import '../widgets/web_filter_tiles.dart';
+import '../widgets/web_side_nav.dart' show WebSideNav;
 import '../widgets/web_table.dart';
 
 enum _TypeFilter {
@@ -64,12 +65,6 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
   static const Color _danger = Color(0xFFD32F2F);
 
   _TypeFilter _typeFilter = _TypeFilter.all;
-
-  @override
-  void initState() {
-    super.initState();
-    ref.invalidate(companiesProvider);
-  }
 
   List<Company> _visible(List<Company> companies) =>
       companies.where(_typeFilter.matches).toList();
@@ -226,12 +221,18 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
     return LayoutBuilder(
       builder: (context, c) {
         const gap = 18.0;
-        final cols = c.maxWidth >= 1150
+        final viewportWidth = MediaQuery.sizeOf(context).width;
+        final width = c.hasBoundedWidth
+            ? c.maxWidth
+            : (viewportWidth - WebSideNav.widthFor(viewportWidth) - 56)
+                .clamp(0.0, viewportWidth)
+                .toDouble();
+        final cols = width >= 1150
             ? 3
-            : c.maxWidth >= 720
+            : width >= 720
                 ? 2
                 : 1;
-        final w = (c.maxWidth - gap * (cols - 1)) / cols;
+        final w = (width - gap * (cols - 1)) / cols;
         return Wrap(
           spacing: gap,
           runSpacing: gap,

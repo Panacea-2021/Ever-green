@@ -18,6 +18,7 @@ import '../../../amcs/domain/models/amc_contract.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../notifications/data/notifications_provider.dart';
 import '../../../tasks/data/task_provider.dart';
+import '../../../tasks/domain/models/task_item.dart' as ti;
 import '../../data/analytics_history_provider.dart';
 import '../../data/analytics_provider.dart';
 import '../../data/dashboard_repository.dart';
@@ -247,7 +248,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   VoidCallback? _openTasks([TaskStatus? status]) {
     final role = ref.watch(currentUserRoleProvider);
     if (!Permissions.canAccessRoute(role, Routes.tasks)) return null;
-    return () => context.go(Routes.tasks, extra: status);
+    ti.TaskStatus? designStatus;
+    if (status != null) {
+      switch (status) {
+        case TaskStatus.open:
+          designStatus = ti.TaskStatus.open;
+        case TaskStatus.hold:
+          designStatus = ti.TaskStatus.hold;
+        case TaskStatus.inProgress:
+          designStatus = ti.TaskStatus.inProgress;
+        case TaskStatus.completed:
+        case TaskStatus.closed:
+          designStatus = ti.TaskStatus.closed;
+      }
+    }
+    return () => context.go(Routes.tasks, extra: designStatus);
   }
 
   /// A rounded card whose ripple stays inside its corners. Not tappable (and

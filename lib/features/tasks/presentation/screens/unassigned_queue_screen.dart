@@ -35,13 +35,15 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
     with WebHeaderActionsMixin {
   static const Color _green = Color(0xFF106220);
   QueueTab _tab = QueueTab.unassigned;
+  bool _webHeaderActionsCleared = false;
 
   TaskActionHandler get _handler => TaskActionHandler(context, ref);
 
   @override
   Widget build(BuildContext context) {
     // Clear header actions on web - this screen has no header buttons
-    if (kIsWeb) {
+    if (kIsWeb && !_webHeaderActionsCleared) {
+      _webHeaderActionsCleared = true;
       setHeaderActions([]);
     }
     final async = ref.watch(taskItemsProvider);
@@ -177,86 +179,104 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
 
     Widget content;
     if (all.isEmpty && async.isLoading) {
-      content = const Center(
-        child: Padding(
-          padding: EdgeInsets.only(top: 100),
-          child: CircularProgressIndicator(color: _green),
-        ),
+      content = ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 120),
+          Center(child: CircularProgressIndicator(color: _green)),
+        ],
       );
     } else if (all.isEmpty && async.hasError) {
-      content = _error(async.error);
+      content = Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: _error(async.error),
+      );
     } else if (list.isEmpty) {
-      content = _empty();
+      content = ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          const SizedBox(height: 100),
+          _empty(),
+        ],
+      );
     } else {
       content = _webGrid(list);
     }
 
     return Scaffold(
       backgroundColor: cream,
-      body: RefreshIndicator(
-        color: _green,
-        onRefresh: () async {
-          ref.invalidate(tasksProvider);
-          await ref.read(tasksProvider.future);
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(28, 20, 28, 36),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header with unassigned count
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: noEngineer > 0
-                              ? const Color(0xFFD32F2F)
-                              : _green,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '$noEngineer unassigned',
-                          style: const TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(28, 20, 28, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            noEngineer > 0 ? const Color(0xFFD32F2F) : _green,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$noEngineer unassigned',
+                        style: const TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Overdue banner
-                  if (_tab == QueueTab.unassigned && overdueOpen > 0)
-                    _webOverdueBanner(
-                      '$overdueOpen open ticket${overdueOpen == 1 ? '' : 's'} past SLA',
                     ),
-                  if (_tab == QueueTab.awaiting && awaitingCount > 0)
-                    _webOverdueBanner(
-                      '$awaitingCount ticket${awaitingCount == 1 ? '' : 's'} with no Service Engineer for over ${TaskItem.unassignedWaitMinutes} min — assign now',
-                    ),
-                  if (_tab == QueueTab.escalation && escalationCount > 0)
-                    _webOverdueBanner(
-                      '$escalationCount ticket${escalationCount == 1 ? '' : 's'} escalated or stuck in the same status for ${TaskItem.staleStatusHours}h+',
-                    ),
-                  // Filter tiles
-                  _webTabs(tabs),
-                  const SizedBox(height: 22),
-                  // Content
-                  content,
-                ],
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              if (_tab == QueueTab.unassigned && overdueOpen > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: _webOverdueBanner(
+                    '$overdueOpen open ticket${overdueOpen == 1 ? '' : 's'} past SLA',
+                  ),
+                ),
+              if (_tab == QueueTab.awaiting && awaitingCount > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: _webOverdueBanner(
+                    '$awaitingCount ticket${awaitingCount == 1 ? '' : 's'} with no Service Engineer for over ${TaskItem.unassignedWaitMinutes} min — assign now',
+                  ),
+                ),
+              if (_tab == QueueTab.escalation && escalationCount > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: _webOverdueBanner(
+                    '$escalationCount ticket${escalationCount == 1 ? '' : 's'} escalated or stuck in the same status for ${TaskItem.staleStatusHours}h+',
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: _webTabs(tabs),
+              ),
+              const SizedBox(height: 22),
+              Expanded(
+                child: RefreshIndicator(
+                  color: _green,
+                  onRefresh: () async {
+                    ref.invalidate(tasksProvider);
+                    await ref.read(tasksProvider.future);
+                  },
+                  child: content,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -555,13 +575,19 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
               runSpacing: 6,
               children: [
                 _tag('Ticket #${t.ticketNo}', const Color(0xFFEBF0EA), _green),
-                _tag(_statusLabel(t), const Color(0xFFF1F1F1),
-                    const Color(0xFF545454),),
+                _tag(
+                  _statusLabel(t),
+                  const Color(0xFFF1F1F1),
+                  const Color(0xFF545454),
+                ),
                 if (t.isIndividual)
                   _tag('Individual', const Color(0xFFEBF0EA), _green),
                 if (t.escalated)
-                  _tag('Escalated', const Color(0xFFFDE8E8),
-                      const Color(0xFFD32F2F),),
+                  _tag(
+                    'Escalated',
+                    const Color(0xFFFDE8E8),
+                    const Color(0xFFD32F2F),
+                  ),
                 if (t.clientName.isNotEmpty)
                   _tag(
                     'Raised by ${t.clientName}',
@@ -605,31 +631,24 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
   Widget _webGrid(List<TaskItem> list) {
     return LayoutBuilder(
       builder: (context, c) {
-        final cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
         const gap = 18.0;
-        final rows = (list.length + cols - 1) ~/ cols;
-        return Column(
-          children: [
-            for (var r = 0; r < rows; r++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: gap),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (var j = 0; j < cols; j++) ...[
-                        if (j > 0) const SizedBox(width: gap),
-                        Expanded(
-                          child: (r * cols + j) < list.length
-                              ? _WebQueueHover(child: _webCard(list[r * cols + j]))
-                              : const SizedBox.shrink(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-          ],
+        final availableWidth = (c.maxWidth - 56).clamp(0.0, double.infinity);
+        final cols =
+            availableWidth >= 1000 ? 3 : (availableWidth >= 640 ? 2 : 1);
+        final cardWidth = (availableWidth - gap * (cols - 1)) / cols;
+        final cardHeight = cardWidth < 380 ? 430.0 : 390.0;
+        return GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(28, 0, 28, 36),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cols,
+            mainAxisSpacing: gap,
+            crossAxisSpacing: gap,
+            mainAxisExtent: cardHeight,
+          ),
+          itemCount: list.length,
+          itemBuilder: (_, index) =>
+              _WebQueueHover(child: _webCard(list[index])),
         );
       },
     );
@@ -774,8 +793,11 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
                       spacing: 6,
                       runSpacing: 6,
                       children: [
-                        _tag(_statusLabel(t), const Color(0xFFF1F1F1),
-                            const Color(0xFF545454),),
+                        _tag(
+                          _statusLabel(t),
+                          const Color(0xFFF1F1F1),
+                          const Color(0xFF545454),
+                        ),
                         if (t.isIndividual)
                           _tag('Individual', const Color(0xFFEBF0EA), _green),
                         if (t.escalated)
@@ -961,7 +983,8 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
         barrierColor: Colors.black.withValues(alpha: 0.4),
         builder: (dialogContext) => Dialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 450, maxHeight: 550),
             child: Column(
@@ -1123,7 +1146,9 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
                                 Navigator.pop(sheetContext);
                                 if (overloaded) {
                                   final ok = await _confirmOverload(
-                                      tech.name, s.active,);
+                                    tech.name,
+                                    s.active,
+                                  );
                                   if (ok != true || !mounted) return;
                                 }
                                 _doAssign(t, tech, isReassign);
@@ -1175,14 +1200,16 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
           style: TextStyle(
             fontFamily: 'Montserrat',
             fontSize: 12,
-            color: overloaded ? const Color(0xFFD32F2F) : const Color(0xFF6B6B6B),
+            color:
+                overloaded ? const Color(0xFFD32F2F) : const Color(0xFF6B6B6B),
           ),
         ),
         trailing: isCurrent
             ? const Icon(Icons.check, color: _green)
             : overloaded
                 ? Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFDE8E8),
                       borderRadius: BorderRadius.circular(12),
@@ -1437,9 +1464,8 @@ class _TicketActionsMenu extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final actions = taskButtonsFor(task, user);
     // Filter out serviceReport since we'll show it separately
-    final menuActions = actions
-        .where((b) => b.action != TaskAction.serviceReport)
-        .toList();
+    final menuActions =
+        actions.where((b) => b.action != TaskAction.serviceReport).toList();
 
     // Add delete action if user can delete (Super Admin / Manager)
     final role = user?.role ?? UserRole.client;

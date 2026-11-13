@@ -59,6 +59,7 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
   static const Color _green = Color(0xFF106220);
   String _query = '';
   TaskStatus? _statusFilter;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   @override
   void initState() {
     super.initState();
@@ -176,9 +177,16 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) context.go(Routes.home);
+        if (didPop) return;
+        final state = _scaffoldKey.currentState;
+        if (state != null && state.isDrawerOpen) {
+          state.closeDrawer();
+          return;
+        }
+        context.go(Routes.home);
       },
       child: Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.white,
       drawer: widget.isRootTab ? const AppDrawer() : null,
       body: Stack(

@@ -47,6 +47,7 @@ class AmcsScreen extends ConsumerStatefulWidget {
 
 class _AmcsScreenState extends ConsumerState<AmcsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _searchQuery = '';
   _TypeFilter _serviceTypeFilter = _TypeFilter.all;
 
@@ -93,10 +94,21 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
     final counts = {
       for (final t in _TypeFilter.values) t: searched.where(t.matches).length,
     };
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: Colors.white,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+          _scaffoldKey.currentState?.closeDrawer();
+          return;
+        }
+        context.go(Routes.home);
+      },
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Colors.white,
         resizeToAvoidBottomInset: true,
         drawer: const AppDrawer(),
         body: Stack(
@@ -197,9 +209,9 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
           ],
         ),
       ),
+    ),
     );
   }
-
   // ---------------------------------------------------------------------------
   //  Company card 3-dots menu
   // ---------------------------------------------------------------------------
