@@ -1,7 +1,6 @@
 import 'package:evergreen/core/data/evergreen_repository.dart';
 import 'package:evergreen/core/models/backend_models.dart' as model;
 import 'package:evergreen/features/amcs/data/amc_provider.dart';
-import 'package:evergreen/features/amcs/data/equipment_provider.dart';
 import 'package:evergreen/features/amcs/domain/models/amc_contract.dart';
 import 'package:evergreen/features/auth/domain/models/user_model.dart';
 import 'package:evergreen/features/dashboard/data/analytics_history_provider.dart';
@@ -66,7 +65,6 @@ Widget _dashboard(
       tasksProvider.overrideWith((ref) async => const <model.ServiceTask>[]),
       companiesProvider.overrideWith((ref) async => const <model.Company>[]),
       amcRenewalsProvider.overrideWithValue(const <AmcContract>[]),
-      equipmentCountProvider.overrideWithValue(0),
       dashboardAnalyticsProvider.overrideWith((ref) async {
         onAnalyticsRequested(true);
         return _analytics;
@@ -96,8 +94,16 @@ void main() {
     expect(find.text('Company Managers'), findsWidgets);
     expect(find.text('Clients'), findsNothing);
     expect(find.text('Task Status Overview'), findsOneWidget);
-    expect(find.text('Priority Distribution'), findsOneWidget);
+    expect(find.text('Priority Distribution'), findsNothing);
     expect(find.text('Recent Tasks'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('web-dashboard-open-tasks-card')),
+      findsNothing,
+    );
+    expect(find.text('Overdue (SLA)'), findsNothing);
+    expect(find.text('Unassigned'), findsNothing);
+    expect(find.text('Renewals Due'), findsNothing);
+    expect(find.text('Under service'), findsNothing);
     expect(find.text('Hold'), findsWidgets);
     expect(find.text('On Hold'), findsNothing);
   });
@@ -120,7 +126,7 @@ void main() {
     expect(find.text('Task Status Overview'), findsOneWidget);
   });
 
-  testWidgets('uses active tasks and treats completed tasks as closed',
+  testWidgets('reports active tasks and treats completed tasks as closed',
       (tester) async {
     await tester.pumpWidget(
       _dashboard(
@@ -130,13 +136,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final openTasksCard = find.byKey(
-      const ValueKey('web-dashboard-open-tasks-card'),
-    );
-    expect(
-      find.descendant(of: openTasksCard, matching: find.text('6')),
-      findsOneWidget,
-    );
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('web-dashboard-status-Closed')),
