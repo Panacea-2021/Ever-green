@@ -56,8 +56,7 @@ class WebCompaniesScreen extends ConsumerStatefulWidget {
   const WebCompaniesScreen({super.key});
 
   @override
-  ConsumerState<WebCompaniesScreen> createState() =>
-      _WebCompaniesScreenState();
+  ConsumerState<WebCompaniesScreen> createState() => _WebCompaniesScreenState();
 }
 
 class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
@@ -65,6 +64,12 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
   static const Color _danger = Color(0xFFD32F2F);
 
   _TypeFilter _typeFilter = _TypeFilter.all;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.invalidate(companiesProvider);
+  }
 
   List<Company> _visible(List<Company> companies) =>
       companies.where(_typeFilter.matches).toList();
@@ -90,8 +95,11 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
         if (visible.isEmpty) {
           return _StateBox(
             child: AmcEmptyState(
-              message:
-                  companies.isEmpty ? 'No companies yet' : 'No companies found',
+              message: companies.isEmpty
+                  ? canManage
+                      ? 'No companies yet'
+                      : 'No companies are linked to your account. Ask your administrator to link your user to the company.'
+                  : 'No companies found',
             ),
           );
         }
@@ -158,9 +166,10 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
       child: WebTable(
         columns: [
           const WebColumn('Company', flex: 5),
+          const WebColumn('GST', flex: 3),
           const WebColumn('Service', flex: 3),
           const WebColumn('POC', flex: 3),
-          const WebColumn('Email', flex: 4),
+          const WebColumn('Company Email', flex: 4),
           const WebColumn('Contract', flex: 3),
           const WebColumn('Status', flex: 2),
           if (canManage) const WebColumn('', flex: 1),
@@ -170,12 +179,19 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
           for (final c in companies)
             [
               _CompanyCell(company: c),
+              WebCellText(c.gstNumber ?? ''),
               _ServiceCell(label: c.serviceLabel),
               WebCellText(
                 c.poc?.name ?? '',
-                subtitle: c.poc?.phone,
+                subtitle: [
+                  c.poc?.phone,
+                  c.pocEmail,
+                ]
+                    .whereType<String>()
+                    .where((value) => value.isNotEmpty)
+                    .join(' · '),
               ),
-              WebCellText(c.pocEmail ?? c.email),
+              WebCellText(c.email),
               _contractCell(c),
               WebCellPill(
                 c.isActive ? 'Active' : 'Inactive',
@@ -226,9 +242,8 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
                 child: _WebCompanyCard(
                   company: company,
                   onTap: () => _openCompany(company),
-                  onMenu: canManage
-                      ? (at) => _showCompanyMenu(company, at)
-                      : null,
+                  onMenu:
+                      canManage ? (at) => _showCompanyMenu(company, at) : null,
                 ),
               ),
           ],
@@ -365,9 +380,11 @@ class _CompanyCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final place = company.branchName.isNotEmpty
-        ? company.branchName
-        : (company.location ?? '');
+    final place = [company.branchName, company.location]
+        .whereType<String>()
+        .where((value) => value.trim().isNotEmpty)
+        .toSet()
+        .join(' · ');
     return Row(
       children: [
         CompanyLogo(
@@ -489,7 +506,11 @@ class _WebCompanyCardState extends State<_WebCompanyCard> {
   @override
   Widget build(BuildContext context) {
     final c = widget.company;
-    final place = c.branchName.isNotEmpty ? c.branchName : (c.location ?? '');
+    final place = [c.branchName, c.location]
+        .whereType<String>()
+        .where((value) => value.trim().isNotEmpty)
+        .toSet()
+        .join(' · ');
     final start = c.amcStartDay;
     final end = c.amcEndDay;
 
@@ -588,8 +609,20 @@ class _WebCompanyCardState extends State<_WebCompanyCard> {
                     const SizedBox(height: 7),
                     _infoRow(
                       Icons.email_outlined,
-                      'Email',
-                      c.pocEmail ?? c.email,
+                      'Company email',
+                      c.email,
+                    ),
+                    const SizedBox(height: 7),
+                    _infoRow(
+                      Icons.badge_outlined,
+                      'GST',
+                      c.gstNumber ?? '',
+                    ),
+                    const SizedBox(height: 7),
+                    _infoRow(
+                      Icons.alternate_email,
+                      'POC email',
+                      c.pocEmail ?? '',
                     ),
                     const SizedBox(height: 7),
                     _infoRow(
