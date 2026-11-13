@@ -58,25 +58,29 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _webSectionLabel('REPORTS'),
-                const SizedBox(height: 12),
-                for (var i = 0; i < _reportTypes.length; i++)
-                  _webSideItem(
-                    label: _reportTypes[i].$1,
-                    icon: _reportTypes[i].$2,
-                    selected: _selectedReport == i,
-                    onTap: () => setState(() => _selectedReport = i),
-                  ),
-                const SizedBox(height: 20),
-                const Divider(color: Color(0xFFE3ECE5)),
-                const SizedBox(height: 16),
-                _webSectionLabel('DATE RANGE'),
-                const SizedBox(height: 12),
-                _webDateRangeSelector(),
-              ],
+            child: Scrollbar(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _webSectionLabel('REPORTS'),
+                    const SizedBox(height: 12),
+                    for (var i = 0; i < _reportTypes.length; i++)
+                      _webSideItem(
+                        label: _reportTypes[i].$1,
+                        icon: _reportTypes[i].$2,
+                        selected: _selectedReport == i,
+                        onTap: () => setState(() => _selectedReport = i),
+                      ),
+                    const SizedBox(height: 20),
+                    const Divider(color: Color(0xFFE3ECE5)),
+                    const SizedBox(height: 16),
+                    _webSectionLabel('DATE RANGE'),
+                    const SizedBox(height: 12),
+                    _webDateRangeSelector(),
+                  ],
+                ),
+              ),
             ),
           ),
           // Main content
