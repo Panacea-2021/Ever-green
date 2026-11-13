@@ -1,4 +1,3 @@
-
 name: Build Evergreen APK
 
 on:
@@ -6,6 +5,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -38,3 +40,11 @@ jobs:
         with:
           name: evergreen-main-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: main-apk-latest
+          name: Main APK (latest)
+          make_latest: true
+          files: build/app/outputs/flutter-apk/app-release.apk
