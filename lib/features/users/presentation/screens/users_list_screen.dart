@@ -18,10 +18,10 @@ import '../../../../web/widgets/web_filter_tiles.dart';
 import '../../../../web/widgets/web_header_actions.dart';
 
 class UsersListScreen extends ConsumerStatefulWidget {
-  const UsersListScreen({super.key, this.initialTab = 0});
+  const UsersListScreen({super.key, this.initialTab});
 
-  /// Tab opened first: 0 Clients, 1 POCs, 2 Service Engineers, 3 Managers.
-  final int initialTab;
+  /// Optional legacy tab index from a dashboard shortcut.
+  final int? initialTab;
 
   @override
   ConsumerState<UsersListScreen> createState() => _UsersListScreenState();
@@ -31,14 +31,12 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     with WebHeaderActionsMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  late int _selectedTab = widget.initialTab.clamp(0, _tabs.length - 1);
+  late int _selectedTab = _resolveInitialTab(widget.initialTab);
 
   /// User whose active flag / deletion is in flight.
   String? _busyId;
 
-  /// Ensures the list never opens silently empty: once the first batch of
-  /// users arrives, if the tab the screen opened on has no users but another
-  /// tab does, land on the first populated tab instead.
+  /// Mobile may fall back to a populated role tab after the first batch loads.
   bool _autoSelectedTab = false;
 
   static const Color _green = Color(0xFF125420);
@@ -46,10 +44,11 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   static const Color _footerBg = Color(0xFFEBF0EA);
 
   final List<String> _tabs = [
+    'All Users',
+    'EG Managers',
     'Company Managers',
     'POCs',
     'Service Engineers',
-    'Managers',
   ];
 
   @override
@@ -60,16 +59,45 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
 
   /// Company Managers = client admins, POCs = client users, Managers =
   /// EverGreen admins.
-  bool _inTab(UserRole role) {
-    switch (_selectedTab) {
+  bool _inTab(UserRole role) => _matchesTab(role, _selectedTab);
+
+  bool _matchesTab(UserRole role, int tab) {
+    switch (tab) {
+      case 0:
+        return true;
       case 1:
-        return role == UserRole.client;
-      case 2:
-        return role.isTechnicianLevel;
-      case 3:
         return role == UserRole.superAdmin || role == UserRole.manager;
-      default:
+      case 2:
         return role == UserRole.clientAdmin;
+      case 3:
+        return role == UserRole.client;
+      case 4:
+        return role.isTechnicianLevel;
+      default:
+        return false;
+    }
+  }
+
+  /// A missing web tab opens All Users; mobile retains its prior default.
+  static int _resolveInitialTab(int? tab) {
+    if (kIsWeb && (tab == null || tab < 0)) return 0;
+    return _mapLegacyTab(tab ?? 0);
+  }
+
+  /// Maps legacy dashboard indices to the current tab order.
+  static int _mapLegacyTab(int t) {
+    if (t < 0) return 0;
+    switch (t) {
+      case 0:
+        return 2; // Company Managers
+      case 1:
+        return 3; // POCs
+      case 2:
+        return 4; // Service Engineers
+      case 3:
+        return 1; // Managers
+      default:
+        return 0; // All Users
     }
   }
 
@@ -85,12 +113,10 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     }).toList();
   }
 
-  /// The screen opens on the tab from [widget.initialTab] (Company Managers
-  /// by default). If that tab has no users but another one does — e.g. a
-  /// workspace that has no client-side users yet — land on the first
-  /// populated tab so the Users List is never silently empty.
+  /// If the selected mobile tab has no users, land on the first populated
+  /// tab so the Users List is never silently empty.
   void _maybeAutoSelectTab(List<User>? all) {
-    if (all == null || all.isEmpty || _autoSelectedTab) return;
+    if (kIsWeb || all == null || all.isEmpty || _autoSelectedTab) return;
     _autoSelectedTab = true;
     if (_webTabCount(all, _selectedTab) > 0) return;
     for (var i = 0; i < _tabs.length; i++) {
@@ -197,24 +223,14 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   static const Color _webLine = Color(0xFFE2E8E3);
   static const Color _webInk = Color(0xFF14201A);
   static const _webTabMeta = [
+    (Icons.people_outline, Color(0xFF106220)),
+    (Icons.manage_accounts_outlined, Color(0xFF6A4BC4)),
     (Icons.business_center_outlined, Color(0xFF106220)),
     (Icons.contact_phone_outlined, Color(0xFF1565C0)),
     (Icons.engineering_outlined, Color(0xFFE08600)),
-    (Icons.manage_accounts_outlined, Color(0xFF6A4BC4)),
   ];
 
-  bool _webInTab(UserRole role, int tab) {
-    switch (tab) {
-      case 1:
-        return role == UserRole.client;
-      case 2:
-        return role.isTechnicianLevel;
-      case 3:
-        return role == UserRole.superAdmin || role == UserRole.manager;
-      default:
-        return role == UserRole.clientAdmin;
-    }
-  }
+  bool _webInTab(UserRole role, int tab) => _matchesTab(role, tab);
 
   int _webTabCount(List<User> all, int tab) {
     final q = _searchQuery.toLowerCase();

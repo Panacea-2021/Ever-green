@@ -272,7 +272,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '${message == 'Access denied' ? 'Access denied. Ask your Super Admin to verify your Manager role and company assignment.' : 'Announcement management could not be loaded: $message.'} '
+                '${message == 'Access denied' ? 'Access denied. Ask your Super Admin to verify your ${UserRole.manager.label} role and company assignment.' : 'Announcement management could not be loaded: $message.'} '
                 'Your notifications are still available below.',
                 style: WebTokens.bodyText(13, color: WebTokens.ink),
               ),

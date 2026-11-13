@@ -944,7 +944,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.admin_panel_settings_outlined,
                 tint: const Color(0xFF9E663B),
-                title: 'Managers',
+                title: 'EG Managers',
                 value: managerCount,
                 trend: mgrTrend,
                 series: mgrSeries,
@@ -960,8 +960,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 value: techCount,
                 trend: techTrend,
                 series: techSeries,
-                onTap: _open(Routes.techniciansList) ??
-                    _open(Routes.usersList, extra: {'tab': 2}),
+                onTap: _open(Routes.usersList, extra: {'tab': 2}),
               ),
             ),
           ],

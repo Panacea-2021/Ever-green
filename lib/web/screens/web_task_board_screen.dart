@@ -278,8 +278,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
                       child: _SmallButton(
                         label: t.hasAssignee ? 'Reassign' : 'Assign',
                         filled: false,
-                        onTap: () =>
-                            _handler.assign(t, reassign: t.hasAssignee),
+                        onTap: () => _assign(t, reassign: t.hasAssignee),
                       ),
                     ),
                   ],
@@ -288,6 +287,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
                     task: t,
                     user: user,
                     handler: _handler,
+                    onAssign: () => _assign(t, reassign: t.hasAssignee),
                     onDeleted: () => ref.invalidate(tasksProvider),
                   ),
                 ],
@@ -321,7 +321,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
                   onTap: () => context.push('${Routes.taskDetails}/${t.id}'),
                   onReport: () => _handler.serviceReport(t),
                   onAssign: canAssignFromCard(t, role)
-                      ? () => _handler.assign(t, reassign: t.hasAssignee)
+                      ? () => _assign(t, reassign: t.hasAssignee)
                       : null,
                   onToggleStar: canToggleTaskPriority(t, role)
                       ? () => _handler.togglePriority(t)
@@ -331,6 +331,62 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
           ],
         );
       },
+    );
+  }
+
+  Future<void> _assign(TaskItem task, {required bool reassign}) async {
+    final picked = await showDialog<(User, TechnicianStats)>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (_) => _WebAssignmentDialog(
+        task: task,
+        reassign: reassign,
+      ),
+    );
+    if (picked == null || !mounted) return;
+
+    final (tech, stats) = picked;
+    if (stats.isOverloaded) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Service Engineer is busy',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            '${tech.name} already has ${stats.active} active tasks. Assign anyway?',
+            style: const TextStyle(fontFamily: 'Montserrat'),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+          actions: [
+            TaskDialogButtons([
+              TaskDialogButton.cancel(
+                onPressed: () => Navigator.pop(dialogContext, false),
+              ),
+              TaskDialogButton(
+                label: 'Assign anyway',
+                onPressed: () => Navigator.pop(dialogContext, true),
+              ),
+            ]),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
+    await runTaskAction(
+      context,
+      () => ref.read(taskActionsProvider).assign(task, tech.backendId),
+      success: reassign && task.hasAssignee
+          ? 'Reassigned to ${tech.name}'
+          : 'Assigned to ${tech.name}',
     );
   }
 
@@ -1035,12 +1091,14 @@ class _TaskActionsMenu extends StatelessWidget {
     required this.task,
     required this.user,
     required this.handler,
+    required this.onAssign,
     required this.onDeleted,
   });
 
   final TaskItem task;
   final User? user;
   final TaskActionHandler handler;
+  final VoidCallback onAssign;
   final VoidCallback onDeleted;
 
   static const Color _green = Color(0xFF106220);
@@ -1127,7 +1185,13 @@ class _TaskActionsMenu extends StatelessWidget {
           ),
         ],
       ],
-      onSelected: (action) => handler.run(task, action, onDeleted: onDeleted),
+      onSelected: (action) {
+        if (action == TaskAction.assign || action == TaskAction.reassign) {
+          onAssign();
+        } else {
+          handler.run(task, action, onDeleted: onDeleted);
+        }
+      },
     );
   }
 }
@@ -1163,6 +1227,170 @@ class _ActionMenuItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _WebAssignmentDialog extends ConsumerWidget {
+  const _WebAssignmentDialog({
+    required this.task,
+    required this.reassign,
+  });
+
+  final TaskItem task;
+  final bool reassign;
+
+  static const Color _green = Color(0xFF106220);
+  static const Color _ink = Color(0xFF14201A);
+  static const Color _muted = Color(0xFF6B6B6B);
+  static const Color _danger = Color(0xFFD32F2F);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: ConstrainedBox(
+        key: const ValueKey('web-task-assignment-dialog-card'),
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 640),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          reassign
+                              ? 'Reassign Service Engineer'
+                              : 'Assign Service Engineer',
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: _ink,
+                          ),
+                        ),
+                        if (reassign && task.hasAssignee) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Currently: ${task.assignee}',
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 13,
+                              color: _muted,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: _muted),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 20),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                child: TechnicianChoices(
+                  builder: (techs, stats) => Column(
+                    children: [
+                      for (final tech in techs)
+                        _technicianTile(
+                          context,
+                          tech,
+                          statsFor(tech, stats),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _muted,
+                    side: const BorderSide(color: Color(0xFFD8D8D8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _technicianTile(
+    BuildContext context,
+    User tech,
+    TechnicianStats stats,
+  ) {
+    final isCurrent = tech.backendId == task.technicianId;
+    final isBusy = stats.isOverloaded;
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      enabled: !isCurrent,
+      leading: CircleAvatar(
+        backgroundColor: const Color(0xFFEBF0EA),
+        child: Text(
+          tech.name.isNotEmpty ? tech.name[0] : '?',
+          style: const TextStyle(color: _green, fontWeight: FontWeight.w600),
+        ),
+      ),
+      title: Text(
+        tech.name,
+        style: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        isCurrent ? 'Current assignee' : '${stats.active} active task(s)',
+        style: TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 12,
+          color: isBusy ? _danger : _muted,
+        ),
+      ),
+      trailing: isCurrent
+          ? const Icon(Icons.check, color: _green)
+          : isBusy
+              ? const Text(
+                  'Busy',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    color: _danger,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
+              : const Icon(Icons.chevron_right, color: Color(0xFFB0B0B0)),
+      onTap: isCurrent ? null : () => Navigator.pop(context, (tech, stats)),
     );
   }
 }

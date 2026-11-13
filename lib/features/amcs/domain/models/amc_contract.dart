@@ -87,8 +87,10 @@ const List<String> _months = [
 ];
 
 /// `07 Sept 2027`, the design's long date style.
-String longDate(DateTime d) =>
-    '${d.day.toString().padLeft(2, '0')} ${_months[d.month - 1]} ${d.year}';
+String longDate(DateTime d) {
+  final m = (d.month >= 1 && d.month <= _months.length) ? _months[d.month - 1] : '';
+  return '${d.day.toString().padLeft(2, '0')} $m ${d.year}'.trim();
+}
 
 /// One AMC company's contract, viewed through the renewal lens. Built from a
 /// backend [Company] via [AmcContract.fromCompany]; only AMC companies with
@@ -220,17 +222,17 @@ class AmcContract {
 
   factory AmcContract.fromJson(Map<String, dynamic> json) {
     return AmcContract(
-      id: json['id'] as String,
-      companyName: json['companyName'] as String? ?? '',
-      branchName: json['branchName'] as String? ?? '',
-      pocName: json['pocName'] as String? ?? '',
-      mobile: json['mobile'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      startDate: DateTime.parse(json['startDate'] as String),
-      endDate: DateTime.parse(json['endDate'] as String),
-      imageUrl: json['imageUrl'] as String?,
-      serviceType: json['serviceType'] as String? ?? 'AMC',
-      amcCategory: json['amcCategory'] as String? ?? '',
+      id: '${json['id'] ?? ''}',
+      companyName: '${json['companyName'] ?? ''}',
+      branchName: '${json['branchName'] ?? ''}',
+      pocName: '${json['pocName'] ?? ''}',
+      mobile: '${json['mobile'] ?? ''}',
+      email: '${json['email'] ?? ''}',
+      startDate: DateTime.tryParse('${json['startDate'] ?? ''}') ?? DateTime.now(),
+      endDate: DateTime.tryParse('${json['endDate'] ?? ''}') ?? DateTime.now(),
+      imageUrl: json['imageUrl']?.toString(),
+      serviceType: '${json['serviceType'] ?? 'AMC'}',
+      amcCategory: '${json['amcCategory'] ?? ''}',
     );
   }
 }

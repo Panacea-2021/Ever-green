@@ -58,7 +58,20 @@ class TaskBoardScreen extends ConsumerStatefulWidget {
 class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
   static const Color _green = Color(0xFF106220);
   String _query = '';
-  late TaskStatus? _statusFilter = widget.initialStatus;
+  TaskStatus? _statusFilter;
+  @override
+  void initState() {
+    super.initState();
+    _statusFilter = widget.initialStatus;
+  }
+
+  @override
+  void didUpdateWidget(covariant TaskBoardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialStatus != widget.initialStatus) {
+      _statusFilter = widget.initialStatus;
+    }
+  }
 
   /// The "Deleted" chip (Super Admin / Manager) lists soft-deleted tickets.
   bool _deletedTab = false;
@@ -160,7 +173,12 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
       return _webBuild(title, searched, visible, role, all, async);
     }
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go(Routes.home);
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       drawer: widget.isRootTab ? const AppDrawer() : null,
       body: Stack(
@@ -217,7 +235,7 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   static const _webFilters = <(String, TaskStatus?, IconData, Color)>[
@@ -582,7 +600,7 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
             builder: (ctx) => widget.isRootTab
                 ? CustomMenuIcon(onTap: () => Scaffold.of(ctx).openDrawer())
                 : GestureDetector(
-                    onTap: () => context.pop(),
+                    onTap: () => context.go(Routes.home),
                     child: Container(
                       width: 42,
                       height: 42,

@@ -191,18 +191,27 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
           controller: textController,
           autofocus: true,
           textInputAction: TextInputAction.search,
-          onSubmitted: (v) => Navigator.pop(ctx, v),
+          onSubmitted: (v) => Navigator.of(ctx).pop(v),
           decoration: const InputDecoration(
             hintText: 'Equipment ID or serial number',
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, textController.text),
+            onPressed: () {
+              final text = textController.text.trim();
+              if (text.isEmpty) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('Please enter an equipment ID')),
+                );
+                return;
+              }
+              Navigator.of(ctx).pop(text);
+            },
             child: const Text(
               'Search',
               style: TextStyle(color: Color(0xFF106220)),
@@ -211,9 +220,10 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
         ],
       ),
     );
+    final trimmed = value?.trim();
     textController.dispose();
-    if (value == null || value.trim().isEmpty || !mounted) return;
-    await _onCodeScanned(value.trim());
+    if (trimmed == null || trimmed.isEmpty || !mounted) return;
+    await _onCodeScanned(trimmed);
   }
 
   void _snack(String message) {

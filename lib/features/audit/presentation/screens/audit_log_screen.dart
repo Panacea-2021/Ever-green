@@ -172,7 +172,32 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen>
 
   Widget _webFilterBar(bool canFilterEntity, int total) {
     final hasFilters = _entityFilter != null || _dateRange != null || _query.isNotEmpty;
-    
+
+    final entityChips = _entityFilters
+        .map(
+          (filter) => _WebChip(
+            label: filter.$1,
+            icon: filter.$3,
+            selected: _entityFilter == filter.$2,
+            onTap: () => setState(() => _entityFilter = filter.$2),
+          ),
+        )
+        .toList();
+    final dateChips = _dateFilters
+        .map(
+          (filter) => _WebChip(
+            label: filter.$2 == RangePreset.custom &&
+                    _dateRange?.preset == RangePreset.custom
+                ? _dateRange!.summary
+                : filter.$1,
+            icon: filter.$3,
+            selected: (filter.$2 == null && _dateRange == null) ||
+                (filter.$2 != null && _dateRange?.preset == filter.$2),
+            onTap: () => _onDateChipTap(filter.$2),
+          ),
+        )
+        .toList();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -188,71 +213,74 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen>
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Type and Date Filters in a single row
-          Row(
-            children: [
-              // Entity type filters
-              if (canFilterEntity) ...[
-                _buildFilterSection(
-                  'Type',
-                  _entityFilters.map((f) => _WebChip(
-                    label: f.$1,
-                    icon: f.$3,
-                    selected: _entityFilter == f.$2,
-                    onTap: () => setState(() => _entityFilter = f.$2),
-                  )).toList(),
-                ),
-                const SizedBox(width: 16),
-                Container(width: 1, height: 40, color: _line),
-                const SizedBox(width: 16),
-              ],
-              // Date filters
-              Expanded(
-                child: _buildFilterSection(
-                  'Time',
-                  _dateFilters.map((f) => _WebChip(
-                    label: f.$2 == RangePreset.custom && _dateRange?.preset == RangePreset.custom
-                        ? _dateRange!.summary
-                        : f.$1,
-                    icon: f.$3,
-                    selected: (f.$2 == null && _dateRange == null) ||
-                        (f.$2 != null && _dateRange?.preset == f.$2),
-                    onTap: () => _onDateChipTap(f.$2),
-                  )).toList(),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(width: 1, height: 40, color: _line),
-              const SizedBox(width: 16),
-              // Stats badge
-              _webStatsBadge(total, hasFilters),
-            ],
+          if (canFilterEntity) ...[
+            _webFilterRow('Type', entityChips),
+            const SizedBox(height: 12),
+          ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 900) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _webFilterRow('Time', dateChips),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _webStatsBadge(total, hasFilters),
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: _webFilterRow('Time', dateChips)),
+                  const SizedBox(width: 16),
+                  Container(width: 1, height: 40, color: _line),
+                  const SizedBox(width: 16),
+                  _webStatsBadge(total, hasFilters),
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterSection(String label, List<Widget> chips) {
+  Widget _webFilterRow(String label, List<Widget> chips) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: Colors.black.withValues(alpha: 0.35),
-            letterSpacing: 0.5,
+        SizedBox(
+          width: 42,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Colors.black.withValues(alpha: 0.35),
+              letterSpacing: 0.5,
+            ),
           ),
         ),
-        const SizedBox(width: 12),
-        ...chips.map((chip) => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: chip,
-        )),
+        const SizedBox(width: 10),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (var i = 0; i < chips.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 8),
+                  chips[i],
+                ],
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }

@@ -47,7 +47,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
     final async = ref.watch(taskItemsProvider);
     final all = ref.watch(taskProvider);
     final tabs = ref.watch(queueTabsProvider);
-    final noEngineer = ref.watch(unassignedCountProvider);
+    final noEngineer = tabs[QueueTab.unassigned]!.length;
 
     final list = tabs[_tab]!;
     final overdueOpen =

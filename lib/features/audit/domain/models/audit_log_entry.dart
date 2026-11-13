@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// The kind of action that was performed.
 enum AuditAction { created, updated, deleted, loggedIn, loggedOut, assigned }
 
@@ -185,7 +187,7 @@ class AuditLogEntry {
       case 'eg_super_admin':
         return 'Super Admin';
       case 'eg_admin':
-        return 'Manager';
+        return kIsWeb ? 'EG Manager' : 'Manager';
       case 'senior_technician':
         return 'Senior Service Engineer';
       case 'technician':

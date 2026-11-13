@@ -313,7 +313,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'usersList',
         builder: (context, state) => UsersListScreen(
           initialTab:
-              (state.extra as Map<String, dynamic>?)?['tab'] as int? ?? 0,
+              (state.extra as Map<String, dynamic>?)?['tab'] as int? ?? -1,
         ),
       ),
       GoRoute(

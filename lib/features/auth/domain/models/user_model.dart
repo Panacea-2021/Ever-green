@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// The four access levels in the app. Drives RBAC gating of menu items,
 /// routes and the audit-log actor role.
 enum UserRole {
@@ -17,7 +19,7 @@ extension UserRoleX on UserRole {
       case UserRole.superAdmin:
         return 'Super Admin';
       case UserRole.manager:
-        return 'Manager';
+        return kIsWeb ? 'EG Manager' : 'Manager';
       case UserRole.seniorTechnician:
         return 'Senior Service Engineer';
       case UserRole.technician:

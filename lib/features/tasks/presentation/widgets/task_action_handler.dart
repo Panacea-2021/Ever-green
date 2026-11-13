@@ -61,7 +61,7 @@ class TaskActionHandler {
           context,
           () => _actions.escalate(t,
               reason: 'Overdue by ${-t.hoursToSla()}h (SLA)',),
-          success: '${t.title} escalated to Manager',
+          success: '${t.title} escalated to ${UserRole.manager.label}',
         );
       case TaskAction.accept:
         await runTaskAction(

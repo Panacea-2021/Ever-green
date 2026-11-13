@@ -1282,7 +1282,7 @@ class _TechnicianPerformanceScreenState
                 children: [
                   roleTab('Service Engineers', Icons.engineering_outlined, 0, _tab == 0 ? count : null),
                   const SizedBox(width: 4),
-                  roleTab('Managers', Icons.manage_accounts_outlined, 1, _tab == 1 ? count : null),
+                  roleTab('EG Manager', Icons.manage_accounts_outlined, 1, _tab == 1 ? count : null),
                 ],
               ),
             ),
@@ -1475,7 +1475,7 @@ class _TechnicianPerformanceScreenState
         children: [
           tab('Service Engineers', 0),
           const SizedBox(width: 10),
-          tab('Managers', 1),
+          tab('EG Managers', 1),
         ],
       ),
     );

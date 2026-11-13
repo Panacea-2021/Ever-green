@@ -389,6 +389,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   Positioned(
                     left: 103,
                     top: 97,
+                    right: 90,
                     child: Container(
                       height: 25,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -399,6 +400,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       child: Center(
                         child: Text(
                           'Service Engineer : ${entry.acceptedBy ?? '—'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontFamily: 'Montserrat',
                             fontSize: 12,
@@ -416,6 +419,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     top: 99,
                     child: Text(
                       _relativeTime(notification.createdAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontFamily: 'Montserrat',
                         fontSize: 12,

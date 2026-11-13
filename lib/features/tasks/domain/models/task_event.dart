@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// Steps on a ticket's timeline (backend `task_event.event`).
 enum TaskEventType {
   raised('raised'),
@@ -30,7 +32,7 @@ enum TaskEventType {
 /// Backend actor role -> display label.
 String taskActorRoleLabel(String role) => switch (role) {
       'eg_super_admin' => 'Super Admin',
-      'eg_admin' => 'Manager',
+      'eg_admin' => kIsWeb ? 'EG Manager' : 'Manager',
       'client_admin' => 'Company Manager',
       'client' => 'POC',
       'technician' => 'Service Engineer',

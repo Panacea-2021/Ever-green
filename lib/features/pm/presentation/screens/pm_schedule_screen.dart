@@ -83,21 +83,6 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     const cream = Color(0xFFFBFCFA);
     return Scaffold(
       backgroundColor: cream,
-      floatingActionButton: _schedulesView && _tab == 0
-          ? FloatingActionButton.extended(
-              backgroundColor: _green,
-              onPressed: _openAddSheet,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'New Schedule',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            )
-          : null,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -124,8 +109,31 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _generateBar(pm.schedules),
+        _webGenerateBar(pm.schedules),
         _tabs(pm.schedules.length, pm.generated.length),
+        if (_tab == 0)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 0, 28, 8),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: _openAddSheet,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('New Schedule'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _green,
+                  side: const BorderSide(color: _green),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  textStyle: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
         const SizedBox(height: 4),
         Expanded(
           child: async.hasValue
@@ -1060,6 +1068,89 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     );
   }
 
+  Widget _webGenerateBar(List<PmSchedule> schedules) {
+    final dueCount = schedules.where((s) => s.isDue()).length;
+    final compact = MediaQuery.sizeOf(context).width < 620;
+    final status = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.autorenew, color: _green),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(
+            dueCount == 0
+                ? 'No visits due right now'
+                : '$dueCount schedule${dueCount == 1 ? '' : 's'} due for a visit',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF125420),
+            ),
+          ),
+        ),
+      ],
+    );
+    final generateButton = ElevatedButton(
+      onPressed: dueCount == 0 || _generating ? null : _generateNow,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _green,
+        disabledBackgroundColor: Colors.grey.shade300,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      ),
+      child: const Text(
+        'Generate',
+        style: TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 0, 28, 14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _webLine),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: compact
+            ? Column(
+                children: [
+                  Center(child: status),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: generateButton,
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: Center(child: status)),
+                  const SizedBox(width: 12),
+                  generateButton,
+                ],
+              ),
+      ),
+    );
+  }
+
   Widget _tabs(int schedules, int generated) {
     Widget tab(String label, int index) {
       final selected = _tab == index;
@@ -1379,43 +1470,50 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
 
   Widget _empty(String title, String subtitle, {VoidCallback? onRetry}) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.build_circle_outlined,
-            size: 56,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF6B6B6B),
+      child: ConstrainedBox(
+        constraints:
+            const BoxConstraints(maxWidth: kIsWeb ? 520 : double.infinity),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.build_circle_outlined,
+              size: 56,
+              color: Colors.grey.shade400,
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 13,
-              color: Color(0xFF9B9B9B),
-            ),
-          ),
-          if (onRetry != null)
-            TextButton(
-              onPressed: onRetry,
-              child: const Text(
-                'Retry',
-                style: TextStyle(fontFamily: 'Montserrat', color: _green),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: kIsWeb ? TextAlign.center : null,
+              maxLines: kIsWeb ? 2 : null,
+              overflow: kIsWeb ? TextOverflow.ellipsis : null,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF6B6B6B),
               ),
             ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 13,
+                color: Color(0xFF9B9B9B),
+              ),
+            ),
+            if (onRetry != null)
+              TextButton(
+                onPressed: onRetry,
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(fontFamily: 'Montserrat', color: _green),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
