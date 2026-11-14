@@ -299,11 +299,13 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
           ),
           Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _WebTopBar(
                   title: title,
                   router: widget.router,
                   onBack: _goBack,
+                  showBackButton: _location != Routes.webDashboard,
                   showUserInfo: _location == Routes.webDashboard,
                 ),
                 Expanded(
@@ -571,12 +573,14 @@ class _WebTopBar extends ConsumerWidget {
     required this.title,
     required this.router,
     required this.onBack,
+    required this.showBackButton,
     this.showUserInfo = true,
   });
 
   final String title;
   final GoRouter router;
   final VoidCallback onBack;
+  final bool showBackButton;
   final bool showUserInfo;
 
   @override
@@ -590,8 +594,9 @@ class _WebTopBar extends ConsumerWidget {
     final compact = MediaQuery.sizeOf(context).width < 600;
 
     return Container(
+      key: showUserInfo ? const ValueKey('web-dashboard-top-bar') : null,
       height: 64,
-      padding: EdgeInsets.only(left: compact ? 12 : 28, right: 0),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 28),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: WebTokens.line)),
@@ -599,12 +604,13 @@ class _WebTopBar extends ConsumerWidget {
       child: Row(
         children: [
           if (title.isNotEmpty) ...[
-            IconButton(
-              key: const ValueKey('web-module-back-button'),
-              onPressed: onBack,
-              icon: const Icon(Icons.arrow_back),
-            ),
-            Flexible(
+            if (showBackButton)
+              IconButton(
+                key: const ValueKey('web-module-back-button'),
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_back),
+              ),
+            Expanded(
               child: Text(
                 title,
                 maxLines: 1,
@@ -612,8 +618,8 @@ class _WebTopBar extends ConsumerWidget {
                 style: WebTokens.heading(20),
               ),
             ),
-          ],
-          const Spacer(),
+          ] else
+            const Spacer(),
           // Page-specific action buttons (Reset, Save, etc.)
           if (headerActions.isNotEmpty) ...[
             WebHeaderActionButtons(actions: headerActions),

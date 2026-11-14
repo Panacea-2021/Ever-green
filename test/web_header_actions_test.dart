@@ -100,8 +100,34 @@ void main() {
     expect(find.text('Notifications destination'), findsOneWidget);
   });
 
-  testWidgets('header actions fit within a narrow viewport',
+  testWidgets(
+      'Dashboard title has no back arrow and header actions are right aligned',
       (tester) async {
+    await _mountDashboard(
+      tester,
+      user,
+      _MemoryNotificationsRepository([]),
+    );
+
+    final topBar = find.byKey(const ValueKey('web-dashboard-top-bar'));
+    expect(
+      find.descendant(of: topBar, matching: find.text('Dashboard')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: topBar,
+        matching: find.byKey(const ValueKey('web-module-back-button')),
+      ),
+      findsNothing,
+    );
+    final topBarRight = tester.getRect(topBar).right;
+    final profileRight =
+        tester.getRect(find.byKey(const ValueKey('web-profile-button'))).right;
+    expect(topBarRight - profileRight, closeTo(28, 1));
+  });
+
+  testWidgets('header actions fit within a narrow viewport', (tester) async {
     await _mountDashboard(
       tester,
       user,
@@ -128,8 +154,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('profile button opens the Profile module',
-      (tester) async {
+  testWidgets('profile button opens the Profile module', (tester) async {
     await _mountDashboard(
       tester,
       user,
@@ -167,9 +192,14 @@ void main() {
       _MemoryNotificationsRepository([]),
     );
 
+    expect(find.byKey(const ValueKey('web-module-back-button')), findsNothing);
     await tester.tap(find.byKey(const ValueKey('web-profile-button')));
     await tester.pumpAndSettle();
     expect(find.text('Profile destination'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('web-module-back-button')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const ValueKey('web-module-back-button')));
     await tester.pumpAndSettle();

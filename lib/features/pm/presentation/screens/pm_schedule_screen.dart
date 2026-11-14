@@ -9,7 +9,6 @@ import '../../../../core/router/routes.dart';
 import '../../data/pm_provider.dart';
 import '../../domain/models/pm_schedule.dart';
 import '../../domain/pm_occurrences.dart';
-import '../../../../web/widgets/web_filter_tiles.dart';
 
 /// Upcoming preventive maintenance for all equipment (from each equipment's
 /// PM frequency and the PM schedules), plus schedule management: recurring
@@ -93,9 +92,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
           ),
           const SizedBox(height: 18),
           Expanded(
-            child: _schedulesView
-                ? _webSchedulesSection()
-                : _upcomingSection(),
+            child: _schedulesView ? _webSchedulesSection() : _upcomingSection(),
           ),
         ],
       ),
@@ -110,39 +107,46 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _webGenerateBar(pm.schedules),
-        _tabs(pm.schedules.length, pm.generated.length),
-        if (_tab == 0)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 0, 28, 8),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: OutlinedButton.icon(
-                onPressed: _openAddSheet,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('New Schedule'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _green,
-                  side: const BorderSide(color: _green),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  textStyle: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 0, 28, 12),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final tabs = _webScheduleTabs(
+                pm.schedules.length,
+                pm.generated.length,
+                maxWidth: constraints.maxWidth,
+              );
+              final addButton = _webNewScheduleButton();
+              if (constraints.maxWidth < 620) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Align(alignment: Alignment.centerLeft, child: tabs),
+                    const SizedBox(height: 12),
+                    Align(alignment: Alignment.centerRight, child: addButton),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  tabs,
+                  const Spacer(),
+                  addButton,
+                ],
+              );
+            },
           ),
-        const SizedBox(height: 4),
+        ),
         Expanded(
           child: async.hasValue
               ? RefreshIndicator(
                   color: _green,
                   onRefresh: () => ref.refresh(pmProvider.future),
-                  child: _tab == 0
-                      ? _schedulesList(pm.schedules)
-                      : _generatedList(pm.generated),
+                  child: _tab == 0 && pm.schedules.isEmpty
+                      ? _webEmptySchedules()
+                      : _tab == 0
+                          ? _schedulesList(pm.schedules)
+                          : _generatedList(pm.generated),
                 )
               : async.hasError
                   ? _empty(
@@ -155,6 +159,169 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                     ),
         ),
       ],
+    );
+  }
+
+  Widget _webScheduleTabs(
+    int schedules,
+    int generated, {
+    required double maxWidth,
+  }) {
+    Widget tab(String label, int index) {
+      final selected = _tab == index;
+      return Expanded(
+        child: Material(
+          color: selected ? _green : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            onTap: () => setState(() => _tab = index),
+            borderRadius: BorderRadius.circular(10),
+            hoverColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            splashFactory: NoSplash.splashFactory,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+              child: Center(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : const Color(0xFF545454),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: maxWidth < 420 ? maxWidth : 420,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F4F1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _webLine),
+      ),
+      child: Row(
+        children: [
+          tab('Schedules ($schedules)', 0),
+          const SizedBox(width: 4),
+          tab('Visits ($generated)', 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _webNewScheduleButton() {
+    return SizedBox(
+      height: 44,
+      child: FilledButton.icon(
+        onPressed: _openAddSheet,
+        icon: const Icon(Icons.add_rounded, size: 19),
+        label: const Text('New Schedule'),
+        style: FilledButton.styleFrom(
+          backgroundColor: _green,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: const TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webEmptySchedules() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final contentHeight = (constraints.maxHeight - 24)
+            .clamp(180.0, double.infinity)
+            .toDouble();
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
+          children: [
+            SizedBox(
+              height: contentHeight,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 22,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: _webLine),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.035),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: _green.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.build_circle_outlined,
+                            size: 30,
+                            color: _green,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'No schedules yet',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1F1F1F),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Add one with the button below.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            color: Color(0xFF6B6B6B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -234,22 +401,127 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
       ).length;
     }
 
-    return WebFilterTiles(
-      options: [
-        for (var i = 0; i < labels.length; i++)
-          WebFilterOption(
-            label: labels[i],
-            icon: _webTileMeta[i].$1,
-            color: _webTileMeta[i].$2,
-            selected:
-                _view == i && (_range == null || i == labels.length - 1),
-            count: countFor(i),
-            onTap: () => setState(() {
-              _view = i;
-              if (i < PmWindow.values.length) _range = null;
-            }),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 1000
+            ? 4
+            : constraints.maxWidth >= 560
+                ? 2
+                : 1;
+        const gap = 12.0;
+        final tileWidth =
+            (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (var i = 0; i < labels.length; i++)
+              SizedBox(
+                width: tileWidth,
+                child: _webViewTile(
+                  label: labels[i],
+                  count: countFor(i),
+                  icon: _webTileMeta[i].$1,
+                  color: _webTileMeta[i].$2,
+                  selected:
+                      _view == i && (_range == null || i == labels.length - 1),
+                  onTap: () => setState(() {
+                    _view = i;
+                    if (i < PmWindow.values.length) _range = null;
+                  }),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _webViewTile({
+    required String label,
+    required int? count,
+    required IconData icon,
+    required Color color,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 72),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? color.withValues(alpha: 0.07) : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? color.withValues(alpha: 0.32) : _webLine,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.035),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-      ],
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 20, color: color),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      count == null ? '–' : '$count',
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 19,
+                        height: 1.1,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF14201A),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: selected
+                            ? const Color(0xFF355940)
+                            : const Color(0xFF626D66),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (selected) ...[
+                const SizedBox(width: 6),
+                Icon(Icons.check_circle, size: 17, color: color),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -645,8 +917,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     if (kIsWeb) {
       final groups = <String, List<PmDue>>{};
       for (final item in items) {
-        final header =
-            item.overdue ? 'Overdue' : _dayHeader(item.dueDate, now);
+        final header = item.overdue ? 'Overdue' : _dayHeader(item.dueDate, now);
         groups.putIfAbsent(header, () => []).add(item);
       }
       return LayoutBuilder(
@@ -705,8 +976,11 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
   Widget _dueCard(PmDue d, DateTime now) {
     final today = d.isToday(now);
     final (String dueText, Color dueBg, Color dueFg) = d.overdue
-        ? ('Overdue · ${_fmt(d.dueDate)}', const Color(0xFFFDE8E8),
-            const Color(0xFFD32F2F))
+        ? (
+            'Overdue · ${_fmt(d.dueDate)}',
+            const Color(0xFFFDE8E8),
+            const Color(0xFFD32F2F)
+          )
         : today
             ? ('Due today', const Color(0xFFFFF3E0), const Color(0xFFE08600))
             : ('Due ${_fmt(d.dueDate)}', const Color(0xFFEBF0EA), _green);
@@ -802,8 +1076,11 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
   Widget _webDueCard(PmDue d, DateTime now) {
     final today = d.isToday(now);
     final (String dueText, Color dueBg, Color dueFg) = d.overdue
-        ? ('Overdue · ${_fmt(d.dueDate)}', const Color(0xFFFDE8E8),
-            const Color(0xFFD32F2F))
+        ? (
+            'Overdue · ${_fmt(d.dueDate)}',
+            const Color(0xFFFDE8E8),
+            const Color(0xFFD32F2F)
+          )
         : today
             ? ('Due today', const Color(0xFFFFF3E0), const Color(0xFFE08600))
             : ('Due ${_fmt(d.dueDate)}', const Color(0xFFEBF0EA), _green);
@@ -845,7 +1122,8 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                           color: dueBg,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(Icons.build_outlined, color: dueFg, size: 20),
+                        child:
+                            Icon(Icons.build_outlined, color: dueFg, size: 20),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -1070,11 +1348,19 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
 
   Widget _webGenerateBar(List<PmSchedule> schedules) {
     final dueCount = schedules.where((s) => s.isDue()).length;
-    final compact = MediaQuery.sizeOf(context).width < 620;
+    final compact = MediaQuery.sizeOf(context).width < 480;
     final status = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.autorenew, color: _green),
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: _green.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.autorenew, color: _green, size: 18),
+        ),
         const SizedBox(width: 10),
         Flexible(
           child: Text(
@@ -1099,8 +1385,9 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
       style: ElevatedButton.styleFrom(
         backgroundColor: _green,
         disabledBackgroundColor: Colors.grey.shade300,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        minimumSize: const Size(0, 40),
       ),
       child: const Text(
         'Generate',
@@ -1114,18 +1401,18 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 0, 28, 14),
+      padding: const EdgeInsets.fromLTRB(28, 0, 28, 12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: _webLine),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.025),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -1133,7 +1420,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
             ? Column(
                 children: [
                   Center(child: status),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
                     child: generateButton,

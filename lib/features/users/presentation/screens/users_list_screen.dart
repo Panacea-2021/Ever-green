@@ -47,7 +47,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     'Company Managers',
     'POCs',
     'Service Engineers',
-    'Managers',
+    'EG Managers',
   ];
 
   @override
@@ -122,20 +122,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                   _buildHeader(),
                   const SizedBox(height: 4),
                   _buildSearchBar(),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      _tabs[_selectedTab],
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF11682E),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 18),
                   _buildTabs(),
                   const SizedBox(height: 14),
                   _buildResultHeader(users.length),

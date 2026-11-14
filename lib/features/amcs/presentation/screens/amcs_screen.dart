@@ -54,7 +54,9 @@ class _AmcsScreenState extends ConsumerState<AmcsScreen> {
   @override
   void initState() {
     super.initState();
-    ref.invalidate(companiesProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(companiesProvider);
+    });
   }
 
   @override
