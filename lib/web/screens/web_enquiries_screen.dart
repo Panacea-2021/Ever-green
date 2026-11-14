@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/permissions.dart';
-import '../../core/router/routes.dart';
-import '../../features/enquiries/data/enquiries_repository.dart';
 import '../../features/enquiries/domain/enquiry.dart';
 import '../../shared/providers/auth_state_provider.dart';
+import '../../web/data/enquiries_sample_data.dart';
 import '../theme/web_tokens.dart';
 
-/// Web-only Enquiries page: lists customer repair enquiries submitted through
-/// the "Book a Repair" popup. Backend integration is pending, so the screen
-/// shows an integration-pending empty state until the API is available.
+/// Web-only Enquiries page: lists customer repair enquiries.
+/// Currently backed by clearly-marked sample data (pending real API).
 class WebEnquiriesScreen extends ConsumerStatefulWidget {
   const WebEnquiriesScreen({super.key});
 
@@ -21,12 +19,24 @@ class WebEnquiriesScreen extends ConsumerStatefulWidget {
 class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _search = '';
-  EnquiryStatus? _statusFilter; // null = All
+  EnquiryStatus? _statusFilter;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  List<Enquiry> get _filtered {
+    final q = _search.trim().toLowerCase();
+    return webEnquirySampleRecords.where((e) {
+      final matchesSearch = q.isEmpty ||
+          e.customerName.toLowerCase().contains(q) ||
+          e.phone.toLowerCase().contains(q) ||
+          (e.email?.toLowerCase().contains(q) ?? false);
+      final matchesStatus = _statusFilter == null || e.status == _statusFilter;
+      return matchesSearch && matchesStatus;
+    }).toList();
   }
 
   @override
@@ -35,23 +45,16 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
     if (!Permissions.canViewReports(role)) {
       return const Center(child: Text('Access denied'));
     }
-
-    final repo = ref.watch(enquiriesRepositoryProvider);
-    return FutureBuilder<List<Enquiry>>(
-      future: repo.fetchEnquiries(search: _search, status: _statusFilter),
-      builder: (context, snapshot) {
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildToolbar(),
-              const SizedBox(height: 16),
-              Expanded(child: _buildBody(snapshot)),
-            ],
-          ),
-        );
-      },
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildToolbar(),
+          const SizedBox(height: 16),
+          Expanded(child: _buildTable()),
+        ],
+      ),
     );
   }
 
@@ -85,32 +88,8 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
     );
   }
 
-  Widget _buildBody(AsyncSnapshot<List<Enquiry>> snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (snapshot.hasError) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey),
-            const SizedBox(height: 12),
-            const Text(
-              'Enquiries API is not available yet. '
-              'Integration pending — please check back once the backend endpoint is ready.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => setState(() {}),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
-    }
-    final items = snapshot.data ?? const [];
+  Widget _buildTable() {
+    final items = _filtered;
     if (items.isEmpty) {
       return const Center(child: Text('No enquiries found.'));
     }
