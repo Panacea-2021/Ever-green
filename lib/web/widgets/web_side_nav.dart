@@ -197,6 +197,12 @@ class WebSideNav extends ConsumerWidget {
           route: Routes.reports,
           icon: Icons.assessment_outlined,
         ),
+      if (Permissions.canViewReports(role))
+        const WebNavEntry(
+          label: 'Enquiries',
+          route: Routes.enquiries,
+          icon: Icons.help_outline,
+        ),
       if (Permissions.hasProfileTab(role))
         const WebNavEntry(
           label: 'Profile',
