@@ -45,7 +45,7 @@ void main() {
           usersListProvider.overrideWith((ref) async => users),
         ],
         child: const MaterialApp(
-          home: UsersListScreen(initialTab: kIsWeb ? null : -1),
+          home: UsersListScreen(initialTab: kIsWeb ? 0 : -1),
         ),
       ),
     );
