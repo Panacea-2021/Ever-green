@@ -10,6 +10,7 @@ import 'core/push/push_service.dart';
 import 'core/router/app_router.dart';
 import 'core/router/routes.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/root_tab_back_handling.dart';
 import 'shared/providers/auth_state_provider.dart';
 import 'shared/widgets/global_scroll_to_top.dart';
 import 'web/widgets/web_module_frame.dart';
@@ -105,7 +106,12 @@ class _EverGreenAppState extends ConsumerState<EverGreenApp> {
                   child: child ?? const SizedBox.shrink(),
                 ),
               )
-            : child ?? const SizedBox.shrink(),
+            // Android back on AMCs/Tasks/Profile returns to Home instead of
+            // letting the OS close the app.
+            : RootTabBackHandling(
+                router: router,
+                child: child ?? const SizedBox.shrink(),
+              ),
       ),
     );
   }
