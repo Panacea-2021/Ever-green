@@ -32,6 +32,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   late int _selectedTab = _resolveInitialTab(widget.initialTab);
+  final ScrollController _tabsScrollController = ScrollController();
 
   /// User whose active flag / deletion is in flight.
   String? _busyId;
@@ -54,6 +55,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   @override
   void dispose() {
     _searchController.dispose();
+    _tabsScrollController.dispose();
     super.dispose();
   }
 
@@ -161,7 +163,20 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                   _buildHeader(),
                   const SizedBox(height: 4),
                   _buildSearchBar(),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      _tabs[_selectedTab],
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF11682E),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   _buildTabs(),
                   const SizedBox(height: 14),
                   _buildResultHeader(users.length),
@@ -762,9 +777,23 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   // Tabs
   // ---------------------------------------------------------------------------
   Widget _buildTabs() {
+    // Keep the selected tab visible.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_tabsScrollController.hasClients) return;
+      final itemWidth = 18.0 * 2 + 60; // approx
+      _tabsScrollController.animateTo(
+        (_selectedTab * (itemWidth + 10)).clamp(
+          0.0,
+          _tabsScrollController.position.maxScrollExtent,
+        ),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    });
     return SizedBox(
       height: 40,
       child: ListView.separated(
+        controller: _tabsScrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: _tabs.length,

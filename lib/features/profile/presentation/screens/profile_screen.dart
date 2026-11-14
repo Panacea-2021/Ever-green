@@ -17,11 +17,19 @@ import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/my_companies_provider.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final user = ref.watch(currentUserProvider);
     final role = ref.watch(currentUserRoleProvider);
 
@@ -33,9 +41,20 @@ class ProfileScreen extends ConsumerWidget {
         statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
       ),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        drawer: const AppDrawer(),
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+            _scaffoldKey.currentState?.closeDrawer();
+            return;
+          }
+          context.go(Routes.home);
+        },
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Colors.white,
+          drawer: const AppDrawer(),
         body: Stack(
           children: [
             // Same decorative background as the Home page.
@@ -121,9 +140,9 @@ class ProfileScreen extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
-
   Widget _webBuild(
     BuildContext context,
     WidgetRef ref,
@@ -201,35 +220,49 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
-        child: LayoutBuilder(
-          builder: (context, c) {
-            if (c.maxWidth < 760) {
-              return Column(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          const padding = EdgeInsets.fromLTRB(28, 24, 28, 28);
+          if (constraints.maxWidth < 760) {
+            return SingleChildScrollView(
+              primary: false,
+              padding: padding,
+              child: Column(
                 children: [
                   identity,
                   const SizedBox(height: 24),
                   _webMenuGrid(context, role, 1),
                 ],
-              );
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(width: 360, child: identity),
-                const SizedBox(width: 28),
-                Expanded(
-                  child: _webMenuGrid(
-                    context,
-                    role,
-                    c.maxWidth >= 1000 ? 2 : 1,
-                  ),
-                ),
-              ],
+              ),
             );
-          },
-        ),
+          }
+
+          return SizedBox.expand(
+            child: Padding(
+              padding: padding,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(width: 360, child: identity),
+                  const SizedBox(width: 28),
+                  Expanded(
+                    child: SizedBox.expand(
+                      child: SingleChildScrollView(
+                        primary: false,
+                        padding: const EdgeInsets.only(bottom: 28),
+                        child: _webMenuGrid(
+                          context,
+                          role,
+                          constraints.maxWidth >= 1000 ? 2 : 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -516,6 +549,24 @@ class ProfileScreen extends ConsumerWidget {
   // from `auth/me`.
   // ---------------------------------------------------------------------------
   void _showCompanySheet(BuildContext context) {
+    if (kIsWeb) {
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 24,
+          ),
+          constraints: BoxConstraints(
+            maxWidth: 640,
+            maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.85,
+          ),
+          child: const _CompanyProfileSheet(showCloseButton: true),
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
@@ -654,7 +705,9 @@ class ProfileScreen extends ConsumerWidget {
 }
 
 class _CompanyProfileSheet extends ConsumerWidget {
-  const _CompanyProfileSheet();
+  const _CompanyProfileSheet({this.showCloseButton = false});
+
+  final bool showCloseButton;
 
   static const Color _ink = Color(0xFF1C2B20);
 
@@ -676,18 +729,32 @@ class _CompanyProfileSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+            if (!showCloseButton)
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            _sheetTitle('Company Profile'),
+            SizedBox(height: showCloseButton ? 8 : 16),
+            if (showCloseButton)
+              Row(
+                children: [
+                  Expanded(child: _sheetTitle('Company Profile')),
+                  IconButton(
+                    key: const ValueKey('company-profile-close'),
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              )
+            else
+              _sheetTitle('Company Profile'),
             const SizedBox(height: 14),
             Flexible(
               child: async.when(

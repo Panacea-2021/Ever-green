@@ -230,7 +230,7 @@ class _WebOrganizationSections extends ConsumerWidget {
               onTap: onOpenCompanyManagers,
             ),
             _OverviewMetricCard(
-              title: 'EG Manager',
+              title: 'EG Managers',
               value: users[UserRole.manager] ?? 0,
               metric: TrendMetric.managers,
               icon: Icons.admin_panel_settings_outlined,

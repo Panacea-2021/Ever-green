@@ -70,7 +70,10 @@ void main() {
 
     void expectSelected(String selected) {
       for (final tab in tabs) {
-        final text = find.text(tab).first;
+        final text = find.descendant(
+          of: find.byType(AnimatedContainer),
+          matching: find.text(tab),
+        ).first;
         final container = find.ancestor(
           of: text,
           matching: find.byType(AnimatedContainer),

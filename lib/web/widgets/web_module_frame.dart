@@ -71,6 +71,43 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.unauthorized,
   };
 
+  /// These screens already render a back control beside their own heading.
+  static const _pathsWithPageBackButton = {
+    Routes.addUser,
+    Routes.addTask,
+    Routes.addEquipment,
+    Routes.createAmc,
+    Routes.createIndividualTask,
+    Routes.uploadEquipments,
+    Routes.uploadTechnicians,
+    Routes.uploadAmc,
+    Routes.downloadQr,
+    Routes.technicianPerformance,
+    Routes.auditLog,
+    Routes.usersList,
+    Routes.globalSearch,
+    Routes.amcRenewals,
+    Routes.pmSchedule,
+    Routes.analytics,
+    Routes.changePassword,
+    Routes.taskBoard,
+    Routes.assignTasks,
+    Routes.techniciansList,
+    Routes.technicianTasks,
+    Routes.verifiedEquipments,
+    Routes.notifications,
+    Routes.scanner,
+    Routes.issueTypes,
+    Routes.serviceTypes,
+    Routes.editProfile,
+    Routes.taskDetails,
+    Routes.companyDetails,
+    Routes.companyTasks,
+    Routes.companyEquipments,
+    Routes.equipmentDetails,
+    Routes.equipmentQr,
+  };
+
   /// Modules that have a dedicated web layout; they draw straight onto the
   /// page background instead of inside a framed panel.
   static const _webDesignedPaths = {
@@ -137,6 +174,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
 class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   final _contentKey = GlobalKey();
   String _location = '';
+  String? _previousLocation;
   _WebHeaderPanel? _headerPanel;
 
   @override
@@ -153,6 +191,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
       oldWidget.router.routerDelegate.removeListener(_onRouteChanged);
       widget.router.routerDelegate.addListener(_onRouteChanged);
       _location = _currentLocation();
+      _previousLocation = null;
     }
   }
 
@@ -181,6 +220,10 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     if (!mounted) return;
     final location = _currentLocation();
     if (location != _location) {
+      _previousLocation =
+          _isProtectedLocation(location) && _isProtectedLocation(_location)
+              ? _location
+              : null;
       // Clear header actions when navigating to a new page
       // The new page will set its own actions if needed
       ref.read(webHeaderActionsProvider).clearActions();
@@ -235,6 +278,24 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     if (route != _location) widget.router.go(route);
   }
 
+  bool _isProtectedLocation(String location) =>
+      location.isNotEmpty && !WebModuleFrame._unframedPaths.contains(location);
+
+  bool _hasPageBackButton(String location) {
+    if (location == Routes.settings) return widget.router.canPop();
+    return WebModuleFrame._pathsWithPageBackButton
+        .any((path) => location == path || location.startsWith('$path/'));
+  }
+
+  void _navigateBack() {
+    final previous = _previousLocation;
+    if (previous != null && previous != _location) {
+      widget.router.go(previous);
+    } else {
+      widget.router.go(Routes.webDashboard);
+    }
+  }
+
   WebNavEntry? _entryFor(UserRole role) {
     for (final entry in WebSideNav.entriesFor(role)) {
       if (entry.route == _location) return entry;
@@ -275,6 +336,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     final bannered = WebModuleFrame._bannerPaths
         .any((p) => _location == p || _location.startsWith('$p/'));
     final title = _titleFor(role);
+    final showTopBar = _location != Routes.taskBoard || title.isNotEmpty;
     final user = ref.watch(currentUserProvider);
 
     return Material(
@@ -300,15 +362,21 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                   children: [
                     Column(
                       children: [
-                        _WebTopBar(
-                          title: title,
-                          showUserInfo: _location == Routes.webDashboard,
-                          user: user,
-                          onNotificationsPressed: () =>
-                              _toggleHeaderPanel(_WebHeaderPanel.notifications),
-                          onProfilePressed: () =>
-                              _toggleHeaderPanel(_WebHeaderPanel.profile),
-                        ),
+                        if (showTopBar)
+                          _WebTopBar(
+                            title: title,
+                            showBackButton: title.isNotEmpty &&
+                                !_hasPageBackButton(_location),
+                            onBack: _navigateBack,
+                            showUserInfo: _location == Routes.webDashboard,
+                            user: user,
+                            onNotificationsPressed: () => _toggleHeaderPanel(
+                              _WebHeaderPanel.notifications,
+                            ),
+                            onProfilePressed: () => _toggleHeaderPanel(
+                              _WebHeaderPanel.profile,
+                            ),
+                          ),
                         Expanded(
                           child: LayoutBuilder(
                             builder: (context, constraints) {
@@ -617,17 +685,21 @@ class _WebRestoringSession extends StatelessWidget {
 class _WebTopBar extends ConsumerWidget {
   const _WebTopBar({
     required this.title,
+    required this.onBack,
     required this.user,
     required this.onNotificationsPressed,
     required this.onProfilePressed,
     this.showUserInfo = true,
+    this.showBackButton = false,
   });
 
   final String title;
+  final VoidCallback onBack;
   final User? user;
   final VoidCallback onNotificationsPressed;
   final VoidCallback onProfilePressed;
   final bool showUserInfo;
+  final bool showBackButton;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -639,6 +711,7 @@ class _WebTopBar extends ConsumerWidget {
         MediaQuery.sizeOf(context).width < 480 ? 12.0 : 28.0;
 
     return Container(
+      key: const ValueKey('web-module-top-bar'),
       height: 64,
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       decoration: const BoxDecoration(
@@ -647,6 +720,18 @@ class _WebTopBar extends ConsumerWidget {
       ),
       child: Row(
         children: [
+          if (showBackButton)
+            IconButton(
+              key: const ValueKey('web-module-back-button'),
+              onPressed: onBack,
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: WebTokens.ink,
+              ),
+              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+              padding: EdgeInsets.zero,
+            ),
+          if (showBackButton) const SizedBox(width: 8),
           if (title.isNotEmpty)
             Expanded(
               child: Text(

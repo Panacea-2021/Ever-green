@@ -90,7 +90,7 @@ void main() {
     expect(find.text('Overview'), findsOneWidget);
     expect(find.text('Reports'), findsOneWidget);
     expect(find.text('Users by Access Level'), findsOneWidget);
-    expect(find.text('EG Manager'), findsOneWidget);
+    expect(find.text('EG Managers'), findsOneWidget);
     expect(find.text('Managers'), findsNothing);
     expect(find.text('Company Managers'), findsWidgets);
     expect(find.text('Clients'), findsNothing);

@@ -311,10 +311,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.usersList,
         name: 'usersList',
-        builder: (context, state) => UsersListScreen(
-          initialTab:
-              (state.extra as Map<String, dynamic>?)?['tab'] as int? ?? -1,
-        ),
+        builder: (context, state) {
+          final extra = state.extra;
+          final tab = extra is Map ? extra['tab'] as int? : null;
+          return UsersListScreen(initialTab: tab ?? -1);
+        },
       ),
       GoRoute(
         path: Routes.addUser,

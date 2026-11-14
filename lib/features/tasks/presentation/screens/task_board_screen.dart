@@ -398,9 +398,8 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
                   ],
                 );
                 final tools = Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(width: 300, child: _webSearch()),
+                    Expanded(child: _webSearch()),
                     if (canCreate) ...[
                       const SizedBox(width: 12),
                       _addPill(),
@@ -410,14 +409,21 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
                 if (c.maxWidth < 760) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [heading, const SizedBox(height: 14), tools],
+                    children: [
+                      heading,
+                      const SizedBox(height: 14),
+                      SizedBox(width: double.infinity, child: tools),
+                    ],
                   );
                 }
                 return Row(
                   children: [
                     Expanded(child: heading),
                     const SizedBox(width: 16),
-                    tools,
+                    SizedBox(
+                      width: canCreate ? 400 : 300,
+                      child: tools,
+                    ),
                   ],
                 );
               },

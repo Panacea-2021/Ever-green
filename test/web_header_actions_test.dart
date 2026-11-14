@@ -215,6 +215,54 @@ void main() {
     expect(logoutCalled, isTrue);
     expect(find.text('Home destination'), findsOneWidget);
   });
+
+  testWidgets('module back button returns to the previous module',
+      (tester) async {
+    await _mountDashboard(
+      tester,
+      user,
+      _MemoryNotificationsRepository([]),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('web-profile-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('web-profile-view')));
+    await tester.pumpAndSettle();
+    expect(find.text('Profile destination'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('web-module-back-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dashboard content'), findsOneWidget);
+  });
+
+  testWidgets('module back button falls back to Dashboard on a direct load',
+      (tester) async {
+    await _mountDashboard(
+      tester,
+      user,
+      _MemoryNotificationsRepository([]),
+      initialLocation: Routes.profile,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('web-module-back-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dashboard content'), findsOneWidget);
+  });
+
+  testWidgets('Task Board omits the empty frame bar above its own header',
+      (tester) async {
+    await _mountDashboard(
+      tester,
+      user,
+      _MemoryNotificationsRepository([]),
+      initialLocation: Routes.taskBoard,
+    );
+
+    expect(find.text('Task Board content'), findsOneWidget);
+    expect(find.byKey(const ValueKey('web-module-top-bar')), findsNothing);
+  });
 }
 
 Future<void> _mountDashboard(
@@ -223,6 +271,7 @@ Future<void> _mountDashboard(
   NotificationsRepository notifications, {
   VoidCallback? onLogout,
   double width = 1280,
+  String initialLocation = Routes.webDashboard,
 }) async {
   EnvironmentConfig.initialize(Environment.dev);
   tester.view.physicalSize = Size(width, 900);
@@ -230,7 +279,7 @@ Future<void> _mountDashboard(
   addTearDown(tester.view.reset);
 
   final router = GoRouter(
-    initialLocation: Routes.webDashboard,
+    initialLocation: initialLocation,
     routes: [
       GoRoute(
         path: Routes.webDashboard,
@@ -239,6 +288,10 @@ Future<void> _mountDashboard(
       GoRoute(
         path: Routes.profile,
         builder: (_, __) => const Center(child: Text('Profile destination')),
+      ),
+      GoRoute(
+        path: Routes.taskBoard,
+        builder: (_, __) => const Center(child: Text('Task Board content')),
       ),
       GoRoute(
         path: Routes.notifications,
