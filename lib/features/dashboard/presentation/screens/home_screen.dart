@@ -18,7 +18,6 @@ import '../../../amcs/domain/models/amc_contract.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../notifications/data/notifications_provider.dart';
 import '../../../tasks/data/task_provider.dart';
-import '../../../tasks/domain/models/task_item.dart' as ti;
 import '../../data/analytics_history_provider.dart';
 import '../../data/analytics_provider.dart';
 import '../../data/dashboard_repository.dart';
@@ -120,7 +119,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
 
                     _sectionHeader(
-                        showOrgOverview ? 'Task Status' : 'My Task Status',),
+                      showOrgOverview ? 'Task Status' : 'My Task Status',
+                    ),
                     const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -248,21 +248,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   VoidCallback? _openTasks([TaskStatus? status]) {
     final role = ref.watch(currentUserRoleProvider);
     if (!Permissions.canAccessRoute(role, Routes.tasks)) return null;
-    ti.TaskStatus? designStatus;
-    if (status != null) {
-      switch (status) {
-        case TaskStatus.open:
-          designStatus = ti.TaskStatus.open;
-        case TaskStatus.hold:
-          designStatus = ti.TaskStatus.hold;
-        case TaskStatus.inProgress:
-          designStatus = ti.TaskStatus.inProgress;
-        case TaskStatus.completed:
-        case TaskStatus.closed:
-          designStatus = ti.TaskStatus.closed;
-      }
-    }
-    return () => context.go(Routes.tasks, extra: designStatus);
+    return () => context.go(Routes.tasks, extra: status);
   }
 
   /// A rounded card whose ripple stays inside its corners. Not tappable (and
@@ -935,7 +921,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 value: pocCount,
                 trend: pocTrend,
                 series: pocSeries,
-                onTap: _open(Routes.usersList, extra: {'tab': 1}),
+                onTap: _open(Routes.usersList, extra: {'tab': 2}),
               ),
             ),
             const SizedBox(width: 14),
@@ -947,7 +933,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 value: companyManagerCount,
                 trend: companyManagerTrend,
                 series: companyManagerSeries,
-                onTap: _open(Routes.usersList, extra: {'tab': 0}),
+                onTap: _open(Routes.usersList, extra: {'tab': 1}),
               ),
             ),
           ],
@@ -959,11 +945,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.admin_panel_settings_outlined,
                 tint: const Color(0xFF9E663B),
-                title: 'EG Managers',
+                title: 'Managers',
                 value: managerCount,
                 trend: mgrTrend,
                 series: mgrSeries,
-                onTap: _open(Routes.usersList, extra: {'tab': 3}),
+                onTap: _open(Routes.usersList, extra: {'tab': 4}),
               ),
             ),
             const SizedBox(width: 14),
@@ -975,7 +961,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 value: techCount,
                 trend: techTrend,
                 series: techSeries,
-                onTap: _open(Routes.usersList, extra: {'tab': 2}),
+                onTap: _open(Routes.techniciansList) ??
+                    _open(Routes.usersList, extra: {'tab': 3}),
               ),
             ),
           ],
@@ -1333,16 +1320,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(width: 2),
                 Flexible(
-                  child: _fitLeft(Text(
-                    '${trend!.percent}% vs last mo',
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: deltaColor,
+                  child: _fitLeft(
+                    Text(
+                      '${trend!.percent}% vs last mo',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: deltaColor,
+                      ),
                     ),
-                  ),),
+                  ),
                 ),
               ],
             )

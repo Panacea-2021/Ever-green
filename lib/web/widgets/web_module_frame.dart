@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,8 +12,6 @@ import '../../shared/providers/auth_state_provider.dart';
 import '../theme/web_tokens.dart';
 import 'web_header_actions.dart';
 import 'web_side_nav.dart' show WebNavEntry, WebSideNav;
-
-enum _WebHeaderPanel { notifications, profile }
 
 /// Web-only desktop frame for the signed-in dashboard modules: a fixed side
 /// navigation (replacing the phone drawer and bottom bar), a top bar, and the
@@ -137,7 +133,6 @@ class WebModuleFrame extends ConsumerStatefulWidget {
 class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   final _contentKey = GlobalKey();
   String _location = '';
-  _WebHeaderPanel? _headerPanel;
 
   @override
   void initState() {
@@ -184,18 +179,9 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
       // Clear header actions when navigating to a new page
       // The new page will set its own actions if needed
       ref.read(webHeaderActionsProvider).clearActions();
-      setState(() {
-        _location = location;
-        _headerPanel = null;
-      });
+      setState(() => _location = location);
       _refreshIfStale();
     }
-  }
-
-  void _toggleHeaderPanel(_WebHeaderPanel panel) {
-    setState(() {
-      _headerPanel = _headerPanel == panel ? null : panel;
-    });
   }
 
   DateTime _lastRefresh = DateTime.now();
@@ -275,7 +261,8 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     final bannered = WebModuleFrame._bannerPaths
         .any((p) => _location == p || _location.startsWith('$p/'));
     final title = _titleFor(role);
-    final user = ref.watch(currentUserProvider);
+
+    final screenWidth = MediaQuery.sizeOf(context).width;
 
     return Material(
       color: WebTokens.cream,
@@ -289,132 +276,75 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
           ),
           // ── Content area ──────────────────────────────────────────────────
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, frameConstraints) {
-                final panelWidth =
-                    math.min(420.0, frameConstraints.maxWidth - 24);
-                final panelHeight =
-                    math.min(560.0, frameConstraints.maxHeight - 76);
+            child: Column(
+              children: [
+                // Top bar with title, notifications, and user avatar
+                _WebTopBar(
+                  title: title,
+                  router: widget.router,
+                  showUserInfo: _location == Routes.webDashboard,
+                ),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final mq = MediaQuery.of(context);
+                      if (webDesigned) {
+                        return MediaQuery(
+                          data: mq.copyWith(
+                            size: constraints.biggest,
+                            padding: EdgeInsets.zero,
+                            viewPadding: EdgeInsets.zero,
+                          ),
+                          child: content,
+                        );
+                      }
 
-                return Stack(
-                  children: [
-                    Column(
-                      children: [
-                        _WebTopBar(
+                      final hPad = constraints.maxWidth > 900 ? 28.0 : 16.0;
+                      final width = (constraints.maxWidth - hPad * 2)
+                          .clamp(0.0, _contentWidthFor(_location));
+
+                      if (bannered) {
+                        return _HeaderCardShell(
+                          width: width,
+                          mq: mq,
+                          constraints: constraints,
+                          compact: WebModuleFrame._uploadPaths.any(
+                            (p) =>
+                                _location == p || _location.startsWith('$p/'),
+                          ),
+                          entry: _entryFor(role),
                           title: title,
-                          showUserInfo: _location == Routes.webDashboard,
-                          user: user,
-                          onNotificationsPressed: () =>
-                              _toggleHeaderPanel(_WebHeaderPanel.notifications),
-                          onProfilePressed: () =>
-                              _toggleHeaderPanel(_WebHeaderPanel.profile),
-                        ),
-                        Expanded(
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final mq = MediaQuery.of(context);
-                              if (webDesigned) {
-                                return MediaQuery(
-                                  data: mq.copyWith(
-                                    size: constraints.biggest,
-                                    padding: EdgeInsets.zero,
-                                    viewPadding: EdgeInsets.zero,
-                                  ),
-                                  child: content,
-                                );
-                              }
-
-                              final hPad =
-                                  constraints.maxWidth > 900 ? 28.0 : 16.0;
-                              final width = (constraints.maxWidth - hPad * 2)
-                                  .clamp(0.0, _contentWidthFor(_location));
-
-                              if (bannered) {
-                                return _HeaderCardShell(
-                                  width: width,
-                                  mq: mq,
-                                  constraints: constraints,
-                                  compact: WebModuleFrame._uploadPaths.any(
-                                    (p) =>
-                                        _location == p ||
-                                        _location.startsWith('$p/'),
-                                  ),
-                                  entry: _entryFor(role),
-                                  title: title,
-                                  child: content,
-                                );
-                              }
-                              final height = constraints.maxHeight - 48;
-                              return Align(
-                                alignment: Alignment.topCenter,
-                                child: Container(
-                                  width: width,
-                                  height: height,
-                                  margin: const EdgeInsets.only(top: 24),
-                                  clipBehavior: Clip.antiAlias,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(color: WebTokens.line),
-                                    boxShadow: WebTokens.softShadow,
-                                  ),
-                                  child: MediaQuery(
-                                    data: mq.copyWith(
-                                      size: Size(width, height),
-                                      padding: EdgeInsets.zero,
-                                      viewPadding: EdgeInsets.zero,
-                                    ),
-                                    child: content,
-                                  ),
-                                ),
-                              );
-                            },
+                          child: content,
+                        );
+                      }
+                      final height = constraints.maxHeight - 48;
+                      return Align(
+                        alignment: Alignment.topCenter,
+                        child: Container(
+                          width: width,
+                          height: height,
+                          margin: const EdgeInsets.only(top: 24),
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: WebTokens.line),
+                            boxShadow: WebTokens.softShadow,
+                          ),
+                          child: MediaQuery(
+                            data: mq.copyWith(
+                              size: Size(width, height),
+                              padding: EdgeInsets.zero,
+                              viewPadding: EdgeInsets.zero,
+                            ),
+                            child: content,
                           ),
                         ),
-                      ],
-                    ),
-                    if (_location == Routes.webDashboard &&
-                        _headerPanel != null &&
-                        panelWidth > 0 &&
-                        panelHeight > 0)
-                      Positioned(
-                        top: 76,
-                        right: 12,
-                        child: TapRegion(
-                          onTapOutside: (_) =>
-                              setState(() => _headerPanel = null),
-                          child: SizedBox(
-                            width: panelWidth,
-                            height: panelHeight,
-                            child: _headerPanel == _WebHeaderPanel.notifications
-                                ? _WebNotificationsPanel(
-                                    onDismiss: () =>
-                                        setState(() => _headerPanel = null),
-                                    onViewAll: () {
-                                      setState(() => _headerPanel = null);
-                                      widget.router.go(Routes.notifications);
-                                    },
-                                  )
-                                : _WebProfilePanel(
-                                    user: user,
-                                    role: role,
-                                    onDismiss: () =>
-                                        setState(() => _headerPanel = null),
-                                    onViewProfile: () {
-                                      setState(() => _headerPanel = null);
-                                      widget.router.go(Routes.profile);
-                                    },
-                                    onSignOut: () async {
-                                      setState(() => _headerPanel = null);
-                                      await _signOut();
-                                    },
-                                  ),
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -617,30 +547,25 @@ class _WebRestoringSession extends StatelessWidget {
 class _WebTopBar extends ConsumerWidget {
   const _WebTopBar({
     required this.title,
-    required this.user,
-    required this.onNotificationsPressed,
-    required this.onProfilePressed,
+    required this.router,
     this.showUserInfo = true,
   });
 
   final String title;
-  final User? user;
-  final VoidCallback onNotificationsPressed;
-  final VoidCallback onProfilePressed;
+  final GoRouter router;
   final bool showUserInfo;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
     final userName = user?.name ?? '';
     final unreadCount =
         ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
     final headerActions = ref.watch(webHeaderActionsProvider).actions;
-    final horizontalPadding =
-        MediaQuery.sizeOf(context).width < 480 ? 12.0 : 28.0;
 
     return Container(
       height: 64,
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      padding: const EdgeInsets.symmetric(horizontal: 28),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: WebTokens.line)),
@@ -648,15 +573,13 @@ class _WebTopBar extends ConsumerWidget {
       child: Row(
         children: [
           if (title.isNotEmpty)
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: WebTokens.heading(20),
-              ),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: WebTokens.heading(20),
             ),
-          if (title.isEmpty) const Spacer(),
+          const Spacer(),
           // Page-specific action buttons (Reset, Save, etc.)
           if (headerActions.isNotEmpty) ...[
             WebHeaderActionButtons(actions: headerActions),
@@ -665,13 +588,12 @@ class _WebTopBar extends ConsumerWidget {
           if (showUserInfo) ...[
             _NotificationBell(
               count: unreadCount,
-              onPressed: onNotificationsPressed,
+              onPressed: () => router.push(Routes.notifications),
             ),
             const SizedBox(width: 18),
             _UserAvatar(
               name: userName,
-              profilePictureUrl: user?.profilePictureUrl,
-              onPressed: onProfilePressed,
+              onPressed: () => router.go(Routes.profile),
             ),
           ],
         ],
@@ -681,7 +603,10 @@ class _WebTopBar extends ConsumerWidget {
 }
 
 class _NotificationBell extends StatelessWidget {
-  const _NotificationBell({required this.count, required this.onPressed});
+  const _NotificationBell({
+    required this.count,
+    required this.onPressed,
+  });
 
   final int count;
   final VoidCallback onPressed;
@@ -693,7 +618,7 @@ class _NotificationBell extends StatelessWidget {
     // Tooltip would look up an Overlay ancestor and fail with
     // "No Overlay widget found" on the web dashboard.
     return IconButton(
-      key: const ValueKey('web-notification-button'),
+      key: const ValueKey('web-notifications-button'),
       icon: Badge(
         isLabelVisible: count > 0,
         label: Text(count > 99 ? '99+' : '$count'),
@@ -708,545 +633,48 @@ class _NotificationBell extends StatelessWidget {
 class _UserAvatar extends StatelessWidget {
   const _UserAvatar({
     required this.name,
-    required this.profilePictureUrl,
     required this.onPressed,
   });
 
   final String name;
-  final String? profilePictureUrl;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      key: const ValueKey('web-profile-button'),
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(12),
-      child: Semantics(
-        button: true,
-        label: 'Open profile menu',
-        child: _ProfileAvatar(
-          name: name,
-          profilePictureUrl: profilePictureUrl,
-          size: 38,
-        ),
-      ),
-    );
-  }
-}
+    final initials = name.isNotEmpty
+        ? name.split(' ').take(2).map((w) => w[0].toUpperCase()).join()
+        : '?';
 
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({
-    required this.name,
-    required this.profilePictureUrl,
-    required this.size,
-  });
-
-  final String name;
-  final String? profilePictureUrl;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final trimmedName = name.trim();
-    final initials = trimmedName.isEmpty
-        ? '?'
-        : trimmedName
-            .split(RegExp(r'\s+'))
-            .take(2)
-            .map((word) => word[0].toUpperCase())
-            .join();
-    final imageUrl = profilePictureUrl?.trim();
-
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF106220), Color(0xFF0A3F15)],
-        ),
-        borderRadius: BorderRadius.circular(size * 0.32),
-      ),
-      child: imageUrl == null || imageUrl.isEmpty
-          ? _initials(initials)
-          : Image.network(
-              imageUrl,
-              width: size,
-              height: size,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _initials(initials),
-            ),
-    );
-  }
-
-  Widget _initials(String value) => Text(
-        value,
-        style: TextStyle(
-          fontFamily: WebTokens.fontFamily,
-          fontSize: size * 0.36,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        ),
-      );
-}
-
-class _WebNotificationsPanel extends ConsumerStatefulWidget {
-  const _WebNotificationsPanel({
-    required this.onDismiss,
-    required this.onViewAll,
-  });
-
-  final VoidCallback onDismiss;
-  final VoidCallback onViewAll;
-
-  @override
-  ConsumerState<_WebNotificationsPanel> createState() =>
-      _WebNotificationsPanelState();
-}
-
-class _WebNotificationsPanelState
-    extends ConsumerState<_WebNotificationsPanel> {
-  final Set<int> _markingIds = {};
-  bool _markingAll = false;
-  String? _actionError;
-
-  Future<void> _markRead({List<int>? ids}) async {
-    if (_markingAll || (ids != null && ids.any(_markingIds.contains))) return;
-    setState(() {
-      _actionError = null;
-      if (ids == null) {
-        _markingAll = true;
-      } else {
-        _markingIds.addAll(ids);
-      }
-    });
-
-    try {
-      await ref.read(notificationsRepositoryProvider).markRead(ids: ids);
-      ref.invalidate(notificationsControllerProvider);
-      ref.invalidate(unreadNotificationsCountProvider);
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _actionError = 'Could not update notifications. Please try again.';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _markingAll = false;
-          if (ids != null) _markingIds.removeAll(ids);
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final feed = ref.watch(notificationsControllerProvider);
-    final unreadCount = feed.valueOrNull?.items
-            .where((entry) => !entry.notification.isRead)
-            .length ??
-        0;
-
-    return Material(
-      key: const ValueKey('web-notifications-panel'),
-      color: Colors.white,
-      elevation: 18,
-      borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 360;
-                return Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Notifications',
-                        style: WebTokens.heading(17),
-                      ),
-                    ),
-                    if (unreadCount > 0)
-                      compact
-                          ? Semantics(
-                              button: true,
-                              label: 'Mark all notifications as read',
-                              child: IconButton(
-                                key: const ValueKey(
-                                  'web-notifications-mark-all',
-                                ),
-                                onPressed:
-                                    _markingAll ? null : () => _markRead(),
-                                icon: const Icon(Icons.done_all, size: 20),
-                              ),
-                            )
-                          : TextButton(
-                              onPressed: _markingAll ? null : () => _markRead(),
-                              child: Text(
-                                _markingAll ? 'Saving...' : 'Mark all read',
-                              ),
-                            ),
-                    IconButton(
-                      onPressed: widget.onDismiss,
-                      icon: const Icon(Icons.close, size: 20),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          const Divider(height: 1, color: WebTokens.line),
-          if (_actionError != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  _actionError!,
-                  style: const TextStyle(
-                    color: Color(0xFFB3261E),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          Expanded(
-            child: feed.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: WebTokens.green),
-              ),
-              error: (_, __) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.cloud_off_outlined,
-                      color: Color(0xFF8A938B),
-                      size: 34,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text("Couldn't load notifications"),
-                    TextButton(
-                      onPressed: () =>
-                          ref.invalidate(notificationsControllerProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-              data: (data) => data.items.isEmpty
-                  ? const Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.notifications_none_rounded,
-                            color: Color(0xFF8A938B),
-                            size: 38,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'No notifications',
-                            style: TextStyle(
-                              color: Color(0xFF505A52),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      itemCount: data.items.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final entry = data.items[index];
-                        return _NotificationPanelItem(
-                          entry: entry,
-                          isMarking:
-                              _markingIds.contains(entry.notification.id),
-                          onMarkRead: () => _markRead(
-                            ids: [entry.notification.id],
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ),
-          const Divider(height: 1, color: WebTokens.line),
-          SizedBox(
-            height: 48,
-            child: TextButton(
-              onPressed: widget.onViewAll,
-              child: const Text('View all notifications'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NotificationPanelItem extends StatelessWidget {
-  const _NotificationPanelItem({
-    required this.entry,
-    required this.isMarking,
-    required this.onMarkRead,
-  });
-
-  final NotificationEntry entry;
-  final bool isMarking;
-  final VoidCallback onMarkRead;
-
-  @override
-  Widget build(BuildContext context) {
-    final notification = entry.notification;
-    final createdAt = notification.createdAt?.toLocal();
-    final timestamp = createdAt == null
-        ? null
-        : '${MaterialLocalizations.of(context).formatMediumDate(createdAt)} · '
-            '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(createdAt))}';
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: notification.isRead
-            ? const Color(0xFFFAFBFA)
-            : const Color(0xFFF0F7F1),
-        border: Border.all(
-          color: notification.isRead
-              ? WebTokens.line
-              : WebTokens.green.withValues(alpha: 0.22),
-        ),
+    return Semantics(
+      button: true,
+      label: 'Open profile',
+      child: InkWell(
+        key: const ValueKey('web-profile-button'),
+        onTap: onPressed,
         borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!notification.isRead) ...[
-                Padding(
-                  padding: const EdgeInsets.only(top: 5, right: 8),
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: WebTokens.green,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-              Expanded(
-                child: Text(
-                  notification.title,
-                  style: const TextStyle(
-                    color: Color(0xFF1E2A20),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              Text(
-                notification.isRead ? 'Read' : 'Unread',
-                style: TextStyle(
-                  color: notification.isRead
-                      ? const Color(0xFF737C74)
-                      : WebTokens.green,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+        child: Container(
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF106220), Color(0xFF0A3F15)],
+            ),
+            borderRadius: BorderRadius.circular(12),
           ),
-          if (notification.description.trim().isNotEmpty) ...[
-            const SizedBox(height: 5),
-            Text(
-              notification.description,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF626B63),
-                fontSize: 12,
-                height: 1.35,
-              ),
-            ),
-          ],
-          if (timestamp != null || entry.acceptedBy != null) ...[
-            const SizedBox(height: 8),
-            if (timestamp != null)
-              Text(
-                timestamp,
-                style: const TextStyle(
-                  color: Color(0xFF737C74),
-                  fontSize: 11,
-                ),
-              ),
-            if (entry.acceptedBy != null) ...[
-              const SizedBox(height: 3),
-              Text(
-                'Accepted by ${entry.acceptedBy}',
-                style: const TextStyle(
-                  color: Color(0xFF737C74),
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ],
-          if (!notification.isRead) ...[
-            const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                key: ValueKey('notification-mark-read-${notification.id}'),
-                onPressed: isMarking ? null : onMarkRead,
-                child: Text(isMarking ? 'Saving...' : 'Mark as read'),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _WebProfilePanel extends StatelessWidget {
-  const _WebProfilePanel({
-    required this.user,
-    required this.role,
-    required this.onDismiss,
-    required this.onViewProfile,
-    required this.onSignOut,
-  });
-
-  final User? user;
-  final UserRole role;
-  final VoidCallback onDismiss;
-  final VoidCallback onViewProfile;
-  final Future<void> Function() onSignOut;
-
-  @override
-  Widget build(BuildContext context) {
-    final name = user?.name.trim() ?? '';
-    final email = user?.email.trim() ?? '';
-    final phone = user?.phone.trim() ?? '';
-
-    return Material(
-      key: const ValueKey('web-profile-panel'),
-      color: Colors.white,
-      elevation: 18,
-      borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
-            child: Row(
-              children: [
-                _ProfileAvatar(
-                  name: name,
-                  profilePictureUrl: user?.profilePictureUrl,
-                  size: 48,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name.isEmpty ? 'Profile details unavailable' : name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF1E2A20),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                        ),
-                      ),
-                      if (user != null)
-                        Text(
-                          role.label,
-                          style: const TextStyle(
-                            color: Color(0xFF6D776F),
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: onDismiss,
-                  icon: const Icon(Icons.close, size: 20),
-                ),
-              ],
+          child: Text(
+            initials,
+            style: const TextStyle(
+              fontFamily: WebTokens.fontFamily,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
           ),
-          if (user != null) ...[
-            if (email.isNotEmpty)
-              _ProfileDetail(icon: Icons.email_outlined, value: email),
-            if (phone.isNotEmpty)
-              _ProfileDetail(icon: Icons.phone_outlined, value: phone),
-          ],
-          const Divider(height: 1, color: WebTokens.line),
-          ListTile(
-            key: const ValueKey('web-profile-view'),
-            leading: const Icon(Icons.person_outline, color: WebTokens.green),
-            title: const Text('Profile'),
-            dense: true,
-            onTap: onViewProfile,
-          ),
-          ListTile(
-            key: const ValueKey('web-profile-logout'),
-            leading: const Icon(Icons.logout, color: Color(0xFF8D342E)),
-            title: const Text('Log out'),
-            dense: true,
-            onTap: () async => onSignOut(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileDetail extends StatelessWidget {
-  const _ProfileDetail({required this.icon, required this.value});
-
-  final IconData icon;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-        child: Row(
-          children: [
-            Icon(icon, size: 17, color: const Color(0xFF737C74)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF505A52),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
         ),
-      );
+      ),
+    );
+  }
 }
