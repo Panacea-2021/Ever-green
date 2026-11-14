@@ -119,7 +119,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
 
                     _sectionHeader(
-                        showOrgOverview ? 'Task Status' : 'My Task Status',),
+                      showOrgOverview ? 'Task Status' : 'My Task Status',
+                    ),
                     const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -920,7 +921,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 value: pocCount,
                 trend: pocTrend,
                 series: pocSeries,
-                onTap: _open(Routes.usersList, extra: {'tab': 1}),
+                onTap: _open(Routes.usersList, extra: {'tab': 2}),
               ),
             ),
             const SizedBox(width: 14),
@@ -932,7 +933,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 value: companyManagerCount,
                 trend: companyManagerTrend,
                 series: companyManagerSeries,
-                onTap: _open(Routes.usersList, extra: {'tab': 0}),
+                onTap: _open(Routes.usersList, extra: {'tab': 1}),
               ),
             ),
           ],
@@ -948,7 +949,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 value: managerCount,
                 trend: mgrTrend,
                 series: mgrSeries,
-                onTap: _open(Routes.usersList, extra: {'tab': 3}),
+                onTap: _open(Routes.usersList, extra: {'tab': 4}),
               ),
             ),
             const SizedBox(width: 14),
@@ -961,7 +962,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 trend: techTrend,
                 series: techSeries,
                 onTap: _open(Routes.techniciansList) ??
-                    _open(Routes.usersList, extra: {'tab': 2}),
+                    _open(Routes.usersList, extra: {'tab': 3}),
               ),
             ),
           ],
@@ -1319,16 +1320,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(width: 2),
                 Flexible(
-                  child: _fitLeft(Text(
-                    '${trend!.percent}% vs last mo',
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: deltaColor,
+                  child: _fitLeft(
+                    Text(
+                      '${trend!.percent}% vs last mo',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: deltaColor,
+                      ),
                     ),
-                  ),),
+                  ),
                 ),
               ],
             )

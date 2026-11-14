@@ -1,5 +1,6 @@
 import 'package:evergreen/core/data/evergreen_repository.dart';
 import 'package:evergreen/core/models/backend_models.dart' as model;
+import 'package:evergreen/core/router/routes.dart';
 import 'package:evergreen/features/amcs/data/amc_provider.dart';
 import 'package:evergreen/features/amcs/domain/models/amc_contract.dart';
 import 'package:evergreen/features/auth/domain/models/user_model.dart';
@@ -11,6 +12,7 @@ import 'package:evergreen/web/screens/web_dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 const _analytics = DashboardAnalytics(
   usersByRole: {
@@ -46,6 +48,7 @@ AnalyticsSnapshot _snapshot() => AnalyticsSnapshot(
 Widget _dashboard(
   UserRole role, {
   required ValueChanged<bool> onAnalyticsRequested,
+  GoRouter? router,
 }) {
   return ProviderScope(
     overrides: [
@@ -70,11 +73,52 @@ Widget _dashboard(
       }),
       analyticsHistoryProvider.overrideWith((ref) async => [_snapshot()]),
     ],
-    child: const MaterialApp(home: WebDashboardScreen()),
+    child: router == null
+        ? const MaterialApp(home: WebDashboardScreen())
+        : MaterialApp.router(routerConfig: router),
   );
 }
 
 void main() {
+  testWidgets('POC dashboard card opens the POCs users-list tab',
+      (tester) async {
+    final router = GoRouter(
+      initialLocation: Routes.webDashboard,
+      routes: [
+        GoRoute(
+          path: Routes.webDashboard,
+          builder: (context, state) => const WebDashboardScreen(),
+        ),
+        GoRoute(
+          path: Routes.usersList,
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return Scaffold(
+              body: Text('Users tab ${extra?['tab']}'),
+            );
+          },
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      _dashboard(
+        UserRole.superAdmin,
+        onAnalyticsRequested: (_) {},
+        router: router,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final pocCard = find.text('POC');
+    await tester.ensureVisible(pocCard);
+    await tester.tap(pocCard);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Users tab 2'), findsOneWidget);
+  });
+
   testWidgets('admin sees organization analytics with mobile role labels',
       (tester) async {
     var analyticsRequested = false;

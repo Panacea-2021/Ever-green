@@ -29,8 +29,11 @@ class TaskActionHandler {
   TaskActions get _actions => ref.read(taskActionsProvider);
 
   /// Dispatches [action] for [t]. [onDeleted] runs after a successful delete.
-  Future<void> run(TaskItem t, TaskAction action,
-      {VoidCallback? onDeleted,}) async {
+  Future<void> run(
+    TaskItem t,
+    TaskAction action, {
+    VoidCallback? onDeleted,
+  }) async {
     switch (action) {
       case TaskAction.serviceReport:
         await serviceReport(t);
@@ -59,8 +62,10 @@ class TaskActionHandler {
       case TaskAction.escalate:
         await runTaskAction(
           context,
-          () => _actions.escalate(t,
-              reason: 'Overdue by ${-t.hoursToSla()}h (SLA)',),
+          () => _actions.escalate(
+            t,
+            reason: 'Overdue by ${-t.hoursToSla()}h (SLA)',
+          ),
           success: '${t.title} escalated to Manager',
         );
       case TaskAction.accept:
@@ -136,11 +141,12 @@ class TaskActionHandler {
         : await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               title: const Text(
                 'Service Report',
-          style:
-              TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontFamily: 'Montserrat', fontWeight: FontWeight.w600),
               ),
               content: Text(
                 'Generate service report for "${t.title}"?',
@@ -224,50 +230,78 @@ class TaskActionHandler {
 
   /// Service Engineer picker; busy engineers need a confirmation.
   Future<void> assign(TaskItem t, {bool reassign = false}) async {
-    final picked = await showModalBottomSheet<(User, TechnicianStats)>(
-      context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: _sheetShape,
-      builder: (ctx) => ListView(
-        shrinkWrap: true,
-        padding: EdgeInsets.fromLTRB(20, 20, 20, _inset(ctx) + 8),
-        children: [
-          Text(
-            reassign
-                ? 'Reassign Service Engineer'
-                : 'Assign to Service Engineer',
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+    Widget technicianChoices(BuildContext ctx) => TechnicianChoices(
+          builder: (techs, stats) => Column(
+            children: [
+              for (final tech in techs)
+                _technicianTile(ctx, tech, statsFor(tech, stats)),
+            ],
           ),
-          if (reassign && t.hasAssignee) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Currently: ${t.assignee}',
-              style: const TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF6B6B6B),
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          TechnicianChoices(
-            builder: (techs, stats) => Column(
+        );
+
+    final title =
+        reassign ? 'Reassign Service Engineer' : 'Assign to Service Engineer';
+    final picked = kIsWeb
+        ? await _pickSheet<(User, TechnicianStats)>(
+            title: title,
+            width: 620,
+            maxWidth: 620,
+            maxHeight: 640,
+            tiles: (ctx) => [
+              if (reassign && t.hasAssignee)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Currently: ${t.assignee}',
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF6B6B6B),
+                      ),
+                    ),
+                  ),
+                ),
+              technicianChoices(ctx),
+            ],
+          )
+        : await showModalBottomSheet<(User, TechnicianStats)>(
+            context: context,
+            backgroundColor: Colors.white,
+            isScrollControlled: true,
+            useSafeArea: true,
+            shape: _sheetShape,
+            builder: (ctx) => ListView(
+              shrinkWrap: true,
+              padding: EdgeInsets.fromLTRB(20, 20, 20, _inset(ctx) + 8),
               children: [
-                for (final tech in techs)
-                  _technicianTile(ctx, tech, statsFor(tech, stats)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (reassign && t.hasAssignee) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Currently: ${t.assignee}',
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF6B6B6B),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                technicianChoices(ctx),
               ],
             ),
-          ),
-        ],
-      ),
-    );
+          );
     if (picked == null || !context.mounted) return;
     final (tech, s) = picked;
     if (s.isOverloaded) {
@@ -530,8 +564,11 @@ class TaskActionHandler {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.image_outlined,
-                        size: 18, color: Colors.grey.shade600,),
+                    Icon(
+                      Icons.image_outlined,
+                      size: 18,
+                      color: Colors.grey.shade600,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '${t.attachments.length + pending.length} '
@@ -545,8 +582,11 @@ class TaskActionHandler {
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => _addScreenshot(t),
-                      icon: const Icon(Icons.add_a_photo_outlined,
-                          size: 18, color: _green,),
+                      icon: const Icon(
+                        Icons.add_a_photo_outlined,
+                        size: 18,
+                        color: _green,
+                      ),
                       label: const Text(
                         'Add',
                         style: TextStyle(
@@ -568,7 +608,8 @@ class TaskActionHandler {
                       if (notes.isEmpty) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
                           const SnackBar(
-                              content: Text('Please describe the work done'),),
+                            content: Text('Please describe the work done'),
+                          ),
                         );
                         return;
                       }
@@ -577,7 +618,8 @@ class TaskActionHandler {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _green,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: const Text(
                       'Submit & Close',
@@ -676,7 +718,8 @@ class TaskActionHandler {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _green,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   child: const Text(
                     'Submit',
@@ -720,6 +763,9 @@ class TaskActionHandler {
   Future<T?> _pickSheet<T>({
     required String title,
     required List<Widget> Function(BuildContext ctx) tiles,
+    double? width,
+    double maxWidth = 380,
+    double maxHeight = 500,
   }) {
     // On web, show as a dialog for better UX
     if (kIsWeb) {
@@ -728,46 +774,56 @@ class TaskActionHandler {
         barrierColor: Colors.black.withValues(alpha: 0.4),
         builder: (ctx) => Dialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 380, maxHeight: 500),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 12, 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: SizedBox(
+            width: width,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: maxWidth,
+                maxHeight: maxHeight,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 12, 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close, color: Color(0xFF8A988E)),
-                        tooltip: 'Close',
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: tiles(ctx),
+                        IconButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          icon: const Icon(
+                            Icons.close,
+                            color: Color(0xFF8A988E),
+                          ),
+                          tooltip: 'Close',
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-              ],
+                  const Divider(height: 1),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: tiles(ctx),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
           ),
         ),

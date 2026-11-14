@@ -20,7 +20,8 @@ import '../../../../web/widgets/web_header_actions.dart';
 class UsersListScreen extends ConsumerStatefulWidget {
   const UsersListScreen({super.key, this.initialTab = 0});
 
-  /// Tab opened first: 0 Clients, 1 POCs, 2 Service Engineers, 3 Managers.
+  /// Tab opened first: 0 All Users, 1 Company Managers, 2 POCs,
+  /// 3 Service Engineers, 4 Managers.
   final int initialTab;
 
   @override
@@ -36,16 +37,12 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   /// User whose active flag / deletion is in flight.
   String? _busyId;
 
-  /// Ensures the list never opens silently empty: once the first batch of
-  /// users arrives, if the tab the screen opened on has no users but another
-  /// tab does, land on the first populated tab instead.
-  bool _autoSelectedTab = false;
-
   static const Color _green = Color(0xFF125420);
   static const Color _addGreen = Color(0xFF106220);
   static const Color _footerBg = Color(0xFFEBF0EA);
 
   final List<String> _tabs = [
+    'All Users',
     'Company Managers',
     'POCs',
     'Service Engineers',
@@ -62,14 +59,22 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   /// EverGreen admins.
   bool _inTab(UserRole role) {
     switch (_selectedTab) {
+      case 0:
+        return role == UserRole.clientAdmin ||
+            role == UserRole.client ||
+            role.isTechnicianLevel ||
+            role == UserRole.superAdmin ||
+            role == UserRole.manager;
       case 1:
-        return role == UserRole.client;
+        return role == UserRole.clientAdmin;
       case 2:
-        return role.isTechnicianLevel;
+        return role == UserRole.client;
       case 3:
+        return role.isTechnicianLevel;
+      case 4:
         return role == UserRole.superAdmin || role == UserRole.manager;
       default:
-        return role == UserRole.clientAdmin;
+        return true;
     }
   }
 
@@ -85,30 +90,10 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     }).toList();
   }
 
-  /// The screen opens on the tab from [widget.initialTab] (Company Managers
-  /// by default). If that tab has no users but another one does — e.g. a
-  /// workspace that has no client-side users yet — land on the first
-  /// populated tab so the Users List is never silently empty.
-  void _maybeAutoSelectTab(List<User>? all) {
-    if (all == null || all.isEmpty || _autoSelectedTab) return;
-    _autoSelectedTab = true;
-    if (_webTabCount(all, _selectedTab) > 0) return;
-    for (var i = 0; i < _tabs.length; i++) {
-      if (_webTabCount(all, i) > 0) {
-        final tab = i;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() => _selectedTab = tab);
-        });
-        return;
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final usersAsync = ref.watch(usersListProvider);
     final users = _filterUsers(usersAsync.valueOrNull ?? const []);
-    _maybeAutoSelectTab(usersAsync.valueOrNull);
 
     if (kIsWeb) return _webBuild(usersAsync, users);
     return GestureDetector(
@@ -197,6 +182,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   static const Color _webLine = Color(0xFFE2E8E3);
   static const Color _webInk = Color(0xFF14201A);
   static const _webTabMeta = [
+    (Icons.people_alt_outlined, Color(0xFF0F6E37)),
     (Icons.business_center_outlined, Color(0xFF106220)),
     (Icons.contact_phone_outlined, Color(0xFF1565C0)),
     (Icons.engineering_outlined, Color(0xFFE08600)),
@@ -205,14 +191,22 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
 
   bool _webInTab(UserRole role, int tab) {
     switch (tab) {
+      case 0:
+        return role == UserRole.clientAdmin ||
+            role == UserRole.client ||
+            role.isTechnicianLevel ||
+            role == UserRole.superAdmin ||
+            role == UserRole.manager;
       case 1:
-        return role == UserRole.client;
+        return role == UserRole.clientAdmin;
       case 2:
-        return role.isTechnicianLevel;
+        return role == UserRole.client;
       case 3:
+        return role.isTechnicianLevel;
+      case 4:
         return role == UserRole.superAdmin || role == UserRole.manager;
       default:
-        return role == UserRole.clientAdmin;
+        return true;
     }
   }
 

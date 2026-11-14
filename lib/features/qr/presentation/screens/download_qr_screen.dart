@@ -1,8 +1,10 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:printing/printing.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
@@ -466,14 +468,23 @@ class _DownloadQrScreenState extends ConsumerState<DownloadQrScreen> {
       final bytes = await ref.read(equipmentApiProvider).qrStickerPdf(
             companyId: company.id,
           );
-      final savedPath = await FilePicker.saveFile(
-        dialogTitle: 'Save QR stickers PDF',
-        fileName: 'qr_${qrFileSlug(company.displayName)}.pdf',
-        type: FileType.custom,
-        allowedExtensions: const ['pdf'],
-        bytes: bytes,
-      );
-      if (savedPath != null) _snack('QR Code saved to your device');
+      final filename = 'qr_${qrFileSlug(company.displayName)}.pdf';
+      final isMobile = !kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS);
+      if (isMobile) {
+        _snack('Choose a destination in the share menu to save the QR PDF');
+        await Printing.sharePdf(bytes: bytes, filename: filename);
+      } else {
+        final savedPath = await FilePicker.saveFile(
+          dialogTitle: 'Save QR stickers PDF',
+          fileName: filename,
+          type: FileType.custom,
+          allowedExtensions: const ['pdf'],
+          bytes: bytes,
+        );
+        if (savedPath != null) _snack('QR Code saved to your device');
+      }
     } catch (e) {
       _snack('$e', error: true);
     } finally {

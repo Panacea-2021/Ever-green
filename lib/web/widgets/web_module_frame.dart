@@ -281,6 +281,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                 // Top bar with title, notifications, and user avatar
                 _WebTopBar(
                   title: title,
+                  router: widget.router,
                   showUserInfo: _location == Routes.webDashboard,
                 ),
                 Expanded(
@@ -308,7 +309,8 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                           mq: mq,
                           constraints: constraints,
                           compact: WebModuleFrame._uploadPaths.any(
-                            (p) => _location == p || _location.startsWith('$p/'),
+                            (p) =>
+                                _location == p || _location.startsWith('$p/'),
                           ),
                           entry: _entryFor(role),
                           title: title,
@@ -543,16 +545,22 @@ class _WebRestoringSession extends StatelessWidget {
 /// user avatar. Also displays page-specific action buttons from the
 /// webHeaderActionsProvider.
 class _WebTopBar extends ConsumerWidget {
-  const _WebTopBar({required this.title, this.showUserInfo = true});
+  const _WebTopBar({
+    required this.title,
+    required this.router,
+    this.showUserInfo = true,
+  });
 
   final String title;
+  final GoRouter router;
   final bool showUserInfo;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final userName = user?.name ?? '';
-    final unreadCount = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
+    final unreadCount =
+        ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
     final headerActions = ref.watch(webHeaderActionsProvider).actions;
 
     return Container(
@@ -578,9 +586,15 @@ class _WebTopBar extends ConsumerWidget {
             if (showUserInfo) const SizedBox(width: 24),
           ],
           if (showUserInfo) ...[
-            _NotificationBell(count: unreadCount),
+            _NotificationBell(
+              count: unreadCount,
+              onPressed: () => router.push(Routes.notifications),
+            ),
             const SizedBox(width: 18),
-            _UserAvatar(name: userName),
+            _UserAvatar(
+              name: userName,
+              onPressed: () => router.go(Routes.profile),
+            ),
           ],
         ],
       ),
@@ -589,9 +603,13 @@ class _WebTopBar extends ConsumerWidget {
 }
 
 class _NotificationBell extends StatelessWidget {
-  const _NotificationBell({required this.count});
+  const _NotificationBell({
+    required this.count,
+    required this.onPressed,
+  });
 
   final int count;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -600,21 +618,26 @@ class _NotificationBell extends StatelessWidget {
     // Tooltip would look up an Overlay ancestor and fail with
     // "No Overlay widget found" on the web dashboard.
     return IconButton(
+      key: const ValueKey('web-notifications-button'),
       icon: Badge(
         isLabelVisible: count > 0,
         label: Text(count > 99 ? '99+' : '$count'),
         backgroundColor: WebTokens.green,
         child: const Icon(Icons.notifications_outlined, size: 24),
       ),
-      onPressed: () => context.push(Routes.notifications),
+      onPressed: onPressed,
     );
   }
 }
 
 class _UserAvatar extends StatelessWidget {
-  const _UserAvatar({required this.name});
+  const _UserAvatar({
+    required this.name,
+    required this.onPressed,
+  });
 
   final String name;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -622,25 +645,34 @@ class _UserAvatar extends StatelessWidget {
         ? name.split(' ').take(2).map((w) => w[0].toUpperCase()).join()
         : '?';
 
-    return Container(
-      width: 38,
-      height: 38,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF106220), Color(0xFF0A3F15)],
-        ),
+    return Semantics(
+      button: true,
+      label: 'Open profile',
+      child: InkWell(
+        key: const ValueKey('web-profile-button'),
+        onTap: onPressed,
         borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        initials,
-        style: const TextStyle(
-          fontFamily: WebTokens.fontFamily,
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
+        child: Container(
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF106220), Color(0xFF0A3F15)],
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            initials,
+            style: const TextStyle(
+              fontFamily: WebTokens.fontFamily,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
         ),
       ),
     );
