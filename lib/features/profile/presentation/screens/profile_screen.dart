@@ -253,7 +253,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: _webMenuGrid(
                           context,
                           role,
-                          constraints.maxWidth >= 1000 ? 2 : 1,
+                          constraints.maxWidth - 56 >= 1000 ? 2 : 1,
                         ),
                       ),
                     ),

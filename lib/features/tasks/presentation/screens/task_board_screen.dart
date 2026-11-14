@@ -303,6 +303,7 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
   Widget _webHeader(String title, int count, UserRole role) {
     final canCreate = Permissions.canRaiseTasks(role);
     return Container(
+      key: const ValueKey('task-board-web-header'),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,

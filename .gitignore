@@ -20,3 +20,7 @@ android/key.properties
 .env.local
 .env.*.local
 !.env.example
+
+.env
+.env.local
+android/app/google-services.json

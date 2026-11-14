@@ -25,10 +25,10 @@ void main() {
   ];
   const tabs = [
     'All Users',
-    'EG Managers',
     'Company Managers',
     'POCs',
     'Service Engineers',
+    'Managers',
   ];
 
   testWidgets('tabs filter the correct roles and retain selected highlight',
@@ -45,7 +45,7 @@ void main() {
           usersListProvider.overrideWith((ref) async => users),
         ],
         child: const MaterialApp(
-          home: UsersListScreen(initialTab: kIsWeb ? null : -1),
+          home: UsersListScreen(initialTab: kIsWeb ? 0 : -1),
         ),
       ),
     );
@@ -104,7 +104,7 @@ void main() {
     expectSelected('All Users');
 
     const expectedRoles = <String, Set<UserRole>>{
-      'EG Managers': {UserRole.superAdmin, UserRole.manager},
+      'Managers': {UserRole.superAdmin, UserRole.manager},
       'Company Managers': {UserRole.clientAdmin},
       'POCs': {UserRole.client},
       'Service Engineers': {

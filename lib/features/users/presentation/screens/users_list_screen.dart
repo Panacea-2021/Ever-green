@@ -18,10 +18,11 @@ import '../../../../web/widgets/web_filter_tiles.dart';
 import '../../../../web/widgets/web_header_actions.dart';
 
 class UsersListScreen extends ConsumerStatefulWidget {
-  const UsersListScreen({super.key, this.initialTab});
+  const UsersListScreen({super.key, this.initialTab = 0});
 
-  /// Optional legacy tab index from a dashboard shortcut.
-  final int? initialTab;
+  /// Tab opened first: 0 All Users, 1 Company Managers, 2 POCs,
+  /// 3 Service Engineers, 4 Managers.
+  final int initialTab;
 
   @override
   ConsumerState<UsersListScreen> createState() => _UsersListScreenState();
@@ -31,14 +32,11 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     with WebHeaderActionsMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  late int _selectedTab = _resolveInitialTab(widget.initialTab);
+  late int _selectedTab = widget.initialTab.clamp(0, _tabs.length - 1);
   final ScrollController _tabsScrollController = ScrollController();
 
   /// User whose active flag / deletion is in flight.
   String? _busyId;
-
-  /// Mobile may fall back to a populated role tab after the first batch loads.
-  bool _autoSelectedTab = false;
 
   static const Color _green = Color(0xFF125420);
   static const Color _addGreen = Color(0xFF106220);
@@ -46,10 +44,10 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
 
   final List<String> _tabs = [
     'All Users',
-    'EG Managers',
     'Company Managers',
     'POCs',
     'Service Engineers',
+    'Managers',
   ];
 
   @override
@@ -61,45 +59,24 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
 
   /// Company Managers = client admins, POCs = client users, Managers =
   /// EverGreen admins.
-  bool _inTab(UserRole role) => _matchesTab(role, _selectedTab);
-
-  bool _matchesTab(UserRole role, int tab) {
-    switch (tab) {
+  bool _inTab(UserRole role) {
+    switch (_selectedTab) {
       case 0:
-        return true;
+        return role == UserRole.clientAdmin ||
+            role == UserRole.client ||
+            role.isTechnicianLevel ||
+            role == UserRole.superAdmin ||
+            role == UserRole.manager;
       case 1:
-        return role == UserRole.superAdmin || role == UserRole.manager;
-      case 2:
         return role == UserRole.clientAdmin;
-      case 3:
-        return role == UserRole.client;
-      case 4:
-        return role.isTechnicianLevel;
-      default:
-        return false;
-    }
-  }
-
-  /// A missing web tab opens All Users; mobile retains its prior default.
-  static int _resolveInitialTab(int? tab) {
-    if (kIsWeb && (tab == null || tab < 0)) return 0;
-    return _mapLegacyTab(tab ?? 0);
-  }
-
-  /// Maps legacy dashboard indices to the current tab order.
-  static int _mapLegacyTab(int t) {
-    if (t < 0) return 0;
-    switch (t) {
-      case 0:
-        return 2; // Company Managers
-      case 1:
-        return 3; // POCs
       case 2:
-        return 4; // Service Engineers
+        return role == UserRole.client;
       case 3:
-        return 1; // Managers
+        return role.isTechnicianLevel;
+      case 4:
+        return role == UserRole.superAdmin || role == UserRole.manager;
       default:
-        return 0; // All Users
+        return true;
     }
   }
 
@@ -115,28 +92,10 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     }).toList();
   }
 
-  /// If the selected mobile tab has no users, land on the first populated
-  /// tab so the Users List is never silently empty.
-  void _maybeAutoSelectTab(List<User>? all) {
-    if (kIsWeb || all == null || all.isEmpty || _autoSelectedTab) return;
-    _autoSelectedTab = true;
-    if (_webTabCount(all, _selectedTab) > 0) return;
-    for (var i = 0; i < _tabs.length; i++) {
-      if (_webTabCount(all, i) > 0) {
-        final tab = i;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() => _selectedTab = tab);
-        });
-        return;
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final usersAsync = ref.watch(usersListProvider);
     final users = _filterUsers(usersAsync.valueOrNull ?? const []);
-    _maybeAutoSelectTab(usersAsync.valueOrNull);
 
     if (kIsWeb) return _webBuild(usersAsync, users);
     return GestureDetector(
@@ -238,14 +197,33 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   static const Color _webLine = Color(0xFFE2E8E3);
   static const Color _webInk = Color(0xFF14201A);
   static const _webTabMeta = [
-    (Icons.people_outline, Color(0xFF106220)),
-    (Icons.manage_accounts_outlined, Color(0xFF6A4BC4)),
+    (Icons.people_alt_outlined, Color(0xFF0F6E37)),
     (Icons.business_center_outlined, Color(0xFF106220)),
     (Icons.contact_phone_outlined, Color(0xFF1565C0)),
     (Icons.engineering_outlined, Color(0xFFE08600)),
+    (Icons.manage_accounts_outlined, Color(0xFF6A4BC4)),
   ];
 
-  bool _webInTab(UserRole role, int tab) => _matchesTab(role, tab);
+  bool _webInTab(UserRole role, int tab) {
+    switch (tab) {
+      case 0:
+        return role == UserRole.clientAdmin ||
+            role == UserRole.client ||
+            role.isTechnicianLevel ||
+            role == UserRole.superAdmin ||
+            role == UserRole.manager;
+      case 1:
+        return role == UserRole.clientAdmin;
+      case 2:
+        return role == UserRole.client;
+      case 3:
+        return role.isTechnicianLevel;
+      case 4:
+        return role == UserRole.superAdmin || role == UserRole.manager;
+      default:
+        return true;
+    }
+  }
 
   int _webTabCount(List<User> all, int tab) {
     final q = _searchQuery.toLowerCase();
@@ -777,12 +755,10 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   // Tabs
   // ---------------------------------------------------------------------------
   Widget _buildTabs() {
-    // Keep the selected tab visible.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_tabsScrollController.hasClients) return;
-      final itemWidth = 18.0 * 2 + 60; // approx
       _tabsScrollController.animateTo(
-        (_selectedTab * (itemWidth + 10)).clamp(
+        (_selectedTab * 110.0).clamp(
           0.0,
           _tabsScrollController.position.maxScrollExtent,
         ),

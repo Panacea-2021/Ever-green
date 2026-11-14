@@ -83,13 +83,13 @@ class WebDashboardScreen extends ConsumerWidget {
                     if (Permissions.canViewOrgOverview(role)) ...[
                       _WebOrganizationSections(
                         onOpenUsers: open(Routes.usersList),
-                        onOpenPocs: open(Routes.usersList, extra: {'tab': 1}),
+                        onOpenPocs: open(Routes.usersList, extra: {'tab': 2}),
                         onOpenCompanyManagers:
-                            open(Routes.usersList, extra: {'tab': 0}),
+                            open(Routes.usersList, extra: {'tab': 1}),
                         onOpenManagers:
-                            open(Routes.usersList, extra: {'tab': 3}),
+                            open(Routes.usersList, extra: {'tab': 4}),
                         onOpenServiceEngineers: open(Routes.techniciansList) ??
-                            open(Routes.usersList, extra: {'tab': 2}),
+                            open(Routes.usersList, extra: {'tab': 3}),
                         onOpenAmcs: open(Routes.amcs),
                         onOpenTasks: open(Routes.tasks),
                       ),
