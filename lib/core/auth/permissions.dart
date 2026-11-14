@@ -51,6 +51,7 @@ class Permissions {
       Routes.issueTypes,
       Routes.serviceTypes,
       Routes.reports,
+      Routes.enquiries,
       Routes.usersList,
       Routes.addUser,
     ],

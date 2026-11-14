@@ -98,14 +98,14 @@ class _EverGreenAppState extends ConsumerState<EverGreenApp> {
         // Force light theme so dark-mode phones do not break the UI.
         themeMode: ThemeMode.light,
         routerConfig: router,
-        builder: (context, child) => GlobalScrollToTop(
-          child: kIsWeb
-              ? WebModuleFrame(
+        builder: (context, child) => kIsWeb
+            ? GlobalScrollToTop(
+                child: WebModuleFrame(
                   router: router,
                   child: child ?? const SizedBox.shrink(),
-                )
-              : child ?? const SizedBox.shrink(),
-        ),
+                ),
+              )
+            : child ?? const SizedBox.shrink(),
       ),
     );
   }

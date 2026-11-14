@@ -184,6 +184,7 @@ class _WebOrganizationSections extends ConsumerWidget {
               subtitle: 'Across access levels',
               icon: Icons.groups_outlined,
               color: WebDashboardScreen._blue,
+              highlight: true,
               onTap: onOpenUsers,
             ),
             _WebDashboardMetricCard(
@@ -192,6 +193,7 @@ class _WebOrganizationSections extends ConsumerWidget {
               subtitle: 'Service contracts',
               icon: Icons.verified_outlined,
               color: WebDashboardScreen._green,
+              highlight: true,
               onTap: onOpenAmcs,
             ),
             _WebDashboardMetricCard(
@@ -200,6 +202,7 @@ class _WebOrganizationSections extends ConsumerWidget {
               subtitle: 'All statuses',
               icon: Icons.checklist_rtl_outlined,
               color: WebDashboardScreen._purple,
+              highlight: true,
               onTap: onOpenTasks,
             ),
           ],
@@ -304,7 +307,7 @@ class _WebDashboardMetricGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = (constraints.maxWidth >= 1100
+        final columns = (constraints.maxWidth >= 900
                 ? desktopColumns
                 : constraints.maxWidth >= 620
                     ? 2
@@ -327,7 +330,7 @@ class _WebDashboardMetricGrid extends StatelessWidget {
   }
 }
 
-class _WebDashboardMetricCard extends StatelessWidget {
+class _WebDashboardMetricCard extends StatefulWidget {
   const _WebDashboardMetricCard({
     required this.title,
     required this.value,
@@ -338,6 +341,8 @@ class _WebDashboardMetricCard extends StatelessWidget {
     this.invertTrend = false,
     this.onTap,
     this.valueKey,
+    this.compact = false,
+    this.highlight = false,
   });
 
   final String title;
@@ -349,111 +354,201 @@ class _WebDashboardMetricCard extends StatelessWidget {
   final bool invertTrend;
   final VoidCallback? onTap;
   final Key? valueKey;
+  final bool compact;
+  final bool highlight;
+
+  @override
+  State<_WebDashboardMetricCard> createState() =>
+      _WebDashboardMetricCardState();
+}
+
+class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
+  bool _hovered = false;
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    final positive = trend == null
+    final positive = widget.trend == null
         ? null
-        : (invertTrend ? !trend!.isPositive : trend!.isPositive);
+        : (widget.invertTrend
+            ? !widget.trend!.isPositive
+            : widget.trend!.isPositive);
     final trendColor = positive == null
         ? null
         : positive
             ? WebDashboardScreen._green
             : WebDashboardScreen._red;
+    final radius = BorderRadius.circular(12);
+
+    final surface = widget.highlight
+        ? AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            constraints: BoxConstraints(
+              minHeight: widget.compact ? 112 : 136,
+            ),
+            padding: EdgeInsets.all(widget.compact ? 12 : 16),
+            transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
+            transformAlignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: widget.color.withValues(
+                alpha: _hovered ? 0.095 : 0.055,
+              ),
+              borderRadius: radius,
+              border: Border.all(
+                color: widget.color.withValues(
+                  alpha: _hovered ? 0.48 : 0.24,
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.color.withValues(
+                    alpha: _hovered ? 0.12 : 0.045,
+                  ),
+                  blurRadius: _hovered ? 14 : 8,
+                  offset: Offset(0, _hovered ? 6 : 3),
+                ),
+              ],
+            ),
+            child: _buildContent(positive, trendColor),
+          )
+        : Container(
+            constraints: BoxConstraints(
+              minHeight: widget.compact ? 112 : 136,
+            ),
+            padding: EdgeInsets.all(widget.compact ? 12 : 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: radius,
+              border: Border.all(
+                color: const Color(0xFFE8E8E8),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.035),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: _buildContent(positive, trendColor),
+          );
+    final interactiveSurface = widget.highlight
+        ? AnimatedScale(
+            scale: _pressed ? 0.99 : 1,
+            duration: const Duration(milliseconds: 100),
+            curve: Curves.easeOut,
+            child: surface,
+          )
+        : surface;
 
     return MouseRegion(
-      cursor:
-          onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      cursor: widget.onTap == null
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
+      onEnter: widget.highlight ? (_) => setState(() => _hovered = true) : null,
+      onExit: widget.highlight ? (_) => setState(() => _hovered = false) : null,
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 136),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE8E8E8)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.035),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+        onTap: widget.onTap,
+        borderRadius: radius,
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashColor: widget.highlight
+            ? widget.color.withValues(alpha: 0.12)
+            : Colors.transparent,
+        splashFactory:
+            widget.highlight ? InkRipple.splashFactory : NoSplash.splashFactory,
+        onHighlightChanged: widget.highlight
+            ? (pressed) => setState(() => _pressed = pressed)
+            : null,
+        child: interactiveSurface,
+      ),
+    );
+  }
+
+  Widget _buildContent(bool? positive, Color? trendColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: widget.compact ? 34 : 38,
+              height: widget.compact ? 34 : 38,
+              decoration: BoxDecoration(
+                color: widget.highlight
+                    ? widget.color.withValues(alpha: 0.1)
+                    : const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(10),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(icon, color: color, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF555555),
-                      ),
-                    ),
-                  ),
-                ],
+              child: Icon(
+                widget.icon,
+                color: widget.color,
+                size: widget.compact ? 18 : 20,
               ),
-              const SizedBox(height: 14),
-              Text(
-                '$value',
-                key: valueKey,
+            ),
+            SizedBox(width: widget.compact ? 8 : 10),
+            Expanded(
+              child: Text(
+                widget.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF555555),
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: widget.compact ? 8 : 14),
+        Text(
+          '${widget.value}',
+          key: widget.valueKey,
+          style: widget.compact
+              ? const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A1A),
+                  letterSpacing: -0.5,
+                )
+              : const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF1A1A1A),
                   letterSpacing: -0.5,
                 ),
-              ),
-              const SizedBox(height: 4),
-              if (trend != null)
-                Row(
-                  children: [
-                    Icon(
-                      positive! ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: trendColor,
-                      size: 13,
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${trend!.percent}% vs last month',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: trendColor,
-                      ),
-                    ),
-                  ],
-                )
-              else if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF777777),
-                  ),
-                ),
-            ],
-          ),
         ),
-      ),
+        SizedBox(height: widget.compact ? 2 : 4),
+        if (widget.trend != null)
+          Row(
+            children: [
+              Icon(
+                positive! ? Icons.arrow_upward : Icons.arrow_downward,
+                color: trendColor,
+                size: 13,
+              ),
+              const SizedBox(width: 3),
+              Text(
+                '${widget.trend!.percent}% vs last month',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: trendColor,
+                ),
+              ),
+            ],
+          )
+        else if (widget.subtitle != null)
+          Text(
+            widget.subtitle!,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF777777),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -483,6 +578,7 @@ class _OverviewMetricCard extends ConsumerWidget {
       icon: icon,
       color: color,
       trend: ref.watch(trendProvider(metric)),
+      highlight: true,
       onTap: onTap,
     );
   }
@@ -568,20 +664,8 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
     final openTrend = ref.watch(trendProvider(TrendMetric.openTasks));
     final closedTrend = ref.watch(trendProvider(TrendMetric.closedTasks));
 
-    return Container(
+    return _DashboardPanelCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -602,6 +686,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 invertTrend: true,
                 onTap: widget.onOpenTasks,
                 valueKey: const ValueKey('web-report-open-tasks-count'),
+                compact: true,
               ),
               _WebDashboardMetricCard(
                 title: 'Closed (mo)',
@@ -611,6 +696,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 trend: closedTrend,
                 onTap: widget.onOpenTasks,
                 valueKey: const ValueKey('web-report-closed-tasks-count'),
+                compact: true,
               ),
             ],
           ),
@@ -665,10 +751,10 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 ChoiceChip(
                   label: Text(metric.label),
                   selected: _metric == metric,
-                  selectedColor: WebTokens.mintSoft,
+                  selectedColor: const Color(0xFFF5F5F5),
                   labelStyle: TextStyle(
                     color: _metric == metric
-                        ? WebTokens.greenDark
+                        ? const Color(0xFF333333)
                         : const Color(0xFF555555),
                     fontWeight: FontWeight.w600,
                   ),
@@ -679,7 +765,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
           const SizedBox(height: 16),
           SizedBox(
             height: 260,
-            child: _buildCombinedChart(context, bars, line, labels),
+            child: _buildCombinedChart(bars, line, labels),
           ),
         ],
       ),
@@ -687,7 +773,6 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
   }
 
   Widget _buildCombinedChart(
-    BuildContext context,
     List<double> bars,
     List<double> line,
     List<String> labels,
@@ -706,10 +791,6 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
     final interval =
         (maxY / 4).ceilToDouble().clamp(1.0, double.infinity).toDouble();
     final maxX = labels.length > 1 ? (labels.length - 1).toDouble() : 1.0;
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final duration =
-        reduceMotion ? Duration.zero : const Duration(milliseconds: 450);
-
     return Stack(
       children: [
         BarChart(
@@ -808,7 +889,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 ),
             ],
           ),
-          duration: duration,
+          duration: Duration.zero,
         ),
         IgnorePointer(
           child: LineChart(
@@ -858,7 +939,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 ),
               ],
             ),
-            duration: duration,
+            duration: Duration.zero,
           ),
         ),
       ],
@@ -888,6 +969,36 @@ class _ReportLegend extends StatelessWidget {
           style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
         ),
       ],
+    );
+  }
+}
+
+class _DashboardPanelCard extends StatelessWidget {
+  const _DashboardPanelCard({
+    required this.padding,
+    required this.child,
+  });
+
+  final EdgeInsetsGeometry padding;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8E8E8)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }
@@ -927,9 +1038,9 @@ class _DashboardDataError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3F0),
+        color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFD1C7)),
+        border: Border.all(color: const Color(0xFFE8E8E8)),
       ),
       child: Row(
         children: [
@@ -1076,20 +1187,8 @@ class _TaskStatusChart extends StatelessWidget {
       _ChartData('Closed', closed, WebDashboardScreen._green),
     ];
 
-    return Container(
+    return _DashboardPanelCard(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1265,6 +1364,7 @@ class _TaskStatusChart extends StatelessWidget {
                             ),
                         ],
                       ),
+                      duration: Duration.zero,
                     ),
                   ),
                   const SizedBox(width: 24),
@@ -1374,20 +1474,8 @@ class _RenewalsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = renewals.take(5).toList();
 
-    return Container(
+    return _DashboardPanelCard(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1412,7 +1500,7 @@ class _RenewalsPanel extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: WebDashboardScreen._red.withValues(alpha: 0.1),
+                        color: const Color(0xFFF5F5F5),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -1444,7 +1532,7 @@ class _RenewalsPanel extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
+                color: const Color(0xFFF5F5F5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -1542,90 +1630,78 @@ class _RenewalsPanel extends StatelessWidget {
   }
 }
 
-class _RenewalRow extends StatefulWidget {
+class _RenewalRow extends StatelessWidget {
   const _RenewalRow({required this.contract, required this.last});
 
   final AmcContract contract;
   final bool last;
 
   @override
-  State<_RenewalRow> createState() => _RenewalRowState();
-}
-
-class _RenewalRowState extends State<_RenewalRow> {
-  bool _hovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    final expired = widget.contract.status() == AmcStatus.expired;
+    final expired = contract.status() == AmcStatus.expired;
     final accent =
         expired ? WebDashboardScreen._red : WebDashboardScreen._orange;
-    final days = widget.contract.daysUntilExpiry();
+    final days = contract.daysUntilExpiry();
     final sub = expired
         ? 'Expired ${-days} day${days == -1 ? '' : 's'} ago'
         : 'Expires in $days day${days == 1 ? '' : 's'}';
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: _hovered ? const Color(0xFFF5F7F6) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: widget.last
-              ? null
-              : const Border(
-                  bottom: BorderSide(color: Color(0xFFEEEEEE)),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: last
+            ? null
+            : const Border(
+                bottom: BorderSide(color: Color(0xFFEEEEEE)),
+              ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.autorenew, size: 20, color: accent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  contract.companyName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
                 ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(Icons.autorenew, size: 20, color: accent),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.contract.companyName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A1A),
-                    ),
+                const SizedBox(height: 2),
+                Text(
+                  sub,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: accent,
+                    fontWeight: FontWeight.w500,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    sub,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: accent,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Icon(
-              expired ? Icons.error_outline : Icons.schedule,
-              size: 18,
-              color: accent,
-            ),
-          ],
-        ),
+          ),
+          Icon(
+            expired ? Icons.error_outline : Icons.schedule,
+            size: 18,
+            color: accent,
+          ),
+        ],
       ),
     );
   }

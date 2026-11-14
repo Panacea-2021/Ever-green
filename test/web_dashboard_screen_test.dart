@@ -9,6 +9,8 @@ import 'package:evergreen/features/dashboard/data/analytics_provider.dart';
 import 'package:evergreen/features/dashboard/data/dashboard_repository.dart';
 import 'package:evergreen/shared/providers/auth_state_provider.dart';
 import 'package:evergreen/web/screens/web_dashboard_screen.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,6 +79,14 @@ Widget _dashboard(
         ? const MaterialApp(home: WebDashboardScreen())
         : MaterialApp.router(routerConfig: router),
   );
+}
+
+Finder _metricSurface(Finder content) {
+  final card = find.ancestor(of: content, matching: find.byType(InkWell)).first;
+  final animated =
+      find.descendant(of: card, matching: find.byType(AnimatedContainer));
+  if (animated.evaluate().isNotEmpty) return animated.first;
+  return find.descendant(of: card, matching: find.byType(Container)).first;
 }
 
 void main() {
@@ -156,6 +166,194 @@ void main() {
     expect(find.text('On Hold'), findsNothing);
   });
 
+  testWidgets(
+      'summary and overview cards have accent surfaces and hover states',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _dashboard(
+        UserRole.superAdmin,
+        onAnalyticsRequested: (_) {},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final highlightedTitles = [
+      'Users',
+      'AMCs',
+      'Tasks',
+      'POC',
+      'Company Managers',
+      'EG Managers',
+      'Service Engineers',
+    ];
+    for (final title in highlightedTitles) {
+      final surface = _metricSurface(find.text(title).first);
+      final decoration = tester.widget<AnimatedContainer>(surface).decoration!
+          as BoxDecoration;
+      expect(decoration.color, isNot(Colors.white), reason: title);
+      expect(decoration.color!.a, closeTo(0.055, 0.001), reason: title);
+      expect(
+        decoration.border!.top.color,
+        isNot(const Color(0xFFE8E8E8)),
+        reason: title,
+      );
+    }
+
+    final summarySurface = _metricSurface(find.text('AMCs').first);
+    final summaryDecoration = tester
+        .widget<AnimatedContainer>(summarySurface)
+        .decoration! as BoxDecoration;
+
+    final overviewSurface = _metricSurface(find.text('POC'));
+    expect(tester.widget<AnimatedContainer>(overviewSurface), isNotNull);
+
+    final reportSurface = _metricSurface(
+      find.byKey(const ValueKey('web-report-open-tasks-count')),
+    );
+    final reportDecoration =
+        tester.widget<Container>(reportSurface).decoration! as BoxDecoration;
+    expect(reportDecoration.color, Colors.white);
+    expect(reportDecoration.border!.top.color, const Color(0xFFE8E8E8));
+    final reportIconTile = find
+        .descendant(of: reportSurface, matching: find.byType(Container))
+        .first;
+    final reportIconDecoration =
+        tester.widget<Container>(reportIconTile).decoration! as BoxDecoration;
+    expect(reportIconDecoration.color, const Color(0xFFF5F5F5));
+
+    final selectedChip =
+        tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Users'));
+    expect(selectedChip.selectedColor, const Color(0xFFF5F5F5));
+
+    final panelTitles = [
+      find.text('Reports'),
+      find.text('Task Status Overview'),
+      find.text('AMC Renewals Due'),
+    ];
+    for (final title in panelTitles) {
+      final panel =
+          find.ancestor(of: title, matching: find.byType(Container)).first;
+      final decoration =
+          tester.widget<Container>(panel).decoration! as BoxDecoration;
+      expect(decoration.color, Colors.white);
+      expect(decoration.border!.top.color, const Color(0xFFE8E8E8));
+      expect(
+        find.ancestor(of: title, matching: find.byType(AnimatedContainer)),
+        findsNothing,
+      );
+    }
+    final renewalsEmptyState = find
+        .ancestor(
+          of: find.text('All contracts active!'),
+          matching: find.byType(Container),
+        )
+        .first;
+    final renewalsEmptyDecoration = tester
+        .widget<Container>(renewalsEmptyState)
+        .decoration! as BoxDecoration;
+    expect(renewalsEmptyDecoration.color, const Color(0xFFF5F5F5));
+
+    expect(
+      find.ancestor(
+        of: find.text('AMCs').first,
+        matching: find.byType(AnimatedContainer),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.ancestor(
+        of: find.byKey(const ValueKey('web-report-open-tasks-count')),
+        matching: find.byType(AnimatedContainer),
+      ),
+      findsNothing,
+    );
+
+    final barCharts = tester.widgetList<BarChart>(find.byType(BarChart));
+    expect(barCharts, isNotEmpty);
+    expect(
+      barCharts.every((chart) => chart.duration == Duration.zero),
+      isTrue,
+    );
+    expect(
+      tester.widget<LineChart>(find.byType(LineChart)).duration,
+      Duration.zero,
+    );
+
+    final title = find.text('AMCs').first;
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    final position = tester.getCenter(title);
+    await mouse.addPointer(location: position);
+    await mouse.moveTo(position);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final hovered = tester.widget<AnimatedContainer>(summarySurface);
+    final hoveredDecoration = hovered.decoration! as BoxDecoration;
+    expect(
+      hoveredDecoration.border!.top.color,
+      isNot(summaryDecoration.border!.top.color),
+    );
+    expect(
+      hoveredDecoration.color,
+      isNot(summaryDecoration.color),
+    );
+    expect(hovered.transform!.storage[13], -2);
+    await mouse.down(position);
+    await tester.pump(const Duration(milliseconds: 50));
+    final pressedScale = tester.widget<AnimatedScale>(
+      find.ancestor(
+        of: find.text('AMCs').first,
+        matching: find.byType(AnimatedScale),
+      ),
+    );
+    expect(pressedScale.scale, lessThan(1));
+    await mouse.cancel();
+    await tester.pump(const Duration(milliseconds: 120));
+    final releasedScale = tester.widget<AnimatedScale>(
+      find.ancestor(
+        of: find.text('AMCs').first,
+        matching: find.byType(AnimatedScale),
+      ),
+    );
+    expect(releasedScale.scale, 1);
+    await mouse.removePointer();
+  });
+
+  testWidgets('report metric cards are more compact than summary cards',
+      (tester) async {
+    await tester.pumpWidget(
+      _dashboard(
+        UserRole.superAdmin,
+        onAnalyticsRequested: (_) {},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final reportCard = find
+        .ancestor(
+          of: find.byKey(const ValueKey('web-report-open-tasks-count')),
+          matching: find.byType(Container),
+        )
+        .first;
+    final summaryCard = find
+        .ancestor(
+          of: find.text('Users'),
+          matching: find.byType(Container),
+        )
+        .first;
+
+    expect(reportCard, findsOneWidget);
+    expect(summaryCard, findsOneWidget);
+    expect(
+      tester.getSize(reportCard).height,
+      lessThan(tester.getSize(summaryCard).height),
+    );
+  });
+
   testWidgets('non-admin does not request or see organization analytics',
       (tester) async {
     var analyticsRequested = false;
@@ -228,7 +426,7 @@ void main() {
 
   testWidgets('renders without layout overflow at tablet and desktop widths',
       (tester) async {
-    for (final width in [900.0, 1440.0]) {
+    for (final width in [900.0, 1024.0, 1440.0]) {
       tester.view.physicalSize = Size(width, 1600);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);

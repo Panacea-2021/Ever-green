@@ -91,6 +91,9 @@ abstract class Routes {
   // Reports & Analytics center
   static const String reports = '/reports';
 
+  // Enquiries (customer repair bookings) - web only
+  static const String enquiries = '/enquiries';
+
   // Unauthorized / access-denied fallback
   static const String unauthorized = '/unauthorized';
 

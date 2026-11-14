@@ -81,6 +81,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.ticketQueue,
     Routes.reports,
     Routes.announcements,
+    Routes.enquiries,
   };
 
   /// Module pages shown in a card with their own icon-and-title header
@@ -124,6 +125,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.analytics: 'Analytics',
     Routes.scanner: 'Scan QR',
     Routes.reports: 'Reports & Export Center',
+    Routes.enquiries: 'Enquiries',
   };
 
   @override
@@ -132,7 +134,9 @@ class WebModuleFrame extends ConsumerStatefulWidget {
 
 class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   final _contentKey = GlobalKey();
+  final List<String> _locationHistory = [];
   String _location = '';
+  bool _skipNextHistoryUpdate = false;
 
   @override
   void initState() {
@@ -176,12 +180,32 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     if (!mounted) return;
     final location = _currentLocation();
     if (location != _location) {
+      if (_skipNextHistoryUpdate) {
+        _skipNextHistoryUpdate = false;
+      } else if (_isModuleLocation(_location) &&
+          _isModuleLocation(location)) {
+        _locationHistory.add(_location);
+      } else if (!_isModuleLocation(location)) {
+        _locationHistory.clear();
+      }
       // Clear header actions when navigating to a new page
       // The new page will set its own actions if needed
       ref.read(webHeaderActionsProvider).clearActions();
       setState(() => _location = location);
       _refreshIfStale();
     }
+  }
+
+  bool _isModuleLocation(String location) =>
+      location.isNotEmpty && !WebModuleFrame._unframedPaths.contains(location);
+
+  void _goBack() {
+    final previous = _locationHistory.isNotEmpty
+        ? _locationHistory.removeLast()
+        : Routes.webDashboard;
+    if (previous == _location) return;
+    _skipNextHistoryUpdate = true;
+    widget.router.go(previous);
   }
 
   DateTime _lastRefresh = DateTime.now();
@@ -268,20 +292,20 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
       color: WebTokens.cream,
       child: Row(
         children: [
-          // ── Left side navigation (vertical sidebar) ───────────────────────
           WebSideNav(
             activeRoute: _location,
             onNavigate: _navigate,
             onSignOut: _signOut,
           ),
-          // ── Content area ──────────────────────────────────────────────────
           Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top bar with title, notifications, and user avatar
                 _WebTopBar(
                   title: title,
                   router: widget.router,
+                  onBack: _goBack,
+                  showBackButton: _location != Routes.webDashboard,
                   showUserInfo: _location == Routes.webDashboard,
                 ),
                 Expanded(
@@ -548,11 +572,15 @@ class _WebTopBar extends ConsumerWidget {
   const _WebTopBar({
     required this.title,
     required this.router,
+    required this.onBack,
+    required this.showBackButton,
     this.showUserInfo = true,
   });
 
   final String title;
   final GoRouter router;
+  final VoidCallback onBack;
+  final bool showBackButton;
   final bool showUserInfo;
 
   @override
@@ -563,23 +591,35 @@ class _WebTopBar extends ConsumerWidget {
         ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
     final headerActions = ref.watch(webHeaderActionsProvider).actions;
 
+    final compact = MediaQuery.sizeOf(context).width < 600;
+
     return Container(
+      key: showUserInfo ? const ValueKey('web-dashboard-top-bar') : null,
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 28),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: WebTokens.line)),
       ),
       child: Row(
         children: [
-          if (title.isNotEmpty)
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: WebTokens.heading(20),
+          if (title.isNotEmpty) ...[
+            if (showBackButton)
+              IconButton(
+                key: const ValueKey('web-module-back-button'),
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_back),
+              ),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: WebTokens.heading(20),
+              ),
             ),
-          const Spacer(),
+          ] else
+            const Spacer(),
           // Page-specific action buttons (Reset, Save, etc.)
           if (headerActions.isNotEmpty) ...[
             WebHeaderActionButtons(actions: headerActions),
@@ -590,7 +630,7 @@ class _WebTopBar extends ConsumerWidget {
               count: unreadCount,
               onPressed: () => router.push(Routes.notifications),
             ),
-            const SizedBox(width: 18),
+            SizedBox(width: compact ? 8 : 18),
             _UserAvatar(
               name: userName,
               onPressed: () => router.go(Routes.profile),

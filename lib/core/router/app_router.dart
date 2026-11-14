@@ -11,6 +11,7 @@ import '../../features/landing/presentation/screens/services_page.dart';
 import '../../features/landing/presentation/screens/technicians_page.dart';
 import '../../features/landing/presentation/screens/website_info_page.dart';
 import '../../web/screens/web_dashboard_screen.dart';
+import '../../web/screens/web_enquiries_screen.dart';
 import '../../web/screens/web_companies_screen.dart';
 import '../../web/screens/web_company_details_screen.dart';
 import '../../web/screens/web_task_board_screen.dart';
@@ -392,6 +393,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.reports,
         name: 'reports',
         builder: (context, state) => const ReportsScreen(),
+      ),
+      GoRoute(
+        path: Routes.enquiries,
+        name: 'enquiries',
+        builder: (context, state) => const WebEnquiriesScreen(),
       ),
       GoRoute(
         path: Routes.editProfile,

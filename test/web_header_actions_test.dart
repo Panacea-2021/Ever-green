@@ -86,43 +86,7 @@ void main() {
     role: UserRole.manager,
   );
 
-  testWidgets('notification panel shows real feed data and marks it read',
-      (tester) async {
-    final repository = _MemoryNotificationsRepository([
-      NotificationEntry(
-        AppNotification(
-          id: 7,
-          title: 'Repair update',
-          description: 'A repair booking needs attention.',
-          isRead: false,
-          createdAt: DateTime(2026, 5, 10, 9, 30),
-        ),
-      ),
-    ]);
-
-    await _mountDashboard(tester, user, repository);
-
-    await tester.tap(find.byKey(const ValueKey('web-notification-button')));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.byKey(const ValueKey('web-notifications-panel')),
-      findsOneWidget,
-    );
-    expect(find.text('Repair update'), findsOneWidget);
-    expect(find.text('A repair booking needs attention.'), findsOneWidget);
-    expect(find.text('Unread'), findsOneWidget);
-
-    await tester.tap(
-      find.byKey(const ValueKey('notification-mark-read-7')),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Read'), findsOneWidget);
-    expect(find.text('Unread'), findsNothing);
-  });
-
-  testWidgets('notification panel has an empty state and closes outside',
+  testWidgets('notification button opens the Notifications module',
       (tester) async {
     await _mountDashboard(
       tester,
@@ -130,18 +94,40 @@ void main() {
       _MemoryNotificationsRepository([]),
     );
 
-    await tester.tap(find.byKey(const ValueKey('web-notification-button')));
-    await tester.pumpAndSettle();
-    expect(find.text('No notifications'), findsOneWidget);
-
-    await tester.tap(find.text('Dashboard content'));
+    await tester.tap(find.byKey(const ValueKey('web-notifications-button')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('web-notifications-panel')), findsNothing);
+    expect(find.text('Notifications destination'), findsOneWidget);
   });
 
-  testWidgets('notification panel stays inside a narrow viewport',
+  testWidgets(
+      'Dashboard title has no back arrow and header actions are right aligned',
       (tester) async {
+    await _mountDashboard(
+      tester,
+      user,
+      _MemoryNotificationsRepository([]),
+    );
+
+    final topBar = find.byKey(const ValueKey('web-dashboard-top-bar'));
+    expect(
+      find.descendant(of: topBar, matching: find.text('Dashboard')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: topBar,
+        matching: find.byKey(const ValueKey('web-module-back-button')),
+      ),
+      findsNothing,
+    );
+    final topBarRight = tester.getRect(topBar).right;
+    final profileRight =
+        tester.getRect(find.byKey(const ValueKey('web-profile-button'))).right;
+    expect(topBarRight - profileRight, closeTo(28, 1));
+  });
+
+  testWidgets('header actions fit within a narrow viewport', (tester) async {
     await _mountDashboard(
       tester,
       user,
@@ -157,27 +143,18 @@ void main() {
       width: 320,
     );
 
-    await tester.tap(find.byKey(const ValueKey('web-notification-button')));
-    await tester.pumpAndSettle();
-
-    final panelRect =
-        tester.getRect(find.byKey(const ValueKey('web-notifications-panel')));
-    expect(panelRect.left, greaterThanOrEqualTo(0));
-    expect(panelRect.right, lessThanOrEqualTo(320));
-    expect(tester.takeException(), isNull);
-
-    await tester.tap(find.byKey(const ValueKey('web-profile-button')));
-    await tester.pumpAndSettle();
-
-    final profileRect =
-        tester.getRect(find.byKey(const ValueKey('web-profile-panel')));
-    expect(profileRect.left, greaterThanOrEqualTo(0));
-    expect(profileRect.right, lessThanOrEqualTo(320));
+    for (final key in const [
+      ValueKey('web-notifications-button'),
+      ValueKey('web-profile-button'),
+    ]) {
+      final rect = tester.getRect(find.byKey(key));
+      expect(rect.left, greaterThanOrEqualTo(0));
+      expect(rect.right, lessThanOrEqualTo(320));
+    }
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('profile panel shows account details and navigates to profile',
-      (tester) async {
+  testWidgets('profile button opens the Profile module', (tester) async {
     await _mountDashboard(
       tester,
       user,
@@ -187,17 +164,10 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('web-profile-button')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Jordan Green'), findsOneWidget);
-    expect(find.text('jordan@example.com'), findsOneWidget);
-    expect(find.text('Manager'), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('web-profile-view')));
-    await tester.pumpAndSettle();
-
     expect(find.text('Profile destination'), findsOneWidget);
   });
 
-  testWidgets('profile logout invokes the existing logout action',
+  testWidgets('sidebar logout invokes the existing logout action',
       (tester) async {
     var logoutCalled = false;
     await _mountDashboard(
@@ -207,9 +177,7 @@ void main() {
       onLogout: () => logoutCalled = true,
     );
 
-    await tester.tap(find.byKey(const ValueKey('web-profile-button')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('web-profile-logout')));
+    await tester.tap(find.text('Logout'));
     await tester.pumpAndSettle();
 
     expect(logoutCalled, isTrue);
@@ -224,11 +192,14 @@ void main() {
       _MemoryNotificationsRepository([]),
     );
 
+    expect(find.byKey(const ValueKey('web-module-back-button')), findsNothing);
     await tester.tap(find.byKey(const ValueKey('web-profile-button')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('web-profile-view')));
-    await tester.pumpAndSettle();
     expect(find.text('Profile destination'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('web-module-back-button')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const ValueKey('web-module-back-button')));
     await tester.pumpAndSettle();
