@@ -591,7 +591,7 @@ class _WebTopBar extends ConsumerWidget {
 
     return Container(
       height: 64,
-      padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 28),
+      padding: EdgeInsets.only(left: compact ? 12 : 28, right: 0),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: WebTokens.line)),

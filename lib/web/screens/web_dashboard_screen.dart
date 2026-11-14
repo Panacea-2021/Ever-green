@@ -304,7 +304,7 @@ class _WebDashboardMetricGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = (constraints.maxWidth >= 1100
+        final columns = (constraints.maxWidth >= 900
                 ? desktopColumns
                 : constraints.maxWidth >= 620
                     ? 2

@@ -111,6 +111,19 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Text(
+                    widget.scope == TaskBoardScope.assignedToMe
+                        ? 'My Tasks'
+                        : widget.scope == TaskBoardScope.raisedByMe
+                            ? 'My Service Tasks'
+                            : 'Task Board',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(child: _filters(scoped.toList())),
