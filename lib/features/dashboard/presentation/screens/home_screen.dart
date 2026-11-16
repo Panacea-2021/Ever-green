@@ -905,7 +905,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildOverviewGrid() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final stats = _userStats;
     final pocCount = stats?.clients ?? _roleCount((r) => r == UserRole.client);
     final companyManagerCount =
@@ -934,7 +934,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.person_outline,
                 tint: const Color(0xFF2E8B45),
-                title: l10n.poc,
+                title: l10n?.poc ?? 'POC',
                 value: pocCount,
                 trend: pocTrend,
                 series: pocSeries,
@@ -946,7 +946,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.groups_outlined,
                 tint: const Color(0xFF775DAC),
-                title: l10n.companyManagers,
+                title: l10n?.companyManagers ?? 'Company Managers',
                 value: companyManagerCount,
                 trend: companyManagerTrend,
                 series: companyManagerSeries,
@@ -962,7 +962,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.admin_panel_settings_outlined,
                 tint: const Color(0xFF9E663B),
-                title: l10n.egManagers,
+                title: l10n?.egManagers ?? 'EG Managers',
                 value: managerCount,
                 trend: mgrTrend,
                 series: mgrSeries,
@@ -974,7 +974,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.build_outlined,
                 tint: const Color(0xFF5B899E),
-                title: l10n.serviceEngineers,
+                title: l10n?.serviceEngineers ?? 'Service Engineers',
                 value: techCount,
                 trend: techTrend,
                 series: techSeries,
@@ -1777,7 +1777,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final hold = byStatus['Hold']!;
     final inProgress = byStatus['In Progress']!;
     final closed = byStatus['Closed']!;
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       children: [
@@ -1786,7 +1786,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _taskCard(
                 Icons.check_box_outlined,
-                l10n.open,
+                l10n?.open ?? 'Open',
                 open,
                 const Color(0xFF2E8B45),
               ),
@@ -1795,7 +1795,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _taskCard(
                 Icons.pause_circle_outline,
-                l10n.hold,
+                l10n?.hold ?? 'Hold',
                 hold,
                 const Color(0xFF775DAC),
               ),
@@ -1808,7 +1808,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _taskCard(
                 Icons.timelapse,
-                l10n.inProgress,
+                l10n?.inProgress ?? 'In Progress',
                 inProgress,
                 const Color(0xFF9E663B),
               ),
@@ -1817,7 +1817,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _taskCard(
                 Icons.check_circle_outline,
-                l10n.closed,
+                l10n?.closed ?? 'Closed',
                 closed,
                 const Color(0xFF5B899E),
               ),

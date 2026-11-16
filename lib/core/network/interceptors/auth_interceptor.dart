@@ -31,9 +31,15 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
-      await _ref.read(tokenStorageProvider).expireSession();
+    final status = err.response?.statusCode;
+    if (status == 401) {
+      // Guard against repeated expireSession calls from concurrent 401s.
+      final storage = _ref.read(tokenStorageProvider);
+      if (await storage.hasValidTokens()) {
+        await storage.expireSession();
+      }
     }
+    // 403 is a permission error: do not expire the session, just propagate.
     handler.next(err);
   }
 }
