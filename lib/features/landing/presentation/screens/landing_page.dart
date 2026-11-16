@@ -5,6 +5,7 @@ import '../../../../core/router/routes.dart';
 import '../widgets/web_login_popup.dart';
 import '../landing_theme.dart';
 import '../widgets/book_repair_dialog.dart';
+import '../widgets/get_estimate_dialog.dart';
 import '../sections/hero_section.dart';
 import '../sections/home_intro_artwork.dart';
 import '../sections/services/services_bottom_sections.dart';
@@ -62,7 +63,7 @@ class _LandingPageState extends State<LandingPage> {
                       onPrivacy: () => context.go(Routes.privacy),
                       onBookRepair: () => showBookRepairDialog(context),
                       onSignIn: () => showWebLoginPopup(context),
-                      onGetEstimate: () => showWebLoginPopup(context),
+                      onGetEstimate: () => showGetEstimateDialog(context),
                       onSearch: () => _scrollTo(_faqKey),
                     ),
                   ),

@@ -107,7 +107,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: Routes.splash,
+    initialLocation: Routes.pmSchedule, // TEST
     debugLogDiagnostics: kDebugMode,
     refreshListenable: refresh,
     redirect: (context, state) {

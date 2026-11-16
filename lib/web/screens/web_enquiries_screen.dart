@@ -20,6 +20,7 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _search = '';
   EnquiryStatus? _statusFilter;
+  String? _requestTypeFilter; // null = All
 
   @override
   void dispose() {
@@ -35,7 +36,8 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
           e.phone.toLowerCase().contains(q) ||
           (e.email?.toLowerCase().contains(q) ?? false);
       final matchesStatus = _statusFilter == null || e.status == _statusFilter;
-      return matchesSearch && matchesStatus;
+      final matchesType = _requestTypeFilter == null || e.requestType == _requestTypeFilter;
+      return matchesSearch && matchesStatus && matchesType;
     }).toList();
   }
 
@@ -73,11 +75,22 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
           ),
         ),
         const SizedBox(width: 12),
+        DropdownButton<String?>(
+          value: _requestTypeFilter,
+          hint: const Text('All Types'),
+          items: const [
+            DropdownMenuItem<String?>(value: null, child: Text('All Types')),
+            DropdownMenuItem<String?>(value: 'Book a Repair', child: Text('Book a Repair')),
+            DropdownMenuItem<String?>(value: 'Get Estimate', child: Text('Get Estimate')),
+          ],
+          onChanged: (v) => setState(() => _requestTypeFilter = v),
+        ),
+        const SizedBox(width: 12),
         DropdownButton<EnquiryStatus?>(
           value: _statusFilter,
-          hint: const Text('All'),
+          hint: const Text('All Statuses'),
           items: [
-            const DropdownMenuItem<EnquiryStatus?>(value: null, child: Text('All')),
+            const DropdownMenuItem<EnquiryStatus?>(value: null, child: Text('All Statuses')),
             ...EnquiryStatus.values.map(
               (s) => DropdownMenuItem<EnquiryStatus?>(value: s, child: Text(s.label)),
             ),
@@ -98,6 +111,7 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
       child: DataTable(
         columns: const [
           DataColumn(label: Text('Token ID')),
+          DataColumn(label: Text('Request Type')),
           DataColumn(label: Text('Customer Name')),
           DataColumn(label: Text('Phone Number')),
           DataColumn(label: Text('Email')),
@@ -110,6 +124,7 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
         rows: items.map((e) {
           return DataRow(cells: [
             DataCell(Text(e.tokenId)),
+            DataCell(Text(e.requestType ?? '-')),
             DataCell(Text(e.customerName)),
             DataCell(Text(e.phone)),
             DataCell(Text(e.email ?? '-')),
@@ -137,6 +152,7 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _detail('Token ID', e.tokenId),
+            _detail('Request Type', e.requestType ?? '-'),
             _detail('Customer Name', e.customerName),
             _detail('Phone Number', e.phone),
             _detail('Email', e.email ?? '-'),

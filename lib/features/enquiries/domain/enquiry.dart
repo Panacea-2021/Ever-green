@@ -12,6 +12,7 @@ class Enquiry {
     this.email,
     this.equipment,
     this.service,
+    this.requestType,
     this.submissionDate,
     this.status = EnquiryStatus.newEnquiry,
   });
@@ -22,6 +23,7 @@ class Enquiry {
   final String? email;
   final String? equipment;
   final String? service;
+  final String? requestType;
   final DateTime? submissionDate;
   final EnquiryStatus status;
 
@@ -35,6 +37,7 @@ class Enquiry {
       email: (json['email'] as String?)?.trim().isEmpty == true ? null : json['email']?.toString(),
       equipment: (json['equipment'] ?? json['equipment_name'])?.toString(),
       service: (json['service'] ?? json['service_name'])?.toString(),
+      requestType: (json['request_type'] ?? json['requestType'] ?? json['type'])?.toString(),
       submissionDate: parseDate(json['submission_date'] ?? json['submissionDate'] ?? json['created_at']),
       status: EnquiryStatus.fromKey(json['status']),
     );
