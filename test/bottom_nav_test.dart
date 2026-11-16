@@ -1,15 +1,31 @@
+import 'dart:async';
+
 import 'package:evergreen/core/router/routes.dart';
+import 'package:evergreen/core/widgets/root_tab_back_handling.dart';
 import 'package:evergreen/core/widgets/scaffold_with_bottom_nav.dart';
 import 'package:evergreen/features/auth/domain/models/user_model.dart';
 import 'package:evergreen/shared/providers/auth_state_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 const _admins = [UserRole.superAdmin, UserRole.manager];
 
-Future<void> _pumpShell(
+/// Sends the `popRoute` message the Android system emits on a back press.
+Future<void> _pressSystemBack(WidgetTester tester) async {
+  final message =
+      SystemChannels.navigation.codec.encodeMethodCall(const MethodCall('popRoute'));
+  await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+    SystemChannels.navigation.name,
+    message,
+    null,
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<GoRouter> _pumpShell(
   WidgetTester tester,
   UserRole role, {
   Size size = const Size(390, 844),
@@ -50,10 +66,17 @@ Future<void> _pumpShell(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [currentUserRoleProvider.overrideWithValue(role)],
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(
+        routerConfig: router,
+        builder: (_, child) => RootTabBackHandling(
+          router: router,
+          child: child ?? const SizedBox.shrink(),
+        ),
+      ),
     ),
   );
   await tester.pumpAndSettle();
+  return router;
 }
 
 void main() {
@@ -189,6 +212,72 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Scan QR'), findsOneWidget);
       expect(find.text('Add Task'), findsOneWidget);
+    });
+  });
+
+  group('Android back button', () {
+    /// Captures the platform calls so we can tell whether the app was closed.
+    List<String> recordPlatformCalls(WidgetTester tester) {
+      final calls = <String>[];
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        calls.add(call.method);
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+      return calls;
+    }
+
+    for (final label in ['AMCs', 'Tasks', 'Profile']) {
+      testWidgets('back on $label returns to Home without closing the app',
+          (tester) async {
+        final router = await _pumpShell(tester, UserRole.manager);
+        final calls = recordPlatformCalls(tester);
+
+        await tester.tap(find.text(label));
+        await tester.pumpAndSettle();
+        expect(
+          router.routerDelegate.currentConfiguration.uri.path,
+          isNot(Routes.home),
+        );
+
+        await _pressSystemBack(tester);
+
+        expect(router.routerDelegate.currentConfiguration.uri.path, Routes.home);
+        expect(find.text('page:${Routes.home}').hitTestable(), findsOneWidget);
+        expect(calls, isNot(contains('SystemNavigator.pop')));
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('back on Home still closes the app', (tester) async {
+      final router = await _pumpShell(tester, UserRole.manager);
+      final calls = recordPlatformCalls(tester);
+      expect(router.routerDelegate.currentConfiguration.uri.path, Routes.home);
+
+      await _pressSystemBack(tester);
+
+      expect(calls, contains('SystemNavigator.pop'));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('back still pops a pushed page instead of going Home',
+        (tester) async {
+      final router = await _pumpShell(tester, UserRole.manager);
+      final calls = recordPlatformCalls(tester);
+
+      unawaited(router.push(Routes.scanner));
+      await tester.pumpAndSettle();
+      expect(find.text('page:${Routes.scanner}'), findsOneWidget);
+
+      await _pressSystemBack(tester);
+
+      expect(find.text('page:${Routes.scanner}'), findsNothing);
+      expect(router.routerDelegate.currentConfiguration.uri.path, Routes.home);
+      expect(calls, isNot(contains('SystemNavigator.pop')));
+      expect(tester.takeException(), isNull);
     });
   });
 }
