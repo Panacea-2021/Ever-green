@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -42,7 +43,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _refreshPushStatus();
+    _loadPushPreference();
+  }
+
+  Future<void> _loadPushPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool('push_notifications_enabled');
+    if (saved == null) {
+      // Never configured: default OFF. Do not auto-enable from OS permission.
+      if (mounted) setState(() => _pushNotifications = false);
+      return;
+    }
+    // Previously configured: reflect OS permission (may have been revoked).
+    await _refreshPushStatus();
+    if (mounted) {
+      await prefs.setBool('push_notifications_enabled', _pushNotifications);
+    }
   }
 
   @override
@@ -74,9 +90,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// Turning on asks for the permission and registers this device's token
   /// with the backend; the OS only lets the user revoke it in system settings.
   Future<void> _setPushNotifications(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
     if (!value) {
+      await prefs.setBool('push_notifications_enabled', false);
+      if (mounted) setState(() => _pushNotifications = false);
       _toast(
-        'To turn off notifications, disable them for EverGreen in your '
+        'Notifications turned off. You can also revoke permission in your '
         'phone’s Settings',
       );
       return;
@@ -84,6 +103,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     await ref.read(pushServiceProvider).registerForUser();
     await _refreshPushStatus();
     if (!mounted) return;
+    await prefs.setBool('push_notifications_enabled', _pushNotifications);
     _toast(
       _pushNotifications
           ? 'Notifications enabled'

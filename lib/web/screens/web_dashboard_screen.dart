@@ -234,7 +234,7 @@ class _WebOrganizationSections extends ConsumerWidget {
             ),
             _OverviewMetricCard(
               title: 'EG Managers',
-              value: users[UserRole.manager] ?? 0,
+              value: (users[UserRole.superAdmin] ?? 0) + (users[UserRole.manager] ?? 0),
               metric: TrendMetric.managers,
               icon: Icons.admin_panel_settings_outlined,
               color: const Color(0xFF9E663B),
