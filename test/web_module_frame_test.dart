@@ -5,8 +5,13 @@ import 'package:evergreen/features/auth/data/repositories/auth_repository_impl.d
 import 'package:evergreen/features/auth/domain/repositories/auth_repository.dart';
 import 'package:evergreen/features/auth/domain/models/user_model.dart';
 import 'package:evergreen/features/notifications/data/notifications_provider.dart';
+import 'package:evergreen/features/tasks/data/task_provider.dart';
+import 'package:evergreen/features/tasks/domain/models/task_item.dart';
+import 'package:evergreen/features/tasks/presentation/screens/task_board_screen.dart'
+    show TaskBoardScope;
 import 'package:evergreen/shared/providers/auth_state_provider.dart';
 import 'package:evergreen/web/widgets/web_module_frame.dart';
+import 'package:evergreen/web/screens/web_task_board_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,6 +40,70 @@ class _AuthenticatedStateNotifier extends AuthStateNotifier {
 }
 
 void main() {
+  testWidgets('task pages show only the unchanged top-bar heading',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final routes = [
+      (Routes.tasks, 'Task Board', const WebTaskBoardScreen()),
+      (
+        Routes.myTasks,
+        'My Tasks',
+        const WebTaskBoardScreen(scope: TaskBoardScope.assignedToMe),
+      ),
+      (
+        Routes.myServiceTasks,
+        'My Service Tasks',
+        const WebTaskBoardScreen(scope: TaskBoardScope.raisedByMe),
+      ),
+    ];
+    final router = GoRouter(
+      initialLocation: routes.first.$1,
+      routes: [
+        for (final (path, _, screen) in routes)
+          GoRoute(path: path, builder: (_, __) => screen),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(_PendingAuthRepository()),
+          authStateProvider.overrideWith(
+            (ref) => _AuthenticatedStateNotifier(ref),
+          ),
+          unreadNotificationsCountProvider.overrideWith((ref) async => 0),
+          taskItemsProvider.overrideWithValue(
+            const AsyncData(<TaskItem>[]),
+          ),
+        ],
+        child: MaterialApp.router(
+          routerConfig: router,
+          builder: (context, child) => WebModuleFrame(
+            router: router,
+            child: child ?? const SizedBox.shrink(),
+          ),
+        ),
+      ),
+    );
+
+    for (final (path, title, _) in routes) {
+      router.go(path);
+      await tester.pumpAndSettle();
+      final heading = find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.data == title &&
+            widget.style?.fontSize == 20,
+      );
+      expect(heading, findsOneWidget);
+      expect(tester.getTopLeft(heading).dy, lessThan(40));
+    }
+  });
+
   testWidgets('dashboard notification and profile buttons open their pages',
       (tester) async {
     final router = GoRouter(
