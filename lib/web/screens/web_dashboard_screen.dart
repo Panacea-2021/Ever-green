@@ -39,7 +39,11 @@ class WebDashboardScreen extends ConsumerWidget {
 
     bool pending(AsyncValue<Object?> v) => !v.hasValue && !v.hasError;
     final taskCountsLoading = pending(taskCountsAsync);
-    final companiesLoading = pending(ref.watch(companiesProvider));
+    final companiesAsync = ref.watch(companiesProvider);
+    final companiesLoading = pending(companiesAsync);
+    final amcCount = companiesAsync.valueOrNull
+        ?.where((company) => company.isAmc || company.amcType != null)
+        .length;
 
     final openStatusCount = statusCounts['Open'] ?? 0;
     final closedCount = statusCounts['Closed'] ?? 0;
@@ -84,6 +88,7 @@ class WebDashboardScreen extends ConsumerWidget {
 
                     if (Permissions.canViewOrgOverview(role)) ...[
                       _WebOrganizationSections(
+                        amcCount: amcCount,
                         onOpenUsers: open(Routes.usersList),
                         onOpenPocs: open(Routes.usersList, extra: {'tab': 2}),
                         onOpenCompanyManagers:
@@ -124,6 +129,7 @@ class WebDashboardScreen extends ConsumerWidget {
 
 class _WebOrganizationSections extends ConsumerWidget {
   const _WebOrganizationSections({
+    required this.amcCount,
     required this.onOpenUsers,
     required this.onOpenPocs,
     required this.onOpenCompanyManagers,
@@ -133,6 +139,7 @@ class _WebOrganizationSections extends ConsumerWidget {
     required this.onOpenTasks,
   });
 
+  final int? amcCount;
   final VoidCallback? onOpenUsers;
   final VoidCallback? onOpenPocs;
   final VoidCallback? onOpenCompanyManagers;
@@ -191,7 +198,7 @@ class _WebOrganizationSections extends ConsumerWidget {
             ),
             _WebDashboardMetricCard(
               title: l10n?.totalAmcs ?? 'AMCs',
-              value: data.totalAmcs,
+              value: amcCount ?? data.totalAmcs,
               subtitle: 'Service contracts',
               icon: Icons.verified_outlined,
               color: WebDashboardScreen._green,
