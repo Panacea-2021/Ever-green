@@ -341,6 +341,56 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
   }
 
   void _handleImageUpload() {
+    if (kIsWeb) {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Upload Company Image',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child:
+                        const Icon(Icons.photo_library, color: AppColors.primary),
+                  ),
+                  title: const Text(
+                    'Choose from Gallery',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/auth/permissions.dart';
 import '../../core/data/evergreen_repository.dart';
+import '../../l10n/app_localizations.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/router/routes.dart';
 import '../../features/amcs/data/amc_provider.dart';
 import '../../features/amcs/domain/models/amc_contract.dart';
@@ -28,6 +30,7 @@ class WebDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final renewals = ref.watch(amcRenewalsProvider);
     final role = ref.watch(currentUserRoleProvider);
     final user = ref.watch(currentUserProvider);
@@ -88,8 +91,7 @@ class WebDashboardScreen extends ConsumerWidget {
                             open(Routes.usersList, extra: {'tab': 1}),
                         onOpenManagers:
                             open(Routes.usersList, extra: {'tab': 4}),
-                        onOpenServiceEngineers: open(Routes.techniciansList) ??
-                            open(Routes.usersList, extra: {'tab': 3}),
+                        onOpenServiceEngineers: open(Routes.usersList, extra: {'tab': 3}),
                         onOpenAmcs: open(Routes.amcs),
                         onOpenTasks: open(Routes.tasks),
                       ),
@@ -142,6 +144,7 @@ class _WebOrganizationSections extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final analytics = ref.watch(dashboardAnalyticsProvider);
     final history = ref.watch(analyticsHistoryProvider);
 
@@ -170,16 +173,16 @@ class _WebOrganizationSections extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _WebDashboardSectionHeading(
-          title: 'Business Summary',
-          subtitle: 'Current totals',
+        _WebDashboardSectionHeading(
+          title: l10n?.businessSummary ?? 'Business Summary',
+          subtitle: l10n?.currentTotals ?? 'Current totals',
         ),
         const SizedBox(height: 12),
         _WebDashboardMetricGrid(
           desktopColumns: 3,
           children: [
             _WebDashboardMetricCard(
-              title: 'Users',
+              title: l10n?.totalUsers ?? 'Users',
               value: data.totalUsers,
               subtitle: 'Across access levels',
               icon: Icons.groups_outlined,
@@ -188,7 +191,7 @@ class _WebOrganizationSections extends ConsumerWidget {
               onTap: onOpenUsers,
             ),
             _WebDashboardMetricCard(
-              title: 'AMCs',
+              title: l10n?.totalAmcs ?? 'AMCs',
               value: data.totalAmcs,
               subtitle: 'Service contracts',
               icon: Icons.verified_outlined,
@@ -197,7 +200,7 @@ class _WebOrganizationSections extends ConsumerWidget {
               onTap: onOpenAmcs,
             ),
             _WebDashboardMetricCard(
-              title: 'Tasks',
+              title: l10n?.totalTasks ?? 'Tasks',
               value: data.totalTasks,
               subtitle: 'All statuses',
               icon: Icons.checklist_rtl_outlined,
@@ -208,9 +211,9 @@ class _WebOrganizationSections extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 24),
-        const _WebDashboardSectionHeading(
-          title: 'Overview',
-          subtitle: 'This month',
+        _WebDashboardSectionHeading(
+          title: l10n?.overview ?? 'Overview',
+          subtitle: l10n?.thisMonth ?? 'This month',
         ),
         const SizedBox(height: 12),
         _WebDashboardMetricGrid(

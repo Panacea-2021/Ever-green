@@ -18,6 +18,7 @@ import '../../../../core/push/push_service.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/scaffold_with_bottom_nav.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -127,6 +128,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Widget build(BuildContext context) {
     final role = ref.watch(currentUserRoleProvider);
     final prefs = ref.watch(settingsPreferencesProvider);
+    final l10n = AppLocalizations.of(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -196,9 +198,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             )
           else
             const SizedBox(width: 48),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Settings',
+              AppLocalizations.of(context)?.settings ?? 'Settings',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Montserrat',
@@ -218,13 +220,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Widget _body(UserRole role, SettingsPreferences prefs) {
     final canAnalytics = Permissions.canViewAnalytics(role);
     if (kIsWeb) return _webBody(role, prefs, canAnalytics);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionLabel('Preferences'),
+        _sectionLabel(l10n?.preferences ?? 'Preferences'),
         _preferencesCard(prefs),
         const SizedBox(height: 22),
-        _sectionLabel('Account'),
+        _sectionLabel(l10n?.account ?? 'Account'),
         _accountCard(role),
         if (canAnalytics) ...[
           const SizedBox(height: 22),
@@ -243,6 +246,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Widget _webBody(UserRole role, SettingsPreferences prefs, bool canAnalytics) {
+    final l10n = AppLocalizations.of(context);
     final preferences = _webSection(
       'Preferences',
       Icons.tune_rounded,
@@ -414,27 +418,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Widget _preferencesCard(SettingsPreferences prefs) {
+    final l10n = AppLocalizations.of(context);
     return _card([
       _switchTile(
         Icons.dark_mode_outlined,
-        'Dark Mode',
+        l10n?.darkMode ?? 'Dark Mode',
         prefs.darkMode,
         (v) {
           ref.read(settingsPreferencesProvider.notifier).setDarkMode(v);
-          _toast(v ? 'Dark mode on' : 'Dark mode off');
+          _toast(v ? (l10n?.darkModeOn ?? 'Dark mode on') : (l10n?.darkModeOff ?? 'Dark mode off'));
         },
       ),
       _divider(),
       _switchTile(
         Icons.notifications_outlined,
-        'Push Notifications',
+        l10n?.pushNotifications ?? 'Push Notifications',
         _pushNotifications,
         _setPushNotifications,
       ),
       _divider(),
       _navTile(
         Icons.language_outlined,
-        'Language',
+        l10n?.language ?? 'Language',
         trailing: prefs.language,
         onTap: _showLanguagePicker,
       ),
@@ -442,17 +447,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Widget _accountCard(UserRole role) {
+    final l10n = AppLocalizations.of(context);
     return _card([
       _navTile(
         Icons.lock_outline,
-        'Change Password',
+        l10n?.changePassword ?? 'Change Password',
         onTap: _showChangePassword,
       ),
       if (Permissions.canManageUsers(role)) ...[
         _divider(),
         _navTile(
           Icons.admin_panel_settings_outlined,
-          'Manage Roles & Permissions',
+          l10n?.manageRoles ?? 'Manage Roles & Permissions',
           onTap: () => context.push(Routes.usersList),
         ),
         _divider(),

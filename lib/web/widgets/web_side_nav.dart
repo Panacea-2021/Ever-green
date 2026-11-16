@@ -361,6 +361,11 @@ class _WebNavTileState extends State<_WebNavTile> {
             width: 20,
             height: 20,
             colorFilter: ColorFilter.mode(fg, BlendMode.srcIn),
+            placeholderBuilder: (_) => Icon(
+              entry.icon ?? Icons.circle_outlined,
+              size: 20,
+              color: fg,
+            ),
           )
         : Icon(entry.icon, size: 20, color: fg);
 

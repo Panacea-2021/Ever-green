@@ -116,6 +116,7 @@ class PmApi {
 }
 
 final pmProvider = FutureProvider.autoDispose<PmState>((ref) async {
+  cacheFor(ref, const Duration(minutes: 5));
   final api = ref.watch(pmApiProvider);
   final results = await Future.wait([api.getSchedules(), api.getGenerated()]);
   final generated = results[1] as List<PmGeneratedTask>
@@ -151,6 +152,7 @@ class PmDueSources {
 /// failure there only loses the visit anchors / schedule rows).
 final pmDueSourcesProvider =
     FutureProvider.autoDispose<PmDueSources>((ref) async {
+  cacheFor(ref, const Duration(minutes: 5));
   final equipmentsFuture = ref.watch(equipmentsProvider(null).future);
   final tasksFuture = ref
       .watch(tasksProvider.future)
@@ -173,5 +175,6 @@ final pmDueSourcesProvider =
 /// Equipment that can get a schedule (for the New Schedule sheet).
 final pmEquipmentOptionsProvider =
     FutureProvider.autoDispose<List<Equipment>>((ref) {
+  cacheFor(ref, const Duration(minutes: 5));
   return ref.watch(equipmentsProvider(null).future);
 });

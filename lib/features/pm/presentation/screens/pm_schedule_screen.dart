@@ -34,6 +34,8 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
   int _tab = 0; // Schedules view: 0 = Schedules, 1 = Generated visits
   bool _generating = false;
   final Set<String> _busy = {};
+  List<int?>? _cachedTileCounts;
+  PmDueSources? _cachedTileSources;
 
   bool get _schedulesView => _view == PmWindow.values.length;
 
@@ -385,21 +387,35 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     final sources = ref.watch(pmDueSourcesProvider).valueOrNull;
     final schedules = ref.watch(pmProvider).valueOrNull?.schedules;
     final now = DateTime.now();
-    int? countFor(int i) {
-      if (i == PmWindow.values.length) return schedules?.length;
-      if (sources == null) return null;
-      final w = PmWindow.values[i];
-      final (from, to) = w.range(now);
-      return computePmDue(
-        equipments: sources.equipments,
-        schedules: sources.schedules,
-        lastVisits: sources.lastVisits,
-        from: from,
-        to: to,
-        today: now,
-        includeOverdue: w.includesOverdue,
-      ).length;
+    // Memoize tile counts so tab switches don't re-run the heavy computePmDue.
+    if (_cachedTileSources != sources) {
+      _cachedTileSources = sources;
+      if (sources == null) {
+        _cachedTileCounts = List<int?>.filled(labels.length, null);
+        if (schedules != null) _cachedTileCounts![labels.length - 1] = schedules.length;
+      } else {
+        final counts = <int?>[];
+        for (var i = 0; i < labels.length; i++) {
+          if (i == labels.length - 1) {
+            counts.add(schedules?.length);
+          } else {
+            final w = PmWindow.values[i];
+            final (from, to) = w.range(now);
+            counts.add(computePmDue(
+              equipments: sources.equipments,
+              schedules: sources.schedules,
+              lastVisits: sources.lastVisits,
+              from: from,
+              to: to,
+              today: now,
+              includeOverdue: w.includesOverdue,
+            ).length);
+          }
+        }
+        _cachedTileCounts = counts;
+      }
     }
+    final counts = _cachedTileCounts ?? List<int?>.filled(labels.length, null);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -420,7 +436,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                 width: tileWidth,
                 child: _webViewTile(
                   label: labels[i],
-                  count: countFor(i),
+                  count: counts[i],
                   icon: _webTileMeta[i].$1,
                   color: _webTileMeta[i].$2,
                   selected:

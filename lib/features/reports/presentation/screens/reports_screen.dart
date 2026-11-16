@@ -58,8 +58,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 ),
               ],
             ),
-            child: Scrollbar(
-              child: SingleChildScrollView(
+            child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -81,7 +80,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   ],
                 ),
               ),
-            ),
           ),
           // Main content
           Expanded(
@@ -296,71 +294,119 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           _webHeader('Reports Dashboard', 'Overview of key metrics'),
           const SizedBox(height: 24),
           // KPI Cards
-          Row(
-            children: [
-              Expanded(
-                child: _kpiCard(
-                  'Total Tasks',
-                  '${data.tasksSummary.total}',
-                  Icons.assignment_outlined,
-                  const Color(0xFF1565C0),
-                  '${data.tasksSummary.open} open',
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _kpiCard(
-                  'Technicians',
-                  '${data.techniciansSummary.total}',
-                  Icons.engineering_outlined,
-                  const Color(0xFF6A4BC4),
-                  '${data.techniciansSummary.active} active',
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _kpiCard(
-                  'Active AMCs',
-                  '${data.amcsSummary.active}',
-                  Icons.handshake_outlined,
-                  const Color(0xFFE08600),
-                  '${data.amcsSummary.expiringSoon} expiring soon',
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _kpiCard(
-                  'SLA Compliance',
-                  '${data.slaCompliance}%',
-                  Icons.verified_outlined,
-                  _green,
-                  'Last 30 days',
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 900;
+              if (isNarrow) {
+                return Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    for (final card in [
+                      _kpiCard('Total Tasks', '${data.tasksSummary.total}',
+                          Icons.assignment_outlined, const Color(0xFF1565C0),
+                          '${data.tasksSummary.open} open'),
+                      _kpiCard('Technicians', '${data.techniciansSummary.total}',
+                          Icons.engineering_outlined, const Color(0xFF6A4BC4),
+                          '${data.techniciansSummary.active} active'),
+                      _kpiCard('Active AMCs', '${data.amcsSummary.active}',
+                          Icons.handshake_outlined, const Color(0xFFE08600),
+                          '${data.amcsSummary.expiringSoon} expiring soon'),
+                      _kpiCard('SLA Compliance', '${data.slaCompliance}%',
+                          Icons.verified_outlined, _green, 'Last 30 days'),
+                    ])
+                      SizedBox(width: (constraints.maxWidth - 16) / 2, child: card),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    child: _kpiCard(
+                      'Total Tasks',
+                      '${data.tasksSummary.total}',
+                      Icons.assignment_outlined,
+                      const Color(0xFF1565C0),
+                      '${data.tasksSummary.open} open',
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _kpiCard(
+                      'Technicians',
+                      '${data.techniciansSummary.total}',
+                      Icons.engineering_outlined,
+                      const Color(0xFF6A4BC4),
+                      '${data.techniciansSummary.active} active',
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _kpiCard(
+                      'Active AMCs',
+                      '${data.amcsSummary.active}',
+                      Icons.handshake_outlined,
+                      const Color(0xFFE08600),
+                      '${data.amcsSummary.expiringSoon} expiring soon',
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _kpiCard(
+                      'SLA Compliance',
+                      '${data.slaCompliance}%',
+                      Icons.verified_outlined,
+                      _green,
+                      'Last 30 days',
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 24),
           // Second row
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: _dashboardCard(
-                  'Tasks Overview',
-                  Icons.pie_chart_outline,
-                  child: _tasksPieChart(data.tasksSummary),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                flex: 3,
-                child: _dashboardCard(
-                  'Recent Activity',
-                  Icons.history,
-                  child: _recentActivityList(data.recentActivity),
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 900) {
+                return Column(
+                  children: [
+                    _dashboardCard(
+                      'Tasks Overview',
+                      Icons.pie_chart_outline,
+                      child: _tasksPieChart(data.tasksSummary),
+                    ),
+                    const SizedBox(height: 16),
+                    _dashboardCard(
+                      'Recent Activity',
+                      Icons.history,
+                      child: _recentActivityList(data.recentActivity),
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: _dashboardCard(
+                      'Tasks Overview',
+                      Icons.pie_chart_outline,
+                      child: _tasksPieChart(data.tasksSummary),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 3,
+                    child: _dashboardCard(
+                      'Recent Activity',
+                      Icons.history,
+                      child: _recentActivityList(data.recentActivity),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 24),
           // Equipment & AMC row
@@ -559,7 +605,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE3ECE5)),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -586,6 +632,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               children: [
                 Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Montserrat',
                     fontSize: 12,
@@ -596,6 +644,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: 'Montserrat',
                     fontSize: 28,

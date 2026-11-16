@@ -156,95 +156,50 @@ class AnalyticsScreen extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.arrow_back,
-                size: 20,
-                color: Color(0xFF1F1F1F),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Text(
-              'Analytics',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1F1F1F),
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: a == null ? null : () => _exportCsv(context, a),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              decoration: BoxDecoration(
-                color: _green,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.file_download_outlined,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    'Export',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const Expanded(child: SizedBox.shrink()),
         ],
       ),
     );
   }
 
   Widget _totalsRow(DashboardAnalytics a) {
-    return Row(
-      children: [
-        _totalCard(
-          'Users',
-          a.totalUsers,
-          const Color(0xFFEAF2FF),
-          const Color(0xFF1565C0),
-        ),
-        const SizedBox(width: 10),
-        _totalCard(
-          'Tasks',
-          a.totalTasks,
-          const Color(0xFFF1E9FF),
-          const Color(0xFF6A1B9A),
-        ),
-        const SizedBox(width: 10),
-        _totalCard('AMCs', a.totalAmcs, const Color(0xFFEBF0EA), _green),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < 600;
+        final cards = [
+          _HoverTotalCard('Users', a.totalUsers, const Color(0xFFEAF2FF),
+              const Color(0xFF1565C0)),
+          _HoverTotalCard('Tasks', a.totalTasks, const Color(0xFFF1E9FF),
+              const Color(0xFF6A1B9A)),
+          _HoverTotalCard('AMCs', a.totalAmcs, const Color(0xFFEBF0EA), _green),
+        ];
+        if (narrow) {
+          return Column(
+            children: [
+              for (var i = 0; i < cards.length; i++) ...[
+                if (i > 0) const SizedBox(height: 10),
+                SizedBox(width: double.infinity, child: cards[i]),
+              ],
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: cards[0]),
+            const SizedBox(width: 10),
+            Expanded(child: cards[1]),
+            const SizedBox(width: 10),
+            Expanded(child: cards[2]),
+          ],
+        );
+      },
     );
   }
 
   Widget _totalCard(String label, int value, Color bg, Color fg) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(16),
@@ -471,4 +426,86 @@ class _Bar {
   final int value;
   final Color color;
   const _Bar(this.label, this.value, this.color);
+}
+
+
+class _HoverTotalCard extends StatefulWidget {
+  const _HoverTotalCard(this.label, this.value, this.bg, this.fg);
+
+  final String label;
+  final int value;
+  final Color bg;
+  final Color fg;
+
+  @override
+  State<_HoverTotalCard> createState() => _HoverTotalCardState();
+}
+
+class _HoverTotalCardState extends State<_HoverTotalCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        transform: _hovered
+            ? (Matrix4.identity()..translate(0.0, -2.0))
+            : Matrix4.identity(),
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: _hovered
+              ? widget.bg.withValues(alpha: 0.85)
+              : widget.bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _hovered
+                ? widget.fg.withValues(alpha: 0.4)
+                : Colors.transparent,
+            width: 1.2,
+          ),
+          boxShadow: _hovered
+              ? [
+                  BoxShadow(
+                    color: widget.fg.withValues(alpha: 0.18),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : null,
+        ),
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(16),
+          splashColor: widget.fg.withValues(alpha: 0.08),
+          highlightColor: Colors.transparent,
+          child: Column(
+            children: [
+              Text(
+                '${widget.value}',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                  color: widget.fg,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: widget.fg.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -107,7 +107,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: Routes.pmSchedule, // TEST
+    initialLocation: Routes.splash,
     debugLogDiagnostics: kDebugMode,
     refreshListenable: refresh,
     redirect: (context, state) {
@@ -152,7 +152,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // If not authenticated (signed out, or a 401 expired the session) and
       // trying to access a protected route.
       if (!isAuthenticated && !isPublicRoute) {
-        return Routes.login;
+        return kIsWeb ? Routes.home : Routes.login;
       }
 
       // If authenticated and on auth routes (except splash/getStarted which auto-navigate)
@@ -285,9 +285,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.createAmc,
         name: 'createAmc',
-        builder: (context, state) => CreateAmcScreen(
-          editCompany: state.extra as Map<String, dynamic>?,
-        ),
+        builder: (context, state) {
+          final _e = state.extra;
+          return CreateAmcScreen(
+            editCompany: _e is Map ? Map<String, dynamic>.from(_e) : null,
+          );
+        },
       ),
       GoRoute(
         path: Routes.uploadEquipments,
@@ -332,7 +335,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.technicianTasks,
         name: 'technicianTasks',
         builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
+          final _extra = state.extra;
+          final extra = _extra is Map ? Map<String, dynamic>.from(_extra) : null;
           return TechnicianTasksScreen(
             technicianId: extra?['technicianId'],
             technicianName: extra?['technicianName'],
@@ -442,7 +446,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'companyDetails',
         builder: (context, state) {
           final companyId = state.pathParameters['companyId'] ?? '';
-          final extra = state.extra as Map<String, dynamic>?;
+          final _extra = state.extra;
+          final extra = _extra is Map ? Map<String, dynamic>.from(_extra) : null;
           if (kIsWeb) {
             return WebCompanyDetailsScreen(
               companyId: companyId,
@@ -463,7 +468,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'companyTasks',
         builder: (context, state) {
           final companyId = state.pathParameters['companyId'] ?? '';
-          final extra = state.extra as Map<String, dynamic>?;
+          final _extra = state.extra;
+          final extra = _extra is Map ? Map<String, dynamic>.from(_extra) : null;
           return CompanyTasksScreen(
             companyId: companyId,
             companyName: extra?['companyName'],
@@ -475,7 +481,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'companyEquipments',
         builder: (context, state) {
           final companyId = state.pathParameters['companyId'] ?? '';
-          final extra = state.extra as Map<String, dynamic>?;
+          final _extra = state.extra;
+          final extra = _extra is Map ? Map<String, dynamic>.from(_extra) : null;
           return CompanyEquipmentsScreen(
             companyId: companyId,
             companyName: extra?['companyName'],
@@ -487,7 +494,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'equipmentDetails',
         builder: (context, state) {
           final equipmentId = state.pathParameters['equipmentId'] ?? '';
-          final extra = state.extra as Map<String, dynamic>?;
+          final _extra = state.extra;
+          final extra = _extra is Map ? Map<String, dynamic>.from(_extra) : null;
           return EquipmentDetailsScreen(
             equipmentId: equipmentId,
             equipmentName: extra?['equipmentName'],
@@ -506,7 +514,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'equipmentQr',
         builder: (context, state) {
           final equipmentId = state.pathParameters['equipmentId'] ?? '';
-          final extra = state.extra as Map<String, dynamic>?;
+          final _extra = state.extra;
+          final extra = _extra is Map ? Map<String, dynamic>.from(_extra) : null;
           return EquipmentQrScreen(
             equipmentId: equipmentId,
             equipmentName: extra?['equipmentName'],
@@ -519,7 +528,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'addEquipment',
         builder: (context, state) {
           final companyId = state.pathParameters['companyId'] ?? '';
-          final extra = state.extra as Map<String, dynamic>?;
+          final _extra = state.extra;
+          final extra = _extra is Map ? Map<String, dynamic>.from(_extra) : null;
           return AddEquipmentScreen(
             companyId: companyId,
             companyName: extra?['companyName'],
@@ -532,7 +542,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'addTask',
         builder: (context, state) {
           final companyId = state.pathParameters['companyId'] ?? '';
-          final extra = state.extra as Map<String, dynamic>?;
+          final _extra = state.extra;
+          final extra = _extra is Map ? Map<String, dynamic>.from(_extra) : null;
           return AddTaskScreen(
             companyId: companyId,
             companyName: extra?['companyName'] as String?,
@@ -549,7 +560,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'taskDetails',
         builder: (context, state) {
           final taskId = state.pathParameters['taskId'] ?? '';
-          final extra = state.extra as Map<String, dynamic>?;
+          final _extra = state.extra;
+          final extra = _extra is Map ? Map<String, dynamic>.from(_extra) : null;
           return TaskDetailsScreen(
             taskId: taskId,
             taskTitle: extra?['taskTitle'],
