@@ -633,6 +633,39 @@ class _CreateIndividualTaskScreenState
   }
 
   void _showImagePickerDialog() {
+    if (kIsWeb) {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Upload Image',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _imagePickerOption(Icons.photo_library, 'Gallery', () {
+                  Navigator.pop(ctx);
+                  _addImage(ImageSource.gallery);
+                }),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,

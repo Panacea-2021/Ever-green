@@ -13,6 +13,7 @@ import '../../../../shared/widgets/app_drawer.dart';
 import '../../../../shared/widgets/custom_menu_icon.dart';
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../amcs/data/amc_provider.dart';
 import '../../../amcs/domain/models/amc_contract.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -904,6 +905,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildOverviewGrid() {
+    final l10n = AppLocalizations.of(context)!;
     final stats = _userStats;
     final pocCount = stats?.clients ?? _roleCount((r) => r == UserRole.client);
     final companyManagerCount =
@@ -932,7 +934,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.person_outline,
                 tint: const Color(0xFF2E8B45),
-                title: 'POC',
+                title: l10n.poc,
                 value: pocCount,
                 trend: pocTrend,
                 series: pocSeries,
@@ -944,7 +946,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.groups_outlined,
                 tint: const Color(0xFF775DAC),
-                title: 'Company Managers',
+                title: l10n.companyManagers,
                 value: companyManagerCount,
                 trend: companyManagerTrend,
                 series: companyManagerSeries,
@@ -960,7 +962,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.admin_panel_settings_outlined,
                 tint: const Color(0xFF9E663B),
-                title: 'EG Managers',
+                title: l10n.egManagers,
                 value: managerCount,
                 trend: mgrTrend,
                 series: mgrSeries,
@@ -972,7 +974,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _statCard(
                 icon: Icons.build_outlined,
                 tint: const Color(0xFF5B899E),
-                title: 'Service Engineers',
+                title: l10n.serviceEngineers,
                 value: techCount,
                 trend: techTrend,
                 series: techSeries,
@@ -1775,6 +1777,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final hold = byStatus['Hold']!;
     final inProgress = byStatus['In Progress']!;
     final closed = byStatus['Closed']!;
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
@@ -1783,7 +1786,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _taskCard(
                 Icons.check_box_outlined,
-                'Open',
+                l10n.open,
                 open,
                 const Color(0xFF2E8B45),
               ),
@@ -1792,7 +1795,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _taskCard(
                 Icons.pause_circle_outline,
-                'Hold',
+                l10n.hold,
                 hold,
                 const Color(0xFF775DAC),
               ),
@@ -1805,7 +1808,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _taskCard(
                 Icons.timelapse,
-                'In Progress',
+                l10n.inProgress,
                 inProgress,
                 const Color(0xFF9E663B),
               ),
@@ -1814,7 +1817,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _taskCard(
                 Icons.check_circle_outline,
-                'Closed',
+                l10n.closed,
                 closed,
                 const Color(0xFF5B899E),
               ),

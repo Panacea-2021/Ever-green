@@ -13,6 +13,8 @@ import 'core/theme/app_theme.dart';
 import 'core/widgets/root_tab_back_handling.dart';
 import 'shared/providers/auth_state_provider.dart';
 import 'shared/widgets/global_scroll_to_top.dart';
+import 'features/settings/data/settings_preferences.dart';
+import 'l10n/app_localizations.dart';
 import 'web/widgets/web_module_frame.dart';
 
 class EverGreenApp extends ConsumerStatefulWidget {
@@ -88,6 +90,15 @@ class _EverGreenAppState extends ConsumerState<EverGreenApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
     _attach(router);
+    final prefs = ref.watch(settingsPreferencesProvider);
+
+    final lang = prefs.language;
+    final locale = switch (lang) {
+      'Hindi' => const Locale('hi'),
+      'Telugu' => const Locale('te'),
+      'Tamil' => const Locale('ta'),
+      _ => const Locale('en'),
+    };
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: EverGreenApp._overlayStyle,
@@ -96,8 +107,10 @@ class _EverGreenAppState extends ConsumerState<EverGreenApp> {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        // Force light theme so dark-mode phones do not break the UI.
-        themeMode: ThemeMode.light,
+        themeMode: prefs.themeMode,
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: router,
         builder: (context, child) => kIsWeb
             ? GlobalScrollToTop(

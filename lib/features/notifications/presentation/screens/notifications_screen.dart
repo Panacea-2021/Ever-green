@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -119,19 +120,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             ),
           ),
           const SizedBox(width: 17),
-          // Title
-          const Expanded(
-            child: Text(
-              'Notifications',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-                letterSpacing: -0.6,
+          // Title (mobile only; web shows it in the top bar)
+          if (!kIsWeb)
+            const Expanded(
+              child: Text(
+                'Notifications',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                  letterSpacing: -0.6,
+                ),
               ),
-            ),
-          ),
+            )
+          else
+            const Spacer(),
           if (hasUnread)
             TextButton(
               onPressed: () =>

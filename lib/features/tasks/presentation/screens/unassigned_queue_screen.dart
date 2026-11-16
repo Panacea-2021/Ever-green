@@ -946,9 +946,10 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
   }
 
   Widget _outlineButton(String label, VoidCallback onTap) {
-    return SizedBox(
-      height: 42,
-      child: OutlinedButton(
+    return IntrinsicWidth(
+      child: SizedBox(
+        height: 42,
+        child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -968,6 +969,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
           ),
         ),
       ),
+    ),
     );
   }
 
