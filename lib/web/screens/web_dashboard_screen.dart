@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/permissions.dart';
 import '../../core/data/evergreen_repository.dart';
 import '../../l10n/app_localizations.dart';
-import '../../l10n/app_localizations.dart';
 import '../../core/router/routes.dart';
 import '../../features/amcs/data/amc_provider.dart';
 import '../../features/amcs/domain/models/amc_contract.dart';

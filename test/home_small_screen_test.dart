@@ -67,10 +67,11 @@ void main() {
         ),
         GoRoute(
           path: Routes.usersList,
-          builder: (_, state) => UsersListScreen(
-            initialTab:
-                (state.extra as Map<String, dynamic>?)?['tab'] as int? ?? 0,
-          ),
+          builder: (_, state) {
+            final extra = state.extra;
+            final tab = extra is Map ? extra['tab'] as int? : null;
+            return UsersListScreen(initialTab: tab ?? 0);
+          },
         ),
       ],
     );
