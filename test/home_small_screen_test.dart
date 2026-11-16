@@ -9,6 +9,7 @@ import 'package:evergreen/features/notifications/data/notifications_provider.dar
 import 'package:evergreen/features/tasks/data/task_provider.dart';
 import 'package:evergreen/features/users/data/user_provider.dart';
 import 'package:evergreen/features/users/presentation/screens/users_list_screen.dart';
+import 'package:evergreen/l10n/app_localizations.dart';
 import 'package:evergreen/shared/providers/auth_state_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -120,7 +121,11 @@ void main() {
           unassignedTasksProvider.overrideWithValue(const []),
           unreadNotificationsCountProvider.overrideWith((ref) async => 0),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
       ),
     );
     await tester.pump(const Duration(seconds: 2));
@@ -200,6 +205,8 @@ void main() {
               unreadNotificationsCountProvider.overrideWith((ref) async => 0),
             ],
             child: MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
               builder: (context, child) => MediaQuery(
                 data: MediaQuery.of(context)
                     .copyWith(textScaler: TextScaler.linear(scale)),
