@@ -48,13 +48,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   Future<void> _loadPushPreference() async {
     final prefs = await SharedPreferences.getInstance();
+    if (kIsWeb) {
+      // Website: preference is stored locally; default OFF. No OS/Firebase
+      // permission auto-enable.
+      final saved = prefs.getBool('push_notifications_enabled') ?? false;
+      if (mounted) setState(() => _pushNotifications = saved);
+      return;
+    }
     final saved = prefs.getBool('push_notifications_enabled');
     if (saved == null) {
-      // Never configured: default OFF. Do not auto-enable from OS permission.
       if (mounted) setState(() => _pushNotifications = false);
       return;
     }
-    // Previously configured: reflect OS permission (may have been revoked).
     await _refreshPushStatus();
     if (mounted) {
       await prefs.setBool('push_notifications_enabled', _pushNotifications);
@@ -70,7 +75,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// The permission can change in system settings while the app is paused.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refreshPushStatus();
+    if (state == AppLifecycleState.resumed && !kIsWeb) _refreshPushStatus();
   }
 
   Future<void> _refreshPushStatus() async {
@@ -91,6 +96,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// with the backend; the OS only lets the user revoke it in system settings.
   Future<void> _setPushNotifications(bool value) async {
     final prefs = await SharedPreferences.getInstance();
+    if (kIsWeb) {
+      await prefs.setBool('push_notifications_enabled', value);
+      if (mounted) setState(() => _pushNotifications = value);
+      _toast(value ? 'Notifications enabled' : 'Notifications turned off');
+      return;
+    }
     if (!value) {
       await prefs.setBool('push_notifications_enabled', false);
       if (mounted) setState(() => _pushNotifications = false);
