@@ -664,11 +664,13 @@ class _NotificationBell extends StatelessWidget {
     // "No Overlay widget found" on the web dashboard.
     return IconButton(
       key: const ValueKey('web-notifications-button'),
+      padding: EdgeInsets.zero,
+      color: WebTokens.green,
       icon: Badge(
         isLabelVisible: count > 0,
         label: Text(count > 99 ? '99+' : '$count'),
         backgroundColor: WebTokens.green,
-        child: const Icon(Icons.notifications_outlined, size: 24),
+        child: const Icon(Icons.notifications_outlined, size: 22),
       ),
       onPressed: onPressed,
     );
