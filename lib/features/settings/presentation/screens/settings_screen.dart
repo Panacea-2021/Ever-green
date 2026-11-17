@@ -137,7 +137,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         statusBarBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
             // Same decorative background as the Home page: faint patterned
@@ -559,9 +559,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: kIsWeb ? Border.all(color: const Color(0xFFE3ECE5)) : null,
+        border: kIsWeb ? Border.all(color: Theme.of(context).dividerColor) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -776,11 +776,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   void _showLanguagePicker() {
-    const langs = [
-      'English',
-      'हिन्दी (Hindi)',
-      'తెలుగు (Telugu)',
-      'தமிழ் (Tamil)',
+    const langs = <Map<String, String>>[
+      {'code': 'English', 'label': 'English'},
+      {'code': 'Hindi', 'label': 'हिन्दी (Hindi)'},
+      {'code': 'Telugu', 'label': 'తెలుగు (Telugu)'},
+      {'code': 'Tamil', 'label': 'தமிழ் (Tamil)'},
     ];
     if (kIsWeb) {
       showDialog(
@@ -796,19 +796,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 leading: Icon(
-                  l == ref.read(settingsPreferencesProvider).language
+                  l['code'] == ref.read(settingsPreferencesProvider).language
                       ? Icons.radio_button_checked
                       : Icons.radio_button_off,
                   color: _green,
                 ),
                 title: Text(
-                  l,
+                  l['label']!,
                   style: const TextStyle(fontFamily: 'Montserrat'),
                 ),
                 onTap: () {
-                  ref.read(settingsPreferencesProvider.notifier).setLanguage(l);
+                  ref.read(settingsPreferencesProvider.notifier)
+                      .setLanguage(l['code']!);
                   Navigator.pop(ctx);
-                  _toast('Language set to $l');
+                  _toast('Language set to ${l['label']}');
                 },
               ),
           ],
@@ -830,16 +831,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           for (final l in langs)
             ListTile(
               leading: Icon(
-                l == ref.read(settingsPreferencesProvider).language
+                l['code'] == ref.read(settingsPreferencesProvider).language
                     ? Icons.radio_button_checked
                     : Icons.radio_button_off,
                 color: _green,
               ),
-              title: Text(l, style: const TextStyle(fontFamily: 'Montserrat')),
+              title: Text(l['label']!,
+                  style: const TextStyle(fontFamily: 'Montserrat')),
               onTap: () {
-                ref.read(settingsPreferencesProvider.notifier).setLanguage(l);
+                ref.read(settingsPreferencesProvider.notifier)
+                    .setLanguage(l['code']!);
                 Navigator.pop(context);
-                _toast('Language set to $l');
+                _toast('Language set to ${l['label']}');
               },
             ),
           const SizedBox(height: 12),

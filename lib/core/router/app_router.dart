@@ -416,10 +416,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.taskBoard,
         name: 'taskBoard',
-        builder: (context, state) => TaskBoardScreen(
-          initialStatus:
-              state.extra is TaskStatus ? state.extra! as TaskStatus : null,
-        ),
+        builder: (context, state) {
+          final status =
+              state.extra is TaskStatus ? state.extra! as TaskStatus : null;
+          return kIsWeb
+              ? WebTaskBoardScreen(initialStatus: status)
+              : TaskBoardScreen(
+                  isRootTab: false,
+                  initialStatus: status,
+                );
+        },
       ),
       GoRoute(
         path: Routes.ticketQueue,
@@ -613,7 +619,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   state.extra is TaskStatus ? state.extra! as TaskStatus : null;
               return NoTransitionPage(
                 child: kIsWeb
-                    ? const WebTaskBoardScreen()
+                    ? WebTaskBoardScreen(initialStatus: status)
                     : TaskBoardScreen(
                         key: ValueKey(status),
                         isRootTab: true,

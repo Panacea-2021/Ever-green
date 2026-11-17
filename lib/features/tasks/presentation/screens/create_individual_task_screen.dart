@@ -124,6 +124,91 @@ class _CreateIndividualTaskScreenState
         onChanged: (v) => setState(() => _issueTypeId = v),
       );
 
+  Widget _webIssueTypeField() {
+    final async = ref.watch(issueTypesProvider);
+    final types = async.valueOrNull ?? const <IssueType>[];
+    final selectedName = types
+        .where((t) => t.id == _issueTypeId)
+        .map((t) => t.name)
+        .firstOrNull;
+    final _key = GlobalKey();
+    return Material(
+      color: Colors.white,
+      elevation: 0,
+      shape: WebForm.fieldShape(32),
+      child: InkWell(
+        key: _key,
+        borderRadius: BorderRadius.circular(12),
+        onTap: types.isEmpty
+            ? null
+            : () async {
+                final renderBox =
+                    _key.currentContext?.findRenderObject() as RenderBox?;
+                if (renderBox == null) return;
+                final offset = renderBox.localToGlobal(Offset.zero);
+                final size = renderBox.size;
+                final chosen = await showMenu<int>(
+                  context: context,
+                  position: RelativeRect.fromLTRB(
+                    offset.dx,
+                    offset.dy + size.height + 4,
+                    offset.dx + size.width,
+                    offset.dy + size.height + 4,
+                  ),
+                  items: [
+                    for (final t in types)
+                      PopupMenuItem<int>(
+                        value: t.id,
+                        child: Text(
+                          t.name,
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+                if (chosen != null) setState(() => _issueTypeId = chosen);
+              },
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: async.isLoading
+                    ? const Align(
+                        alignment: Alignment.centerLeft,
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : Text(
+                        selectedName ?? 'Issue Type',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: selectedName == null
+                              ? Colors.black.withValues(alpha: 0.4)
+                              : Colors.black,
+                        ),
+                      ),
+              ),
+              const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _priorityField() => _buildDropdownField<TaskPriority>(
         label: 'Priority',
         value: _priority,
@@ -374,17 +459,7 @@ class _CreateIndividualTaskScreenState
                       children: [
                         _buildContactCard(),
                         const SizedBox(height: 16),
-                        _buildDropdownField<int>(
-                          label: 'Issue Type',
-                          value: _issueTypeId,
-                          items: [
-                            for (final it
-                                in ref.watch(issueTypesProvider).valueOrNull ??
-                                    const <IssueType>[])
-                              (it.id, it.name),
-                          ],
-                          onChanged: (v) => setState(() => _issueTypeId = v),
-                        ),
+                        _webIssueTypeField(),
                         const SizedBox(height: 16),
                         _buildDropdownField<TaskPriority>(
                           label: 'Priority',

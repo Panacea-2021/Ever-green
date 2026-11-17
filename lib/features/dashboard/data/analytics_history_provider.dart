@@ -169,6 +169,7 @@ Future<T?> _orNull<T>(Future<T> future) async {
 
 final analyticsHistoryProvider =
     FutureProvider.autoDispose<List<AnalyticsSnapshot>>((ref) async {
+  cacheFor(ref, listCacheDuration);
   final monthly = await ref.watch(monthlyStatsProvider.future);
   final usersF = _orNull(ref.watch(dashboardUsersProvider.future));
   final tasksF = monthly == null
@@ -176,13 +177,14 @@ final analyticsHistoryProvider =
       : Future<List<ServiceTask>?>.value();
   final companiesF = _orNull(ref.watch(companiesProvider.future));
   final equipmentF = _orNull(ref.watch(equipmentsProvider(null).future));
+  final results = await Future.wait<dynamic>([usersF, tasksF, companiesF, equipmentF]);
   return buildAnalyticsHistory(
     now: DateTime.now(),
-    users: await usersF,
+    users: results[0] as List<User>?,
     monthlyStats: monthly,
-    tasks: await tasksF,
-    companies: await companiesF,
-    equipment: await equipmentF,
+    tasks: results[1] as List<ServiceTask>?,
+    companies: results[2] as List<Company>?,
+    equipment: results[3] as List<Equipment>?,
   );
 });
 

@@ -132,4 +132,109 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get allUsers => 'అన్ని వినియోగదారులు';
+
+  @override
+  String get home => 'హోమ్';
+
+  @override
+  String get all => 'అన్నీ';
+
+  @override
+  String get cancel => 'రద్దు';
+
+  @override
+  String get save => 'భద్రపరచు';
+
+  @override
+  String get submit => 'సమర్పించు';
+
+  @override
+  String get retry => 'మళ్లీ ప్రయత్నించు';
+
+  @override
+  String get loading => 'లోడ్ అవుతోంది...';
+
+  @override
+  String get taskBoard => 'టాస్క్ బోర్డ్';
+
+  @override
+  String get usersList => 'వినియోగదారుల జాబితా';
+
+  @override
+  String get amcRenewals => 'ఏఎంసీ పునరుద్ధరణలు';
+
+  @override
+  String get pmSchedule => 'పీఎం షెడ్యూల్';
+
+  @override
+  String get analytics => 'విశ్లేషణలు';
+
+  @override
+  String get notifications => 'నోటిఫికేషన్లు';
+
+  @override
+  String get announcements => 'ప్రకటనలు';
+
+  @override
+  String get scanner => 'స్కానర్';
+
+  @override
+  String get companyList => 'కంపెనీ జాబితా';
+
+  @override
+  String get myTasks => 'నా పనులు';
+
+  @override
+  String get myServiceTasks => 'నా సేవా పనులు';
+
+  @override
+  String get createTask => 'పని సృష్టించండి';
+
+  @override
+  String get addUser => 'వినియోగదారుని జోడించండి';
+
+  @override
+  String get technicians => 'సేవా ఇంజనీర్లు';
+
+  @override
+  String get ticketQueue => 'టిక్కెట్ క్యూ';
+
+  @override
+  String get createCompany => 'కంపెనీ సృష్టించండి';
+
+  @override
+  String get activityHistory => 'కార్యాచరణ చరిత్ర';
+
+  @override
+  String get enquiries => 'విచారణలు';
+
+  @override
+  String get globalSearch => 'గ్లోబల్ శోధన';
+
+  @override
+  String get addEquipment => 'ఉపకరణం జోడించండి';
+
+  @override
+  String get createAmc => 'కంపెనీ సృష్టించండి';
+
+  @override
+  String get upload => 'అప్‌లోడ్';
+
+  @override
+  String get downloadQr => 'క్యూఆర్ డౌన్‌లోడ్';
+
+  @override
+  String get technicianPerformance => 'సేవా ఇంజనీర్ పనితీరు';
+
+  @override
+  String get auditLog => 'కార్యాచరణ చరిత్ర';
+
+  @override
+  String get pmScheduleShort => 'పీఎం షెడ్యూల్';
+
+  @override
+  String get noData => 'డేటా లేదు';
+
+  @override
+  String get welcome => 'స్వాగతం';
 }

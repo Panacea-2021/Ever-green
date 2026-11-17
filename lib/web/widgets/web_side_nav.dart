@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/auth/permissions.dart';
 import '../../core/router/routes.dart';
+import '../../l10n/app_localizations.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../shared/providers/auth_state_provider.dart';
 import '../../shared/widgets/app_drawer.dart'
@@ -12,7 +13,7 @@ import '../theme/web_tokens.dart';
 
 /// One destination in the web side navigation.
 class WebNavEntry {
-  const WebNavEntry({
+  WebNavEntry({
     required this.label,
     required this.route,
     this.svgIcon,
@@ -55,10 +56,11 @@ class WebSideNav extends ConsumerWidget {
     UserRole role, {
     int? companiesCount,
     int? usersCount,
+    AppLocalizations? l10n,
   }) {
     return [
-      const WebNavEntry(
-        label: 'Dashboard',
+      WebNavEntry(
+        label: l10n?.dashboard ?? 'Dashboard',
         route: Routes.webDashboard,
         svgIcon: 'assets/images/menu_home.svg',
       ),
@@ -80,78 +82,78 @@ class WebSideNav extends ConsumerWidget {
       ),
       // Super Admin also gets the personal task views other roles have.
       if (role == UserRole.superAdmin) ...[
-        const WebNavEntry(
+        WebNavEntry(
           label: 'My Tasks',
           route: Routes.myTasks,
           icon: Icons.task_alt_outlined,
         ),
-        const WebNavEntry(
+        WebNavEntry(
           label: 'My Service Tasks',
           route: Routes.myServiceTasks,
           icon: Icons.home_repair_service_outlined,
         ),
       ],
-      const WebNavEntry(
-        label: 'Search',
+      WebNavEntry(
+        label: l10n?.search ?? 'Search',
         route: Routes.globalSearch,
         svgIcon: 'assets/images/menu_qr_scanner.svg',
       ),
-      const WebNavEntry(
-        label: 'Announcements',
+      WebNavEntry(
+        label: l10n?.announcements ?? 'Announcements',
         route: Routes.announcements,
         icon: Icons.campaign_outlined,
       ),
       if (Permissions.canRaiseTasks(role))
-        const WebNavEntry(
+        WebNavEntry(
           label: 'Create Task',
           route: '${Routes.addTask}/new',
           svgIcon: 'assets/images/menu_add.svg',
         ),
       if (Permissions.canCreateIndividualTask(role))
-        const WebNavEntry(
+        WebNavEntry(
           label: 'Create Individual Task',
           route: Routes.createIndividualTask,
           svgIcon: 'assets/images/menu_technicians.svg',
         ),
       if (Permissions.canManageAmcs(role))
-        const WebNavEntry(
+        WebNavEntry(
           label: 'Add Equipment',
           route: '${Routes.addEquipment}/new',
           svgIcon: 'assets/images/menu_add.svg',
         ),
       if (Permissions.canManageUsers(role))
         WebNavEntry(
-          label: 'Users List',
+          label: l10n?.usersList ?? 'Users List',
           route: Routes.usersList,
           svgIcon: 'assets/images/menu_users.svg',
           badge: usersCount?.toString(),
           badgeColor: const Color(0xFFFF2F00),
         ),
       if (Permissions.canAssignTasks(role))
-        const WebNavEntry(
+        WebNavEntry(
           label: 'Ticket Queue',
           route: Routes.ticketQueue,
           svgIcon: 'assets/images/menu_assign_tasks.svg',
         ),
       if (Permissions.canManageAmcs(role))
-        const WebNavEntry(
+        WebNavEntry(
           label: 'Create Company',
           route: Routes.createAmc,
           svgIcon: 'assets/images/menu_flag.svg',
         ),
       if (Permissions.canViewRenewals(role))
-        const WebNavEntry(
-          label: 'AMC Renewals',
+        WebNavEntry(
+          label: l10n?.amcRenewals ?? 'AMC Renewals',
           route: Routes.amcRenewals,
           svgIcon: 'assets/images/menu_flag.svg',
         ),
       if (Permissions.canManagePmSchedule(role))
-        const WebNavEntry(
-          label: 'PM Schedule',
+        WebNavEntry(
+          label: l10n?.pmSchedule ?? 'PM Schedule',
           route: Routes.pmSchedule,
           svgIcon: 'assets/images/menu_tasks_list.svg',
         ),
-      if (Permissions.canBulkUpload(role)) ...const [
+      if (Permissions.canBulkUpload(role)) ...[
         WebNavEntry(
           label: 'Upload Equipments Excel Data',
           route: Routes.uploadEquipments,
@@ -174,48 +176,48 @@ class WebSideNav extends ConsumerWidget {
         ),
       ],
       if (Permissions.canViewTechnicianPerformance(role))
-        const WebNavEntry(
+        WebNavEntry(
           label: 'Service Engineer Performance',
           route: Routes.technicianPerformance,
           svgIcon: 'assets/images/menu_technicians.svg',
         ),
       if (Permissions.canViewAuditLog(role))
-        const WebNavEntry(
-          label: 'Activity History',
+        WebNavEntry(
+          label: l10n?.activityHistory ?? 'Activity History',
           route: Routes.auditLog,
           icon: Icons.history,
         ),
       if (Permissions.canViewAnalytics(role))
-        const WebNavEntry(
-          label: 'Analytics',
+        WebNavEntry(
+          label: l10n?.analytics ?? 'Analytics',
           route: Routes.analytics,
           icon: Icons.bar_chart_outlined,
         ),
       if (Permissions.canViewReports(role))
-        const WebNavEntry(
-          label: 'Reports & Export',
+        WebNavEntry(
+          label: l10n?.reports ?? 'Reports & Export',
           route: Routes.reports,
           icon: Icons.assessment_outlined,
         ),
       if (Permissions.canViewReports(role))
-        const WebNavEntry(
-          label: 'Enquiries',
+        WebNavEntry(
+          label: l10n?.enquiries ?? 'Enquiries',
           route: Routes.enquiries,
           icon: Icons.help_outline,
         ),
       if (Permissions.hasProfileTab(role))
-        const WebNavEntry(
-          label: 'Profile',
+        WebNavEntry(
+          label: l10n?.profile ?? 'Profile',
           route: Routes.profile,
           icon: Icons.person_outline,
         ),
-      const WebNavEntry(
-        label: 'Change Password',
+      WebNavEntry(
+        label: l10n?.changePassword ?? 'Change Password',
         route: Routes.changePassword,
         icon: Icons.lock_outline,
       ),
-      const WebNavEntry(
-        label: 'Settings',
+      WebNavEntry(
+        label: l10n?.settings ?? 'Settings',
         route: Routes.settings,
         icon: Icons.settings_outlined,
       ),
@@ -230,10 +232,12 @@ class WebSideNav extends ConsumerWidget {
     final usersCount = Permissions.canManageUsers(role)
         ? ref.watch(drawerUsersCountProvider).valueOrNull
         : null;
+    final l10n = AppLocalizations.of(context);
     final entries = entriesFor(
       role,
       companiesCount: ref.watch(drawerCompaniesCountProvider),
       usersCount: usersCount,
+      l10n: l10n,
     );
 
     return Container(
@@ -306,8 +310,8 @@ class WebSideNav extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 16, top: 4),
             child: _WebNavTile(
-              entry: const WebNavEntry(
-                label: 'Logout',
+              entry: WebNavEntry(
+                label: l10n?.logout ?? 'Logout',
                 route: Routes.login,
                 icon: Icons.logout,
               ),

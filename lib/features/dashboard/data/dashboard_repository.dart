@@ -178,17 +178,20 @@ final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
 });
 
 final taskCountsProvider = FutureProvider.autoDispose<TaskCounts>((ref) {
+  cacheFor(ref, listCacheDuration);
   return ref.watch(dashboardRepositoryProvider).getTaskCounts();
 });
 
 /// Admin-only: watch it only for Super Admin / Manager.
 final userStatsProvider = FutureProvider.autoDispose<UserStats>((ref) {
+  cacheFor(ref, listCacheDuration);
   return ref.watch(dashboardRepositoryProvider).getUserStats();
 });
 
 /// Admin-only: watch it only for Super Admin / Manager.
 final companiesStatsProvider =
     FutureProvider.autoDispose<List<MonthlyCount>>((ref) {
+  cacheFor(ref, listCacheDuration);
   return ref.watch(dashboardRepositoryProvider).getCompaniesStats();
 });
 
@@ -196,6 +199,7 @@ final companiesStatsProvider =
 /// endpoint fails, so callers fall back to the scoped task list.
 final monthlyStatsProvider =
     FutureProvider.autoDispose<MonthlyStats?>((ref) async {
+  cacheFor(ref, listCacheDuration);
   final role = ref.watch(currentUserRoleProvider);
   if (role != UserRole.superAdmin &&
       role != UserRole.manager &&
@@ -214,6 +218,7 @@ final monthlyStatsProvider =
 /// staff. Null when the role can't list users (clients) or the call fails.
 final dashboardUsersProvider =
     FutureProvider.autoDispose<List<User>?>((ref) async {
+  cacheFor(ref, listCacheDuration);
   final role = ref.watch(currentUserRoleProvider);
   final repo = ref.watch(evergreenRepositoryProvider);
   try {

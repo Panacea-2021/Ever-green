@@ -82,6 +82,59 @@ class EquipmentApi {
     );
   }
 
+  // ---------------------------------------------------------------------
+  // Admin /equipment endpoints (authenticated). These mirror the backend's
+  // newer equipment management API. They are additive and do not replace the
+  // legacy `user/*` calls used by the existing screens.
+  // ---------------------------------------------------------------------
+
+  /// GET /equipment  (optional `status` filter: active | inactive)
+  Future<List<Equipment>> listEquipment({String? status}) async {
+    final body = unwrap(
+      await api.get<dynamic>(
+        'equipment',
+        queryParameters: status == null ? null : {'status': status},
+      ),
+    );
+    final data = body is Map ? (body['data'] ?? body['items'] ?? body) : body;
+    if (data is List) {
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(Equipment.fromJson)
+          .toList();
+    }
+    return const [];
+  }
+
+  /// POST /equipment
+  Future<Equipment> createEquipment(Map<String, dynamic> fields) async {
+    final body = unwrap(await api.post<dynamic>('equipment', data: fields));
+    final data = body is Map ? body['data'] : null;
+    return Equipment.fromJson(
+      data is Map<String, dynamic> ? data : const <String, dynamic>{},
+    );
+  }
+
+  /// PATCH /equipment/:id
+  Future<void> updateEquipment(int equipmentId, Map<String, dynamic> fields) async {
+    unwrap(await api.patch<dynamic>('equipment/$equipmentId', data: fields));
+  }
+
+  /// PATCH /equipment/:id/status
+  Future<void> updateEquipmentStatus(int equipmentId, String status) async {
+    unwrap(
+      await api.patch<dynamic>(
+        'equipment/$equipmentId/status',
+        data: {'status': status},
+      ),
+    );
+  }
+
+  /// DELETE /equipment/:id
+  Future<void> deleteEquipment(int equipmentId) async {
+    unwrap(await api.delete<dynamic>('equipment/$equipmentId'));
+  }
+
   /// [link] may be the equipment id, EG serial number or serial number.
   /// Client-side [user]s only get equipment of their own companies; anything
   /// else throws [ForeignEquipmentException].

@@ -106,20 +106,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       padding: const EdgeInsets.fromLTRB(25, 39, 16, 24),
       child: Row(
         children: [
-          // Back button
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: const SizedBox(
-              width: 24,
-              height: 24,
-              child: Icon(
-                Icons.arrow_back,
-                color: Colors.black,
-                size: 24,
+          // Back button (mobile only; web uses the top bar's back arrow)
+          if (!kIsWeb) ...[
+            GestureDetector(
+              onTap: () => context.pop(),
+              child: const SizedBox(
+                width: 24,
+                height: 24,
+                child: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 24,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 17),
+            const SizedBox(width: 17),
+          ],
           // Title (mobile only; web shows it in the top bar)
           if (!kIsWeb)
             const Expanded(

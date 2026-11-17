@@ -645,16 +645,14 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                             const SizedBox(height: 18),
                             _webLabelled(
                               'Location',
-                              ValueListenableBuilder<TextEditingValue>(
-                                valueListenable: _locationController,
-                                builder: (context, value, _) =>
-                                    _pickerField(
-                                  label:
-                                      'Location (e.g. Block B, 2nd floor)',
-                                  value: value.text.trim().isEmpty
-                                      ? null
-                                      : value.text.trim(),
-                                  onTap: _pickLocation,
+                              TextField(
+                                controller: _locationController,
+                                onChanged: (_) => _locationEdited = true,
+                                decoration: InputDecoration(
+                                  hintText: 'Enter location (e.g. Block B, 2nd Floor)',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
                               Icons.location_on_outlined,
@@ -977,9 +975,21 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
   }
 
   Widget _branchDropdown(AsyncValue<List<Company>> companies, bool locked) {
+    if (companies.isLoading && !companies.hasValue) {
+      return _statusField('Loading branches…', onTap: null);
+    }
+    if (companies.hasError && !companies.hasValue) {
+      return _statusField(
+        'Couldn\'t load branches — tap to retry',
+        onTap: () => ref.invalidate(companiesProvider),
+      );
+    }
     final branches = (companies.valueOrNull ?? const <Company>[])
         .where((c) => c.name == _companyName)
         .toList();
+    if (branches.isEmpty) {
+      return _statusField('No branches available', onTap: null);
+    }
     return _buildInlineDropdownField<int>(
       label: 'Branch',
       value: _companyId,
@@ -1193,48 +1203,123 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
     required List<(T, String)> items,
     required ValueChanged<T?>? onChanged,
   }) {
+    if (!kIsWeb) {
+      return Material(
+        color: Colors.white,
+        elevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        shape: _fieldShape(32),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<T>(
+              value: items.any((e) => e.$1 == value) ? value : null,
+              hint: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black.withValues(alpha: 0.4),
+                ),
+              ),
+              isExpanded: true,
+              borderRadius: BorderRadius.circular(16),
+              icon: const Icon(
+                Icons.arrow_drop_down,
+                color: Color(0xFF6B6B6B),
+              ),
+              items: items.map((item) {
+                return DropdownMenuItem<T>(
+                  value: item.$1,
+                  child: Text(
+                    item.$2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                );
+              }).toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Web: use showMenu to avoid overlay/clipping issues.
+    final key = GlobalKey();
+    final selectedName = items
+        .where((e) => e.$1 == value)
+        .map((e) => e.$2)
+        .firstOrNull;
     return Material(
       color: Colors.white,
-      elevation: kIsWeb ? 0 : 2,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
+      elevation: 0,
       shape: _fieldShape(32),
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<T>(
-            value: items.any((e) => e.$1 == value) ? value : null,
-            hint: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: Colors.black.withValues(alpha: 0.4),
-              ),
-            ),
-            isExpanded: true,
-            borderRadius: BorderRadius.circular(16),
-            icon: const Icon(
-              Icons.arrow_drop_down,
-              color: Color(0xFF6B6B6B),
-            ),
-            items: items.map((item) {
-              return DropdownMenuItem<T>(
-                value: item.$1,
+      child: InkWell(
+        key: key,
+        borderRadius: BorderRadius.circular(12),
+        onTap: (onChanged == null || items.isEmpty)
+            ? null
+            : () async {
+                final renderBox =
+                    key.currentContext?.findRenderObject() as RenderBox?;
+                if (renderBox == null) return;
+                final offset = renderBox.localToGlobal(Offset.zero);
+                final size = renderBox.size;
+                final chosen = await showMenu<T>(
+                  context: context,
+                  position: RelativeRect.fromLTRB(
+                    offset.dx,
+                    offset.dy + size.height + 4,
+                    offset.dx + size.width,
+                    offset.dy + size.height + 4,
+                  ),
+                  items: [
+                    for (final item in items)
+                      PopupMenuItem<T>(
+                        value: item.$1,
+                        child: Text(
+                          item.$2,
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+                if (chosen != null) onChanged(chosen);
+              },
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
                 child: Text(
-                  item.$2,
+                  selectedName ?? label,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Montserrat',
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black,
+                    color: selectedName == null
+                        ? Colors.black.withValues(alpha: 0.4)
+                        : Colors.black,
                   ),
                 ),
-              );
-            }).toList(),
-            onChanged: onChanged,
+              ),
+              const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
+            ],
           ),
         ),
       ),

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/data/evergreen_repository.dart';
 import '../../core/router/routes.dart';
 import '../../features/auth/domain/models/user_model.dart';
+import '../../l10n/app_localizations.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/notifications/data/notifications_provider.dart';
 import '../../shared/providers/auth_state_provider.dart';
@@ -246,14 +247,16 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
   }
 
   WebNavEntry? _entryFor(UserRole role) {
-    for (final entry in WebSideNav.entriesFor(role)) {
+    final l10n = AppLocalizations.of(context);
+    for (final entry in WebSideNav.entriesFor(role, l10n: l10n)) {
       if (entry.route == _location) return entry;
     }
     return null;
   }
 
   String _titleFor(UserRole role) {
-    for (final entry in WebSideNav.entriesFor(role)) {
+    final l10n = AppLocalizations.of(context);
+    for (final entry in WebSideNav.entriesFor(role, l10n: l10n)) {
       if (entry.route == _location) return entry.label;
     }
     for (final e in WebModuleFrame._detailTitles.entries) {
@@ -289,7 +292,7 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     return Material(
-      color: WebTokens.cream,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Row(
         children: [
           WebSideNav(
@@ -506,7 +509,7 @@ class _WebRestoringSession extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: WebTokens.cream,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -597,8 +600,8 @@ class _WebTopBar extends ConsumerWidget {
       key: showUserInfo ? const ValueKey('web-dashboard-top-bar') : null,
       height: 64,
       padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 28),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         border: Border(bottom: BorderSide(color: WebTokens.line)),
       ),
       child: Row(
@@ -615,7 +618,9 @@ class _WebTopBar extends ConsumerWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: WebTokens.heading(20),
+                style: WebTokens.heading(20).copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
           ] else

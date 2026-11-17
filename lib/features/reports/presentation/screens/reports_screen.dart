@@ -600,75 +600,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 
   Widget _kpiCard(String title, String value, IconData icon, Color color, String subtitle) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withValues(alpha: 0.35), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color, size: 26),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.5),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF14201A),
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return _HoverKpiCard(title: title, value: value, icon: icon, color: color, subtitle: subtitle);
   }
+
+
 
   Widget _dashboardCard(String title, IconData icon, {required Widget child}) {
     return Container(
@@ -1120,6 +1055,80 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
   }
 
+  Widget _summaryCard(String label, dynamic value, IconData icon, {Color color = const Color(0xFF1565C0)}) {
+    var hovered = false;
+    return StatefulBuilder(builder: (context, setState) {
+      return MouseRegion(
+        onEnter: (_) {
+          if (!hovered) {
+            hovered = true;
+            setState(() {});
+          }
+        },
+        onExit: (_) {
+          if (hovered) {
+            hovered = false;
+            setState(() {});
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          transform: Matrix4.identity()
+            ..scaleByDouble(hovered ? 1.02 : 1.0, hovered ? 1.02 : 1.0, 1.0, 1.0)
+            ..translateByDouble(0, hovered ? -4 : 0, 0, 1),
+          transformAlignment: Alignment.center,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: hovered ? color.withValues(alpha: 0.08) : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: hovered ? color : color.withValues(alpha: 0.45),
+              width: 1.4,
+            ),
+            boxShadow: hovered
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.22),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 8),
+              Text(
+                '$value',
+                style: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 11,
+                  color: Colors.black.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
   Widget _chartDataList(List<ChartData> data) {
     if (data.isEmpty) {
       return Center(
@@ -1352,13 +1361,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: _statCard('Total', data.totalAmcs, Icons.handshake)),
+              Expanded(child: _summaryCard('Total', data.totalAmcs, Icons.handshake, color: const Color(0xFF1565C0))),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Active', data.activeAmcs, Icons.check_circle, color: _green)),
+              Expanded(child: _summaryCard('Active', data.activeAmcs, Icons.check_circle, color: _green)),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Expiring', data.expiringSoon, Icons.warning, color: const Color(0xFFE08600))),
+              Expanded(child: _summaryCard('Expiring', data.expiringSoon, Icons.warning, color: const Color(0xFFE08600))),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Expired', data.expired, Icons.cancel, color: const Color(0xFFD32F2F))),
+              Expanded(child: _summaryCard('Expired', data.expired, Icons.cancel, color: const Color(0xFFD32F2F))),
             ],
           ),
           const SizedBox(height: 24),
@@ -1454,13 +1463,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: _statCard('Total', data.totalEquipment, Icons.precision_manufacturing)),
+              Expanded(child: _summaryCard('Total', data.totalEquipment, Icons.precision_manufacturing, color: const Color(0xFF1565C0))),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Operational', data.operational, Icons.check_circle, color: _green)),
+              Expanded(child: _summaryCard('Operational', data.operational, Icons.check_circle, color: _green)),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Maintenance', data.underMaintenance, Icons.build, color: const Color(0xFFE08600))),
+              Expanded(child: _summaryCard('Maintenance', data.underMaintenance, Icons.build, color: const Color(0xFFE08600))),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Faulty', data.faulty, Icons.error, color: const Color(0xFFD32F2F))),
+              Expanded(child: _summaryCard('Faulty', data.faulty, Icons.error, color: const Color(0xFFD32F2F))),
             ],
           ),
           const SizedBox(height: 24),
@@ -1667,4 +1676,122 @@ class _PieChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+
+class _HoverKpiCard extends StatefulWidget {
+  const _HoverKpiCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final String subtitle;
+
+  @override
+  State<_HoverKpiCard> createState() => _HoverKpiCardState();
+}
+
+class _HoverKpiCardState extends State<_HoverKpiCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.color;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        transform: _hovered
+            ? (Matrix4.identity()..translateByDouble(0.0, -2.0, 0.0, 1.0))
+            : Matrix4.identity(),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: _hovered
+                ? color.withValues(alpha: 0.5)
+                : color.withValues(alpha: 0.35),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _hovered
+                  ? color.withValues(alpha: 0.18)
+                  : Colors.black.withValues(alpha: 0.03),
+              blurRadius: _hovered ? 16 : 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(18),
+          splashColor: color.withValues(alpha: 0.08),
+          highlightColor: Colors.transparent,
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(widget.icon, color: color, size: 26),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF14201A),
+                      ),
+                    ),
+                    Text(
+                      widget.subtitle,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

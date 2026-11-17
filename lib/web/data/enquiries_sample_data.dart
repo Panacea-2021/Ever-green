@@ -12,7 +12,7 @@ final List<Enquiry> webEnquirySampleRecords = List.unmodifiable([
     service: 'Air conditioner diagnostics',
     requestType: 'Book a Repair',
     submissionDate: DateTime(2026, 11, 12, 14, 30),
-    status: EnquiryStatus.newEnquiry,
+    status: EnquiryStatus.pending,
   ),
   Enquiry(
     tokenId: 'ENQ-1002',
@@ -23,7 +23,7 @@ final List<Enquiry> webEnquirySampleRecords = List.unmodifiable([
     service: 'Refrigerator cooling issue',
     requestType: 'Get Estimate',
     submissionDate: DateTime(2026, 11, 11, 09, 15),
-    status: EnquiryStatus.inProgress,
+    status: EnquiryStatus.underReview,
   ),
   Enquiry(
     tokenId: 'ENQ-1003',
@@ -56,7 +56,7 @@ final List<Enquiry> webEnquirySampleRecords = List.unmodifiable([
     service: 'Water leakage',
     requestType: 'Book a Repair',
     submissionDate: DateTime(2026, 11, 08, 13, 20),
-    status: EnquiryStatus.newEnquiry,
+    status: EnquiryStatus.pending,
   ),
   Enquiry(
     tokenId: 'ENQ-1006',
@@ -67,7 +67,7 @@ final List<Enquiry> webEnquirySampleRecords = List.unmodifiable([
     service: 'Filter replacement cost',
     requestType: 'Get Estimate',
     submissionDate: DateTime(2026, 11, 07, 10, 05),
-    status: EnquiryStatus.inProgress,
+    status: EnquiryStatus.underReview,
   ),
   Enquiry(
     tokenId: 'ENQ-1007',
@@ -89,6 +89,6 @@ final List<Enquiry> webEnquirySampleRecords = List.unmodifiable([
     service: 'Coil replacement',
     requestType: 'Get Estimate',
     submissionDate: DateTime(2026, 11, 05, 08, 50),
-    status: EnquiryStatus.newEnquiry,
+    status: EnquiryStatus.pending,
   ),
 ]);

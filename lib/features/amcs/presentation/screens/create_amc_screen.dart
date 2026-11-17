@@ -192,8 +192,12 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
     final name = _companyController.text.trim();
     final branch = _branchNameController.text.trim();
     final gst = _gstController.text.trim().toUpperCase();
+    final email = _companyEmailController.text.trim();
     if (name.isEmpty) return 'Please enter company name';
     if (branch.isEmpty) return 'Please enter branch name';
+    if (email.isNotEmpty && !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      return 'Please enter a valid company email';
+    }
     if (gst.isNotEmpty && !_gstPattern.hasMatch(gst)) {
       return 'Please enter a valid GST number';
     }
@@ -700,11 +704,11 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
       _webPair(
         _webField(
           controller: _companyController,
-          hint: 'Company Name',
+          hint: 'Company Name *',
           icon: Icons.business_outlined,
         ),
         _webDropdown(
-          hint: 'Branch Name',
+          hint: 'Branch Name *',
           icon: Icons.account_tree_outlined,
           value: _selectedBranch,
           items: _branchOptions,
@@ -720,13 +724,13 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
       _webPair(
         _webField(
           controller: _companyEmailController,
-          hint: 'Company Email',
+          hint: 'Company Email (Optional)',
           icon: Icons.mail_outline,
           keyboardType: TextInputType.emailAddress,
         ),
         _webField(
           controller: _gstController,
-          hint: 'GST Number',
+          hint: 'GST Number (Optional)',
           icon: Icons.receipt_long_outlined,
           capitalization: TextCapitalization.characters,
         ),
@@ -734,7 +738,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
       const SizedBox(height: 18),
       _webField(
         controller: _addressController,
-        hint: 'Company Address',
+        hint: 'Company Address (Optional)',
         icon: Icons.location_on_outlined,
         keyboardType: TextInputType.streetAddress,
       ),

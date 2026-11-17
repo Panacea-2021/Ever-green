@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -52,6 +53,9 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
 
   String? _selectedYear;
   String? _selectedFrequency;
+
+  final FocusNode _yearFocus = FocusNode();
+  final FocusNode _frequencyFocus = FocusNode();
   int? _serviceTypeId;
   String? _serviceTypeName;
   int? _companyId;
@@ -138,6 +142,8 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
     _serialNumberController.dispose();
     _locationController.dispose();
     _descriptionController.dispose();
+    _yearFocus.dispose();
+    _frequencyFocus.dispose();
     super.dispose();
   }
 
@@ -328,21 +334,29 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
           _pillField(_locationController, 'Location'),
           const SizedBox(height: 19),
 
-          _dropdownField(
-            'Manufacturer Year',
-            _selectedYear,
-            const [],
-            (_) {},
-            onTapOverride: _pickYear,
+          _keyboardClearable(
+            focusNode: _yearFocus,
+            onClear: () => setState(() => _selectedYear = null),
+            child: _dropdownField(
+              'Manufacturer Year',
+              _selectedYear,
+              const [],
+              (_) {},
+              onTapOverride: _pickYear,
+            ),
           ),
           const SizedBox(height: 19),
 
           // PM Frequency dropdown
-          _dropdownField(
-            'PM Frequency',
-            _selectedFrequency,
-            _frequencies,
-            (v) => setState(() => _selectedFrequency = v),
+          _keyboardClearable(
+            focusNode: _frequencyFocus,
+            onClear: () => setState(() => _selectedFrequency = null),
+            child: _dropdownField(
+              'PM Frequency',
+              _selectedFrequency,
+              _frequencies,
+              (v) => setState(() => _selectedFrequency = v),
+            ),
           ),
           const SizedBox(height: 19),
 
@@ -374,18 +388,26 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
               _pillField(_modelController, 'Model Number'),
               _pillField(_serialNumberController, 'Serial Number'),
               _pillField(_locationController, 'Hyderabad'),
-              _dropdownField(
-                'Manufacturer Year',
-                _selectedYear,
-                const [],
-                (_) {},
-                onTapOverride: _pickYear,
+              _keyboardClearable(
+                focusNode: _yearFocus,
+                onClear: () => setState(() => _selectedYear = null),
+                child: _dropdownField(
+                  'Manufacturer Year',
+                  _selectedYear,
+                  const [],
+                  (_) {},
+                  onTapOverride: _pickYear,
+                ),
               ),
-              _dropdownField(
-                'PM Frequency',
-                _selectedFrequency,
-                _frequencies,
-                (v) => setState(() => _selectedFrequency = v),
+              _keyboardClearable(
+                focusNode: _frequencyFocus,
+                onClear: () => setState(() => _selectedFrequency = null),
+                child: _dropdownField(
+                  'PM Frequency',
+                  _selectedFrequency,
+                  _frequencies,
+                  (v) => setState(() => _selectedFrequency = v),
+                ),
               ),
               _buildServiceTypeField(),
             ]),
@@ -598,6 +620,28 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
           ),
         ),
       ),
+    );
+  }
+
+  /// Wraps a dropdown field so Backspace/Delete clear the selection on web.
+  Widget _keyboardClearable({
+    required FocusNode focusNode,
+    required Widget child,
+    required VoidCallback onClear,
+  }) {
+    if (!kIsWeb) return child;
+    return Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.backspace ||
+                event.logicalKey == LogicalKeyboardKey.delete)) {
+          onClear();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: child,
     );
   }
 
@@ -897,7 +941,34 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: items.asMap().entries.map((entry) {
+            children: [
+              if (selectedValue != null)
+                GestureDetector(
+                  onTap: () {
+                    onChanged(null);
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: const BoxDecoration(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Clear selection',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFD32F2F),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ...items.asMap().entries.map((entry) {
               final i = entry.key;
               final item = entry.value;
               final isSelected = item == selectedValue;
@@ -936,6 +1007,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
                 ),
               );
             }).toList(),
+            ],
           ),
         ),
       ),
@@ -977,6 +1049,12 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
           ),
         ),
         actions: [
+          if (_selectedYear != null)
+            TextButton(
+              onPressed: () => Navigator.pop(context, -1),
+              child: const Text('Clear',
+                  style: TextStyle(color: Color(0xFFD32F2F))),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -984,7 +1062,11 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
         ],
       ),
     );
-    if (picked != null && mounted) setState(() => _selectedYear = '$picked');
+    if (picked == -1) {
+      if (mounted) setState(() => _selectedYear = null);
+    } else if (picked != null && mounted) {
+      setState(() => _selectedYear = '$picked');
+    }
   }
 
   void _showImagePickerDialog() {
