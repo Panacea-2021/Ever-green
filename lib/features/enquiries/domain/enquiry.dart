@@ -13,8 +13,10 @@ class Enquiry {
     this.equipment,
     this.service,
     this.requestType,
+    this.problemDescription,
+    this.photos = const [],
     this.submissionDate,
-    this.status = EnquiryStatus.newEnquiry,
+    this.status = EnquiryStatus.pending,
   });
 
   final String tokenId;
@@ -24,12 +26,16 @@ class Enquiry {
   final String? equipment;
   final String? service;
   final String? requestType;
+  final String? problemDescription;
+  final List<String> photos;
   final DateTime? submissionDate;
   final EnquiryStatus status;
 
   factory Enquiry.fromJson(Map<String, dynamic> json) {
     DateTime? parseDate(dynamic v) =>
         v == null ? null : DateTime.tryParse('$v')?.toLocal();
+    final photosRaw = json['photos'] ?? json['images'] ?? json['uploaded_photos'];
+    final photos = photosRaw is List ? photosRaw.map((e) => '$e').toList() : const <String>[];
     return Enquiry(
       tokenId: '${json['token_id'] ?? json['tokenId'] ?? json['id'] ?? ''}',
       customerName: '${json['customer_name'] ?? json['customerName'] ?? json['name'] ?? ''}',
@@ -37,7 +43,9 @@ class Enquiry {
       email: (json['email'] as String?)?.trim().isEmpty == true ? null : json['email']?.toString(),
       equipment: (json['equipment'] ?? json['equipment_name'])?.toString(),
       service: (json['service'] ?? json['service_name'])?.toString(),
-      requestType: (json['request_type'] ?? json['requestType'] ?? json['type'])?.toString(),
+      requestType: (json['request_type'] ?? json['requestType'] ?? json['type'] ?? json['booking_type'])?.toString(),
+      problemDescription: (json['problem_description'] ?? json['problemDescription'] ?? json['description'])?.toString(),
+      photos: photos,
       submissionDate: parseDate(json['submission_date'] ?? json['submissionDate'] ?? json['created_at']),
       status: EnquiryStatus.fromKey(json['status']),
     );
@@ -45,41 +53,43 @@ class Enquiry {
 }
 
 enum EnquiryStatus {
-  newEnquiry('New'),
-  inProgress('In Progress'),
-  completed('Completed'),
-  cancelled('Cancelled');
+  pending('pending', 'Pending'),
+  underReview('under_review', 'Under Review'),
+  confirmed('confirmed', 'Confirmed'),
+  rejected('rejected', 'Rejected'),
+  completed('completed', 'Completed'),
+  contacted('Contacted', 'Contacted'),
+  cancelled('cancelled', 'Cancelled');
 
-  const EnquiryStatus(this.label);
+  const EnquiryStatus(this.key, this.label);
+  final String key;
   final String label;
 
   static EnquiryStatus fromKey(dynamic key) {
-    final s = '$key'.trim().toLowerCase();
+    final s = '$key'.trim().toLowerCase().replaceAll(' ', '_');
     switch (s) {
-      case 'new':
       case 'pending':
-        return EnquiryStatus.newEnquiry;
-      case 'in progress':
+      case 'new':
+        return EnquiryStatus.pending;
+      case 'under_review':
       case 'in_progress':
       case 'inprogress':
-        return EnquiryStatus.inProgress;
+        return EnquiryStatus.underReview;
+      case 'confirmed':
+        return EnquiryStatus.confirmed;
+      case 'rejected':
+      case 'cancelled':
+      case 'canceled':
+        return s == 'cancelled' || s == 'canceled' ? EnquiryStatus.cancelled : EnquiryStatus.rejected;
       case 'completed':
       case 'done':
         return EnquiryStatus.completed;
-      case 'cancelled':
-      case 'canceled':
-        return EnquiryStatus.cancelled;
+      case 'contacted':
+        return EnquiryStatus.contacted;
       default:
-        return EnquiryStatus.newEnquiry;
+        return EnquiryStatus.pending;
     }
   }
-
-  String get key => switch (this) {
-        EnquiryStatus.newEnquiry => 'new',
-        EnquiryStatus.inProgress => 'in_progress',
-        EnquiryStatus.completed => 'completed',
-        EnquiryStatus.cancelled => 'cancelled',
-      };
 }
 
 /// ---------------------------------------------------------------------------

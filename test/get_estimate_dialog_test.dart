@@ -1,5 +1,6 @@
 import 'package:evergreen/features/landing/presentation/widgets/get_estimate_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -67,13 +68,15 @@ void main() {
 }
 
 Widget _estimateHost() {
-  return MaterialApp(
-    home: Scaffold(
-      body: Builder(
-        builder: (context) => Center(
-          child: ElevatedButton(
-            onPressed: () => showGetEstimateDialog(context),
-            child: const Text('Get Estimate'),
+  return ProviderScope(
+    child: MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => Center(
+            child: ElevatedButton(
+              onPressed: () => showGetEstimateDialog(context),
+              child: const Text('Get Estimate'),
+            ),
           ),
         ),
       ),

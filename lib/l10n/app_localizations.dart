@@ -347,6 +347,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All Users'**
   String get allUsers;
+
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submit;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
+  /// No description provided for @taskBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Board'**
+  String get taskBoard;
+
+  /// No description provided for @usersList.
+  ///
+  /// In en, this message translates to:
+  /// **'Users List'**
+  String get usersList;
+
+  /// No description provided for @amcRenewals.
+  ///
+  /// In en, this message translates to:
+  /// **'AMC Renewals'**
+  String get amcRenewals;
+
+  /// No description provided for @pmSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'PM Schedule'**
+  String get pmSchedule;
+
+  /// No description provided for @analytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get analytics;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @announcements.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get announcements;
+
+  /// No description provided for @scanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanner'**
+  String get scanner;
+
+  /// No description provided for @companyList.
+  ///
+  /// In en, this message translates to:
+  /// **'Company\'s List'**
+  String get companyList;
+
+  /// No description provided for @myTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'My Tasks'**
+  String get myTasks;
+
+  /// No description provided for @myServiceTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'My Service Tasks'**
+  String get myServiceTasks;
+
+  /// No description provided for @createTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Task'**
+  String get createTask;
+
+  /// No description provided for @addUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Add User'**
+  String get addUser;
+
+  /// No description provided for @technicians.
+  ///
+  /// In en, this message translates to:
+  /// **'Service Engineers'**
+  String get technicians;
+
+  /// No description provided for @ticketQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket Queue'**
+  String get ticketQueue;
+
+  /// No description provided for @createCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Company'**
+  String get createCompany;
+
+  /// No description provided for @activityHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity History'**
+  String get activityHistory;
+
+  /// No description provided for @enquiries.
+  ///
+  /// In en, this message translates to:
+  /// **'Enquiries'**
+  String get enquiries;
+
+  /// No description provided for @globalSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Global Search'**
+  String get globalSearch;
+
+  /// No description provided for @addEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Equipment'**
+  String get addEquipment;
+
+  /// No description provided for @createAmc.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Company'**
+  String get createAmc;
+
+  /// No description provided for @upload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get upload;
+
+  /// No description provided for @downloadQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Download QR'**
+  String get downloadQr;
+
+  /// No description provided for @technicianPerformance.
+  ///
+  /// In en, this message translates to:
+  /// **'Service Engineer Performance'**
+  String get technicianPerformance;
+
+  /// No description provided for @auditLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity History'**
+  String get auditLog;
+
+  /// No description provided for @pmScheduleShort.
+  ///
+  /// In en, this message translates to:
+  /// **'PM Schedule'**
+  String get pmScheduleShort;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get noData;
+
+  /// No description provided for @welcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get welcome;
 }
 
 class _AppLocalizationsDelegate

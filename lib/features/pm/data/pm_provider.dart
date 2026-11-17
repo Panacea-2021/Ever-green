@@ -162,9 +162,14 @@ final pmDueSourcesProvider =
       .watch(pmProvider.future)
       .then<PmState?>((v) => v)
       .catchError((Object _) => null);
-  final equipments = await equipmentsFuture;
-  final tasks = await tasksFuture ?? const <ServiceTask>[];
-  final pm = await pmFuture ?? const PmState();
+  final results = await Future.wait<dynamic>([
+    equipmentsFuture,
+    tasksFuture,
+    pmFuture,
+  ]);
+  final equipments = results[0] as List<Equipment>;
+  final tasks = (results[1] as List<ServiceTask>?) ?? const <ServiceTask>[];
+  final pm = (results[2] as PmState?) ?? const PmState();
   return PmDueSources(
     equipments: equipments,
     schedules: pm.schedules,

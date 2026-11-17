@@ -227,6 +227,7 @@ final companiesProvider = FutureProvider.autoDispose<List<Company>>((ref) {
 });
 
 final tasksProvider = FutureProvider.autoDispose<List<ServiceTask>>((ref) {
+  cacheFor(ref, listCacheDuration);
   return ref.watch(evergreenRepositoryProvider).getTasks();
 });
 

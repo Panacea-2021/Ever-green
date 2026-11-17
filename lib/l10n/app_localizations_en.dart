@@ -132,4 +132,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allUsers => 'All Users';
+
+  @override
+  String get home => 'Home';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get submit => 'Submit';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get taskBoard => 'Task Board';
+
+  @override
+  String get usersList => 'Users List';
+
+  @override
+  String get amcRenewals => 'AMC Renewals';
+
+  @override
+  String get pmSchedule => 'PM Schedule';
+
+  @override
+  String get analytics => 'Analytics';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get announcements => 'Announcements';
+
+  @override
+  String get scanner => 'Scanner';
+
+  @override
+  String get companyList => 'Company\'s List';
+
+  @override
+  String get myTasks => 'My Tasks';
+
+  @override
+  String get myServiceTasks => 'My Service Tasks';
+
+  @override
+  String get createTask => 'Create Task';
+
+  @override
+  String get addUser => 'Add User';
+
+  @override
+  String get technicians => 'Service Engineers';
+
+  @override
+  String get ticketQueue => 'Ticket Queue';
+
+  @override
+  String get createCompany => 'Create Company';
+
+  @override
+  String get activityHistory => 'Activity History';
+
+  @override
+  String get enquiries => 'Enquiries';
+
+  @override
+  String get globalSearch => 'Global Search';
+
+  @override
+  String get addEquipment => 'Add Equipment';
+
+  @override
+  String get createAmc => 'Create Company';
+
+  @override
+  String get upload => 'Upload';
+
+  @override
+  String get downloadQr => 'Download QR';
+
+  @override
+  String get technicianPerformance => 'Service Engineer Performance';
+
+  @override
+  String get auditLog => 'Activity History';
+
+  @override
+  String get pmScheduleShort => 'PM Schedule';
+
+  @override
+  String get noData => 'No data';
+
+  @override
+  String get welcome => 'Welcome';
 }

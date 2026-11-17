@@ -132,4 +132,109 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get allUsers => 'सभी उपयोगकर्ता';
+
+  @override
+  String get home => 'होम';
+
+  @override
+  String get all => 'सभी';
+
+  @override
+  String get cancel => 'रद्द करें';
+
+  @override
+  String get save => 'सहेजें';
+
+  @override
+  String get submit => 'जमा करें';
+
+  @override
+  String get retry => 'पुनः प्रयास';
+
+  @override
+  String get loading => 'लोड हो रहा है...';
+
+  @override
+  String get taskBoard => 'टास्क बोर्ड';
+
+  @override
+  String get usersList => 'उपयोगकर्ता सूची';
+
+  @override
+  String get amcRenewals => 'एएमसी नवीनीकरण';
+
+  @override
+  String get pmSchedule => 'पीएम शेड्यूल';
+
+  @override
+  String get analytics => 'एनालिटिक्स';
+
+  @override
+  String get notifications => 'नोटिफिकेशन';
+
+  @override
+  String get announcements => 'घोषणाएँ';
+
+  @override
+  String get scanner => 'स्कैनर';
+
+  @override
+  String get companyList => 'कंपनी सूची';
+
+  @override
+  String get myTasks => 'मेरे कार्य';
+
+  @override
+  String get myServiceTasks => 'मेरी सेवा कार्य';
+
+  @override
+  String get createTask => 'कार्य बनाएँ';
+
+  @override
+  String get addUser => 'उपयोगकर्ता जोड़ें';
+
+  @override
+  String get technicians => 'सेवा इंजीनियर';
+
+  @override
+  String get ticketQueue => 'टिकट कतार';
+
+  @override
+  String get createCompany => 'कंपनी बनाएँ';
+
+  @override
+  String get activityHistory => 'गतिविधि इतिहास';
+
+  @override
+  String get enquiries => 'पूछताछ';
+
+  @override
+  String get globalSearch => 'ग्लोबल खोज';
+
+  @override
+  String get addEquipment => 'उपकरण जोड़ें';
+
+  @override
+  String get createAmc => 'कंपनी बनाएँ';
+
+  @override
+  String get upload => 'अपलोड';
+
+  @override
+  String get downloadQr => 'क्यूआर डाउनलोड';
+
+  @override
+  String get technicianPerformance => 'सेवा इंजीनियर प्रदर्शन';
+
+  @override
+  String get auditLog => 'गतिविधि इतिहास';
+
+  @override
+  String get pmScheduleShort => 'पीएम शेड्यूल';
+
+  @override
+  String get noData => 'कोई डेटा नहीं';
+
+  @override
+  String get welcome => 'स्वागत है';
 }

@@ -28,8 +28,10 @@ enum CompanyServiceType {
   final String label;
 
   static CompanyServiceType? fromKey(dynamic key) {
+    if (key == null) return null;
+    final k = '$key'.trim().toLowerCase();
     for (final t in values) {
-      if (t.key == key) return t;
+      if (t.key == k) return t;
     }
     return null;
   }
@@ -45,8 +47,10 @@ enum AmcType {
   final String label;
 
   static AmcType? fromKey(dynamic key) {
+    if (key == null) return null;
+    final k = '$key'.trim().toLowerCase();
     for (final t in values) {
-      if (t.key == key) return t;
+      if (t.key == k) return t;
     }
     return null;
   }

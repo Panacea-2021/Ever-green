@@ -560,7 +560,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!Permissions.canViewOrgOverview(role)) return _buildMyTasksSummaryBar();
     final users = _userStats?.total ?? _users?.length;
     final amcs =
-        ref.watch(companiesProvider).valueOrNull?.where((c) => c.isAmc).length;
+        ref.watch(companiesProvider).valueOrNull?.length;
     final tasks = _counts?.total;
 
     return _summaryCard([

@@ -1,6 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../guest_repair_bookings/data/guest_repair_bookings_repository.dart';
 
 /// Shows a "Book a Repair" dialog.
 ///
@@ -19,44 +22,34 @@ Future<void> showBookRepairDialog(
   );
 }
 
-class _BookRepairDialog extends StatefulWidget {
-  const _BookRepairDialog();
+class _BookRepairDialog extends ConsumerStatefulWidget {
+  const _BookRepairDialog({super.key});
 
   @override
-  State<_BookRepairDialog> createState() => _BookRepairDialogState();
+  ConsumerState<_BookRepairDialog> createState() => _BookRepairDialogState();
 }
 
-class _BookRepairDialogState extends State<_BookRepairDialog> {
-  static const _services = [
-    'Repair',
-    'Maintenance',
-    'Installation',
-    'AMC Service',
-    'Emergency Repair',
-  ];
-
-  static const _equipment = [
-    'Range / Oven',
-    'Refrigerator',
-    'Microwave',
-    'Dishwasher',
-    'Hood / Ventilation',
-    'Mixer',
-    'Fryer',
-    'Chiller / Freezer',
-    'Ice Machine',
-    'Coffee Machine',
-  ];
+class _BookRepairDialogState extends ConsumerState<_BookRepairDialog> {
+  List<String> _services = const [];
+  List<Map<String, dynamic>> _equipment = const [];
+  bool _loadingOptions = true;
+  String? _optionsError;
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
 
-  String? _selectedEquipment;
+  String? _selectedEquipmentId;
   String? _selectedService;
   String? _token;
   bool _issuing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOptions();
+  }
 
   @override
   void dispose() {
@@ -66,9 +59,31 @@ class _BookRepairDialogState extends State<_BookRepairDialog> {
     super.dispose();
   }
 
+  Future<void> _loadOptions() async {
+    try {
+      final repo = ref.read(guestRepairBookingsRepositoryProvider);
+      final results = await Future.wait<dynamic>([
+        repo.fetchEquipment(),
+        repo.fetchServices(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _equipment = results[0] as List<Map<String, dynamic>>;
+        _services = results[1] as List<String>;
+        _loadingOptions = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _optionsError = e.toString();
+        _loadingOptions = false;
+      });
+    }
+  }
+
   Future<void> _issueToken() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedEquipment == null) {
+    if (_selectedEquipmentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select equipment first')),
       );
@@ -81,13 +96,31 @@ class _BookRepairDialogState extends State<_BookRepairDialog> {
       return;
     }
     setState(() => _issuing = true);
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    final token = 'EG-${100000 + Random().nextInt(900000)}';
-    setState(() {
-      _token = token;
-      _issuing = false;
-    });
+    try {
+      final repo = ProviderScope.containerOf(context)
+          .read(guestRepairBookingsRepositoryProvider);
+      final key =
+          '${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(1 << 32)}';
+      final reference = await repo.submit(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        email: _emailController.text.trim(),
+        equipmentId: _selectedEquipmentId!,
+        service: _selectedService!,
+        idempotencyKey: key,
+      );
+      if (!mounted) return;
+      setState(() {
+        _token = reference ?? 'EG-${100000 + Random().nextInt(900000)}';
+        _issuing = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _issuing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Booking failed: $e')),
+      );
+    }
   }
 
   @override
@@ -102,7 +135,9 @@ class _BookRepairDialogState extends State<_BookRepairDialog> {
         width: dialogWidth,
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: _token == null ? _buildForm() : _buildSuccess(),
+          child: SingleChildScrollView(
+            child: _token == null ? _buildForm() : _buildSuccess(),
+          ),
         ),
       ),
     );
@@ -191,56 +226,73 @@ class _BookRepairDialogState extends State<_BookRepairDialog> {
             ),
           ),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedEquipment,
-            decoration: InputDecoration(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFD7E6DA)),
+          if (_loadingOptions)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_optionsError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text('Could not load options: $_optionsError'),
+            )
+          else ...[
+            DropdownButtonFormField<String>(
+              initialValue: _selectedEquipmentId,
+              decoration: InputDecoration(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFD7E6DA)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFD7E6DA)),
+                ),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFD7E6DA)),
+              hint: const Text('Choose equipment'),
+              items: _equipment
+                  .map((e) => DropdownMenuItem<String>(
+                        value: '${e['id']}',
+                        child: Text('${e['name']}'),
+                      ))
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedEquipmentId = v),
+              validator: (v) => v == null ? 'Equipment is required' : null,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Select a service',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1A1A1A),
               ),
             ),
-            hint: const Text('Choose equipment'),
-            items: _equipment
-                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                .toList(),
-            onChanged: (v) => setState(() => _selectedEquipment = v),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Select a service',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedService,
-            decoration: InputDecoration(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFD7E6DA)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedService,
+              decoration: InputDecoration(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFD7E6DA)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFD7E6DA)),
+                ),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFD7E6DA)),
-              ),
+              hint: const Text('Choose a service'),
+              items: _services
+                  .map((s) => DropdownMenuItem<String>(value: s, child: Text(s)))
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedService = v),
+              validator: (v) => v == null ? 'Service is required' : null,
             ),
-            hint: const Text('Choose a service'),
-            items: _services
-                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                .toList(),
-            onChanged: (v) => setState(() => _selectedService = v),
-          ),
+          ],
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
@@ -326,7 +378,7 @@ class _BookRepairDialogState extends State<_BookRepairDialog> {
         ),
         const SizedBox(height: 8),
         Text(
-          '$name · $_selectedEquipment · $_selectedService',
+          '$name',
           style: const TextStyle(
             fontSize: 13,
             color: Color(0xFF5C6B60),

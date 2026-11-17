@@ -132,4 +132,109 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get allUsers => 'அனைத்து பயனர்கள்';
+
+  @override
+  String get home => 'முகப்பு';
+
+  @override
+  String get all => 'அனைத்து';
+
+  @override
+  String get cancel => 'ரத்து';
+
+  @override
+  String get save => 'சேமி';
+
+  @override
+  String get submit => 'சமர்ப்பி';
+
+  @override
+  String get retry => 'மீண்டும் முயற்சி';
+
+  @override
+  String get loading => 'ஏற்றுகிறது...';
+
+  @override
+  String get taskBoard => 'பணி பலகை';
+
+  @override
+  String get usersList => 'பயனர் பட்டியல்';
+
+  @override
+  String get amcRenewals => 'ஏஎம்சி புதுப்பிப்புகள்';
+
+  @override
+  String get pmSchedule => 'பிஎம் அட்டவணை';
+
+  @override
+  String get analytics => 'பகுப்பாய்வு';
+
+  @override
+  String get notifications => 'அறிவிப்புகள்';
+
+  @override
+  String get announcements => 'அறிவிப்புகள்';
+
+  @override
+  String get scanner => 'ஸ்கேனர்';
+
+  @override
+  String get companyList => 'நிறுவன பட்டியல்';
+
+  @override
+  String get myTasks => 'என் பணிகள்';
+
+  @override
+  String get myServiceTasks => 'என் சேவை பணிகள்';
+
+  @override
+  String get createTask => 'பணி உருவாக்கு';
+
+  @override
+  String get addUser => 'பயனரைச் சேர்';
+
+  @override
+  String get technicians => 'சேவை பொறியாளர்கள்';
+
+  @override
+  String get ticketQueue => 'டிக்கெட் வரிசை';
+
+  @override
+  String get createCompany => 'நிறுவனம் உருவாக்கு';
+
+  @override
+  String get activityHistory => 'செயல்பாட்டு வரலாறு';
+
+  @override
+  String get enquiries => 'விசாரணைகள்';
+
+  @override
+  String get globalSearch => 'குளோபல் தேடல்';
+
+  @override
+  String get addEquipment => 'உபகரணம் சேர்';
+
+  @override
+  String get createAmc => 'நிறுவனம் உருவாக்கு';
+
+  @override
+  String get upload => 'பதிவேற்று';
+
+  @override
+  String get downloadQr => 'க்யூஆர் பதிவிறக்கு';
+
+  @override
+  String get technicianPerformance => 'சேவை பொறியாளர் செயல்திறன்';
+
+  @override
+  String get auditLog => 'செயல்பாட்டு வரலாறு';
+
+  @override
+  String get pmScheduleShort => 'பிஎம் அட்டவணை';
+
+  @override
+  String get noData => 'தரவு இல்லை';
+
+  @override
+  String get welcome => 'வரவேற்கிறோம்';
 }

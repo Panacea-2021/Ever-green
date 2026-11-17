@@ -52,7 +52,7 @@ class WebDashboardScreen extends ConsumerWidget {
             : null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Background decoration
@@ -168,6 +168,7 @@ class _WebOrganizationSections extends ConsumerWidget {
     final serviceEngineers = (users[UserRole.seniorTechnician] ?? 0) +
         (users[UserRole.technician] ?? 0) +
         (users[UserRole.coldRoomTechnician] ?? 0);
+    final totalCompanies = ref.watch(companiesProvider).valueOrNull?.length ?? data.totalAmcs;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -191,7 +192,7 @@ class _WebOrganizationSections extends ConsumerWidget {
             ),
             _WebDashboardMetricCard(
               title: l10n?.totalAmcs ?? 'AMCs',
-              value: data.totalAmcs,
+              value: totalCompanies,
               subtitle: 'Service contracts',
               icon: Icons.verified_outlined,
               color: WebDashboardScreen._green,
@@ -281,15 +282,18 @@ class _WebDashboardSectionHeading extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A1A),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         Text(
           subtitle,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
+          style: TextStyle(
+            fontSize: 13,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );

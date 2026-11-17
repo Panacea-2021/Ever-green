@@ -36,6 +36,8 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
   final Set<String> _busy = {};
   List<int?>? _cachedTileCounts;
   PmDueSources? _cachedTileSources;
+  List<PmDue>? _cachedItems;
+  Object? _cachedItemsKey;
 
   bool get _schedulesView => _view == PmWindow.values.length;
 
@@ -432,20 +434,25 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
           runSpacing: gap,
           children: [
             for (var i = 0; i < labels.length; i++)
-              SizedBox(
-                width: tileWidth,
-                child: _webViewTile(
-                  label: labels[i],
-                  count: counts[i],
-                  icon: _webTileMeta[i].$1,
-                  color: _webTileMeta[i].$2,
-                  selected:
-                      _view == i && (_range == null || i == labels.length - 1),
-                  onTap: () => setState(() {
-                    _view = i;
-                    if (i < PmWindow.values.length) _range = null;
-                  }),
-                ),
+              Builder(
+                builder: (context) {
+                  final index = i;
+                  return SizedBox(
+                    width: tileWidth,
+                    child: _webViewTile(
+                      label: labels[index],
+                      count: counts[index],
+                      icon: _webTileMeta[index].$1,
+                      color: _webTileMeta[index].$2,
+                      selected: _view == index &&
+                          (_range == null || index == labels.length - 1),
+                      onTap: () => setState(() {
+                        _view = index;
+                        if (index < PmWindow.values.length) _range = null;
+                      }),
+                    ),
+                  );
+                },
               ),
           ],
         );
@@ -674,17 +681,32 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     final (from, to) =
         range == null ? window.range(now) : (range.start, range.end);
     final sources = async.valueOrNull;
-    final items = sources == null
-        ? const <PmDue>[]
-        : computePmDue(
-            equipments: sources.equipments,
-            schedules: sources.schedules,
-            lastVisits: sources.lastVisits,
-            from: from,
-            to: to,
-            today: now,
-            includeOverdue: range == null && window.includesOverdue,
-          );
+    List<PmDue> items = const <PmDue>[];
+    if (sources != null) {
+      final key = Object.hash(
+        identityHashCode(sources),
+        _view,
+        range?.start,
+        range?.end,
+        now.day,
+      );
+      if (_cachedItemsKey != key || _cachedItems == null) {
+        _cachedItems = computePmDue(
+          equipments: sources.equipments,
+          schedules: sources.schedules,
+          lastVisits: sources.lastVisits,
+          from: from,
+          to: to,
+          today: now,
+          includeOverdue: range == null && window.includesOverdue,
+        );
+        _cachedItemsKey = key;
+      }
+      items = _cachedItems!;
+    } else {
+      _cachedItems = null;
+      _cachedItemsKey = null;
+    }
     return Column(
       children: [
         _rangeRow(items.length, sources != null),

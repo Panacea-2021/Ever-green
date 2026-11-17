@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/permissions.dart';
+import '../../core/router/routes.dart';
+import '../../features/enquiries/data/enquiries_repository.dart';
 import '../../features/enquiries/domain/enquiry.dart';
 import '../../shared/providers/auth_state_provider.dart';
-import '../../web/data/enquiries_sample_data.dart';
 import '../theme/web_tokens.dart';
 
-/// Web-only Enquiries page: lists customer repair enquiries.
-/// Currently backed by clearly-marked sample data (pending real API).
+/// Web-only Enquiries page: lists customer repair enquiries from the backend.
 class WebEnquiriesScreen extends ConsumerStatefulWidget {
   const WebEnquiriesScreen({super.key});
 
@@ -21,6 +21,7 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
   String _search = '';
   EnquiryStatus? _statusFilter;
   String? _requestTypeFilter; // null = All
+  int _page = 1;
 
   @override
   void dispose() {
@@ -28,13 +29,18 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
     super.dispose();
   }
 
-  List<Enquiry> get _filtered {
-    final q = _search.trim().toLowerCase();
-    return webEnquirySampleRecords.where((e) {
-      final matchesSearch = q.isEmpty ||
-          e.customerName.toLowerCase().contains(q) ||
-          e.phone.toLowerCase().contains(q) ||
-          (e.email?.toLowerCase().contains(q) ?? false);
+  Future<List<Enquiry>> _load() async {
+    final repo = ref.read(enquiriesRepositoryProvider);
+    final results = await Future.wait([
+      repo.fetchGuestRepairBookings(page: _page),
+      repo.fetchFreeEstimates(),
+    ]);
+    final all = [...results[0], ...results[1]];
+    return all.where((e) {
+      final matchesSearch = _search.trim().isEmpty ||
+          e.customerName.toLowerCase().contains(_search.trim().toLowerCase()) ||
+          e.phone.toLowerCase().contains(_search.trim().toLowerCase()) ||
+          (e.email?.toLowerCase().contains(_search.trim().toLowerCase()) ?? false);
       final matchesStatus = _statusFilter == null || e.status == _statusFilter;
       final matchesType = _requestTypeFilter == null || e.requestType == _requestTypeFilter;
       return matchesSearch && matchesStatus && matchesType;
@@ -47,6 +53,7 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
     if (!Permissions.canViewReports(role)) {
       return const Center(child: Text('Access denied'));
     }
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -54,7 +61,68 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
         children: [
           _buildToolbar(),
           const SizedBox(height: 16),
-          Expanded(child: _buildTable()),
+          Expanded(
+            child: FutureBuilder<List<Enquiry>>(
+              future: _load(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey),
+                        const SizedBox(height: 12),
+                        Text('Failed to load enquiries: ${snapshot.error}', textAlign: TextAlign.center),
+                        const SizedBox(height: 12),
+                        ElevatedButton(onPressed: () => setState(() {}), child: const Text('Retry')),
+                      ],
+                    ),
+                  );
+                }
+                final items = snapshot.data ?? const [];
+                if (items.isEmpty) {
+                  return const Center(child: Text('No enquiries found.'));
+                }
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columns: const [
+                      DataColumn(label: Text('Token ID')),
+                      DataColumn(label: Text('Request Type')),
+                      DataColumn(label: Text('Customer Name')),
+                      DataColumn(label: Text('Phone Number')),
+                      DataColumn(label: Text('Email')),
+                      DataColumn(label: Text('Equipment')),
+                      DataColumn(label: Text('Service')),
+                      DataColumn(label: Text('Submission Date')),
+                      DataColumn(label: Text('Status')),
+                      DataColumn(label: Text('Action')),
+                    ],
+                    rows: items.map((e) {
+                      return DataRow(cells: [
+                        DataCell(Text(e.tokenId)),
+                        DataCell(Text(e.requestType ?? '-')),
+                        DataCell(Text(e.customerName)),
+                        DataCell(Text(e.phone)),
+                        DataCell(Text(e.email ?? '-')),
+                        DataCell(Text(e.equipment ?? '-')),
+                        DataCell(Text(e.service ?? '-')),
+                        DataCell(Text(e.submissionDate?.toLocal().toString() ?? '-')),
+                        DataCell(Text(e.status.label)),
+                        DataCell(TextButton(
+                          onPressed: () => _showDetails(e),
+                          child: const Text('View Details'),
+                        )),
+                      ]);
+                    }).toList(),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -101,53 +169,123 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
     );
   }
 
-  Widget _buildTable() {
-    final items = _filtered;
-    if (items.isEmpty) {
-      return const Center(child: Text('No enquiries found.'));
-    }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: const [
-          DataColumn(label: Text('Token ID')),
-          DataColumn(label: Text('Request Type')),
-          DataColumn(label: Text('Customer Name')),
-          DataColumn(label: Text('Phone Number')),
-          DataColumn(label: Text('Email')),
-          DataColumn(label: Text('Equipment')),
-          DataColumn(label: Text('Service')),
-          DataColumn(label: Text('Submission Date')),
-          DataColumn(label: Text('Status')),
-          DataColumn(label: Text('Action')),
-        ],
-        rows: items.map((e) {
-          return DataRow(cells: [
-            DataCell(Text(e.tokenId)),
-            DataCell(Text(e.requestType ?? '-')),
-            DataCell(Text(e.customerName)),
-            DataCell(Text(e.phone)),
-            DataCell(Text(e.email ?? '-')),
-            DataCell(Text(e.equipment ?? '-')),
-            DataCell(Text(e.service ?? '-')),
-            DataCell(Text(e.submissionDate?.toLocal().toString() ?? '-')),
-            DataCell(Text(e.status.label)),
-            DataCell(TextButton(
-              onPressed: () => _showDetails(e),
-              child: const Text('View Details'),
-            )),
-          ]);
-        }).toList(),
+  void _showDetails(Enquiry e) {
+    final isRepair = (e.requestType ?? '').toLowerCase().contains('repair');
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => _EnquiryDetailsDialog(
+        enquiry: e,
+        isRepair: isRepair,
+        onRefresh: () => setState(() {}),
       ),
     );
   }
 
-  void _showDetails(Enquiry e) {
-    showDialog<void>(
+  Widget _detail(String label, String value) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Expanded(child: Text(value)),
+          ],
+        ),
+      );
+}
+
+class _EnquiryDetailsDialog extends ConsumerStatefulWidget {
+  final Enquiry enquiry;
+  final bool isRepair;
+  final VoidCallback onRefresh;
+  const _EnquiryDetailsDialog({
+    required this.enquiry,
+    required this.isRepair,
+    required this.onRefresh,
+  });
+
+  @override
+  ConsumerState<_EnquiryDetailsDialog> createState() => _EnquiryDetailsDialogState();
+}
+
+class _EnquiryDetailsDialogState extends ConsumerState<_EnquiryDetailsDialog> {
+  Enquiry? _loaded;
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.isRepair) {
+      _fetch();
+    }
+  }
+
+  Future<void> _fetch() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final repo = ref.read(enquiriesRepositoryProvider);
+      final e = await repo.fetchFreeEstimate(widget.enquiry.tokenId);
+      if (!mounted) return;
+      setState(() {
+        _loaded = e;
+        _loading = false;
+      });
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _error = err.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Enquiry get _e => _loaded ?? widget.enquiry;
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Enquiry ${e.tokenId}'),
-        content: Column(
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete enquiry?'),
+        content: const Text('This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final repo = ref.read(enquiriesRepositoryProvider);
+      if (widget.isRepair) {
+        await repo.deleteGuestRepairBooking(widget.enquiry.tokenId);
+      } else {
+        await repo.deleteFreeEstimate(widget.enquiry.tokenId);
+      }
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onRefresh();
+      }
+    } catch (err) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Delete failed: $err')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const AlertDialog(
+        content: SizedBox(height: 60, child: Center(child: CircularProgressIndicator())),
+      );
+    }
+    final e = _e;
+    return AlertDialog(
+      title: Text('Enquiry ${e.tokenId}'),
+      content: SingleChildScrollView(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -158,14 +296,44 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
             _detail('Email', e.email ?? '-'),
             _detail('Equipment', e.equipment ?? '-'),
             _detail('Service', e.service ?? '-'),
+            if (e.problemDescription != null && e.problemDescription!.trim().isNotEmpty)
+              _detail('Problem Description', e.problemDescription!),
+            if (e.photos.isNotEmpty) _detail('Uploaded Photos', e.photos.join(', ')),
             _detail('Submission Date', e.submissionDate?.toLocal().toString() ?? '-'),
             _detail('Status', e.status.label),
+            if (widget.isRepair) ...[
+              const SizedBox(height: 12),
+              DropdownButton<EnquiryStatus>(
+                value: e.status,
+                items: EnquiryStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.label))).toList(),
+                onChanged: (s) async {
+                  if (s == null || s == e.status) return;
+                  try {
+                    final repo = ref.read(enquiriesRepositoryProvider);
+                    await repo.updateGuestRepairBookingStatus(widget.enquiry.tokenId, s);
+                    if (mounted) {
+                      Navigator.pop(context);
+                      widget.onRefresh();
+                    }
+                  } catch (err) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Update failed: $err')));
+                    }
+                  }
+                },
+              ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text('Failed to refresh: $_error', style: const TextStyle(color: Colors.red, fontSize: 12)),
+            ],
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
-        ],
       ),
+      actions: [
+        TextButton(onPressed: _delete, child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+      ],
     );
   }
 
