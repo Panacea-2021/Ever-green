@@ -12,6 +12,7 @@ import 'package:evergreen/features/notifications/data/notifications_provider.dar
 import 'package:evergreen/core/models/backend_models.dart';
 import 'package:evergreen/shared/widgets/app_drawer.dart'
     show drawerCompaniesCountProvider, drawerUsersCountProvider;
+import 'package:evergreen/web/theme/web_tokens.dart';
 import 'package:evergreen/web/widgets/web_module_frame.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -151,6 +152,13 @@ void main() {
       expect(rect.left, greaterThanOrEqualTo(0));
       expect(rect.right, lessThanOrEqualTo(320));
     }
+    final notificationButton =
+        find.byKey(const ValueKey('web-notifications-button'));
+    expect(tester.getSize(notificationButton), const Size(48, 48));
+    expect(tester.widget<IconButton>(notificationButton).color, WebTokens.green);
+    await tester.tap(notificationButton);
+    await tester.pumpAndSettle();
+    expect(find.text('Notifications destination'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -51,6 +51,7 @@ Widget _dashboard(
   UserRole role, {
   required ValueChanged<bool> onAnalyticsRequested,
   GoRouter? router,
+  List<model.Company> companies = const [],
 }) {
   return ProviderScope(
     overrides: [
@@ -67,7 +68,7 @@ Widget _dashboard(
           model.TaskStatus.closed: 2,
         }),
       ),
-      companiesProvider.overrideWith((ref) async => const <model.Company>[]),
+      companiesProvider.overrideWith((ref) async => companies),
       amcRenewalsProvider.overrideWithValue(const <AmcContract>[]),
       dashboardAnalyticsProvider.overrideWith((ref) async {
         onAnalyticsRequested(true);
@@ -127,6 +128,35 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Users tab 2'), findsOneWidget);
+  });
+
+  testWidgets('AMC total includes records with AMC type but no service type',
+      (tester) async {
+    final companies = [
+      for (var id = 1; id <= 14; id++)
+        model.Company(
+          id: id,
+          name: 'AMC $id',
+          serviceType: model.CompanyServiceType.amc,
+        ),
+      for (var id = 15; id <= 23; id++)
+        model.Company(
+          id: id,
+          name: 'Legacy AMC $id',
+          amcType: model.AmcType.cAmc,
+        ),
+    ];
+
+    await tester.pumpWidget(
+      _dashboard(
+        UserRole.superAdmin,
+        onAnalyticsRequested: (_) {},
+        companies: companies,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('23'), findsOneWidget);
   });
 
   testWidgets('admin sees organization analytics with mobile role labels',
