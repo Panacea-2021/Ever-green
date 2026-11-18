@@ -47,7 +47,7 @@ class FreeEstimatesRepository {
   /// repeated field name `photos` (max 5).
   Future<String?> submit({
     required int equipmentId,
-    required dynamic serviceId,
+    required String service,
     required String problemDescription,
     required String customerName,
     required String phoneNumber,
@@ -59,7 +59,7 @@ class FreeEstimatesRepository {
         '/free-estimates',
         data: {
           'equipment_id': equipmentId,
-          'service_id': serviceId,
+          'service': service,
           'problem_description': problemDescription,
           'customer_name': customerName,
           'phone_number': phoneNumber,
@@ -70,7 +70,7 @@ class FreeEstimatesRepository {
 
     final form = FormData();
     form.fields.add(MapEntry('equipment_id', '$equipmentId'));
-    form.fields.add(MapEntry('service_id', '$serviceId'));
+    form.fields.add(MapEntry('service', service));
     form.fields.add(MapEntry('problem_description', problemDescription));
     form.fields.add(MapEntry('customer_name', customerName));
     form.fields.add(MapEntry('phone_number', phoneNumber));

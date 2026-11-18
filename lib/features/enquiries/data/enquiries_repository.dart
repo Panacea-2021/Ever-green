@@ -23,7 +23,11 @@ class EnquiriesRepository {
         queryParameters: {'page': page, 'limit': limit},
       ),
     );
-    final data = body is Map ? (body['data'] ?? body['items'] ?? body) : body;
+    dynamic data = body;
+    if (data is Map) {
+      data = data['data'] ?? data['items'] ?? data['results'] ?? data;
+      if (data is Map) data = data['data'] ?? data['items'] ?? data['results'] ?? data;
+    }
     if (data is List) {
       return data.whereType<Map<String, dynamic>>().map(Enquiry.fromJson).toList();
     }
@@ -52,7 +56,11 @@ class EnquiriesRepository {
   // Free Estimates
   Future<List<Enquiry>> fetchFreeEstimates() async {
     final body = unwrap(await api.get<dynamic>('free-estimates'));
-    final data = body is Map ? (body['data'] ?? body['items'] ?? body) : body;
+    dynamic data = body;
+    if (data is Map) {
+      data = data['data'] ?? data['items'] ?? data['results'] ?? data;
+      if (data is Map) data = data['data'] ?? data['items'] ?? data['results'] ?? data;
+    }
     if (data is List) {
       return data.whereType<Map<String, dynamic>>().map((json) {
         final e = Enquiry.fromJson(json);

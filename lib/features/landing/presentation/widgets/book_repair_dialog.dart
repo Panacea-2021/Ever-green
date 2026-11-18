@@ -17,10 +17,14 @@ Future<void> showBookRepairDialog(
   String? technicianImage,
   String? technicianPhone,
 }) {
-  return showDialog<void>(
+  return showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
-    builder: (_) => const _BookRepairDialog(),
+    barrierLabel: 'Book a Repair',
+    transitionDuration: const Duration(milliseconds: 120),
+    pageBuilder: (_, __, ___) => const _BookRepairDialog(),
+    transitionBuilder: (_, animation, __, child) =>
+        FadeTransition(opacity: animation, child: child),
   );
 }
 

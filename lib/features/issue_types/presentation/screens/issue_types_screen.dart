@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -53,6 +54,7 @@ class ServiceTypesScreen extends IssueTypesScreen {
 
 class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
   final Set<int> _busy = {};
+  final Map<int, bool> _optimistic = {};
 
   ManagedTypeKind get _kind => widget.kind;
   bool get _isIssue => _kind == ManagedTypeKind.issue;
@@ -129,12 +131,22 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
   }
 
   Future<void> _toggle(_TypeRow type, bool active) async {
-    setState(() => _busy.add(type.id));
+    if (_busy.contains(type.id)) return; // prevent duplicate clicks
+    setState(() {
+      _busy.add(type.id);
+      _optimistic[type.id] = active;
+    });
     try {
       await _update(type.id, isActive: active);
-      _refresh();
+      // Defer provider refresh so the UI stays responsive.
+      Future.microtask(_refresh);
     } catch (e) {
-      _snack('$e', error: true);
+      if (mounted) {
+        setState(() {
+          _optimistic[type.id] = type.isActive;
+        });
+        _snack('$e', error: true);
+      }
     } finally {
       if (mounted) setState(() => _busy.remove(type.id));
     }
@@ -213,6 +225,7 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
   }
 
   Widget _header() {
+    if (kIsWeb) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
@@ -252,18 +265,19 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
 
   Widget _tile(_TypeRow type) {
     final busy = _busy.contains(type.id);
+    final active = _optimistic[type.id] ?? type.isActive;
     return Container(
       key: Key('${_kind.keyPrefix}-${type.id}'),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: type.isActive ? const Color(0xFFEBF0EA) : Colors.grey.shade100,
+        color: active ? const Color(0xFFEBF0EA) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
           Icon(
             _kind.icon,
-            color: type.isActive ? _green : Colors.grey,
+            color: active ? _green : Colors.grey,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -277,13 +291,13 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color:
-                        type.isActive ? const Color(0xFF1F1F1F) : Colors.grey,
+                        active ? const Color(0xFF1F1F1F) : Colors.grey,
                   ),
                 ),
                 Text(
                   [
                     if (type.builtIn) 'Built-in',
-                    type.isActive ? 'Active' : 'Inactive',
+                    active ? 'Active' : 'Inactive',
                   ].join(' · '),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
@@ -296,7 +310,7 @@ class _IssueTypesScreenState extends ConsumerState<IssueTypesScreen> {
             onPressed: busy ? null : () => _edit(type),
           ),
           Switch(
-            value: type.isActive,
+            value: active,
             activeThumbColor: _green,
             onChanged: busy ? null : (v) => _toggle(type, v),
           ),

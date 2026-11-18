@@ -49,7 +49,14 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
           api.get<dynamic>('announcements/history'),
         ]);
         final recipientRows = dataList(unwrap(results[0]));
-        recipients.addAll(recipientRows.map(AnnouncementRecipient.fromBackend));
+        // Drop exact duplicate recipient rows (same id) returned by the backend.
+        final seenIds = <String>{};
+        for (final row in recipientRows) {
+          final recipient = AnnouncementRecipient.fromBackend(row);
+          if (seenIds.add(recipient.id)) {
+            recipients.add(recipient);
+          }
+        }
 
         for (final row in dataList(unwrap(results[1]))) {
           final announcement = Announcement.fromBackend(row);
@@ -199,6 +206,24 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
     });
   }
 
+  Future<int> fetchUnreadCount() async {
+    final body = unwrap(
+      await ref.read(apiClientProvider).get<dynamic>('announcements/unread-count'),
+    );
+    if (body is Map) {
+      final v = body['count'] ?? body['unread_count'] ?? body['unreadCount'] ?? body['data'];
+      if (v is num) return v.toInt();
+      if (v is String) return int.tryParse(v) ?? 0;
+      if (v is Map) {
+        final c = v['count'] ?? v['unread_count'] ?? v['unreadCount'];
+        if (c is num) return c.toInt();
+        if (c is String) return int.tryParse(c) ?? 0;
+      }
+    }
+    if (body is num) return body.toInt();
+    return 0;
+  }
+
   Future<void> markRead(String announcementId) async {
     final user = ref.read(currentUserProvider);
     if (user == null) throw StateError('Sign in to read notifications.');
@@ -234,3 +259,15 @@ class AnnouncementController extends AsyncNotifier<AnnouncementState> {
     }
   }
 }
+
+/// Backend-provided unread announcement count (refreshed on demand).
+final announcementUnreadCountProvider =
+    FutureProvider.autoDispose<int>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return 0;
+  try {
+    return await ref.read(announcementControllerProvider.notifier).fetchUnreadCount();
+  } catch (_) {
+    return 0;
+  }
+});

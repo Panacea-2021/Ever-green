@@ -129,6 +129,17 @@ class AppDrawer extends ConsumerWidget {
                               context.go(Routes.amcs);
                             },
                           ),
+                        if (Permissions.canAccessRoute(role, Routes.equipmentList))
+                          _buildMenuItem(
+                            context,
+                            icon: Icons.precision_manufacturing_outlined,
+                            title: 'Equipment List',
+                            isSelected: location == Routes.equipmentList,
+                            onTap: () {
+                              Navigator.pop(context);
+                              context.go(Routes.equipmentList);
+                            },
+                          ),
                         _buildMenuItem(
                           context,
                           svgIcon: 'assets/images/menu_tasks_list.svg',
@@ -174,6 +185,16 @@ class AppDrawer extends ConsumerWidget {
                           onTap: () {
                             Navigator.pop(context);
                             context.push(Routes.globalSearch);
+                          },
+                        ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.campaign_outlined,
+                          title: 'Announcements',
+                          isSelected: location == Routes.announcements,
+                          onTap: () {
+                            Navigator.pop(context);
+                            context.push(Routes.announcements);
                           },
                         ),
                         if (Permissions.canRaiseTasks(role))

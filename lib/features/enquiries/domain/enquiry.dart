@@ -38,11 +38,11 @@ class Enquiry {
     final photos = photosRaw is List ? photosRaw.map((e) => '$e').toList() : const <String>[];
     return Enquiry(
       tokenId: '${json['token_id'] ?? json['tokenId'] ?? json['id'] ?? ''}',
-      customerName: '${json['customer_name'] ?? json['customerName'] ?? json['name'] ?? ''}',
-      phone: '${json['phone'] ?? json['phone_number'] ?? ''}',
+      customerName: '${json['customer_name'] ?? json['customerName'] ?? json['name'] ?? json['customer'] ?? json['full_name'] ?? json['userName'] ?? json['user_name'] ?? json['guest_name'] ?? ''}',
+      phone: '${json['phone'] ?? json['phone_number'] ?? json['mobile'] ?? json['contact_number'] ?? json['contactNumber'] ?? ''}',
       email: (json['email'] as String?)?.trim().isEmpty == true ? null : json['email']?.toString(),
-      equipment: (json['equipment'] ?? json['equipment_name'])?.toString(),
-      service: (json['service'] ?? json['service_name'])?.toString(),
+      equipment: (json['equipment'] ?? json['equipment_name'] ?? json['equipmentName'] ?? json['equipment_id'] ?? json['equipmentId'])?.toString(),
+      service: (json['service'] ?? json['service_name'] ?? json['serviceName'] ?? json['service_id'] ?? json['serviceId'])?.toString(),
       requestType: (json['request_type'] ?? json['requestType'] ?? json['type'] ?? json['booking_type'])?.toString(),
       problemDescription: (json['problem_description'] ?? json['problemDescription'] ?? json['description'])?.toString(),
       photos: photos,

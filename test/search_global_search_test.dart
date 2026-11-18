@@ -230,13 +230,17 @@ void main() {
     });
 
     test('clients have no service engineers tab', () {
-      for (final role in [UserRole.client, UserRole.clientAdmin]) {
-        expect(searchTabsFor(role), [
-          SearchTab.companies,
-          SearchTab.equipments,
-          SearchTab.tasks,
-        ]);
-      }
+      expect(searchTabsFor(UserRole.client), [
+        SearchTab.companies,
+        SearchTab.equipments,
+        SearchTab.tasks,
+      ]);
+      // Company Managers (client admins) no longer have access to the
+      // Company List, so the companies tab is hidden for them.
+      expect(searchTabsFor(UserRole.clientAdmin), [
+        SearchTab.equipments,
+        SearchTab.tasks,
+      ]);
     });
 
     test('no tab label says "Technician"', () {

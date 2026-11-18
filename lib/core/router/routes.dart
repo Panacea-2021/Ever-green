@@ -54,6 +54,7 @@ abstract class Routes {
 
   // Verified Equipments route
   static const String verifiedEquipments = '/verified-equipments';
+  static const String equipmentList = '/equipment-list';
 
   // Issue (service) types used when raising tickets — admins only
   static const String issueTypes = '/issue-types';

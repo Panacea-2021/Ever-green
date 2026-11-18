@@ -13,7 +13,7 @@ class EnvironmentConfig {
   /// `flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:3000/`.
   static const String backendUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://evergreen-backend-lgmy.onrender.com/',
+    defaultValue: 'https://staging-2i9i.onrender.com/',
   );
 
   /// Sent as the `api-key` header on the two routes that run before a JWT
