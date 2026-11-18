@@ -4,6 +4,40 @@
 /// contract documented at the bottom of this file. Until the backend ships
 /// the endpoint, the repository returns an integration-pending error and the
 /// screen shows an empty state.
+String _phoneOf(Map<String, dynamic> json) {
+  const keys = [
+    'phone',
+    'phone_number',
+    'phoneNumber',
+    'mobile',
+    'mobile_number',
+    'mobileNumber',
+    'contact_number',
+    'contactNumber',
+    'contact_phone',
+    'contactPhone',
+    'phone_no',
+    'phoneNo',
+    'customer_phone',
+    'customerPhone',
+    'guest_phone',
+    'guestPhone',
+  ];
+  for (final k in keys) {
+    final v = json[k];
+    if (v != null && '$v'.trim().isNotEmpty) return '$v'.trim();
+  }
+  // Nested objects
+  for (final nestedKey in const ['customer', 'guest', 'user', 'contact']) {
+    final nested = json[nestedKey];
+    if (nested is Map<String, dynamic>) {
+      final r = _phoneOf(nested);
+      if (r.isNotEmpty) return r;
+    }
+  }
+  return '';
+}
+
 class Enquiry {
   const Enquiry({
     required this.tokenId,
@@ -39,7 +73,7 @@ class Enquiry {
     return Enquiry(
       tokenId: '${json['token_id'] ?? json['tokenId'] ?? json['id'] ?? ''}',
       customerName: '${json['customer_name'] ?? json['customerName'] ?? json['name'] ?? json['customer'] ?? json['full_name'] ?? json['userName'] ?? json['user_name'] ?? json['guest_name'] ?? ''}',
-      phone: '${json['phone'] ?? json['phone_number'] ?? json['mobile'] ?? json['contact_number'] ?? json['contactNumber'] ?? ''}',
+      phone: '${_phoneOf(json)}',
       email: (json['email'] as String?)?.trim().isEmpty == true ? null : json['email']?.toString(),
       equipment: (json['equipment'] ?? json['equipment_name'] ?? json['equipmentName'] ?? json['equipment_id'] ?? json['equipmentId'])?.toString(),
       service: (json['service'] ?? json['service_name'] ?? json['serviceName'] ?? json['service_id'] ?? json['serviceId'])?.toString(),

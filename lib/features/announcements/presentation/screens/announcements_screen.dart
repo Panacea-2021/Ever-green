@@ -97,7 +97,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
         return ColoredBox(
           color: WebTokens.cream,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 12 : 24),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1200),

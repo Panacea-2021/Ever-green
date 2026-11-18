@@ -18,7 +18,9 @@ import '../sections/download_app_section.dart';
 
 /// Evergreen Landing Page — marketing homepage from the Figma Website frame.
 class LandingPage extends StatefulWidget {
-  const LandingPage({super.key});
+  const LandingPage({super.key, this.openSearch = false});
+
+  final bool openSearch;
 
   @override
   State<LandingPage> createState() => _LandingPageState();
@@ -31,6 +33,16 @@ class _LandingPageState extends State<LandingPage> {
   final _taskStepsKey = GlobalKey();
   final _whyKey = GlobalKey();
   final _faqKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.openSearch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollTo(_faqKey);
+      });
+    }
+  }
 
   void _scrollTo(GlobalKey key) {
     final target = key.currentContext;

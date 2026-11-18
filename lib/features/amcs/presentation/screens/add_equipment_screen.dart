@@ -402,12 +402,14 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
               _keyboardClearable(
                 focusNode: _frequencyFocus,
                 onClear: () => setState(() => _selectedFrequency = null),
-                child: _dropdownField(
-                  'PM Frequency',
-                  _selectedFrequency,
-                  _frequencies,
-                  (v) => setState(() => _selectedFrequency = v),
-                ),
+                child: kIsWeb
+                    ? _webPmFrequencyField()
+                    : _dropdownField(
+                        'PM Frequency',
+                        _selectedFrequency,
+                        _frequencies,
+                        (v) => setState(() => _selectedFrequency = v),
+                      ),
               ),
               _buildServiceTypeField(),
             ]),
@@ -642,6 +644,74 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
         return KeyEventResult.ignored;
       },
       child: child,
+    );
+  }
+
+  Widget _webPmFrequencyField() {
+    final key = GlobalKey();
+    return Material(
+      color: Colors.white,
+      elevation: 0,
+      shape: WebForm.fieldShape(32),
+      child: InkWell(
+        key: key,
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          final renderBox =
+              key.currentContext?.findRenderObject() as RenderBox?;
+          if (renderBox == null) return;
+          final offset = renderBox.localToGlobal(Offset.zero);
+          final size = renderBox.size;
+          final chosen = await showMenu<String>(
+            context: context,
+            position: RelativeRect.fromLTRB(
+              offset.dx,
+              offset.dy + size.height + 4,
+              offset.dx + size.width,
+              offset.dy + size.height + 4,
+            ),
+            items: [
+              for (final f in _frequencies)
+                PopupMenuItem<String>(
+                  value: f,
+                  child: Text(
+                    f,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+            ],
+          );
+          if (chosen != null) setState(() => _selectedFrequency = chosen);
+        },
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _selectedFrequency ?? 'PM Frequency',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: _selectedFrequency == null
+                        ? Colors.black.withValues(alpha: 0.4)
+                        : Colors.black,
+                  ),
+                ),
+              ),
+              const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

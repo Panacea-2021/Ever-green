@@ -88,6 +88,7 @@ class WebsiteInfoPage extends StatelessWidget {
             onPrivacy: () => go(Routes.privacy),
             onBookRepair: () => showBookRepairDialog(context),
             onSignIn: () => showWebLoginPopup(context),
+            onSearch: () => context.go(Routes.home, extra: 'search'),
             activeNav: _activeNav,
           ),
           Expanded(

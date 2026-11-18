@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -64,6 +64,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   Timer? _timer;
   String _query = '';
   SearchTab? _selected;
+
+  Map<SearchTab, _TabResult>? _cachedResults;
+  String _cachedQuery = '';
+  List<SearchTab> _cachedTabs = const [];
 
   @override
   void dispose() {
@@ -268,7 +272,14 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     final role = ref.watch(currentUserRoleProvider);
     final tabs = searchTabsFor(role);
     final selected = tabs.contains(_selected) ? _selected! : tabs.first;
-    final results = {for (final t in tabs) t: _results(t, tabs)};
+    if (_cachedResults == null ||
+        _cachedQuery != _query ||
+        !listEquals(_cachedTabs, tabs)) {
+      _cachedResults = {for (final t in tabs) t: _results(t, tabs)};
+      _cachedQuery = _query;
+      _cachedTabs = tabs;
+    }
+    final results = _cachedResults!;
 
     if (kIsWeb) return _webLayout(tabs, selected, results);
 

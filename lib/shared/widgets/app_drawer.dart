@@ -129,7 +129,7 @@ class AppDrawer extends ConsumerWidget {
                               context.go(Routes.amcs);
                             },
                           ),
-                        if (Permissions.canAccessRoute(role, Routes.equipmentList))
+                        if (Permissions.canAccessEquipmentList(role))
                           _buildMenuItem(
                             context,
                             icon: Icons.precision_manufacturing_outlined,

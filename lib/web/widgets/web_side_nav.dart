@@ -71,7 +71,7 @@ class WebSideNav extends ConsumerWidget {
           svgIcon: 'assets/images/menu_company_list.svg',
           badge: companiesCount?.toString(),
         ),
-      if (Permissions.canAccessRoute(role, Routes.equipmentList))
+      if (Permissions.canAccessEquipmentList(role))
         WebNavEntry(
           label: 'Equipment List',
           route: Routes.equipmentList,

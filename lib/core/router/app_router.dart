@@ -167,6 +167,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           !isPublicRoute &&
           currentPath != Routes.unauthorized) {
         final role = authState.user?.role ?? UserRole.client;
+        if (_gatePath(currentPath) == Routes.equipmentList &&
+            !Permissions.canAccessEquipmentList(role)) {
+          return Routes.unauthorized;
+        }
         if (!Permissions.canAccessRoute(role, _gatePath(currentPath))) {
           return Routes.unauthorized;
         }
@@ -605,10 +609,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.home,
             name: 'home',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              // Completely different design on web vs mobile; same providers.
-              child: kIsWeb ? LandingPage() : HomeScreen(),
-            ),
+            pageBuilder: (context, state) {
+              final openSearch = state.extra == 'search';
+              return NoTransitionPage(
+                // Completely different design on web vs mobile; same providers.
+                child: kIsWeb
+                    ? LandingPage(openSearch: openSearch)
+                    : HomeScreen(),
+              );
+            },
           ),
           GoRoute(
             path: Routes.amcs,

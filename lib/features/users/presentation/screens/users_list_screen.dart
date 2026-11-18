@@ -42,13 +42,25 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   static const Color _addGreen = Color(0xFF106220);
   static const Color _footerBg = Color(0xFFEBF0EA);
 
-  final List<String> _tabs = [
-    'All Users',
-    'Company Managers',
-    'POCs',
-    'Service Engineers',
-    'EG Managers',
-  ];
+  late List<String> _tabs;
+
+  @override
+  void initState() {
+    super.initState();
+    final role = ref.read(currentUserRoleProvider);
+    if (role == UserRole.clientAdmin) {
+      _tabs = const ['POCs'];
+      _selectedTab = 0;
+    } else {
+      _tabs = const [
+        'All Users',
+        'Company Managers',
+        'POCs',
+        'Service Engineers',
+        'EG Managers',
+      ];
+    }
+  }
 
   @override
   void dispose() {
@@ -60,6 +72,11 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   /// Company Managers = client admins, POCs = client users, Managers =
   /// EverGreen admins.
   bool _inTab(UserRole role) {
+    final currentUserRole = ref.read(currentUserRoleProvider);
+    if (currentUserRole == UserRole.clientAdmin) {
+      // Company Managers see only POC users.
+      return role == UserRole.client;
+    }
     switch (_selectedTab) {
       case 0:
         return role == UserRole.clientAdmin ||

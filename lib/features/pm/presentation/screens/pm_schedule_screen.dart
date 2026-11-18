@@ -434,29 +434,32 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
           runSpacing: gap,
           children: [
             for (var i = 0; i < labels.length; i++)
-              Builder(
-                builder: (context) {
-                  final index = i;
-                  return SizedBox(
-                    width: tileWidth,
-                    child: _webViewTile(
-                      label: labels[index],
-                      count: counts[index],
-                      icon: _webTileMeta[index].$1,
-                      color: _webTileMeta[index].$2,
-                      selected: _view == index &&
-                          (_range == null || index == labels.length - 1),
-                      onTap: () => setState(() {
-                        _view = index;
-                        if (index < PmWindow.values.length) _range = null;
-                      }),
-                    ),
-                  );
-                },
-              ),
+              _buildWebTile(i, labels, counts, tileWidth),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildWebTile(
+    int index,
+    List<String> labels,
+    List<int?> counts,
+    double tileWidth,
+  ) {
+    return SizedBox(
+      width: tileWidth,
+      child: _webViewTile(
+        label: labels[index],
+        count: counts[index],
+        icon: _webTileMeta[index].$1,
+        color: _webTileMeta[index].$2,
+        selected: _view == index && (_range == null || index == labels.length - 1),
+        onTap: () => setState(() {
+          _view = index;
+          if (index < PmWindow.values.length) _range = null;
+        }),
+      ),
     );
   }
 
