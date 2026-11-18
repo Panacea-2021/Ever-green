@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/environment_config.dart';
 import '../../../core/data/evergreen_repository.dart';
 import '../../../core/network/api_client.dart';
 
@@ -80,10 +81,13 @@ class ApiGuestRepairBookingsRepository
     implements GuestRepairBookingsRepository {
   ApiGuestRepairBookingsRepository(this.api);
 
-  static const _baseUrl = 'http://127.0.0.1:3001';
-  static const _equipmentPath = '$_baseUrl/guest-repair-bookings/equipment';
-  static const _servicesPath = '$_baseUrl/guest-repair-bookings/services';
-  static const _createPath = '$_baseUrl/guest-repair-bookings';
+  static String get _baseUrl =>
+      EnvironmentConfig.backendUrl.replaceAll(RegExp(r'/$'), '');
+  static String get _equipmentPath =>
+      '$_baseUrl/guest-repair-bookings/equipment';
+  static String get _servicesPath =>
+      '$_baseUrl/guest-repair-bookings/services';
+  static String get _createPath => '$_baseUrl/guest-repair-bookings';
 
   final ApiClient api;
 

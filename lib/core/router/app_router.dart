@@ -23,6 +23,7 @@ import '../../features/amcs/presentation/screens/company_details_screen.dart';
 import '../../features/amcs/presentation/screens/company_equipments_screen.dart';
 import '../../features/amcs/presentation/screens/company_tasks_screen.dart';
 import '../../features/amcs/presentation/screens/equipment_details_screen.dart';
+import '../../features/amcs/presentation/screens/equipment_list_screen.dart';
 import '../../features/amcs/presentation/screens/equipment_qr_screen.dart';
 import '../../features/auth/presentation/screens/change_password_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
@@ -362,6 +363,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.verifiedEquipments,
         name: 'verifiedEquipments',
         builder: (context, state) => const VerifiedEquipmentsScreen(),
+      ),
+      GoRoute(
+        path: Routes.equipmentList,
+        name: 'equipmentList',
+        builder: (context, state) => const EquipmentListScreen(),
       ),
       GoRoute(
         path: Routes.issueTypes,

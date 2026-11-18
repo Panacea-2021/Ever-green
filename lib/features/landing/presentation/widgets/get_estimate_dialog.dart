@@ -7,10 +7,14 @@ import '../../../free_estimates/data/free_estimates_repository.dart';
 import '../landing_theme.dart';
 
 Future<void> showGetEstimateDialog(BuildContext context) {
-  return showDialog<void>(
+  return showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
-    builder: (_) => const _GetEstimateDialog(),
+    barrierLabel: 'Get Estimate',
+    transitionDuration: const Duration(milliseconds: 120),
+    pageBuilder: (_, __, ___) => const _GetEstimateDialog(),
+    transitionBuilder: (_, animation, __, child) =>
+        FadeTransition(opacity: animation, child: child),
   );
 }
 
@@ -104,11 +108,6 @@ class _GetEstimateDialogState extends ConsumerState<_GetEstimateDialog> {
     return '$s';
   }
 
-  dynamic _serviceValue(dynamic s) {
-    if (s is Map && s.containsKey('id')) return s['id'];
-    return s;
-  }
-
   Future<void> _requestEstimate() async {
     if (_submitting) return;
     if (!_formKey.currentState!.validate()) return;
@@ -130,7 +129,7 @@ class _GetEstimateDialogState extends ConsumerState<_GetEstimateDialog> {
       final equipmentId = int.tryParse(_selectedEquipmentId!) ?? 0;
       final reference = await repo.submit(
         equipmentId: equipmentId,
-        serviceId: _serviceValue(_selectedService),
+        service: _selectedService.toString(),
         problemDescription: _problemController.text.trim(),
         customerName: _nameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),

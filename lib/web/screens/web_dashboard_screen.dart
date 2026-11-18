@@ -41,9 +41,7 @@ class WebDashboardScreen extends ConsumerWidget {
     final taskCountsLoading = pending(taskCountsAsync);
     final companiesAsync = ref.watch(companiesProvider);
     final companiesLoading = pending(companiesAsync);
-    final amcCount = companiesAsync.valueOrNull
-        ?.where((company) => company.isAmc || company.amcType != null)
-        .length;
+    final amcCount = companiesAsync.valueOrNull?.length;
 
     final openStatusCount = statusCounts['Open'] ?? 0;
     final closedCount = statusCounts['Closed'] ?? 0;

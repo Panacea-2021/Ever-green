@@ -79,7 +79,8 @@ class Permissions {
     // Client Admin: a client-side administrator — same read scope as a client
     // plus renewals and managing their own company's POCs/users.
     UserRole.clientAdmin: [
-      Routes.amcs,
+      // Company List (amcs) intentionally hidden for Company Manager.
+      Routes.equipmentList,
       Routes.tasks,
       Routes.amcRenewals,
       Routes.usersList,

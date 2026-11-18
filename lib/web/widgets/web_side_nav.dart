@@ -71,6 +71,12 @@ class WebSideNav extends ConsumerWidget {
           svgIcon: 'assets/images/menu_company_list.svg',
           badge: companiesCount?.toString(),
         ),
+      if (Permissions.canAccessRoute(role, Routes.equipmentList))
+        WebNavEntry(
+          label: 'Equipment List',
+          route: Routes.equipmentList,
+          icon: Icons.precision_manufacturing_outlined,
+        ),
       WebNavEntry(
         label: role.isTechnicianLevel
             ? 'My Tasks'
@@ -140,6 +146,12 @@ class WebSideNav extends ConsumerWidget {
           label: 'Create Company',
           route: Routes.createAmc,
           svgIcon: 'assets/images/menu_flag.svg',
+        ),
+      if (Permissions.canManageIssueTypes(role))
+        WebNavEntry(
+          label: 'Issue Types',
+          route: Routes.issueTypes,
+          icon: Icons.build_circle_outlined,
         ),
       if (Permissions.canViewRenewals(role))
         WebNavEntry(

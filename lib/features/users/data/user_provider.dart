@@ -25,7 +25,9 @@ final usersListProvider = FutureProvider.autoDispose<List<User>>((ref) {
   if (!_canQueryUsers(role)) {
     return Future.value(const <User>[]);
   }
-  return ref.watch(evergreenRepositoryProvider).getUsers();
+  // Company Managers (client admins) only manage POC users of their companies.
+  final accessLevel = role == UserRole.clientAdmin ? 'client' : null;
+  return ref.watch(evergreenRepositoryProvider).getUsers(accessLevel: accessLevel);
 });
 
 /// A managed application user (distinct from the logged-in auth [User]).

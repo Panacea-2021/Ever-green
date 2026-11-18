@@ -207,18 +207,24 @@ class _HeroButtonState extends State<_HeroButton> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           decoration: BoxDecoration(
-            color: widget.isPrimary
-                ? (_isHovered ? Colors.white.withValues(alpha: 0.9) : Colors.white)
-                : (_isHovered
-                    ? Colors.black.withValues(alpha: 0.25)
-                    : Colors.black.withValues(alpha: 0.15)),
+            color: widget.label == 'Get Estimate'
+                ? Colors.white
+                : (widget.isPrimary
+                    ? (_isHovered
+                        ? Colors.white.withValues(alpha: 0.9)
+                        : Colors.white)
+                    : (_isHovered
+                        ? Colors.black.withValues(alpha: 0.25)
+                        : Colors.black.withValues(alpha: 0.15))),
             borderRadius: BorderRadius.circular(LandingRadius.pill),
           ),
           child: Text(
             widget.label,
-            style: widget.isPrimary
+            style: widget.label == 'Get Estimate'
                 ? LandingTypography.buttonPrimary
-                : LandingTypography.buttonSecondary,
+                : (widget.isPrimary
+                    ? LandingTypography.buttonPrimary
+                    : LandingTypography.buttonSecondary),
           ),
         ),
       ),
