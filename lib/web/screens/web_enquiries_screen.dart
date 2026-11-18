@@ -35,14 +35,22 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
       repo.fetchGuestRepairBookings(page: _page),
       repo.fetchFreeEstimates(),
     ]);
-    final all = [...results[0], ...results[1]];
+    final seen = <String>{};
+    final all = <Enquiry>[];
+    for (final e in [...results[0], ...results[1]]) {
+      if (seen.add(e.tokenId)) all.add(e);
+    }
     return all.where((e) {
       final matchesSearch = _search.trim().isEmpty ||
           e.customerName.toLowerCase().contains(_search.trim().toLowerCase()) ||
           e.phone.toLowerCase().contains(_search.trim().toLowerCase()) ||
           (e.email?.toLowerCase().contains(_search.trim().toLowerCase()) ?? false);
       final matchesStatus = _statusFilter == null || e.status == _statusFilter;
-      final matchesType = _requestTypeFilter == null || e.requestType == _requestTypeFilter;
+      final norm = (e.requestType ?? '').toLowerCase().trim();
+      final matchesType = _requestTypeFilter == null ||
+          norm == _requestTypeFilter!.toLowerCase().trim() ||
+          (_requestTypeFilter == 'Book a Repair' && norm.contains('repair')) ||
+          (_requestTypeFilter == 'Get Estimate' && norm.contains('estimate'));
       return matchesSearch && matchesStatus && matchesType;
     }).toList();
   }
@@ -56,35 +64,44 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
 
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildToolbar(),
-          const SizedBox(height: 16),
-          Expanded(
-            child: FutureBuilder<List<Enquiry>>(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildToolbar(),
+            const SizedBox(height: 16),
+            FutureBuilder<List<Enquiry>>(
               future: _load(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
                 }
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey),
-                        const SizedBox(height: 12),
-                        Text('Failed to load enquiries: ${snapshot.error}', textAlign: TextAlign.center),
-                        const SizedBox(height: 12),
-                        ElevatedButton(onPressed: () => setState(() {}), child: const Text('Retry')),
-                      ],
+                  return SizedBox(
+                    height: 200,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey),
+                          const SizedBox(height: 12),
+                          Text('Failed to load enquiries: ${snapshot.error}', textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          ElevatedButton(onPressed: () => setState(() {}), child: const Text('Retry')),
+                        ],
+                      ),
                     ),
                   );
                 }
                 final items = snapshot.data ?? const [];
                 if (items.isEmpty) {
-                  return const Center(child: Text('No enquiries found.'));
+                  return const SizedBox(
+                    height: 200,
+                    child: Center(child: Text('No enquiries found.')),
+                  );
                 }
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -122,8 +139,8 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
                 );
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -164,8 +164,7 @@ class _WebOrganizationSections extends ConsumerWidget {
     }
 
     final data = analytics.valueOrNull;
-    final snapshots = history.valueOrNull;
-    if (data == null || snapshots == null) {
+    if (data == null) {
       return const _DashboardAnalyticsLoading();
     }
 

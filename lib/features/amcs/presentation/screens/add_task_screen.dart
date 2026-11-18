@@ -1252,7 +1252,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
       );
     }
 
-    // Web: use showMenu to avoid overlay/clipping issues.
+    // Web: use an OverlayEntry anchored to the field (matches the working
+    // web_top_nav pattern) so the menu opens directly below the field.
     final key = GlobalKey();
     final selectedName = items
         .where((e) => e.$1 == value)
@@ -1267,37 +1268,68 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
         borderRadius: BorderRadius.circular(12),
         onTap: (onChanged == null || items.isEmpty)
             ? null
-            : () async {
+            : () {
                 final renderBox =
                     key.currentContext?.findRenderObject() as RenderBox?;
                 if (renderBox == null) return;
-                final offset = renderBox.localToGlobal(Offset.zero);
+                final pos = renderBox.localToGlobal(Offset.zero);
                 final size = renderBox.size;
-                final chosen = await showMenu<T>(
-                  context: context,
-                  position: RelativeRect.fromLTRB(
-                    offset.dx,
-                    offset.dy + size.height + 4,
-                    offset.dx + size.width,
-                    offset.dy + size.height + 4,
-                  ),
-                  items: [
-                    for (final item in items)
-                      PopupMenuItem<T>(
-                        value: item.$1,
-                        child: Text(
-                          item.$2,
-                          style: const TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
+                final overlay = Overlay.of(context);
+                late OverlayEntry oe;
+                oe = OverlayEntry(
+                  builder: (_) => Stack(
+                    children: [
+                      Positioned.fill(
+                        child: GestureDetector(
+                          onTap: () => oe.remove(),
+                          behavior: HitTestBehavior.translucent,
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                      Positioned(
+                        left: pos.dx,
+                        top: pos.dy + size.height + 4,
+                        width: size.width,
+                        child: Material(
+                          elevation: 8,
+                          borderRadius: BorderRadius.circular(12),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 300),
+                            child: ListView(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              children: [
+                                for (final item in items)
+                                  InkWell(
+                                    onTap: () {
+                                      oe.remove();
+                                      onChanged(item.$1);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      child: Text(
+                                        item.$2,
+                                        style: const TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                  ],
+                    ],
+                  ),
                 );
-                if (chosen != null) onChanged(chosen);
+                overlay.insert(oe);
               },
         child: Container(
           height: 48,

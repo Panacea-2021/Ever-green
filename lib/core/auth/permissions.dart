@@ -186,6 +186,10 @@ class Permissions {
 
   static bool canManageIssueTypes(UserRole role) => _isAdmin(role);
 
+  /// Equipment List (aggregated) is exclusive to Company Manager.
+  static bool canAccessEquipmentList(UserRole role) =>
+      role == UserRole.clientAdmin;
+
   static bool canViewAnalytics(UserRole role) =>
       role == UserRole.superAdmin || role == UserRole.manager;
 

@@ -29,7 +29,24 @@ class EnquiriesRepository {
       if (data is Map) data = data['data'] ?? data['items'] ?? data['results'] ?? data;
     }
     if (data is List) {
-      return data.whereType<Map<String, dynamic>>().map(Enquiry.fromJson).toList();
+      return data.whereType<Map<String, dynamic>>().map((json) {
+        final e = Enquiry.fromJson(json);
+        return Enquiry(
+          tokenId: e.tokenId,
+          customerName: e.customerName,
+          phone: e.phone,
+          email: e.email,
+          equipment: e.equipment,
+          service: e.service,
+          requestType: (e.requestType == null || e.requestType!.trim().isEmpty)
+              ? 'Book a Repair'
+              : e.requestType,
+          problemDescription: e.problemDescription,
+          photos: e.photos,
+          submissionDate: e.submissionDate,
+          status: e.status,
+        );
+      }).toList();
     }
     return const [];
   }

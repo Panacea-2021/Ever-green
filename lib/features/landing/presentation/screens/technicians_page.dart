@@ -107,6 +107,7 @@ class TechniciansPage extends StatelessWidget {
             onPrivacy: () => context.go(Routes.privacy),
             onBookRepair: bookRepair,
             onSignIn: () => showWebLoginPopup(context),
+            onSearch: () => context.go(Routes.home, extra: 'search'),
           ),
           Expanded(
             child: SingleChildScrollView(

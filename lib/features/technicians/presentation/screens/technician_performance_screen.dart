@@ -309,6 +309,7 @@ class _TechnicianPerformanceScreenState
             subtitle: '▲ +12%',
             subtitleColor: _green,
             subtitleSuffix: 'vs last month',
+            borderColor: const Color(0xFF1565C0),
           ),
         ),
         const SizedBox(width: 12),
@@ -322,6 +323,7 @@ class _TechnicianPerformanceScreenState
             subtitle: '${completionRate.toStringAsFixed(1)}%',
             subtitleColor: const Color(0xFF6B6B6B),
             subtitleSuffix: 'completion rate',
+            borderColor: _green,
           ),
         ),
         const SizedBox(width: 12),
@@ -334,6 +336,7 @@ class _TechnicianPerformanceScreenState
             value: '$activeJobs',
             subtitle: '● Ongoing',
             subtitleColor: _green,
+            borderColor: const Color(0xFF1565C0),
           ),
         ),
         const SizedBox(width: 12),
@@ -348,6 +351,7 @@ class _TechnicianPerformanceScreenState
             subtitleColor: const Color(0xFFD32F2F),
             subtitleSuffix: 'Requires supervisor',
             isAlert: overdueJobs > 0,
+            borderColor: const Color(0xFFD32F2F),
           ),
         ),
         const SizedBox(width: 12),
@@ -360,6 +364,7 @@ class _TechnicianPerformanceScreenState
             value: avgResolution > 0 ? '${avgResolution.toStringAsFixed(1)}h' : '-',
             subtitle: 'Target < 5 hrs',
             subtitleColor: const Color(0xFF6B6B6B),
+            borderColor: const Color(0xFF00897B),
           ),
         ),
         const SizedBox(width: 12),
@@ -373,6 +378,7 @@ class _TechnicianPerformanceScreenState
             subtitle: '/ 5.0',
             subtitleColor: const Color(0xFF6B6B6B),
             subtitleSuffix: 'Based on reviews',
+            borderColor: const Color(0xFFFFB300),
           ),
         ),
       ],
@@ -389,22 +395,24 @@ class _TechnicianPerformanceScreenState
     required Color subtitleColor,
     String? subtitleSuffix,
     bool isAlert = false,
+    Color borderColor = const Color(0xFFE2E8E3),
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isAlert ? const Color(0xFFFFCDD2) : _webLine),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
+    return _WebHoverLift(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: borderColor, width: 1.4),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -478,6 +486,7 @@ class _TechnicianPerformanceScreenState
             ],
           ),
         ],
+      ),
       ),
     );
   }
@@ -1184,6 +1193,13 @@ class _TechnicianPerformanceScreenState
   }
 
   Widget _webToolbar(DateRange range, int count) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: _webToolbarBody(range, count),
+    );
+  }
+
+  Widget _webToolbarBody(DateRange range, int count) {
     Widget roleTab(String label, IconData icon, int index, int? badgeCount) {
       final sel = _tab == index;
       return MouseRegion(
@@ -1269,6 +1285,7 @@ class _TechnicianPerformanceScreenState
           ],
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Role tabs
             Container(
@@ -1289,16 +1306,15 @@ class _TechnicianPerformanceScreenState
             const SizedBox(width: 12),
             Container(width: 1, height: 36, color: _webLine),
             const SizedBox(width: 12),
-            // Date filters - use Expanded to take remaining space
-            Expanded(
-              child: Row(
-                children: [
-                  for (final p in RangePreset.values) ...[
-                    if (p != RangePreset.values.first) const SizedBox(width: 6),
-                    _webRangeChip(p, range),
-                  ],
+            // Date filters - compact, aligned beside the role tabs
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final p in RangePreset.values) ...[
+                  if (p != RangePreset.values.first) const SizedBox(width: 6),
+                  _webRangeChip(p, range),
                 ],
-              ),
+              ],
             ),
           ],
         ),

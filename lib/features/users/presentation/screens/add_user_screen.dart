@@ -51,7 +51,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   /// Only a super admin may create another super admin; client admins only
   /// manage their own company's client users.
   List<UserRole> _creatableRoles(UserRole actor) => UserRole.values.where((r) {
-        if (actor == UserRole.clientAdmin) return r.isClientSide;
+        if (actor == UserRole.clientAdmin) return r == UserRole.client;
         return r != UserRole.superAdmin || actor == UserRole.superAdmin;
       }).toList();
 

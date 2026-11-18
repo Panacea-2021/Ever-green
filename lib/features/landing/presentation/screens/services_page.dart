@@ -70,7 +70,7 @@ class _ServicesPageState extends State<ServicesPage> {
             onPrivacy: () => context.go(Routes.privacy),
             onBookRepair: () => showBookRepairDialog(context),
             onSignIn: () => showWebLoginPopup(context),
-            onSearch: () => _scrollTo(_faqKey),
+            onSearch: () => context.go(Routes.home, extra: 'search'),
             activeNav: 'Services',
           ),
           Expanded(
