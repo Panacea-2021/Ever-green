@@ -427,13 +427,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.taskBoard,
         name: 'taskBoard',
         builder: (context, state) {
-          final status =
-              state.extra is TaskStatus ? state.extra! as TaskStatus : null;
+          TaskStatus? status;
+          String? titleOverride;
+          TaskBoardScope? scope;
+          final extra = state.extra;
+          if (extra is TaskStatus) {
+            status = extra;
+          } else if (extra is Map) {
+            status = extra['status'] is TaskStatus ? extra['status'] as TaskStatus : null;
+            titleOverride = extra['title']?.toString();
+            scope = extra['scope'] is TaskBoardScope ? extra['scope'] as TaskBoardScope : null;
+          }
           return kIsWeb
-              ? WebTaskBoardScreen(initialStatus: status)
+              ? WebTaskBoardScreen(initialStatus: status, titleOverride: titleOverride, scope: scope)
               : TaskBoardScreen(
                   isRootTab: false,
                   initialStatus: status,
+                  titleOverride: titleOverride,
+                  scope: scope,
                 );
         },
       ),

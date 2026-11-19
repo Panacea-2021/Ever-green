@@ -94,10 +94,10 @@ void main() {
     Iterable<String> ids(QueueTab tab, DateTime at) =>
         queueTabs(tasks.values, at)[tab]!.map((t) => t.id);
 
-    test('Unassigned lists every open ticket, with or without an engineer', () {
+    test('Unassigned lists only open tickets with no engineer assigned', () {
       expect(
         ids(QueueTab.unassigned, now),
-        unorderedEquals(['1', '2', '3', '4', '5', '11', '12']),
+        unorderedEquals(['1', '2']),
       );
     });
 

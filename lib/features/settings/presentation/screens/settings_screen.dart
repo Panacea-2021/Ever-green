@@ -421,16 +421,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final l10n = AppLocalizations.of(context);
     return _card([
       _switchTile(
-        Icons.dark_mode_outlined,
-        l10n?.darkMode ?? 'Dark Mode',
-        prefs.darkMode,
-        (v) {
-          ref.read(settingsPreferencesProvider.notifier).setDarkMode(v);
-          _toast(v ? (l10n?.darkModeOn ?? 'Dark mode on') : (l10n?.darkModeOff ?? 'Dark mode off'));
-        },
-      ),
-      _divider(),
-      _switchTile(
         Icons.notifications_outlined,
         l10n?.pushNotifications ?? 'Push Notifications',
         _pushNotifications,
@@ -460,12 +450,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           Icons.admin_panel_settings_outlined,
           l10n?.manageRoles ?? 'Manage Roles & Permissions',
           onTap: () => context.push(Routes.usersList),
-        ),
-        _divider(),
-        _navTile(
-          Icons.palette_outlined,
-          'Company Branding',
-          onTap: _showBranding,
         ),
       ],
     ]);

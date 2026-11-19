@@ -36,8 +36,9 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
   final Set<String> _busy = {};
   List<int?>? _cachedTileCounts;
   PmDueSources? _cachedTileSources;
-  List<PmDue>? _cachedItems;
-  Object? _cachedItemsKey;
+  List<PmDue>? _cachedUpcomingItems;
+  Object? _cachedUpcomingKey;
+  bool _computingUpcoming = false;
 
   bool get _schedulesView => _view == PmWindow.values.length;
 
@@ -390,31 +391,40 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     final schedules = ref.watch(pmProvider).valueOrNull?.schedules;
     final now = DateTime.now();
     // Memoize tile counts so tab switches don't re-run the heavy computePmDue.
+    // Defer the (potentially heavy) computation to after the first frame so
+    // the page renders immediately and counts fill in progressively.
     if (_cachedTileSources != sources) {
       _cachedTileSources = sources;
       if (sources == null) {
         _cachedTileCounts = List<int?>.filled(labels.length, null);
         if (schedules != null) _cachedTileCounts![labels.length - 1] = schedules.length;
       } else {
-        final counts = <int?>[];
-        for (var i = 0; i < labels.length; i++) {
-          if (i == labels.length - 1) {
-            counts.add(schedules?.length);
-          } else {
-            final w = PmWindow.values[i];
-            final (from, to) = w.range(now);
-            counts.add(computePmDue(
-              equipments: sources.equipments,
-              schedules: sources.schedules,
-              lastVisits: sources.lastVisits,
-              from: from,
-              to: to,
-              today: now,
-              includeOverdue: w.includesOverdue,
-            ).length);
+        _cachedTileCounts = List<int?>.filled(labels.length, null);
+        if (schedules != null) _cachedTileCounts![labels.length - 1] = schedules.length;
+        final capturedSources = sources;
+        final capturedSchedules = schedules;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _cachedTileSources != capturedSources) return;
+          final counts = <int?>[];
+          for (var i = 0; i < labels.length; i++) {
+            if (i == labels.length - 1) {
+              counts.add(capturedSchedules?.length);
+            } else {
+              final w = PmWindow.values[i];
+              final (from, to) = w.range(now);
+              counts.add(computePmDue(
+                equipments: capturedSources.equipments,
+                schedules: capturedSources.schedules,
+                lastVisits: capturedSources.lastVisits,
+                from: from,
+                to: to,
+                today: now,
+                includeOverdue: w.includesOverdue,
+              ).length);
+            }
           }
-        }
-        _cachedTileCounts = counts;
+          if (mounted) setState(() => _cachedTileCounts = counts);
+        });
       }
     }
     final counts = _cachedTileCounts ?? List<int?>.filled(labels.length, null);
@@ -684,32 +694,77 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     final (from, to) =
         range == null ? window.range(now) : (range.start, range.end);
     final sources = async.valueOrNull;
-    List<PmDue> items = const <PmDue>[];
-    if (sources != null) {
-      final key = Object.hash(
-        identityHashCode(sources),
-        _view,
-        range?.start,
-        range?.end,
-        now.day,
+    // While sources are loading, show a spinner.
+    if (sources == null) {
+      _cachedUpcomingItems = null;
+      _cachedUpcomingKey = null;
+      _computingUpcoming = false;
+      return Column(
+        children: [
+          _rangeRow(0, false),
+          const SizedBox(height: 8),
+          Expanded(
+            child: async.hasError
+                ? _empty('Could not load equipment', '${async.error}',
+                    onRetry: () => ref.invalidate(equipmentsProvider(null)))
+                : const Center(child: CircularProgressIndicator(color: _green)),
+          ),
+        ],
       );
-      if (_cachedItemsKey != key || _cachedItems == null) {
-        _cachedItems = computePmDue(
-          equipments: sources.equipments,
-          schedules: sources.schedules,
-          lastVisits: sources.lastVisits,
-          from: from,
-          to: to,
-          today: now,
-          includeOverdue: range == null && window.includesOverdue,
-        );
-        _cachedItemsKey = key;
-      }
-      items = _cachedItems!;
-    } else {
-      _cachedItems = null;
-      _cachedItemsKey = null;
     }
+
+    final key = Object.hash(
+      identityHashCode(sources),
+      _view,
+      range?.start,
+      range?.end,
+      now.day,
+    );
+    if (_cachedUpcomingKey != key || _cachedUpcomingItems == null) {
+      _cachedUpcomingItems = null;
+      // Defer heavy computePmDue to after the frame so the UI stays responsive.
+      if (!_computingUpcoming) {
+        _computingUpcoming = true;
+        _cachedUpcomingKey = key;
+        final capturedSources = sources;
+        final capturedFrom = from;
+        final capturedTo = to;
+        final capturedNow = now;
+        final capturedIncludeOverdue = range == null && window.includesOverdue;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _cachedUpcomingKey != key) {
+            _computingUpcoming = false;
+            return;
+          }
+          final result = computePmDue(
+            equipments: capturedSources.equipments,
+            schedules: capturedSources.schedules,
+            lastVisits: capturedSources.lastVisits,
+            from: capturedFrom,
+            to: capturedTo,
+            today: capturedNow,
+            includeOverdue: capturedIncludeOverdue,
+          );
+          if (mounted) {
+            setState(() {
+              _cachedUpcomingItems = result;
+              _computingUpcoming = false;
+            });
+          }
+        });
+      }
+      // Show spinner while computing.
+      return Column(
+        children: [
+          _rangeRow(0, true),
+          const SizedBox(height: 8),
+          const Expanded(
+            child: Center(child: CircularProgressIndicator(color: _green)),
+          ),
+        ],
+      );
+    }
+    final items = _cachedUpcomingItems!;
     return Column(
       children: [
         _rangeRow(items.length, sources != null),

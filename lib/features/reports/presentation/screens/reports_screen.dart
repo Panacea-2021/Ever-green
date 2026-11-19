@@ -38,57 +38,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Widget _webBuild() {
     return Scaffold(
       backgroundColor: _cream,
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Sidebar
-          Container(
-            width: 280,
-            margin: const EdgeInsets.all(24),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE3ECE5)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _webSectionLabel('REPORTS'),
-                    const SizedBox(height: 12),
-                    for (var i = 0; i < _reportTypes.length; i++)
-                      _webSideItem(
-                        label: _reportTypes[i].$1,
-                        icon: _reportTypes[i].$2,
-                        selected: _selectedReport == i,
-                        onTap: () => setState(() => _selectedReport = i),
-                      ),
-                    const SizedBox(height: 20),
-                    const Divider(color: Color(0xFFE3ECE5)),
-                    const SizedBox(height: 16),
-                    _webSectionLabel('DATE RANGE'),
-                    const SizedBox(height: 12),
-                    _webDateRangeSelector(),
-                  ],
-                ),
-              ),
-          ),
-          // Main content
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 24, 24, 24),
-              child: _webContent(),
-            ),
-          ),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Horizontal report navigation
+            _webReportTabBar(),
+            const SizedBox(height: 16),
+            _webDateRangeHeader(),
+            const SizedBox(height: 16),
+            Expanded(child: _webContent()),
+          ],
+        ),
       ),
     );
   }
@@ -192,6 +154,167 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _webReportTabBar() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (var i = 0; i < _reportTypes.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            _webTabItem(
+              label: _reportTypes[i].$1,
+              icon: _reportTypes[i].$2,
+              selected: _selectedReport == i,
+              onTap: () => setState(() => _selectedReport = i),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _webTabItem({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        gradient: selected
+            ? const LinearGradient(
+                colors: [Color(0xFF106220), Color(0xFF1A801A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        color: selected ? null : Colors.white,
+        border: Border.all(
+          color: selected ? Colors.transparent : const Color(0xFFE3ECE5),
+        ),
+        boxShadow: selected
+            ? [
+                BoxShadow(
+                  color: _green.withValues(alpha: 0.25),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          hoverColor: _green.withValues(alpha: 0.06),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: selected ? Colors.white : _green,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : const Color(0xFF1F1F1F),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webDateRangeHeader() {
+    final range = ref.watch(reportDateRangeProvider);
+    String label() {
+      final ranges = [
+        ('This Month', ReportDateRange.thisMonth),
+        ('Last Month', ReportDateRange.lastMonth),
+        ('Last 30 Days', ReportDateRange.last30Days),
+        ('Last 90 Days', ReportDateRange.last90Days),
+        ('This Year', ReportDateRange.thisYear),
+      ];
+      for (final r in ranges) {
+        if (_isSameRange(range, r.$2())) return r.$1;
+      }
+      return 'Custom';
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFE3ECE5)),
+          ),
+          child: Text(
+            label(),
+            style: const TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF106220),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        PopupMenuButton<String>(
+          tooltip: 'Date range',
+          icon: const Icon(Icons.calendar_today, color: Color(0xFF106220)),
+          onSelected: (value) {
+            switch (value) {
+              case 'This Month':
+                ref.read(reportDateRangeProvider.notifier).state =
+                    ReportDateRange.thisMonth();
+                break;
+              case 'Last Month':
+                ref.read(reportDateRangeProvider.notifier).state =
+                    ReportDateRange.lastMonth();
+                break;
+              case 'Last 30 Days':
+                ref.read(reportDateRangeProvider.notifier).state =
+                    ReportDateRange.last30Days();
+                break;
+              case 'Last 90 Days':
+                ref.read(reportDateRangeProvider.notifier).state =
+                    ReportDateRange.last90Days();
+                break;
+              case 'This Year':
+                ref.read(reportDateRangeProvider.notifier).state =
+                    ReportDateRange.thisYear();
+                break;
+            }
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(value: 'This Month', child: Text('This Month')),
+            PopupMenuItem(value: 'Last Month', child: Text('Last Month')),
+            PopupMenuItem(value: 'Last 30 Days', child: Text('Last 30 Days')),
+            PopupMenuItem(value: 'Last 90 Days', child: Text('Last 90 Days')),
+            PopupMenuItem(value: 'This Year', child: Text('This Year')),
+          ],
+        ),
+      ],
     );
   }
 
@@ -971,15 +1094,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           // Stats row
           Row(
             children: [
-              Expanded(child: _statCard('Total', data.totalTasks, Icons.assignment)),
+              Expanded(child: _taskKpiCard('Total', data.totalTasks, Icons.assignment, const Color(0xFF1565C0))),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Open', data.openTasks, Icons.pending_actions, color: const Color(0xFFE08600))),
+              Expanded(child: _taskKpiCard('Open', data.openTasks, Icons.pending_actions, const Color(0xFFE08600))),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('In Progress', data.inProgressTasks, Icons.autorenew, color: const Color(0xFF1565C0))),
+              Expanded(child: _taskKpiCard('In Progress', data.inProgressTasks, Icons.autorenew, const Color(0xFF1565C0))),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Completed', data.completedTasks, Icons.check_circle_outline, color: _green)),
+              Expanded(child: _taskKpiCard('Completed', data.completedTasks, Icons.check_circle_outline, _green)),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Overdue', data.overdueCount, Icons.warning_amber, color: const Color(0xFFD32F2F))),
+              Expanded(child: _taskKpiCard('Overdue', data.overdueCount, Icons.warning_amber, const Color(0xFFD32F2F))),
             ],
           ),
           const SizedBox(height: 24),
@@ -987,25 +1110,28 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _dashboardCard(
+                child: _taskReportCard(
                   'Tasks by Status',
                   Icons.pie_chart,
+                  const Color(0xFF1565C0),
                   child: _chartDataList(data.tasksByStatus),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _dashboardCard(
+                child: _taskReportCard(
                   'Tasks by Priority',
                   Icons.flag_outlined,
+                  const Color(0xFFE08600),
                   child: _chartDataList(data.tasksByPriority),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _dashboardCard(
+                child: _taskReportCard(
                   'Tasks by Type',
                   Icons.category_outlined,
+                  _green,
                   child: _chartDataList(data.tasksByCallType),
                 ),
               ),
@@ -1055,7 +1181,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
   }
 
-  Widget _summaryCard(String label, dynamic value, IconData icon, {Color color = const Color(0xFF1565C0)}) {
+  Widget _summaryCard(String label, dynamic value, IconData icon, {Color color = const Color(0xFF1565C0), double padding = 16}) {
     var hovered = false;
     return StatefulBuilder(builder: (context, setState) {
       return MouseRegion(
@@ -1078,7 +1204,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             ..scaleByDouble(hovered ? 1.02 : 1.0, hovered ? 1.02 : 1.0, 1.0, 1.0)
             ..translateByDouble(0, hovered ? -4 : 0, 0, 1),
           transformAlignment: Alignment.center,
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(padding),
           decoration: BoxDecoration(
             color: hovered ? color.withValues(alpha: 0.08) : Colors.white,
             borderRadius: BorderRadius.circular(14),
@@ -1127,6 +1253,178 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         ),
       );
     });
+  }
+
+  Widget _techKpiCard(String label, dynamic value, IconData icon, Color color) {
+    var hovered = false;
+    return StatefulBuilder(builder: (context, setState) {
+      return MouseRegion(
+        onEnter: (_) {
+          if (!hovered) {
+            hovered = true;
+            setState(() {});
+          }
+        },
+        onExit: (_) {
+          if (hovered) {
+            hovered = false;
+            setState(() {});
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          transform: Matrix4.identity()
+            ..scaleByDouble(hovered ? 1.02 : 1.0, hovered ? 1.02 : 1.0, 1.0, 1.0)
+            ..translateByDouble(0, hovered ? -4 : 0, 0, 1),
+          transformAlignment: Alignment.center,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: hovered ? 0.12 : 0.06),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.35), width: 1.2),
+            boxShadow: hovered
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.2),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(height: 4),
+              Text(
+                '$value',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 11,
+                  color: Colors.black.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _taskKpiCard(String label, dynamic value, IconData icon, Color color) {
+    var hovered = false;
+    return StatefulBuilder(builder: (context, setState) {
+      return MouseRegion(
+        onEnter: (_) {
+          if (!hovered) {
+            hovered = true;
+            setState(() {});
+          }
+        },
+        onExit: (_) {
+          if (hovered) {
+            hovered = false;
+            setState(() {});
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          transform: Matrix4.identity()
+            ..scaleByDouble(hovered ? 1.02 : 1.0, hovered ? 1.02 : 1.0, 1.0, 1.0)
+            ..translateByDouble(0, hovered ? -4 : 0, 0, 1),
+          transformAlignment: Alignment.center,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: hovered ? 0.12 : 0.06),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.35), width: 1.2),
+            boxShadow: hovered
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.2),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 8),
+              Text(
+                '$value',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 11,
+                  color: Colors.black.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _taskReportCard(String title, IconData icon, Color color, {required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 1.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
   }
 
   Widget _chartDataList(List<ChartData> data) {
@@ -1213,10 +1511,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       return const SizedBox(height: 100, child: Center(child: Text('No data')));
     }
     final maxValue = data.fold<int>(0, (max, d) => d.created > max ? d.created : (d.completed > max ? d.completed : max));
-    const height = 150.0;
+    const height = 180.0;
 
     return SizedBox(
-      height: height + 30,
+      height: height + 40,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -1229,32 +1527,38 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Container(
-                        width: 8,
-                        height: maxValue > 0 ? (data[i].created / maxValue) * height : 0,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1565C0),
-                          borderRadius: BorderRadius.circular(4),
+                      Tooltip(
+                        message: 'Created: ${data[i].created}',
+                        child: Container(
+                          width: 12,
+                          height: maxValue > 0 ? (data[i].created / maxValue) * height : 0,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1565C0),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 2),
-                      Container(
-                        width: 8,
-                        height: maxValue > 0 ? (data[i].completed / maxValue) * height : 0,
-                        decoration: BoxDecoration(
-                          color: _green,
-                          borderRadius: BorderRadius.circular(4),
+                      const SizedBox(width: 3),
+                      Tooltip(
+                        message: 'Completed: ${data[i].completed}',
+                        child: Container(
+                          width: 12,
+                          height: maxValue > 0 ? (data[i].completed / maxValue) * height : 0,
+                          decoration: BoxDecoration(
+                            color: _green,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
                     data[i].date.substring(5),
                     style: TextStyle(
                       fontFamily: 'Montserrat',
-                      fontSize: 9,
-                      color: Colors.black.withValues(alpha: 0.4),
+                      fontSize: 10,
+                      color: Colors.black.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -1286,14 +1590,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: _statCard('Avg Resolution', '${data.averageResolutionTime}h', Icons.timer_outlined)),
+              Expanded(child: _techKpiCard('Avg Resolution', '${data.averageResolutionTime}h', Icons.timer_outlined, const Color(0xFF00897B))),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('SLA Compliance', '${data.overallSlaCompliance}%', Icons.verified, color: _green)),
+              Expanded(child: _techKpiCard('SLA Compliance', '${data.overallSlaCompliance}%', Icons.verified, _green)),
               const SizedBox(width: 12),
-              Expanded(child: _statCard('Technicians', '${data.technicians.length}', Icons.engineering)),
+              Expanded(child: _techKpiCard('Technicians', '${data.technicians.length}', Icons.engineering, const Color(0xFF1565C0))),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _dashboardCard(
             'Performance Table',
             Icons.table_chart,
@@ -1308,9 +1612,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     if (technicians.isEmpty) {
       return const Center(child: Text('No technicians'));
     }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            child: DataTable(
+              columnSpacing: 12,
+              horizontalMargin: 12,
         headingTextStyle: const TextStyle(
           fontFamily: 'Montserrat',
           fontSize: 12,
@@ -1322,7 +1632,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           fontSize: 13,
         ),
         columns: const [
-          DataColumn(label: Text('Name')),
+          DataColumn(label: SizedBox(width: 120, child: Text('Name'))),
           DataColumn(label: Text('Assigned'), numeric: true),
           DataColumn(label: Text('Completed'), numeric: true),
           DataColumn(label: Text('Avg Hours'), numeric: true),
@@ -1337,8 +1647,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           DataCell(Text(t.avgRating != null ? '${t.avgRating}' : '-')),
           DataCell(Text('${t.slaCompliance}%')),
         ],),).toList(),
-      ),
-    );
+      ),   // DataTable
+      ),   // ConstrainedBox
+    );     // SingleChildScrollView
+  },       // builder
+);         // LayoutBuilder
   }
 
   // AMC Status Report
@@ -1463,13 +1776,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: _summaryCard('Total', data.totalEquipment, Icons.precision_manufacturing, color: const Color(0xFF1565C0))),
+              Expanded(child: _summaryCard('Total', data.totalEquipment, Icons.precision_manufacturing, color: const Color(0xFF1565C0), padding: 20)),
               const SizedBox(width: 12),
-              Expanded(child: _summaryCard('Operational', data.operational, Icons.check_circle, color: _green)),
+              Expanded(child: _summaryCard('Operational', data.operational, Icons.check_circle, color: _green, padding: 20)),
               const SizedBox(width: 12),
-              Expanded(child: _summaryCard('Maintenance', data.underMaintenance, Icons.build, color: const Color(0xFFE08600))),
+              Expanded(child: _summaryCard('Maintenance', data.underMaintenance, Icons.build, color: const Color(0xFFE08600), padding: 20)),
               const SizedBox(width: 12),
-              Expanded(child: _summaryCard('Faulty', data.faulty, Icons.error, color: const Color(0xFFD32F2F))),
+              Expanded(child: _summaryCard('Faulty', data.faulty, Icons.error, color: const Color(0xFFD32F2F), padding: 20)),
             ],
           ),
           const SizedBox(height: 24),

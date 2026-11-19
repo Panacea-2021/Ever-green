@@ -500,15 +500,14 @@ class TaskItem {
   }
 
   /// Ticket queue membership:
-  /// - unassigned: every open ticket (backend `open`), with or without an
-  ///   engineer;
+  /// - unassigned: open tickets with no Service Engineer assigned;
   /// - awaiting: open with no engineer for [unassignedWaitMinutes] or more;
   /// - assigned: any ticket with an engineer that isn't closed;
   /// - escalation: not closed, and escalated or [isStatusStale].
   bool inQueueTab(QueueTab tab, [DateTime? now]) {
     switch (tab) {
       case QueueTab.unassigned:
-        return serviceStatus == ServiceStatus.open;
+        return serviceStatus == ServiceStatus.open && !hasAssignee;
       case QueueTab.awaiting:
         return serviceStatus == ServiceStatus.open &&
             !hasAssignee &&

@@ -6,8 +6,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/auth/permissions.dart';
 import '../../../../core/data/evergreen_repository.dart';
-import '../../../../core/models/backend_models.dart';
+import '../../../../core/models/backend_models.dart' hide TaskStatus;
 import '../../../../core/router/routes.dart';
+import '../../../tasks/domain/models/task_item.dart' show TaskStatus;
+import '../../../tasks/presentation/screens/task_board_screen.dart'
+    show TaskBoardScope;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/scaffold_with_bottom_nav.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
@@ -290,7 +293,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _MenuEntry(
           icon: Icons.assignment_outlined,
           label: role.isClientSide ? 'My Service History' : 'My Tasks History',
-          onTap: () => context.push(Routes.taskBoard),
+          onTap: () => context.push(
+            Routes.taskBoard,
+            extra: {
+              'status': TaskStatus.closed,
+              'title': 'Task History',
+              'scope': role.isClientSide
+                  ? TaskBoardScope.raisedByMe
+                  : TaskBoardScope.assignedToMe,
+            },
+          ),
         ),
         const Color(0xFF2563EB),
       ),
@@ -445,7 +457,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _MenuEntry(
         icon: Icons.assignment_outlined,
         label: role.isClientSide ? 'My Service History' : 'My Tasks History',
-        onTap: () => context.push(Routes.taskBoard),
+        onTap: () => context.push(
+          Routes.taskBoard,
+          extra: {
+            'status': TaskStatus.closed,
+            'title': 'Task History',
+            'scope': role.isClientSide
+                ? TaskBoardScope.raisedByMe
+                : TaskBoardScope.assignedToMe,
+          },
+        ),
       ),
       if (Permissions.canViewAuditLog(role))
         _MenuEntry(
