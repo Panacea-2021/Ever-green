@@ -51,9 +51,9 @@ class ReportsApi {
     DateTime? from,
     DateTime? to,
   }) async {
-    final result = await _api.post<dynamic>(
+    final result = await _api.get<dynamic>(
       'reports/tasks',
-      data: {
+      queryParameters: {
         if (from != null) 'from': from.toIso8601String(),
         if (to != null) 'to': to.toIso8601String(),
       },
@@ -67,9 +67,9 @@ class ReportsApi {
     DateTime? from,
     DateTime? to,
   }) async {
-    final result = await _api.post<dynamic>(
+    final result = await _api.get<dynamic>(
       'reports/technicians',
-      data: {
+      queryParameters: {
         if (from != null) 'from': from.toIso8601String(),
         if (to != null) 'to': to.toIso8601String(),
       },
@@ -97,9 +97,9 @@ class ReportsApi {
     DateTime? from,
     DateTime? to,
   }) async {
-    final result = await _api.post<dynamic>(
+    final result = await _api.get<dynamic>(
       'reports/sla',
-      data: {
+      queryParameters: {
         if (from != null) 'from': from.toIso8601String(),
         if (to != null) 'to': to.toIso8601String(),
       },

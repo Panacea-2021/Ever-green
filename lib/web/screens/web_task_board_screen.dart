@@ -20,9 +20,10 @@ import '../widgets/web_table.dart';
 /// Web layout of the Task Board: same scoping, filters, sorting, texts and
 /// actions as the mobile board, laid out as a desktop toolbar + card grid.
 class WebTaskBoardScreen extends ConsumerStatefulWidget {
-  const WebTaskBoardScreen({super.key, this.initialStatus, this.scope});
+  const WebTaskBoardScreen({super.key, this.initialStatus, this.scope, this.titleOverride});
 
   final TaskStatus? initialStatus;
+  final String? titleOverride;
 
   /// Optional personal scope (Super Admin "My Tasks" / "My Service Tasks"
   /// modules). Null keeps the default role-based board.

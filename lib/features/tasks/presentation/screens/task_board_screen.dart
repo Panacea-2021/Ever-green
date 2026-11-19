@@ -44,11 +44,15 @@ class TaskBoardScreen extends ConsumerStatefulWidget {
   /// modules). Null keeps the default role-based board.
   final TaskBoardScope? scope;
 
+  /// Optional title override (e.g. "Task History" when opened from Profile).
+  final String? titleOverride;
+
   const TaskBoardScreen({
     super.key,
     this.isRootTab = false,
     this.initialStatus,
     this.scope,
+    this.titleOverride,
   });
 
   @override
@@ -157,17 +161,18 @@ class _TaskBoardScreenState extends ConsumerState<TaskBoardScreen> {
             : _statusChips.firstWhere((c) => c.$2 == _statusFilter).$1;
     final selectedCount = counts[selectedLabel];
 
-    final title = widget.scope == TaskBoardScope.assignedToMe
-        ? 'My Tasks'
-        : widget.scope == TaskBoardScope.raisedByMe
-            ? 'My Service Tasks'
-            : role.isTechnicianLevel && role != UserRole.seniorTechnician
-                ? 'My Tasks'
-                : role.isClientSide
-                    ? 'My Service Tasks'
-                    : role == UserRole.seniorTechnician
-                        ? 'Team Tasks'
-                        : 'Task Board';
+    final title = widget.titleOverride ??
+        (widget.scope == TaskBoardScope.assignedToMe
+            ? 'My Tasks'
+            : widget.scope == TaskBoardScope.raisedByMe
+                ? 'My Service Tasks'
+                : role.isTechnicianLevel && role != UserRole.seniorTechnician
+                    ? 'My Tasks'
+                    : role.isClientSide
+                        ? 'My Service Tasks'
+                        : role == UserRole.seniorTechnician
+                            ? 'Team Tasks'
+                            : 'Task Board');
 
     if (kIsWeb) {
       final searched = scoped.where((t) => t.matchesQuery(_query)).toList();

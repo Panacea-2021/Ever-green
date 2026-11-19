@@ -514,8 +514,8 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
       behavior: HitTestBehavior.opaque,
       onTap: () => context.push('${Routes.taskDetails}/${t.id}'),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
+        margin: EdgeInsets.only(bottom: kIsWeb ? 8 : 12),
+        padding: EdgeInsets.all(kIsWeb ? 10 : 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -569,7 +569,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
                 color: Color(0xFF6B6B6B),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: kIsWeb ? 4 : 8),
             Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -602,10 +602,10 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: kIsWeb ? 4 : 8),
             _timeRow(t),
             if (canAct) ...[
-              const SizedBox(height: 12),
+              SizedBox(height: kIsWeb ? 6 : 12),
               if (!t.hasAssignee)
                 _primaryButton(
                   'Assign to Service Engineer',

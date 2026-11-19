@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+
+import 'dart:html' deferred as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -964,12 +966,12 @@ class _TechnicianPerformanceScreenState
                 SizedBox(width: 30, child: Text('#', style: _tableHeaderStyle)),
                 Expanded(flex: 3, child: Text('Engineer', style: _tableHeaderStyle)),
                 Expanded(flex: 2, child: Text('Completed', style: _tableHeaderStyle)),
-                Expanded(flex: 2, child: Text('Active', style: _tableHeaderStyle)),
-                Expanded(flex: 2, child: Text('Overdue', style: _tableHeaderStyle)),
+                Expanded(flex: 1, child: Text('Active', style: _tableHeaderStyle)),
+                Expanded(flex: 1, child: Text('Overdue', style: _tableHeaderStyle)),
                 Expanded(flex: 2, child: Text('Completion', style: _tableHeaderStyle)),
-                Expanded(flex: 2, child: Text('SLA', style: _tableHeaderStyle)),
-                Expanded(flex: 2, child: Text('Rating', style: _tableHeaderStyle)),
-                Expanded(flex: 2, child: Text('Status', style: _tableHeaderStyle)),
+                Expanded(flex: 1, child: Text('SLA', style: _tableHeaderStyle)),
+                Expanded(flex: 1, child: Text('Rating', style: _tableHeaderStyle)),
+                Expanded(flex: 1, child: Text('Status', style: _tableHeaderStyle)),
               ],
             ),
           ),
@@ -1067,7 +1069,7 @@ class _TechnicianPerformanceScreenState
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Text(
               '${s.active}',
               style: const TextStyle(
@@ -1079,9 +1081,9 @@ class _TechnicianPerformanceScreenState
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
               decoration: BoxDecoration(
                 color: s.overdue > 0 ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
                 borderRadius: BorderRadius.circular(12),
@@ -1126,7 +1128,7 @@ class _TechnicianPerformanceScreenState
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Text(
               s.completed == 0 ? '-' : '${s.slaCompliance.toStringAsFixed(1)}%',
               style: TextStyle(
@@ -1142,7 +1144,7 @@ class _TechnicianPerformanceScreenState
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Row(
               children: [
                 const Icon(Icons.star, size: 14, color: Color(0xFFFFB300)),
@@ -1160,7 +1162,7 @@ class _TechnicianPerformanceScreenState
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
@@ -1270,8 +1272,10 @@ class _TechnicianPerformanceScreenState
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -1319,7 +1323,8 @@ class _TechnicianPerformanceScreenState
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _webRangeChip(RangePreset p, DateRange range) {
@@ -1370,13 +1375,69 @@ class _TechnicianPerformanceScreenState
     );
   }
 
-  void _onExportReport() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Export feature coming soon'),
-        backgroundColor: _green,
-      ),
-    );
+  Future<void> _onExportReport() async {
+    final stats = _tab == 0
+        ? ref.read(technicianPerformanceProvider)
+        : ref.read(managerPerformanceProvider);
+    if (stats.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No data to export'), backgroundColor: _green),
+      );
+      return;
+    }
+    int totalJobs = 0, completed = 0, activeJobs = 0, overdueJobs = 0;
+    double totalResolution = 0, totalRating = 0;
+    int resolutionCount = 0, ratingCount = 0;
+    for (final s in stats) {
+      totalJobs += s.created + s.active;
+      completed += s.completed;
+      activeJobs += s.active;
+      overdueJobs += s.overdue;
+      if (s.avgResolutionHours > 0) {
+        totalResolution += s.avgResolutionHours;
+        resolutionCount++;
+      }
+      if (s.avgRating > 0) {
+        totalRating += s.avgRating;
+        ratingCount++;
+      }
+    }
+    final avgResolution = resolutionCount > 0 ? totalResolution / resolutionCount : 0.0;
+    final avgRating = ratingCount > 0 ? totalRating / ratingCount : 0.0;
+    final completionRate = totalJobs > 0 ? (completed / totalJobs) * 100 : 0.0;
+
+    String csv(String v) {
+      if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+        return '"${v.replaceAll('"', '""')}"';
+      }
+      return v;
+    }
+
+    final buffer = StringBuffer();
+    buffer.writeln('Metric,Value');
+    buffer.writeln('Total Jobs,$totalJobs');
+    buffer.writeln('Completed,$completed');
+    buffer.writeln('Active Jobs,$activeJobs');
+    buffer.writeln('Overdue SLA,$overdueJobs');
+    buffer.writeln('Average Resolution (hrs),${avgResolution.toStringAsFixed(1)}');
+    buffer.writeln('Average Rating,${avgRating.toStringAsFixed(1)}');
+    buffer.writeln('Completion Rate (%),${completionRate.toStringAsFixed(1)}');
+    buffer.writeln('');
+    buffer.writeln('Name,Created,Completed,Active,Overdue,Avg Resolution (hrs),Avg Rating,SLA %');
+    for (final s in stats) {
+      buffer.writeln(
+        '${csv(s.name)},${s.created},${s.completed},${s.active},${s.overdue},${s.avgResolutionHours},${s.avgRating},${s.slaCompliance}',
+      );
+    }
+
+    final bytes = buffer.toString().codeUnits;
+    await html.loadLibrary();
+    final blob = html.Blob([bytes], 'text/csv;charset=utf-8;');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute('download', 'Service_Engineer_Performance_Report.csv')
+      ..click();
+    html.Url.revokeObjectUrl(url);
   }
 
   Future<void> _selectRange(RangePreset p, DateRange range) async {

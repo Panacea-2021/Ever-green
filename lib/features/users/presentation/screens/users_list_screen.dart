@@ -42,24 +42,18 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   static const Color _addGreen = Color(0xFF106220);
   static const Color _footerBg = Color(0xFFEBF0EA);
 
-  late List<String> _tabs;
-
-  @override
-  void initState() {
-    super.initState();
+  List<String> get _tabs {
     final role = ref.read(currentUserRoleProvider);
     if (role == UserRole.clientAdmin) {
-      _tabs = const ['POCs'];
-      _selectedTab = 0;
-    } else {
-      _tabs = const [
-        'All Users',
-        'Company Managers',
-        'POCs',
-        'Service Engineers',
-        'EG Managers',
-      ];
+      return const ['POCs'];
     }
+    return const [
+      'All Users',
+      'Company Managers',
+      'POCs',
+      'Service Engineers',
+      'EG Managers',
+    ];
   }
 
   @override
@@ -779,7 +773,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
         itemCount: _tabs.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
-          final isSelected = _selectedTab == index;
+          final isSelected = _selectedTab.clamp(0, _tabs.length - 1) == index;
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () => setState(() => _selectedTab = index),

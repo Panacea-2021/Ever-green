@@ -105,6 +105,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
 
   /// Titles for pages that are not sidebar destinations.
   static const _detailTitles = {
+    Routes.taskBoard: 'Task History',
     Routes.taskDetails: 'Task Details',
     Routes.companyDetails: 'Company Details',
     Routes.companyTasks: 'Company Tasks',

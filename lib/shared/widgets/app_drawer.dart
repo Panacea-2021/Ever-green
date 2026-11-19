@@ -25,7 +25,7 @@ final drawerUsersCountProvider = FutureProvider.autoDispose<int?>((ref) async {
       return (await ref.watch(userStatsProvider.future)).total;
     }
     if (role == UserRole.clientAdmin) {
-      return (await ref.watch(evergreenRepositoryProvider).getUsers()).length;
+      return (await ref.watch(evergreenRepositoryProvider).getUsers(accessLevel: 'client')).length;
     }
   } catch (_) {
     // Badge is informational; hide it when the count can't be loaded.
