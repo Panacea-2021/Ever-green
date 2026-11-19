@@ -358,11 +358,6 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
               (v) => setState(() => _selectedFrequency = v),
             ),
           ),
-          const SizedBox(height: 19),
-
-          _buildServiceTypeField(),
-          const SizedBox(height: 19),
-
           // Description
           _buildDescriptionField(),
         ],
@@ -411,7 +406,6 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
                         (v) => setState(() => _selectedFrequency = v),
                       ),
               ),
-              _buildServiceTypeField(),
             ]),
           ),
           Column(
@@ -648,99 +642,103 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
   }
 
   Widget _webPmFrequencyField() {
-    final layerLink = LayerLink();
-    return CompositedTransformTarget(
-      link: layerLink,
-      child: Material(
-        color: Colors.white,
-        elevation: 0,
-        shape: WebForm.fieldShape(32),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            final overlay = Overlay.of(context);
-            late OverlayEntry oe;
-            oe = OverlayEntry(
-              builder: (_) => GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () => oe.remove(),
-                child: CompositedTransformFollower(
-                  link: layerLink,
-                   showWhenUnlinked: true,
-                  offset: const Offset(0, 52),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 8,
-                      borderRadius: BorderRadius.circular(12),
-                      child: ConstrainedBox(
-                        constraints:
-                            const BoxConstraints(maxHeight: 300, minWidth: 100),
-                        child: IntrinsicWidth(
-                          child: ListView(
-                            shrinkWrap: true,
-                            padding: EdgeInsets.zero,
-                            children: [
-                              for (final f in _frequencies)
-                                InkWell(
-                                  onTap: () {
-                                    oe.remove();
-                                    setState(() => _selectedFrequency = f);
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                    child: Text(
-                                      f,
-                                      style: const TextStyle(
-                                        fontFamily: 'Montserrat',
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black,
-                                      ),
-                                    ),
+    final key = GlobalKey();
+    return Material(
+      key: key,
+      color: Colors.white,
+      elevation: 0,
+      shape: WebForm.fieldShape(32),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+          if (renderBox == null) return;
+          final pos = renderBox.localToGlobal(Offset.zero);
+          final size = renderBox.size;
+          final overlay = Overlay.of(context, rootOverlay: true);
+          late OverlayEntry oe;
+          oe = OverlayEntry(
+            builder: (_) => Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () => oe.remove(),
+                    behavior: HitTestBehavior.translucent,
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+                Positioned(
+                  left: pos.dx,
+                  top: pos.dy + size.height + 4,
+                  width: size.width,
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(12),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      child: ListView(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        children: [
+                          for (final f in _frequencies)
+                            InkWell(
+                              onTap: () {
+                                oe.remove();
+                                setState(() => _selectedFrequency = f);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                child: Text(
+                                  f,
+                                  style: const TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black,
                                   ),
                                 ),
-                            ],
-                          ),
-                        ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-            overlay.insert(oe);
-          },
-          child: Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _selectedFrequency ?? 'PM Frequency',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: _selectedFrequency == null
-                          ? Colors.black.withValues(alpha: 0.4)
-                          : Colors.black,
-                    ),
-                  ),
-                ),
-                const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
               ],
             ),
+          );
+          overlay.insert(oe);
+        },
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _selectedFrequency ?? 'PM Frequency',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: _selectedFrequency == null
+                        ? Colors.black.withValues(alpha: 0.4)
+                        : Colors.black,
+                  ),
+                ),
+              ),
+              const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
+            ],
           ),
         ),
       ),
     );
   }
+
 
   Widget _buildDescriptionField() {
     return Material(
@@ -1167,6 +1165,52 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
   }
 
   void _showImagePickerDialog() {
+    if (kIsWeb) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Choose One',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _pickerOption(
+                    icon: Icons.photo_library_outlined,
+                    label: 'Gallery',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickImage(ImageSource.gallery);
+                    },
+                  ),
+                  _pickerOption(
+                    icon: Icons.camera_alt_outlined,
+                    label: 'Camera',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickImage(ImageSource.camera);
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1376,7 +1420,13 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
             ? 'Equipment updated successfully'
             : 'Equipment added successfully',
       );
-      if (mounted) context.pop(true);
+      if (mounted) {
+        if (context.canPop()) {
+          context.pop(true);
+        } else {
+          context.go(Routes.amcs);
+        }
+      }
     } catch (e) {
       _snack('$e', error: true);
     } finally {

@@ -131,47 +131,78 @@ class _CreateIndividualTaskScreenState
         .where((t) => t.id == _issueTypeId)
         .map((t) => t.name)
         .firstOrNull;
-    final _key = GlobalKey();
+
+    final key = GlobalKey();
     return Material(
+      key: key,
       color: Colors.white,
       elevation: 0,
       shape: WebForm.fieldShape(32),
       child: InkWell(
-        key: _key,
         borderRadius: BorderRadius.circular(12),
         onTap: types.isEmpty
             ? null
-            : () async {
-                final renderBox =
-                    _key.currentContext?.findRenderObject() as RenderBox?;
+            : () {
+                final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
                 if (renderBox == null) return;
-                final offset = renderBox.localToGlobal(Offset.zero);
+                final pos = renderBox.localToGlobal(Offset.zero);
                 final size = renderBox.size;
-                final chosen = await showMenu<int>(
-                  context: context,
-                  position: RelativeRect.fromLTRB(
-                    offset.dx,
-                    offset.dy + size.height + 4,
-                    offset.dx + size.width,
-                    offset.dy + size.height + 4,
-                  ),
-                  items: [
-                    for (final t in types)
-                      PopupMenuItem<int>(
-                        value: t.id,
-                        child: Text(
-                          t.name,
-                          style: const TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
+                final overlay = Overlay.of(context, rootOverlay: true);
+                late OverlayEntry oe;
+                oe = OverlayEntry(
+                  builder: (_) => Stack(
+                    children: [
+                      Positioned.fill(
+                        child: GestureDetector(
+                          onTap: () => oe.remove(),
+                          behavior: HitTestBehavior.translucent,
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                      Positioned(
+                        left: pos.dx,
+                        top: pos.dy + size.height + 4,
+                        width: size.width,
+                        child: Material(
+                          elevation: 8,
+                          borderRadius: BorderRadius.circular(12),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 300),
+                            child: ListView(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              children: [
+                                for (final t in types)
+                                  InkWell(
+                                    onTap: () {
+                                      oe.remove();
+                                      setState(() => _issueTypeId = t.id);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      child: Text(
+                                        t.name,
+                                        style: const TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                  ],
+                    ],
+                  ),
                 );
-                if (chosen != null) setState(() => _issueTypeId = chosen);
+                overlay.insert(oe);
               },
         child: Container(
           height: 48,
@@ -200,6 +231,104 @@ class _CreateIndividualTaskScreenState
                               : Colors.black,
                         ),
                       ),
+              ),
+              const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webPriorityField() {
+    final key = GlobalKey();
+    return Material(
+      key: key,
+      color: Colors.white,
+      elevation: 0,
+      shape: WebForm.fieldShape(32),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+          if (renderBox == null) return;
+          final pos = renderBox.localToGlobal(Offset.zero);
+          final size = renderBox.size;
+          final overlay = Overlay.of(context, rootOverlay: true);
+          late OverlayEntry oe;
+          oe = OverlayEntry(
+            builder: (_) => Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () => oe.remove(),
+                    behavior: HitTestBehavior.translucent,
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+                Positioned(
+                  left: pos.dx,
+                  top: pos.dy + size.height + 4,
+                  width: size.width,
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(12),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      child: ListView(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        children: [
+                          for (final p in TaskPriority.values)
+                            InkWell(
+                              onTap: () {
+                                oe.remove();
+                                setState(() => _priority = p);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                child: Text(
+                                  p.label,
+                                  style: const TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+          overlay.insert(oe);
+        },
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _priority?.label ?? 'Priority',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: _priority == null
+                        ? Colors.black.withValues(alpha: 0.4)
+                        : Colors.black,
+                  ),
+                ),
               ),
               const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
             ],
@@ -461,14 +590,7 @@ class _CreateIndividualTaskScreenState
                         const SizedBox(height: 16),
                         _webIssueTypeField(),
                         const SizedBox(height: 16),
-                        _buildDropdownField<TaskPriority>(
-                          label: 'Priority',
-                          value: _priority,
-                          items: [
-                            for (final p in TaskPriority.values) (p, p.label),
-                          ],
-                          onChanged: (v) => setState(() => _priority = v),
-                        ),
+                        _webPriorityField(),
                         const SizedBox(height: 16),
                         _buildTextField(
                           controller: _titleController,
