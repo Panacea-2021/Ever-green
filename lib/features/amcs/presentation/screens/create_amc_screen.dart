@@ -320,7 +320,13 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
               emailFailed ? Colors.orange.shade800 : AppColors.primary,
         ),
       );
-      if (mounted) context.pop(true);
+      if (mounted) {
+        if (context.canPop()) {
+          context.pop(true);
+        } else {
+          context.go(Routes.amcs);
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);

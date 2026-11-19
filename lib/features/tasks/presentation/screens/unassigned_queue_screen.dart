@@ -636,7 +636,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
         final cols =
             availableWidth >= 1000 ? 3 : (availableWidth >= 640 ? 2 : 1);
         final cardWidth = (availableWidth - gap * (cols - 1)) / cols;
-        final cardHeight = cardWidth < 380 ? 430.0 : 390.0;
+        final cardHeight = cardWidth < 380 ? 330.0 : 290.0;
         return GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(28, 0, 28, 36),

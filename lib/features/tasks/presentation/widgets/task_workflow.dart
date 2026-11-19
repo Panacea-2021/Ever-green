@@ -81,15 +81,20 @@ List<TaskButton> taskButtonsFor(TaskItem t, User? user) {
     add(TaskAction.reject, TaskButtonKind.danger);
   }
 
-  if (isSuperAdmin || (isManagerial && !t.isClosed)) {
-    if (t.hasAssignee) {
-      add(TaskAction.reassign);
-      add(TaskAction.unassign);
-    } else {
-      add(TaskAction.assign, TaskButtonKind.filled);
+  if (isSuperAdmin || isManagerial) {
+    if (!t.isClosed) {
+      if (t.hasAssignee) {
+        add(TaskAction.reassign);
+        add(TaskAction.unassign);
+      } else {
+        add(TaskAction.assign, TaskButtonKind.filled);
+      }
     }
-    add(TaskAction.priority);
-    add(TaskAction.status);
+    // Super Admin keeps priority/status on closed tickets; managers do not.
+    if (isSuperAdmin || !t.isClosed) {
+      add(TaskAction.priority);
+      add(TaskAction.status);
+    }
     if (!t.escalated && t.isOverdue() && !t.isClosed) {
       add(TaskAction.escalate, TaskButtonKind.danger);
     }
@@ -270,8 +275,8 @@ bool canToggleTaskPriority(TaskItem t, UserRole role) {
 
 /// Whether the board card shows Assign / Reassign for [role].
 bool canAssignFromCard(TaskItem t, UserRole role) {
-  if (role == UserRole.superAdmin) return true;
   if (t.isClosed) return false;
+  if (role == UserRole.superAdmin) return true;
   return role == UserRole.manager || role == UserRole.seniorTechnician;
 }
 

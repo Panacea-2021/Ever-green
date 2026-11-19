@@ -243,7 +243,7 @@ void main() {
       expect(canAssignFromCard(open, UserRole.seniorTechnician), isTrue);
       expect(canAssignFromCard(open, UserRole.technician), isFalse);
       expect(canAssignFromCard(open, UserRole.client), isFalse);
-      expect(canAssignFromCard(closed, UserRole.superAdmin), isTrue);
+      expect(canAssignFromCard(closed, UserRole.superAdmin), isFalse);
       expect(canAssignFromCard(closed, UserRole.seniorTechnician), isFalse);
     });
 
