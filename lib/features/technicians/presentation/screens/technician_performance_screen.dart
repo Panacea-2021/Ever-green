@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-
-import 'dart:html' deferred as html;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../web/widgets/web_header_actions.dart';
 import '../../../tasks/data/task_provider.dart';
+import '../../data/csv_exporter.dart';
 import '../../data/performance_provider.dart';
 
 /// Super Admin / Manager performance report for both technicians and
@@ -1381,63 +1381,95 @@ class _TechnicianPerformanceScreenState
         : ref.read(managerPerformanceProvider);
     if (stats.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No data to export'), backgroundColor: _green),
+        const SnackBar(
+          content: Text('No data to export'),
+          backgroundColor: _green,
+        ),
       );
       return;
     }
-    int totalJobs = 0, completed = 0, activeJobs = 0, overdueJobs = 0;
-    double totalResolution = 0, totalRating = 0;
-    int resolutionCount = 0, ratingCount = 0;
-    for (final s in stats) {
-      totalJobs += s.created + s.active;
-      completed += s.completed;
-      activeJobs += s.active;
-      overdueJobs += s.overdue;
-      if (s.avgResolutionHours > 0) {
-        totalResolution += s.avgResolutionHours;
+
+    var totalJobs = 0;
+    var completed = 0;
+    var activeJobs = 0;
+    var overdueJobs = 0;
+    var totalResolution = 0.0;
+    var totalRating = 0.0;
+    var resolutionCount = 0;
+    var ratingCount = 0;
+    for (final stat in stats) {
+      totalJobs += stat.created + stat.active;
+      completed += stat.completed;
+      activeJobs += stat.active;
+      overdueJobs += stat.overdue;
+      if (stat.avgResolutionHours > 0) {
+        totalResolution += stat.avgResolutionHours;
         resolutionCount++;
       }
-      if (s.avgRating > 0) {
-        totalRating += s.avgRating;
+      if (stat.avgRating > 0) {
+        totalRating += stat.avgRating;
         ratingCount++;
       }
     }
-    final avgResolution = resolutionCount > 0 ? totalResolution / resolutionCount : 0.0;
+    final avgResolution =
+        resolutionCount > 0 ? totalResolution / resolutionCount : 0.0;
     final avgRating = ratingCount > 0 ? totalRating / ratingCount : 0.0;
     final completionRate = totalJobs > 0 ? (completed / totalJobs) * 100 : 0.0;
 
-    String csv(String v) {
-      if (v.contains(',') || v.contains('"') || v.contains('\n')) {
-        return '"${v.replaceAll('"', '""')}"';
+    String csv(String value) {
+      if (value.contains(',') ||
+          value.contains('"') ||
+          value.contains('\n') ||
+          value.contains('\r')) {
+        return '"${value.replaceAll('"', '""')}"';
       }
-      return v;
+      return value;
     }
 
-    final buffer = StringBuffer();
-    buffer.writeln('Metric,Value');
-    buffer.writeln('Total Jobs,$totalJobs');
-    buffer.writeln('Completed,$completed');
-    buffer.writeln('Active Jobs,$activeJobs');
-    buffer.writeln('Overdue SLA,$overdueJobs');
-    buffer.writeln('Average Resolution (hrs),${avgResolution.toStringAsFixed(1)}');
-    buffer.writeln('Average Rating,${avgRating.toStringAsFixed(1)}');
-    buffer.writeln('Completion Rate (%),${completionRate.toStringAsFixed(1)}');
-    buffer.writeln('');
-    buffer.writeln('Name,Created,Completed,Active,Overdue,Avg Resolution (hrs),Avg Rating,SLA %');
-    for (final s in stats) {
+    final buffer = StringBuffer()
+      ..writeln('Metric,Value')
+      ..writeln('Total Jobs,$totalJobs')
+      ..writeln('Completed,$completed')
+      ..writeln('Active Jobs,$activeJobs')
+      ..writeln('Overdue SLA,$overdueJobs')
+      ..writeln('Average Resolution (hrs),${avgResolution.toStringAsFixed(1)}')
+      ..writeln('Average Rating,${avgRating.toStringAsFixed(1)}')
+      ..writeln('Completion Rate (%),${completionRate.toStringAsFixed(1)}')
+      ..writeln()
+      ..writeln(
+        'Name,Created,Completed,Active,Overdue,Avg Resolution (hrs),Avg Rating,SLA %',
+      );
+    for (final stat in stats) {
       buffer.writeln(
-        '${csv(s.name)},${s.created},${s.completed},${s.active},${s.overdue},${s.avgResolutionHours},${s.avgRating},${s.slaCompliance}',
+        '${csv(stat.name)},${stat.created},${stat.completed},${stat.active},'
+        '${stat.overdue},${stat.avgResolutionHours},${stat.avgRating},'
+        '${stat.slaCompliance}',
       );
     }
 
-    final bytes = buffer.toString().codeUnits;
-    await html.loadLibrary();
-    final blob = html.Blob([bytes], 'text/csv;charset=utf-8;');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', 'Service_Engineer_Performance_Report.csv')
-      ..click();
-    html.Url.revokeObjectUrl(url);
+    try {
+      await exportCsv(
+        buffer.toString(),
+        'Service_Engineer_Performance_Report.csv',
+      );
+    } on PlatformException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('Could not export report: ${error.message ?? error.code}'),
+          backgroundColor: _green,
+        ),
+      );
+    } on MissingPluginException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('CSV export is not available on this device'),
+          backgroundColor: _green,
+        ),
+      );
+    }
   }
 
   Future<void> _selectRange(RangePreset p, DateRange range) async {
@@ -1500,6 +1532,11 @@ class _TechnicianPerformanceScreenState
                 color: Color(0xFF1F1F1F),
               ),
             ),
+          ),
+          IconButton(
+            onPressed: _onExportReport,
+            tooltip: 'Export Report',
+            icon: const Icon(Icons.download_outlined, color: _green),
           ),
         ],
       ),
