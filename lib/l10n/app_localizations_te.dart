@@ -237,4 +237,46 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get welcome => 'స్వాగతం';
+
+  @override
+  String get exportServiceReport => 'సేవా నివేదిక ఎగుమతి (CSV)';
+
+  @override
+  String get offlineData => 'ఆఫ్‌లైన్ డేటా';
+
+  @override
+  String get cached => 'క్యాష్ చేయబడింది';
+
+  @override
+  String get helpCenter => 'సహాయ కేంద్రం';
+
+  @override
+  String get sendFeedback => 'అభిప్రాయం పంపండి';
+
+  @override
+  String get termsOfService => 'సేవా నిబంధనలు';
+
+  @override
+  String get privacyPolicy => 'గోప్యతా విధానం';
+
+  @override
+  String get equipmentList => 'పరికరాల జాబితా';
+
+  @override
+  String get createIndividualTask => 'వ్యక్తిగత టాస్క్ సృష్టించు';
+
+  @override
+  String get issueTypes => 'సమస్య రకాలు';
+
+  @override
+  String get uploadEquipments => 'పరికరాల ఎక్సెల్ డేటా అప్లోడ్';
+
+  @override
+  String get uploadTechnicians => 'సేవా ఇంజనీర్ల ఎక్సెల్ డేటా అప్లోడ్';
+
+  @override
+  String get uploadCompanies => 'కంపెనీ ఎక్సెల్ డేటా అప్లోడ్';
+
+  @override
+  String get menu => 'మెనూ';
 }

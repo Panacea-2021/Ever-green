@@ -12,6 +12,12 @@ import '../../../core/config/environment_config.dart';
 class FreeEstimatesRepository {
   final Dio _dio;
 
+  List<Map<String, dynamic>>? _equipmentCache;
+  List<dynamic>? _servicesCache;
+  DateTime? _equipmentCacheAt;
+  DateTime? _servicesCacheAt;
+  static const _cacheTtl = Duration(minutes: 5);
+
   FreeEstimatesRepository()
       : _dio = Dio(BaseOptions(
           baseUrl: EnvironmentConfig.backendUrl,
@@ -24,20 +30,39 @@ class FreeEstimatesRepository {
         ));
 
   Future<List<Map<String, dynamic>>> fetchEquipment() async {
+    final now = DateTime.now();
+    if (_equipmentCache != null &&
+        _equipmentCacheAt != null &&
+        now.difference(_equipmentCacheAt!) < _cacheTtl) {
+      return _equipmentCache!;
+    }
     final res = await _dio.get<dynamic>('/guest-repair-bookings/equipment');
     final data = res.data;
     final list = data is Map ? data['data'] : data;
     if (list is List) {
-      return list.whereType<Map<String, dynamic>>().toList();
+      final result = list.whereType<Map<String, dynamic>>().toList();
+      _equipmentCache = result;
+      _equipmentCacheAt = now;
+      return result;
     }
     return const [];
   }
 
   Future<List<dynamic>> fetchServices() async {
+    final now = DateTime.now();
+    if (_servicesCache != null &&
+        _servicesCacheAt != null &&
+        now.difference(_servicesCacheAt!) < _cacheTtl) {
+      return _servicesCache!;
+    }
     final res = await _dio.get<dynamic>('/guest-repair-bookings/services');
     final data = res.data;
     final list = data is Map ? data['data'] : data;
-    if (list is List) return list;
+    if (list is List) {
+      _servicesCache = list;
+      _servicesCacheAt = now;
+      return list;
+    }
     return const [];
   }
 

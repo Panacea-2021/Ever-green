@@ -96,32 +96,48 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _pickPhoto() async {
     if (_isLoading) return;
-    final source = await showModalBottomSheet<ImageSource>(
+    final user = ref.read(currentUserProvider);
+    final hasPhoto = _pickedPhoto != null ||
+        (user != null && mediaUrl(user.profilePictureUrl).isNotEmpty);
+
+    final choice = await showDialog<String>(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Change Photo'),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppColors.primary),
               title: const Text('Take Photo'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              onTap: () => Navigator.pop(ctx, 'camera'),
             ),
             ListTile(
               leading:
                   const Icon(Icons.photo_library, color: AppColors.primary),
               title: const Text('Choose from Gallery'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
             ),
+            if (hasPhoto)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                title: const Text('Remove Profile Photo'),
+                onTap: () => Navigator.pop(ctx, 'remove'),
+              ),
           ],
         ),
       ),
     );
-    if (source == null) return;
+    if (choice == null) return;
+    if (choice == 'remove') {
+      await _removePhoto();
+      return;
+    }
+    final source = choice == 'camera'
+        ? ImageSource.camera
+        : ImageSource.gallery;
     final XFile? file;
     try {
       file = await ImagePicker().pickImage(
@@ -135,6 +151,44 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
     if (file == null || !mounted) return;
     setState(() => _pickedPhoto = file);
+  }
+
+  Future<void> _removePhoto() async {
+    if (_isLoading) return;
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    // If a photo was only picked locally (not yet uploaded), just clear it.
+    if (_pickedPhoto != null && mediaUrl(user.profilePictureUrl).isEmpty) {
+      setState(() => _pickedPhoto = null);
+      _snack('Profile photo removed');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final result = await ref.read(usersRepositoryProvider).updateUser(
+          user.backendId,
+          avatarUrl: '',
+        );
+    if (!mounted) return;
+    await result.fold(
+      (failure) async {
+        setState(() => _isLoading = false);
+        _snack(failure.displayMessage, error: true);
+      },
+      (message) async {
+        final notifier = ref.read(authStateProvider.notifier);
+        notifier.updateUser(user.copyWith(profilePictureUrl: ''));
+        final fresh = await ref.read(authRepositoryProvider).getCurrentUser();
+        fresh.fold((_) {}, notifier.updateUser);
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _pickedPhoto = null;
+        });
+        _snack(message.isEmpty ? 'Profile photo removed' : message);
+      },
+    );
   }
 
   Future<void> _pickDateOfBirth() async {

@@ -74,15 +74,39 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     color: _green,
                     onRefresh: _refresh,
                     child: feed.when(
-                      loading: () => const Center(
-                        child: CircularProgressIndicator(color: _green),
-                      ),
-                      error: (e, _) => _message(
-                        icon: Icons.cloud_off_outlined,
-                        title: "Couldn't load notifications",
-                        subtitle: '$e',
-                        onRetry: _refresh,
-                      ),
+                      loading: () {
+                        final cached = feed.valueOrNull;
+                        if (cached != null) {
+                          return cached.items.isEmpty
+                              ? _message(
+                                  icon: Icons.notifications_none,
+                                  title: 'No notifications yet',
+                                  subtitle: 'Task updates will show up here.',
+                                )
+                              : _buildNotificationsList(cached);
+                        }
+                        return const Center(
+                          child: CircularProgressIndicator(color: _green),
+                        );
+                      },
+                      error: (e, _) {
+                        final cached = feed.valueOrNull;
+                        if (cached != null) {
+                          return cached.items.isEmpty
+                              ? _message(
+                                  icon: Icons.notifications_none,
+                                  title: 'No notifications yet',
+                                  subtitle: 'Task updates will show up here.',
+                                )
+                              : _buildNotificationsList(cached);
+                        }
+                        return _message(
+                          icon: Icons.cloud_off_outlined,
+                          title: "Couldn't load notifications",
+                          subtitle: '$e',
+                          onRetry: _refresh,
+                        );
+                      },
                       data: (data) => data.items.isEmpty
                           ? _message(
                               icon: Icons.notifications_none,
@@ -220,8 +244,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       itemCount: items.length + (showFooter ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= items.length) return _buildFooter(feed);
-        if (index >= items.length - 3 && feed.hasMore && feed.loadMoreError == null) {
-          // Prefetch the next page as the end comes into view.
+        if (index >= items.length - 3 &&
+            feed.hasMore &&
+            feed.loadMoreError == null &&
+            !feed.loadingMore) {
+          // Prefetch the next page as the end comes into view (guarded to avoid
+          // spawning duplicate microtasks on every rebuild).
           Future.microtask(
             () => ref.read(notificationsControllerProvider.notifier).loadMore(),
           );

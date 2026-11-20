@@ -29,6 +29,7 @@ class UsersRepository {
     String location = '',
     List<int> companyIds = const [],
     bool sendCredentials = true,
+    String? designation,
   }) async {
     final result = await _api.post<dynamic>(
       'user/createUser',
@@ -39,7 +40,10 @@ class UsersRepository {
         'password': password,
         'location': location,
         'access_level': role.accessLevel,
-        if (role.designation != null) 'designation': role.designation,
+        if (designation != null && designation.trim().isNotEmpty)
+          'designation': designation.trim()
+        else if (role.designation != null)
+          'designation': role.designation,
         if (companyIds.isNotEmpty) 'company_link': companyIds,
         'send_credentials': sendCredentials,
       },

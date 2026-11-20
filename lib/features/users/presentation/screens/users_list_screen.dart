@@ -85,7 +85,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
       case 3:
         return role.isTechnicianLevel;
       case 4:
-        return role == UserRole.superAdmin || role == UserRole.manager;
+        return role == UserRole.manager;
       default:
         return true;
     }
@@ -217,7 +217,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
       case 3:
         return role.isTechnicianLevel;
       case 4:
-        return role == UserRole.superAdmin || role == UserRole.manager;
+        return role == UserRole.manager;
       default:
         return true;
     }

@@ -237,4 +237,46 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get welcome => 'स्वागत है';
+
+  @override
+  String get exportServiceReport => 'सेवा रिपोर्ट निर्यात (CSV)';
+
+  @override
+  String get offlineData => 'ऑफलाइन डेटा';
+
+  @override
+  String get cached => 'कैश्ड';
+
+  @override
+  String get helpCenter => 'सहायता केंद्र';
+
+  @override
+  String get sendFeedback => 'फीडबैक भेजें';
+
+  @override
+  String get termsOfService => 'सेवा की शर्तें';
+
+  @override
+  String get privacyPolicy => 'गोपनीयता नीति';
+
+  @override
+  String get equipmentList => 'उपकरण सूची';
+
+  @override
+  String get createIndividualTask => 'व्यक्तिगत टास्क बनाएं';
+
+  @override
+  String get issueTypes => 'समस्या प्रकार';
+
+  @override
+  String get uploadEquipments => 'उपकरण एक्सेल डेटा अपलोड';
+
+  @override
+  String get uploadTechnicians => 'सेवा इंजीनियर एक्सेल डेटा अपलोड';
+
+  @override
+  String get uploadCompanies => 'कंपनी एक्सेल डेटा अपलोड';
+
+  @override
+  String get menu => 'मेनू';
 }

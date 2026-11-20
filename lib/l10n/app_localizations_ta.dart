@@ -237,4 +237,46 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get welcome => 'வரவேற்கிறோம்';
+
+  @override
+  String get exportServiceReport => 'சேவை அறிக்கை ஏற்றுமதி (CSV)';
+
+  @override
+  String get offlineData => 'ஆஃப்லைன் தரவு';
+
+  @override
+  String get cached => 'தற்காலிகமாக சேமிக்கப்பட்டது';
+
+  @override
+  String get helpCenter => 'உதவி மையம்';
+
+  @override
+  String get sendFeedback => 'கருத்து அனுப்பு';
+
+  @override
+  String get termsOfService => 'சேவை விதிமுறைகள்';
+
+  @override
+  String get privacyPolicy => 'தனியுரிமை கொள்கை';
+
+  @override
+  String get equipmentList => 'உபகரண பட்டியல்';
+
+  @override
+  String get createIndividualTask => 'தனிப்பட்ட பணி உருவாக்கு';
+
+  @override
+  String get issueTypes => 'சிக்கல் வகைகள்';
+
+  @override
+  String get uploadEquipments => 'உபகரண எக்செல் தரவு பதிவேற்றம்';
+
+  @override
+  String get uploadTechnicians => 'சேவை பொறியாளர் எக்செல் தரவு பதிவேற்றம்';
+
+  @override
+  String get uploadCompanies => 'நிறுவன எக்செல் தரவு பதிவேற்றம்';
+
+  @override
+  String get menu => 'பட்டியல்';
 }

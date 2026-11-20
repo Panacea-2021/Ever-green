@@ -1206,6 +1206,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
     required T? value,
     required List<(T, String)> items,
     required ValueChanged<T?>? onChanged,
+    LayerLink? link,
   }) {
     if (!kIsWeb) {
       return Material(
@@ -1256,110 +1257,123 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
       );
     }
 
-    // Web: use an OverlayEntry anchored to the field (matches the working
-    // web_top_nav pattern) so the menu opens directly below the field.
+    // Web: anchor the popup to THIS field using a LayerLink so the
+    // coordinate space is handled by the framework (no manual global math).
+    final fieldLink = link ?? LayerLink();
     final key = GlobalKey();
     final selectedName = items
         .where((e) => e.$1 == value)
         .map((e) => e.$2)
         .firstOrNull;
-    return Material(
-      key: key,
-      color: Colors.white,
-      elevation: 0,
-      shape: _fieldShape(32),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: (onChanged == null || items.isEmpty)
-            ? null
-            : () {
-                final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
-                if (renderBox == null) return;
-                final pos = renderBox.localToGlobal(Offset.zero);
-                final size = renderBox.size;
-                final overlay = Overlay.of(context, rootOverlay: true);
-                late OverlayEntry oe;
-                oe = OverlayEntry(
-                  builder: (_) => Stack(
-                    children: [
-                      Positioned.fill(
-                        child: GestureDetector(
-                          onTap: () => oe.remove(),
-                          behavior: HitTestBehavior.translucent,
-                          child: const SizedBox.expand(),
+    return CompositedTransformTarget(
+      link: fieldLink,
+      child: Material(
+        key: key,
+        color: Colors.white,
+        elevation: 0,
+        shape: _fieldShape(32),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          onTap: (onChanged == null || items.isEmpty)
+              ? null
+              : () {
+                  final renderBox =
+                      key.currentContext?.findRenderObject() as RenderBox?;
+                  final fieldWidth = renderBox?.size.width ?? 200.0;
+                  final overlay = Overlay.of(context, rootOverlay: true);
+                  late OverlayEntry oe;
+                  oe = OverlayEntry(
+                    builder: (_) => Stack(
+                      children: [
+                        Positioned.fill(
+                          child: GestureDetector(
+                            onTap: () => oe.remove(),
+                            behavior: HitTestBehavior.translucent,
+                            child: const SizedBox.expand(),
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        left: pos.dx,
-                        top: pos.dy + size.height + 4,
-                        width: size.width,
-                        child: Material(
-                          elevation: 8,
-                          borderRadius: BorderRadius.circular(12),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 300),
-                            child: ListView(
-                              shrinkWrap: true,
-                              padding: EdgeInsets.zero,
-                              children: [
-                                for (final item in items)
-                                  InkWell(
-                                    onTap: () {
-                                      oe.remove();
-                                      onChanged(item.$1);
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 12,
-                                      ),
-                                      child: Text(
-                                        item.$2,
-                                        style: const TextStyle(
-                                          fontFamily: 'Montserrat',
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black,
+                        CompositedTransformFollower(
+                          link: fieldLink,
+                          showWhenUnlinked: false,
+                          offset: const Offset(0, 52),
+                          child: Material(
+                            elevation: 8,
+                            borderRadius: BorderRadius.circular(12),
+                            child: SizedBox(
+                              width: fieldWidth,
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxHeight: 300),
+                                child: ListView(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  children: [
+                                    for (final item in items)
+                                      InkWell(
+                                        onTap: () {
+                                          oe.remove();
+                                          onChanged(item.$1);
+                                        },
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                          child: Text(
+                                            item.$2,
+                                            style: const TextStyle(
+                                              fontFamily: 'Montserrat',
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                              ],
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-                overlay.insert(oe);
-              },
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  selectedName ?? label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: selectedName == null
-                        ? Colors.black.withValues(alpha: 0.4)
-                        : Colors.black,
+                      ],
+                    ),
+                  );
+                  overlay.insert(oe);
+                },
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    selectedName ?? label,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: selectedName == null
+                          ? Colors.black.withValues(alpha: 0.4)
+                          : Colors.black,
+                    ),
                   ),
                 ),
-              ),
-              const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
-            ],
+                const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
 
   Widget _buildEquipmentSpecifications(Equipment e) {
     String v(String? s) => (s == null || s.isEmpty) ? '-' : s;

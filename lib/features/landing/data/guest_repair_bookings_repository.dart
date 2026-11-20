@@ -91,24 +91,48 @@ class ApiGuestRepairBookingsRepository
 
   final ApiClient api;
 
+  List<GuestRepairEquipment>? _equipmentCache;
+  List<String>? _servicesCache;
+  DateTime? _equipmentCacheAt;
+  DateTime? _servicesCacheAt;
+  static const _cacheTtl = Duration(minutes: 5);
+
   @override
   Future<List<GuestRepairEquipment>> getEquipment() async {
+    final now = DateTime.now();
+    if (_equipmentCache != null &&
+        _equipmentCacheAt != null &&
+        now.difference(_equipmentCacheAt!) < _cacheTtl) {
+      return _equipmentCache!;
+    }
     final envelope = unwrap(await api.get<dynamic>(_equipmentPath));
     final data = _responseData(envelope);
     if (data is! List) {
       throw const RepositoryException('Invalid equipment response');
     }
-    return data.map(GuestRepairEquipment.fromJson).toList(growable: false);
+    final result = data.map(GuestRepairEquipment.fromJson).toList(growable: false);
+    _equipmentCache = result;
+    _equipmentCacheAt = now;
+    return result;
   }
 
   @override
   Future<List<String>> getServices() async {
+    final now = DateTime.now();
+    if (_servicesCache != null &&
+        _servicesCacheAt != null &&
+        now.difference(_servicesCacheAt!) < _cacheTtl) {
+      return _servicesCache!;
+    }
     final envelope = unwrap(await api.get<dynamic>(_servicesPath));
     final data = _responseData(envelope);
     if (data is! List || data.any((value) => value is! String)) {
       throw const RepositoryException('Invalid services response');
     }
-    return data.cast<String>().toList(growable: false);
+    final result = data.cast<String>().toList(growable: false);
+    _servicesCache = result;
+    _servicesCacheAt = now;
+    return result;
   }
 
   @override

@@ -75,5 +75,19 @@
   "auditLog": "Activity History",
   "pmScheduleShort": "PM Schedule",
   "noData": "No data",
-  "welcome": "Welcome"
+  "welcome": "Welcome",
+  "exportServiceReport": "Export Service Report (CSV)",
+  "offlineData": "Offline Data",
+  "cached": "Cached",
+  "helpCenter": "Help Center",
+  "sendFeedback": "Send Feedback",
+  "termsOfService": "Terms of Service",
+  "privacyPolicy": "Privacy Policy",
+  "equipmentList": "Equipment List",
+  "createIndividualTask": "Create Individual Task",
+  "issueTypes": "Issue Types",
+  "uploadEquipments": "Upload Equipments Excel Data",
+  "uploadTechnicians": "Upload Service Engineers Excel Data",
+  "uploadCompanies": "Upload Company Excel Data",
+  "menu": "MENU"
 }

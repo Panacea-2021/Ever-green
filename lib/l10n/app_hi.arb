@@ -75,5 +75,19 @@
   "auditLog": "गतिविधि इतिहास",
   "pmScheduleShort": "पीएम शेड्यूल",
   "noData": "कोई डेटा नहीं",
-  "welcome": "स्वागत है"
+  "welcome": "स्वागत है",
+  "cached": "कैश्ड",
+  "sendFeedback": "फीडबैक भेजें",
+  "exportServiceReport": "सेवा रिपोर्ट निर्यात (CSV)",
+  "termsOfService": "सेवा की शर्तें",
+  "privacyPolicy": "गोपनीयता नीति",
+  "offlineData": "ऑफलाइन डेटा",
+  "helpCenter": "सहायता केंद्र",
+  "equipmentList": "उपकरण सूची",
+  "createIndividualTask": "व्यक्तिगत टास्क बनाएं",
+  "issueTypes": "समस्या प्रकार",
+  "uploadEquipments": "उपकरण एक्सेल डेटा अपलोड",
+  "uploadTechnicians": "सेवा इंजीनियर एक्सेल डेटा अपलोड",
+  "uploadCompanies": "कंपनी एक्सेल डेटा अपलोड",
+  "menu": "मेनू"
 }

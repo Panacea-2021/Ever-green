@@ -237,4 +237,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcome => 'Welcome';
+
+  @override
+  String get exportServiceReport => 'Export Service Report (CSV)';
+
+  @override
+  String get offlineData => 'Offline Data';
+
+  @override
+  String get cached => 'Cached';
+
+  @override
+  String get helpCenter => 'Help Center';
+
+  @override
+  String get sendFeedback => 'Send Feedback';
+
+  @override
+  String get termsOfService => 'Terms of Service';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get equipmentList => 'Equipment List';
+
+  @override
+  String get createIndividualTask => 'Create Individual Task';
+
+  @override
+  String get issueTypes => 'Issue Types';
+
+  @override
+  String get uploadEquipments => 'Upload Equipments Excel Data';
+
+  @override
+  String get uploadTechnicians => 'Upload Service Engineers Excel Data';
+
+  @override
+  String get uploadCompanies => 'Upload Company Excel Data';
+
+  @override
+  String get menu => 'MENU';
 }

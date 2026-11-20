@@ -456,29 +456,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Widget _reportsCard() {
+    final l10n = AppLocalizations.of(context);
     return _card([
       _navTile(
         Icons.summarize_outlined,
-        'Export Service Report (CSV)',
+        l10n?.exportServiceReport ?? 'Export Service Report (CSV)',
         onTap: () => _exportServiceReport(context),
       ),
       _divider(),
       _navTile(
         Icons.cloud_done_outlined,
-        'Offline Data',
-        trailing: 'Cached',
+        l10n?.offlineData ?? 'Offline Data',
+        trailing: l10n?.cached ?? 'Cached',
         onTap: _showOfflineInfo,
       ),
     ]);
   }
 
   Widget _supportCard() {
+    final l10n = AppLocalizations.of(context);
     return _card([
       _navTile(
         Icons.help_outline,
-        'Help Center',
+        l10n?.helpCenter ?? 'Help Center',
         onTap: () => _showInfoDialog(
-          'Help Center',
+          l10n?.helpCenter ?? 'Help Center',
           Icons.help_outline,
           'Browse FAQs and how-to guides, or reach our support '
               'team at support@evergreen.com. Average response '
@@ -488,15 +490,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       _divider(),
       _navTile(
         Icons.feedback_outlined,
-        'Send Feedback',
+        l10n?.sendFeedback ?? 'Send Feedback',
         onTap: _showFeedbackSheet,
       ),
       _divider(),
       _navTile(
         Icons.description_outlined,
-        'Terms of Service',
+        l10n?.termsOfService ?? 'Terms of Service',
         onTap: () => _showInfoDialog(
-          'Terms of Service',
+          l10n?.termsOfService ?? 'Terms of Service',
           Icons.description_outlined,
           'By using EverGreen you agree to use the platform for '
               'legitimate equipment and maintenance management. '
@@ -506,9 +508,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       _divider(),
       _navTile(
         Icons.privacy_tip_outlined,
-        'Privacy Policy',
+        l10n?.privacyPolicy ?? 'Privacy Policy',
         onTap: () => _showInfoDialog(
-          'Privacy Policy',
+          l10n?.privacyPolicy ?? 'Privacy Policy',
           Icons.privacy_tip_outlined,
           'Your data is stored securely and never sold. Service '
               'records are retained for the life of the AMC '
@@ -787,7 +789,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
                 title: Text(
                   l['label']!,
-                  style: const TextStyle(fontFamily: 'Montserrat'),
+                  // Do not force Montserrat: it has no Indic glyphs, which
+                  // causes box-glyphs until a fallback font loads. Let Flutter
+                  // pick a system font that supports the selected script.
                 ),
                 onTap: () {
                   ref.read(settingsPreferencesProvider.notifier)
@@ -820,8 +824,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     : Icons.radio_button_off,
                 color: _green,
               ),
-              title: Text(l['label']!,
-                  style: const TextStyle(fontFamily: 'Montserrat')),
+              title: Text(l['label']!),
               onTap: () {
                 ref.read(settingsPreferencesProvider.notifier)
                     .setLanguage(l['code']!);
