@@ -1,0 +1,53 @@
+
+name: Merge Developer Branch to Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Select developer branch name"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  merge-to-staging:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify authorized user
+        if: github.actor != 'YOUR_GITHUB_USERNAME'
+        run: |
+          echo "Unauthorized user"
+          exit 1
+
+      - name: Validate source branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_BRANCH: ${{ inputs.source_branch }}
+        run: |
+          if [[ "$SOURCE_BRANCH" == "staging" || "$SOURCE_BRANCH" == "main" ]]; then
+            echo "Invalid source branch"
+            exit 1
+          fi
+
+          gh api "repos/${GITHUB_REPOSITORY}/branches/$SOURCE_BRANCH" \
+            --silent || exit 1
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_BRANCH: ${{ inputs.source_branch }}
+        run: |
+          gh pr create \
+            --base staging \
+            --head "$SOURCE_BRANCH" \
+            --title "Merge $SOURCE_BRANCH into staging" \
+            --body "Developer changes submitted for staging review." \
+            || {
+              echo "PR may already exist. Check existing Pull Requests."
+              exit 1
+            }
