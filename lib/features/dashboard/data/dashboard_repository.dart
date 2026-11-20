@@ -26,8 +26,29 @@ class TaskCounts {
 
   factory TaskCounts.fromJson(dynamic data) {
     final map = data is Map ? data : const {};
+    // Backend counts by ServiceStatus (open/hold/in_progress/completed/closed);
+    // the design collapses completed+closed into the Closed bucket. Accept both
+    // camelCase and snake_case keys so a mismatched envelope never zeroes out
+    // a bucket.
+    int read(List<String> keys) {
+      for (final k in keys) {
+        final v = map[k];
+        if (v != null) return _toInt(v);
+      }
+      return 0;
+    }
+
     return TaskCounts({
-      for (final s in TaskStatus.values) s: _toInt(map[s.key]),
+      TaskStatus.open: read(['open', 'Open']),
+      TaskStatus.hold: read(['hold', 'Hold', 'on_hold', 'onHold']),
+      TaskStatus.inProgress: read([
+        'in_progress',
+        'inProgress',
+        'in-progress',
+        'InProgress',
+      ]),
+      TaskStatus.closed: read(['closed', 'Closed']) +
+          read(['completed', 'Completed']),
     });
   }
 }

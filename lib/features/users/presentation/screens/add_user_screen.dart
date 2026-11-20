@@ -72,6 +72,16 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     if (_isSaving || !(_formKey.currentState?.validate() ?? false)) return;
     final role = _selectedRole ?? UserRole.client;
 
+    if (_needsCompany && (_selectedCompanyId == null || _selectedCompanyId! <= 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a company.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
     final result = await ref.read(usersRepositoryProvider).createUser(
           name: _nameController.text.trim(),
@@ -386,7 +396,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
                 }
               },
               validator: (v) => _needsCompany && _selectedCompanyId == null
-                  ? 'Please select an AMC'
+                  ? 'Please select a company.'
                   : null,
               style: const TextStyle(
                 fontFamily: 'Montserrat',
@@ -439,7 +449,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
                 elevation: 4,
                 borderRadius: BorderRadius.circular(12),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 240, maxWidth: 420),
+                  constraints: BoxConstraints(maxHeight: 360, maxWidth: MediaQuery.of(context).size.width * 0.9),
                   child: ListView.builder(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,

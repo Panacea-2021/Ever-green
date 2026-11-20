@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -155,20 +153,21 @@ class _WebOrganizationSections extends ConsumerWidget {
     final analytics = ref.watch(dashboardAnalyticsProvider);
     final history = ref.watch(analyticsHistoryProvider);
 
-    if (analytics.hasError || history.hasError) {
-      return _DashboardDataError(
-        message: 'Organization analytics could not be loaded.',
-        error: analytics.error ?? history.error,
-        onRetry: () {
-          ref.invalidate(dashboardAnalyticsProvider);
-          ref.invalidate(analyticsHistoryProvider);
-        },
-      );
-    }
-
     final data = analytics.valueOrNull;
+    // Keep the dashboard content hidden while analytics load — do not show a
+    // large centred spinner or partially loaded cards.
     if (data == null) {
-      return const _DashboardAnalyticsLoading();
+      if (analytics.hasError || history.hasError) {
+        return _DashboardDataError(
+          message: 'Organization analytics could not be loaded.',
+          error: analytics.error ?? history.error,
+          onRetry: () {
+            ref.invalidate(dashboardAnalyticsProvider);
+            ref.invalidate(analyticsHistoryProvider);
+          },
+        );
+      }
+      return const SizedBox.shrink();
     }
 
     final users = data.usersByRole;
@@ -355,7 +354,7 @@ class _WebDashboardMetricCard extends StatefulWidget {
     this.valueKey,
     this.compact = false,
     this.highlight = false,
-    this.animatedBorder = false,
+    this.coloredBorder = true,
   });
 
   final String title;
@@ -369,41 +368,16 @@ class _WebDashboardMetricCard extends StatefulWidget {
   final Key? valueKey;
   final bool compact;
   final bool highlight;
-  final bool animatedBorder;
+  final bool coloredBorder;
 
   @override
   State<_WebDashboardMetricCard> createState() =>
       _WebDashboardMetricCardState();
 }
 
-class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
-    with SingleTickerProviderStateMixin {
+class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
   bool _hovered = false;
   bool _pressed = false;
-  AnimationController? _borderCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.animatedBorder) {
-      // Skip the repeating animation in the test environment so pumpAndSettle
-      // based tests can complete; the animation still runs in real (debug/release)
-      // builds.
-      final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
-      if (!isTest) {
-        _borderCtrl = AnimationController(
-          vsync: this,
-          duration: const Duration(seconds: 3),
-        )..repeat();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _borderCtrl?.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -424,9 +398,9 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
             constraints: BoxConstraints(
-              minHeight: widget.compact ? 112 : 136,
+              minHeight: widget.compact ? 100 : 136,
             ),
-            padding: EdgeInsets.all(widget.compact ? 12 : 16),
+            padding: EdgeInsets.all(widget.compact ? 10 : 16),
             transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
             transformAlignment: Alignment.center,
             decoration: BoxDecoration(
@@ -435,9 +409,11 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
               ),
               borderRadius: radius,
               border: Border.all(
-                color: widget.color.withValues(
-                  alpha: _hovered ? 0.48 : 0.24,
-                ),
+                color: widget.coloredBorder
+                    ? widget.color.withValues(
+                        alpha: _hovered ? 0.48 : 0.24,
+                      )
+                    : const Color(0xFFE8E8E8),
               ),
               boxShadow: [
                 BoxShadow(
@@ -453,16 +429,14 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
           )
         : Container(
             constraints: BoxConstraints(
-              minHeight: widget.compact ? 112 : 136,
+              minHeight: widget.compact ? 100 : 136,
             ),
-            padding: EdgeInsets.all(widget.compact ? 12 : 16),
+            padding: EdgeInsets.all(widget.compact ? 10 : 16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: radius,
               border: Border.all(
-                color: _borderCtrl != null
-                    ? Colors.transparent
-                    : const Color(0xFFE8E8E8),
+                color: const Color(0xFFE8E8E8),
               ),
               boxShadow: [
                 BoxShadow(
@@ -519,9 +493,7 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
               width: widget.compact ? 34 : 38,
               height: widget.compact ? 34 : 38,
               decoration: BoxDecoration(
-                color: widget.highlight
-                    ? widget.color.withValues(alpha: 0.1)
-                    : const Color(0xFFF5F5F5),
+                color: const Color(0xFFF5F5F5),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -545,7 +517,7 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
             ),
           ],
         ),
-        SizedBox(height: widget.compact ? 8 : 14),
+        SizedBox(height: widget.compact ? 6 : 14),
         Text(
           '${widget.value}',
           key: widget.valueKey,
@@ -563,7 +535,7 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
                   letterSpacing: -0.5,
                 ),
         ),
-        SizedBox(height: widget.compact ? 2 : 4),
+        SizedBox(height: widget.compact ? 1 : 4),
         if (widget.trend != null)
           Row(
             children: [
@@ -691,15 +663,23 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
     final reportSnapshots = snapshots.length <= 7
         ? snapshots
         : snapshots.sublist(snapshots.length - 7);
-    final bars = [
-      for (final snapshot in reportSnapshots)
-        snapshot.metric(_barMetric).toDouble(),
-    ];
-    final line = [
-      for (final snapshot in reportSnapshots)
-        snapshot.metric(_lineMetric).toDouble(),
-    ];
-    final labels = reportSnapshots.map(snapshotMonthLabel).toList();
+    // When a year has no monthly data, still render all 12 months at zero
+    // instead of a blank chart.
+    final bars = reportSnapshots.isEmpty
+        ? List<double>.filled(12, 0.0)
+        : [
+            for (final snapshot in reportSnapshots)
+              snapshot.metric(_barMetric).toDouble(),
+          ];
+    final line = reportSnapshots.isEmpty
+        ? List<double>.filled(12, 0.0)
+        : [
+            for (final snapshot in reportSnapshots)
+              snapshot.metric(_lineMetric).toDouble(),
+          ];
+    final labels = reportSnapshots.isEmpty
+        ? const ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        : reportSnapshots.map(snapshotMonthLabel).toList();
     final labelsForLegend = _legendLabels;
     final openTasks = (widget.analytics.tasksByStatus['Open'] ?? 0) +
         (widget.analytics.tasksByStatus['Hold'] ?? 0) +
@@ -730,7 +710,8 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 onTap: widget.onOpenTasks,
                 valueKey: const ValueKey('web-report-open-tasks-count'),
                 compact: true,
-                animatedBorder: true,
+                highlight: true,
+                coloredBorder: false,
               ),
               _WebDashboardMetricCard(
                 title: 'Closed (mo)',
@@ -741,7 +722,8 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 onTap: widget.onOpenTasks,
                 valueKey: const ValueKey('web-report-closed-tasks-count'),
                 compact: true,
-                animatedBorder: true,
+                highlight: true,
+                coloredBorder: false,
               ),
             ],
           ),
@@ -822,15 +804,6 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
     List<double> line,
     List<String> labels,
   ) {
-    if (labels.isEmpty) {
-      return const Center(
-        child: Text(
-          'No monthly data for this year',
-          style: TextStyle(fontSize: 13, color: Color(0xFF888888)),
-        ),
-      );
-    }
-
     final maxValue = [...bars, ...line, 1.0].reduce((a, b) => a > b ? a : b);
     final maxY = (maxValue * 1.25).ceilToDouble();
     final interval =
@@ -1474,15 +1447,14 @@ class _LegendItem extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF666666),
-            ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF666666),
           ),
         ),
+        const SizedBox(width: 8),
         Text(
           '$value',
           style: const TextStyle(
@@ -1839,67 +1811,4 @@ class _BackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ChasingBorderDecoration extends Decoration {
-  final Color color;
-  final double progress;
-  final double radius;
-  final double strokeWidth;
-
-  const _ChasingBorderDecoration({
-    required this.color,
-    required this.progress,
-    required this.radius,
-    required this.strokeWidth,
-  });
-
-  @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      _ChasingBorderBoxPainter(color, progress, radius, strokeWidth);
-
-  @override
-  bool operator ==(Object other) =>
-      other is _ChasingBorderDecoration &&
-      other.color == color &&
-      other.progress == progress &&
-      other.radius == radius &&
-      other.strokeWidth == strokeWidth;
-
-  @override
-  int get hashCode => Object.hash(color, progress, radius, strokeWidth);
-}
-
-class _ChasingBorderBoxPainter extends BoxPainter {
-  final Color color;
-  final double progress;
-  final double radius;
-  final double strokeWidth;
-
-  _ChasingBorderBoxPainter(this.color, this.progress, this.radius, this.strokeWidth);
-
-  @override
-  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
-    final size = configuration.size;
-    if (size == null) return;
-    final rect = offset & size;
-    final rrect = RRect.fromRectAndRadius(
-      rect.deflate(strokeWidth / 2),
-      Radius.circular(radius),
-    );
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..shader = SweepGradient(
-        startAngle: progress * 2 * math.pi,
-        endAngle: progress * 2 * math.pi + 2 * math.pi,
-        colors: [
-          color.withValues(alpha: 0.0),
-          color.withValues(alpha: 0.9),
-          color.withValues(alpha: 0.0),
-        ],
-        stops: const [0.0, 0.5, 1.0],
-      ).createShader(rect);
-    canvas.drawRRect(rrect, paint);
-  }
 }

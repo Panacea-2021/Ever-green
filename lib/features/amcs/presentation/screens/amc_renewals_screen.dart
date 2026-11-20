@@ -15,6 +15,9 @@ import '../../../../web/widgets/web_filter_tiles.dart';
 import '../../../../web/widgets/web_header_actions.dart';
 import '../widgets/amc_async_states.dart';
 
+/// Filter tabs for the AMC Renewals screen.
+enum _AmcRenewalFilter { all, expired, due, expiringSoon }
+
 /// Super Admin / Manager view of AMC contracts that need attention —
 /// expiring soon or already expired — with one-tap renewal.
 class AmcRenewalsScreen extends ConsumerStatefulWidget {
@@ -28,8 +31,8 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
     with WebHeaderActionsMixin {
   static const Color _green = Color(0xFF106220);
 
-  // null = All flagged; otherwise filter to this status.
-  AmcStatus? _filter;
+  // Active renewal filter tab.
+  _AmcRenewalFilter _filter = _AmcRenewalFilter.all;
 
   @override
   Widget build(BuildContext context) {
@@ -43,23 +46,39 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
         .where((c) => c.company?.isActive != false)
         .toList();
     final flagged = renewalsFrom(all);
+    int daysUntil(AmcContract c) => c.daysUntilExpiry();
+    final expiredCount = flagged.where((c) => daysUntil(c) < 0).length;
+    final dueCount = flagged.where((c) => daysUntil(c) == 0).length;
     final expiringCount =
-        all.where((c) => c.status() == AmcStatus.expiringSoon).length;
-    final expiredCount =
-        all.where((c) => c.status() == AmcStatus.expired).length;
+        flagged.where((c) => daysUntil(c) > 0 && daysUntil(c) <= AmcContract.expiryWindowDays).length;
+    final allCount = flagged.length;
 
-    final visible = _filter == null
-        ? flagged
-        : flagged.where((c) => c.status() == _filter).toList();
+    List<AmcContract> visible;
+    switch (_filter) {
+      case _AmcRenewalFilter.all:
+        visible = flagged;
+        break;
+      case _AmcRenewalFilter.expired:
+        visible = flagged.where((c) => daysUntil(c) < 0).toList();
+        break;
+      case _AmcRenewalFilter.due:
+        visible = flagged.where((c) => daysUntil(c) == 0).toList();
+        break;
+      case _AmcRenewalFilter.expiringSoon:
+        visible = flagged.where((c) => daysUntil(c) > 0 && daysUntil(c) <= AmcContract.expiryWindowDays).toList();
+        break;
+    }
+
     final canRenew =
         Permissions.canManageAmcs(ref.watch(currentUserRoleProvider));
 
     if (kIsWeb) {
       return _webBuild(
         companiesAsync,
-        flagged.length,
-        expiringCount,
+        allCount,
         expiredCount,
+        dueCount,
+        expiringCount,
         visible,
         canRenew,
       );
@@ -129,9 +148,10 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
 
   Widget _webBuild(
     AsyncValue<List<Company>> companiesAsync,
+    int allCount,
+    int expiredCount,
     int dueCount,
-    int expiring,
-    int expired,
+    int expiringCount,
     List<AmcContract> visible,
     bool canRenew,
   ) {
@@ -178,31 +198,10 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
               builder: (context, c) {
                 final filters = WebFilterTiles(
                   options: [
-                    for (final f in <(String, AmcStatus?, int, IconData, Color)>[
-                      ('All', null, dueCount, Icons.dashboard_outlined, _green),
-                      (
-                        'Expiring Soon',
-                        AmcStatus.expiringSoon,
-                        expiring,
-                        Icons.schedule,
-                        const Color(0xFFE08600),
-                      ),
-                      (
-                        'Expired',
-                        AmcStatus.expired,
-                        expired,
-                        Icons.error_outline,
-                        const Color(0xFFD32F2F),
-                      ),
-                    ])
-                      WebFilterOption(
-                        label: f.$1,
-                        count: f.$3,
-                        icon: f.$4,
-                        color: f.$5,
-                        selected: _filter == f.$2,
-                        onTap: () => setState(() => _filter = f.$2),
-                      ),
+                    WebFilterOption(label: 'All', icon: Icons.dashboard_outlined, color: _green, selected: _filter == _AmcRenewalFilter.all, count: allCount, onTap: () => setState(() => _filter = _AmcRenewalFilter.all)),
+                    WebFilterOption(label: 'Expired', icon: Icons.error_outline, color: const Color(0xFFD32F2F), selected: _filter == _AmcRenewalFilter.expired, count: expiredCount, onTap: () => setState(() => _filter = _AmcRenewalFilter.expired)),
+                    WebFilterOption(label: 'Due', icon: Icons.event_outlined, color: const Color(0xFF1565C0), selected: _filter == _AmcRenewalFilter.due, count: dueCount, onTap: () => setState(() => _filter = _AmcRenewalFilter.due)),
+                    WebFilterOption(label: 'Expiring Soon', icon: Icons.schedule, color: const Color(0xFFE08600), selected: _filter == _AmcRenewalFilter.expiringSoon, count: expiringCount, onTap: () => setState(() => _filter = _AmcRenewalFilter.expiringSoon)),
                   ],
                 );
                 if (c.maxWidth < 900) {
@@ -729,11 +728,13 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
   }
 
   Widget _buildFilters() {
-    final chips = <MapEntry<String, AmcStatus?>>[
-      const MapEntry('All', null),
-      const MapEntry('Expiring Soon', AmcStatus.expiringSoon),
-      const MapEntry('Expired', AmcStatus.expired),
+    final chips = <_AmcRenewalFilter>[
+      _AmcRenewalFilter.all,
+      _AmcRenewalFilter.expired,
+      _AmcRenewalFilter.due,
+      _AmcRenewalFilter.expiringSoon,
     ];
+    final labels = <String>['All', 'Expired', 'Due', 'Expiring Soon'];
     return SizedBox(
       height: 44,
       child: ListView.separated(
@@ -742,9 +743,9 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
         itemCount: chips.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
-          final selected = _filter == chips[i].value;
+          final selected = _filter == chips[i];
           return GestureDetector(
-            onTap: () => setState(() => _filter = chips[i].value),
+            onTap: () => setState(() => _filter = chips[i]),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               alignment: Alignment.center,
@@ -766,7 +767,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
                     : null,
               ),
               child: Text(
-                chips[i].key,
+                labels[i],
                 style: TextStyle(
                   fontFamily: 'Montserrat',
                   fontSize: 13,

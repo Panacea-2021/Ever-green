@@ -160,7 +160,7 @@ void main() {
           ),
         ],
         child: const MaterialApp(
-          home: UsersListScreen(initialTab: 2),
+          home: UsersListScreen(initialTab: 3),
         ),
       ),
     );

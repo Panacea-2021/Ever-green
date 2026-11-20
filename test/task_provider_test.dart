@@ -73,7 +73,7 @@ void main() {
       final t = item(row());
       expect(t.hasAssignee, isFalse);
       expect(t.isUnassigned, isTrue);
-      expect(t.lifecycleLabel, 'Not Assigned');
+      expect(t.lifecycleLabel, 'Open');
       expect(t.priority, TaskPriority.high);
       expect(t.approval, ApprovalState.approved);
     });

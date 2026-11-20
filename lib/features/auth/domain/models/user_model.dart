@@ -21,7 +21,7 @@ extension UserRoleX on UserRole {
       case UserRole.manager:
         return kIsWeb ? 'EG Manager' : 'Manager';
       case UserRole.seniorTechnician:
-        return 'Senior Service Engineer';
+        return 'Jr. Service Engineer';
       case UserRole.technician:
         return 'Service Engineer';
       case UserRole.coldRoomTechnician:

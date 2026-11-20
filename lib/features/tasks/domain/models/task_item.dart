@@ -434,7 +434,9 @@ class TaskItem {
       case TaskStatus.inProgress:
         return 'In Progress';
       case TaskStatus.open:
-        return hasAssignee ? 'Assigned' : 'Not Assigned';
+        // Accepted/assigned tickets keep their Open status; only an explicit
+        // status change moves them to In Progress / Completed.
+        return 'Open';
     }
   }
 

@@ -128,9 +128,23 @@ class TaskDetailsScreen extends ConsumerWidget {
         task == null ? const <TaskButton>[] : taskDetailButtonsFor(task, user);
     final canEdit = taskMenuFor(role).contains(TaskMenuItem.edit);
 
+    final editButton = canEdit
+        ? _buildBottomButtons(context, ref, task, title, loc, stat, company,
+            client, mob, tech, techMob, created, sNo, desc,)
+        : null;
+
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (kIsWeb && canEdit)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: _webEditButton(context, ref, task, title, loc, stat, company,
+                  client, mob, tech, techMob, created, sNo, desc),
+            ),
+          ),
         _buildHeroHeader(context, img),
         if (task != null && task.attachments.length > 1)
           _buildImageGallery(task.attachments),
@@ -171,12 +185,19 @@ class TaskDetailsScreen extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: kIsWeb ? 14 : 20),
         if (individual)
           _buildContactCard(context, task!)
         else
-          _buildCompanyCard(company, client, mob),
-        const SizedBox(height: 20),
+          _buildCompanyCard(
+            company,
+            client,
+            mob,
+            imageUrl: task?.source?.company?.raw['image_url']?.toString() ??
+                task?.source?.company?.raw['logo_url']?.toString() ??
+                task?.source?.company?.raw['logo']?.toString(),
+          ),
+        SizedBox(height: kIsWeb ? 14 : 20),
         _buildTaskDetailsCard(
           task?.ticketNo ?? '',
           task?.source?.issueTypeLabel ?? '',
@@ -187,29 +208,26 @@ class TaskDetailsScreen extends ConsumerWidget {
           desc,
           lastUpdated,
           task?.source?.equipment?.serviceType?.name,
+          acceptedBy: task != null && task.hasAssignee ? tech : null,
+          equipmentImageUrl: task?.source?.equipment?.imageUrl,
         ),
         if (task != null && actions.isNotEmpty) ...[
-          const SizedBox(height: 20),
+          SizedBox(height: kIsWeb ? 14 : 20),
           _buildActionsCard(context, ref, task, actions),
         ],
         if (task != null && task.taskId > 0) ...[
-          const SizedBox(height: 20),
+          SizedBox(height: kIsWeb ? 14 : 20),
           TaskTimelineCard(taskId: task.taskId),
         ],
         const SizedBox(height: 24),
       ],
     );
-    final editButton = canEdit
-        ? _buildBottomButtons(context, ref, task, title, loc, stat, company,
-            client, mob, tech, techMob, created, sNo, desc,)
-        : null;
 
     return Scaffold(
       backgroundColor: kIsWeb ? const Color(0xFFF3F7F3) : Colors.white,
       body: kIsWeb
           ? Column(
               children: [
-                if (editButton != null) editButton,
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
@@ -240,12 +258,12 @@ class TaskDetailsScreen extends ConsumerWidget {
       ),
     );
     return SizedBox(
-      height: 344,
+      height: kIsWeb ? 200 : 344,
       child: Stack(
         children: [
           // Hero Image
           Positioned.fill(
-            child: taskImage(img, fallback: fallback),
+            child: taskImage(img, fit: BoxFit.contain, fallback: fallback),
           ),
 
           // Gradient overlay for text readability
@@ -264,18 +282,12 @@ class TaskDetailsScreen extends ConsumerWidget {
             ),
           ),
 
-          // Back button and title
+          // Title only (back icon removed per design)
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: const Icon(Icons.arrow_back,
-                        color: Colors.white, size: 24,),
-                  ),
-                  const SizedBox(width: 12),
                   const Text(
                     'Task Details',
                     style: TextStyle(
@@ -352,7 +364,8 @@ class TaskDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCompanyCard(String company, String client, String mobile) {
+  Widget _buildCompanyCard(String company, String client, String mobile,
+      {String? imageUrl}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 11),
       padding: const EdgeInsets.fromLTRB(15, 18, 15, 20),
@@ -369,7 +382,7 @@ class TaskDetailsScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Icon
+          // Icon / image
           Container(
             width: 51,
             height: 51,
@@ -377,7 +390,15 @@ class TaskDetailsScreen extends ConsumerWidget {
               color: _greenTitle.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.business, color: _greenTitle, size: 26),
+            clipBehavior: Clip.antiAlias,
+            child: (imageUrl != null && imageUrl.isNotEmpty)
+                ? Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.business, color: _greenTitle, size: 26),
+                  )
+                : const Icon(Icons.business, color: _greenTitle, size: 26),
           ),
           const SizedBox(height: 14),
 
@@ -517,8 +538,10 @@ class TaskDetailsScreen extends ConsumerWidget {
     String? serialNo,
     String description,
     String lastUpdated,
-    String? serviceType,
-  ) {
+    String? serviceType, {
+    String? acceptedBy,
+    String? equipmentImageUrl,
+  }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 11),
       decoration: BoxDecoration(
@@ -538,7 +561,7 @@ class TaskDetailsScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(15, 20, 15, 0),
             child: Column(
               children: [
-                // Icon
+                // Icon / image
                 Container(
                   width: 47,
                   height: 47,
@@ -546,8 +569,19 @@ class TaskDetailsScreen extends ConsumerWidget {
                     color: _blueTitle.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.build_outlined,
-                      color: _blueTitle, size: 24,),
+                  clipBehavior: Clip.antiAlias,
+                  child: (equipmentImageUrl != null &&
+                          equipmentImageUrl.isNotEmpty)
+                      ? Image.network(
+                          equipmentImageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                              Icons.build_outlined,
+                              color: _blueTitle,
+                              size: 24),
+                        )
+                      : const Icon(Icons.build_outlined,
+                          color: _blueTitle, size: 24),
                 ),
                 const SizedBox(height: 12),
 
@@ -596,6 +630,14 @@ class TaskDetailsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
+                if (acceptedBy != null && acceptedBy.isNotEmpty) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _infoField('Accepted by', acceptedBy),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
                 // Mobile
                 Align(
                   alignment: Alignment.centerLeft,
@@ -627,7 +669,7 @@ class TaskDetailsScreen extends ConsumerWidget {
                   child: _infoField(
                       'Description', description.isEmpty ? '-' : description,),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: kIsWeb ? 14 : 20),
               ],
             ),
           ),
@@ -773,6 +815,85 @@ class TaskDetailsScreen extends ConsumerWidget {
     );
   }
 
+  Widget _webEditButton(
+    BuildContext context,
+    WidgetRef ref,
+    TaskItem? task,
+    String title,
+    String loc,
+    String stat,
+    String company,
+    String client,
+    String mob,
+    String tech,
+    String techMob,
+    String created,
+    String sNo,
+    String desc,
+  ) {
+    void editTask() {
+      if (task != null && task.isIndividual) {
+        showEditTaskSheet(context, task);
+        return;
+      }
+      context.push(
+        '${Routes.addTask}/edit',
+        extra: {
+          'isEdit': true,
+          'companyName': company,
+          'editTask': {
+            'taskId': taskId,
+            'taskTitle': title,
+            'location': loc,
+            'status': stat,
+            'companyName': company,
+            'clientName': client,
+            'mobile': mob,
+            'technician': tech,
+            'technicianMobile': techMob,
+            'createdOn': created,
+            'serialNumber': sNo,
+            'description': desc,
+          },
+        },
+      );
+    }
+
+    return Material(
+      color: _green,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 2,
+      shadowColor: _green.withValues(alpha: 0.4),
+      child: InkWell(
+        onTap: editTask,
+        borderRadius: BorderRadius.circular(12),
+        hoverColor: Colors.white.withValues(alpha: 0.12),
+        splashColor: Colors.white.withValues(alpha: 0.2),
+        child: Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.edit_outlined, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Edit',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomButtons(
     BuildContext context,
     WidgetRef ref,
@@ -817,33 +938,35 @@ class TaskDetailsScreen extends ConsumerWidget {
       );
     }
 
-    final button = GestureDetector(
-      onTap: editTask,
-      child: Container(
-        height: 46,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(32),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [_green, Color.lerp(_green, Colors.black, 0.12)!],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: _green.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: const Text(
-          'Edit',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
+    final button = Material(
+      color: _green,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 2,
+      shadowColor: _green.withValues(alpha: 0.4),
+      child: InkWell(
+        onTap: editTask,
+        borderRadius: BorderRadius.circular(12),
+        hoverColor: Colors.white.withValues(alpha: 0.12),
+        splashColor: Colors.white.withValues(alpha: 0.2),
+        child: Container(
+          height: 42,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.edit_outlined, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Edit',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       ),

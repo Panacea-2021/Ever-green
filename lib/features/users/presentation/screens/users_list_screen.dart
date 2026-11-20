@@ -49,10 +49,10 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     }
     return const [
       'All Users',
+      'EG Managers',
       'Company Managers',
       'POCs',
       'Service Engineers',
-      'EG Managers',
     ];
   }
 
@@ -79,13 +79,13 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
             role == UserRole.superAdmin ||
             role == UserRole.manager;
       case 1:
-        return role == UserRole.clientAdmin;
-      case 2:
-        return role == UserRole.client;
-      case 3:
-        return role.isTechnicianLevel;
-      case 4:
         return role == UserRole.manager;
+      case 2:
+        return role == UserRole.clientAdmin;
+      case 3:
+        return role == UserRole.client;
+      case 4:
+        return role.isTechnicianLevel;
       default:
         return true;
     }
@@ -196,10 +196,10 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   static const Color _webInk = Color(0xFF14201A);
   static const _webTabMeta = [
     (Icons.people_alt_outlined, Color(0xFF0F6E37)),
+    (Icons.manage_accounts_outlined, Color(0xFF6A4BC4)),
     (Icons.business_center_outlined, Color(0xFF106220)),
     (Icons.contact_phone_outlined, Color(0xFF1565C0)),
     (Icons.engineering_outlined, Color(0xFFE08600)),
-    (Icons.manage_accounts_outlined, Color(0xFF6A4BC4)),
   ];
 
   bool _webInTab(UserRole role, int tab) {
@@ -211,13 +211,13 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
             role == UserRole.superAdmin ||
             role == UserRole.manager;
       case 1:
-        return role == UserRole.clientAdmin;
-      case 2:
-        return role == UserRole.client;
-      case 3:
-        return role.isTechnicianLevel;
-      case 4:
         return role == UserRole.manager;
+      case 2:
+        return role == UserRole.clientAdmin;
+      case 3:
+        return role == UserRole.client;
+      case 4:
+        return role.isTechnicianLevel;
       default:
         return true;
     }
@@ -529,7 +529,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                         _webInfoRow(
                           Icons.business_outlined,
                           'Company',
-                          user.companyNames.isEmpty ? '-' : user.companyNames,
+                          user.companyNames.isEmpty ? 'Not Assigned' : user.companyNames,
                         ),
                       ],
                     ),
@@ -982,7 +982,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
             child: _infoRow(
               Icons.business,
               'Company',
-              user.companyNames.isEmpty ? '-' : user.companyNames,
+              user.companyNames.isEmpty ? 'Not Assigned' : user.companyNames,
             ),
           ),
 
