@@ -311,7 +311,10 @@ Future<bool> runTaskAction(
     await action();
     navigator.pop();
     messenger.showSnackBar(
-      SnackBar(content: Text(success), backgroundColor: _green),
+      SnackBar(
+        content: Text(success, style: const TextStyle(color: Colors.white)),
+        backgroundColor: _green,
+      ),
     );
     return true;
   } catch (e) {

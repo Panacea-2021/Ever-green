@@ -164,6 +164,7 @@ class User {
   final String? profilePictureUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? createdBy;
 
   const User({
     required this.id,
@@ -180,6 +181,7 @@ class User {
     this.profilePictureUrl,
     this.createdAt,
     this.updatedAt,
+    this.createdBy,
   });
 
   int get backendId => int.tryParse(id) ?? 0;
@@ -226,6 +228,7 @@ class User {
       profilePictureUrl: json['avatar_url']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
       updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? ''),
+      createdBy: json['created_by']?.toString() ?? json['createdBy']?.toString(),
     );
   }
 
@@ -249,6 +252,7 @@ class User {
       profilePictureUrl: json['profilePictureUrl'] as String?,
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
       updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? ''),
+      createdBy: json['createdBy']?.toString() ?? json['created_by']?.toString(),
     );
   }
 
@@ -268,6 +272,7 @@ class User {
       'profilePictureUrl': profilePictureUrl,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'createdBy': createdBy,
     };
   }
 
@@ -286,6 +291,7 @@ class User {
     String? profilePictureUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? createdBy,
   }) {
     return User(
       id: id ?? this.id,
@@ -302,6 +308,7 @@ class User {
       profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 }

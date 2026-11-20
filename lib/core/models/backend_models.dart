@@ -287,6 +287,12 @@ class Company {
   /// Client admin linked to the company (`poc_details.user`), if any.
   final TaskPerson? poc;
   final String? pocEmail;
+
+  /// Company manager (a linked user whose role contains "Manager"), if any.
+  final String managerName;
+  final String managerPhone;
+  final int managerCount;
+
   final Map<String, dynamic> raw;
 
   const Company({
@@ -307,6 +313,9 @@ class Company {
     this.childCompanyCount = 0,
     this.poc,
     this.pocEmail,
+    this.managerName = '',
+    this.managerPhone = '',
+    this.managerCount = 0,
     this.raw = const {},
   });
 
@@ -328,6 +337,12 @@ class Company {
 
   factory Company.fromJson(Map<String, dynamic> json) {
     final pocUser = _map(_map(json['poc_details'])?['user']);
+    final managerUser = _map(_map(json['manager_details'])?['user']);
+    final managerCount = json['managerCount'] != null
+        ? _int(json['managerCount'])
+        : (json['managers'] is List
+            ? (json['managers'] as List).length
+            : (managerUser != null ? 1 : 0));
     return Company(
       id: _int(json['id']),
       name: _str(json['name']),
@@ -349,6 +364,9 @@ class Company {
           .toList(),
       poc: TaskPerson.fromJson(pocUser),
       pocEmail: _strOrNull(pocUser?['email']),
+      managerName: _str(json['managerName'] ?? managerUser?['name']),
+      managerPhone: _str(json['managerPhone'] ?? managerUser?['phone']),
+      managerCount: managerCount,
       raw: json,
     );
   }

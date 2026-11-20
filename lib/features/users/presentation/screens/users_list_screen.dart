@@ -278,10 +278,67 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                     ? 2
                     : 1;
             final w = (inner - gap * (cols - 1)) / cols;
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
-              children: [
+            final children = <Widget>[];
+            if (_selectedTab == 0) {
+              // Role-wise sections for "All Users".
+              final groups = <(String, List<AppUser>)>[
+                ('EG Managers', users.where((u) => u.role == UserRole.manager).toList()),
+                ('Company Managers', users.where((u) => u.role == UserRole.clientAdmin).toList()),
+                ('POCs', users.where((u) => u.role == UserRole.client).toList()),
+                ('Service Engineers', users.where((u) => u.role.isTechnicianLevel).toList()),
+                ('Super Admins', users.where((u) => u.role == UserRole.superAdmin).toList()),
+              ];
+              for (final (title, group) in groups) {
+                if (group.isEmpty) continue;
+                children.add(
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 8),
+                    child: Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: _webInk,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _addGreen.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${group.length}',
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: _addGreen,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+                children.add(
+                  Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (final u in group)
+                        SizedBox(width: w, child: _webUserCard(u)),
+                    ],
+                  ),
+                );
+                children.add(const SizedBox(height: 8));
+              }
+            } else {
+              children.add(
                 Wrap(
                   spacing: gap,
                   runSpacing: gap,
@@ -290,7 +347,12 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                       SizedBox(width: w, child: _webUserCard(u)),
                   ],
                 ),
-              ],
+              );
+            }
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+              children: children,
             );
           },
         ),
@@ -543,34 +605,71 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                 color: Color(0xFFF5F9F5),
                 border: Border(top: BorderSide(color: _webLine)),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.calendar_today_outlined,
-                    size: 14,
-                    color: _addGreen,
-                  ),
-                  const SizedBox(width: 8),
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 14,
+                        color: _addGreen,
                       ),
-                      children: [
-                        TextSpan(
-                          text: 'Created On ',
-                          style: TextStyle(
-                            color: Colors.black.withValues(alpha: 0.45),
+                      const SizedBox(width: 8),
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
                           ),
+                          children: [
+                            TextSpan(
+                              text: 'Created On ',
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.45),
+                              ),
+                            ),
+                            TextSpan(
+                              text: ':  ${_formatDate(user.createdAt)}',
+                              style: const TextStyle(color: _webInk),
+                            ),
+                          ],
                         ),
-                        TextSpan(
-                          text: ':  ${_formatDate(user.createdAt)}',
-                          style: const TextStyle(color: _webInk),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.person_outline,
+                        size: 14,
+                        color: _addGreen,
+                      ),
+                      const SizedBox(width: 8),
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'Created By ',
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.45),
+                              ),
+                            ),
+                            TextSpan(
+                              text: ':  ${_creatorDisplayName(user.createdBy)}',
+                              style: const TextStyle(color: _webInk),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1262,6 +1361,15 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     final d = date.toLocal();
     String two(int v) => v.toString().padLeft(2, '0');
     return '${two(d.day)}-${two(d.month)}-${d.year}';
+  }
+
+  String _creatorDisplayName(String? createdBy) {
+    if (createdBy == null || createdBy.trim().isEmpty) return '—';
+    final all = ref.read(usersListProvider).valueOrNull ?? const <User>[];
+    for (final u in all) {
+      if (u.phone == createdBy || u.id == createdBy) return u.name;
+    }
+    return createdBy;
   }
 
   Future<void> _toggleActive(AppUser user) async {

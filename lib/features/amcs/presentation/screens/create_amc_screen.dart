@@ -181,24 +181,9 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
   String _formatDate(DateTime? date) => date == null ? '' : displayDate(date);
 
   void _showError(String msg) {
-    _showTopNotification(context, message: msg, type: _NotifType.error);
-  }
-
-  void _showTopNotification(
-    BuildContext ctx, {
-    required String message,
-    required _NotifType type,
-  }) {
-    final overlay = Overlay.of(ctx, rootOverlay: true);
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (_) => _TopNotification(
-        message: message,
-        type: type,
-        onDismiss: () => entry.remove(),
-      ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: const Color(0xFFD32F2F)),
     );
-    overlay.insert(entry);
   }
 
   /// Mirrors the backend's createCompany / updateCompany validation so the
@@ -321,23 +306,24 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
             original != null ? 'Company details updated' : 'Branch: $branch',
       );
 
-      _showTopNotification(
-        context,
-        message: (original != null
-                ? 'Company updated successfully!'
-                : 'Company created successfully!') +
-            (emailFailed
-                ? ' The login email to the company manager could not be sent.'
-                : ''),
-        type: emailFailed ? _NotifType.warning : _NotifType.success,
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            (original != null
+                    ? 'Company updated successfully!'
+                    : 'Company created successfully!') +
+                (emailFailed
+                    ? ' The login email to the company manager could not be sent.'
+                    : ''),
+            style: const TextStyle(color: Colors.white),
+          ),
+          // Website: a successful creation is always a green success notification.
+          backgroundColor: kIsWeb
+              ? AppColors.primary
+              : (emailFailed ? Colors.orange.shade800 : AppColors.primary),
+        ),
       );
-      if (mounted) {
-        if (context.canPop()) {
-          context.pop(true);
-        } else {
-          context.go(Routes.amcs);
-        }
-      }
+      if (mounted) context.pop(true);
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
@@ -724,10 +710,17 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
           hint: 'Company Name *',
           icon: Icons.business_outlined,
         ),
-        _webField(
-          controller: _branchNameController,
-          hint: 'Enter Branch Name *',
+        _webDropdown(
+          hint: 'Branch Name *',
           icon: Icons.account_tree_outlined,
+          value: _selectedBranch,
+          items: _branchOptions,
+          onChanged: (v) {
+            setState(() {
+              _selectedBranch = v;
+              _branchNameController.text = v ?? '';
+            });
+          },
         ),
       ),
       const SizedBox(height: 18),
@@ -933,6 +926,9 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
               child: DropdownButton<String>(
                 value: value,
                 isExpanded: true,
+                // Open the menu just below the field, never overlapping it.
+                alignment: Alignment.centerLeft,
+                menuMaxHeight: 280,
                 borderRadius: BorderRadius.circular(14),
                 icon: Icon(
                   Icons.keyboard_arrow_down_rounded,
@@ -1414,7 +1410,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
             const SizedBox(height: 19),
             _pillField(
               controller: _branchNameController,
-              hint: 'Enter Branch Name *',
+              hint: 'Branch Name *',
             ),
             const SizedBox(height: 19),
             _pillField(
@@ -1760,103 +1756,6 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-enum _NotifType { success, warning, error }
-
-class _TopNotification extends StatefulWidget {
-  const _TopNotification({
-    required this.message,
-    required this.type,
-    required this.onDismiss,
-  });
-
-  final String message;
-  final _NotifType type;
-  final VoidCallback onDismiss;
-
-  @override
-  State<_TopNotification> createState() => _TopNotificationState();
-}
-
-class _TopNotificationState extends State<_TopNotification>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 250),
-  )..forward();
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) {
-        _ctrl.reverse().then((_) {
-          if (mounted) widget.onDismiss();
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final (Color bg, Color fg, IconData icon) = switch (widget.type) {
-      _NotifType.success => (const Color(0xFF106220), Colors.white, Icons.check_circle),
-      _NotifType.warning => (const Color(0xFFF59E0B), Colors.white, Icons.warning_amber_rounded),
-      _NotifType.error => (const Color(0xFFD32F2F), Colors.white, Icons.error_outline),
-    };
-    return Positioned(
-      top: 16,
-      right: 16,
-      child: FadeTransition(
-        opacity: _ctrl,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0.2, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut)),
-          child: Material(
-            color: bg,
-            borderRadius: BorderRadius.circular(12),
-            elevation: 6,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 420),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: fg, size: 22),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      widget.message,
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w500,
-                        color: fg,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: widget.onDismiss,
-                    child: Icon(Icons.close, color: fg, size: 18),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );

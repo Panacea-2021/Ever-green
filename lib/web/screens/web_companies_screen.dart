@@ -20,7 +20,8 @@ enum _TypeFilter {
   cAmc('C-AMC'),
   ncAmc('NC-AMC'),
   nonAmc('Non AMC'),
-  regular('Regular');
+  regular('Regular'),
+  inactive('Inactive');
 
   const _TypeFilter(this.label);
   final String label;
@@ -31,6 +32,7 @@ enum _TypeFilter {
         _TypeFilter.ncAmc => Icons.handshake_outlined,
         _TypeFilter.nonAmc => Icons.build_circle_outlined,
         _TypeFilter.regular => Icons.storefront_outlined,
+        _TypeFilter.inactive => Icons.block,
       };
 
   Color get color => switch (this) {
@@ -39,6 +41,7 @@ enum _TypeFilter {
         _TypeFilter.ncAmc => const Color(0xFF0F766E),
         _TypeFilter.nonAmc => const Color(0xFFB7791F),
         _TypeFilter.regular => const Color(0xFF7B4FB0),
+        _TypeFilter.inactive => const Color(0xFF8A8A8A),
       };
 
   bool matches(Company c) => switch (this) {
@@ -47,6 +50,7 @@ enum _TypeFilter {
         _TypeFilter.ncAmc => c.isAmc && c.amcType == AmcType.ncAmc,
         _TypeFilter.nonAmc => c.serviceType == CompanyServiceType.nonAmc,
         _TypeFilter.regular => c.serviceType == CompanyServiceType.regular,
+        _TypeFilter.inactive => !c.isActive,
       };
 }
 
@@ -135,6 +139,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
 
   Widget _toolbar(List<Company> all) {
     return WebFilterTiles(
+      minTileWidth: 190,
       options: [
         for (final type in _TypeFilter.values)
           WebFilterOption(
@@ -401,16 +406,21 @@ class _CompanyCell extends StatelessWidget {
   }
 }
 
-/// Service type as wrapping chips ("AMC · C AMC" -> [AMC] [C AMC]) so the
-/// full label stays visible in a narrow column.
+/// Service type as wrapping chips ("AMC · C AMC" -> [C AMC]) so the full
+/// label stays visible in a narrow column. The plain "AMC" marker is dropped;
+/// "C AMC", "NC AMC", "Regular" and "Non-AMC" are shown unchanged.
 class _ServiceCell extends StatelessWidget {
   const _ServiceCell({required this.label});
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    if (label.isEmpty) return const WebCellText('—');
-    final parts = label.split(' · ');
+    final parts = [
+      for (final part in label.split(' · '))
+        if (part.trim().isNotEmpty && part.trim().toUpperCase() != 'AMC')
+          part,
+    ];
+    if (parts.isEmpty) return const WebCellText('—');
     return Wrap(
       spacing: 5,
       runSpacing: 5,
