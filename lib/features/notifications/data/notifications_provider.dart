@@ -82,7 +82,21 @@ class NotificationsRepository {
       'user/getNotificationsPage',
       data: {'page': page, 'limit': pageSize},
     ),);
-    final items = dataList(body).map(NotificationEntry.fromJson).toList();
+    // Accept several possible response shapes so records are not silently
+    // dropped when the backend uses a different envelope key.
+    List<Map<String, dynamic>> rows = const [];
+    if (body is Map) {
+      for (final key in const ['data', 'notifications', 'items', 'results']) {
+        final v = body[key];
+        if (v is List) {
+          rows = v.whereType<Map<String, dynamic>>().toList();
+          break;
+        }
+      }
+    } else if (body is List) {
+      rows = body.whereType<Map<String, dynamic>>().toList();
+    }
+    final items = rows.map(NotificationEntry.fromJson).toList();
     final hasMore = body is Map && body['has_more'] is bool
         ? body['has_more'] as bool
         : items.length >= pageSize;
@@ -113,7 +127,7 @@ final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) 
 
 /// Unread badge count. Falls back to 0 if the endpoint is unavailable so the
 /// badge never blocks the UI.
-final unreadNotificationsCountProvider = FutureProvider.autoDispose<int>((ref) async {
+final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
   try {
     return await ref.watch(notificationsRepositoryProvider).getUnreadCount();
   } catch (_) {
@@ -121,7 +135,7 @@ final unreadNotificationsCountProvider = FutureProvider.autoDispose<int>((ref) a
   }
 });
 
-class NotificationsController extends AutoDisposeAsyncNotifier<NotificationsFeed> {
+class NotificationsController extends AsyncNotifier<NotificationsFeed> {
   NotificationsRepository get _repo => ref.read(notificationsRepositoryProvider);
 
   @override
@@ -173,6 +187,6 @@ class NotificationsController extends AutoDisposeAsyncNotifier<NotificationsFeed
 }
 
 final notificationsControllerProvider =
-    AsyncNotifierProvider.autoDispose<NotificationsController, NotificationsFeed>(
+    AsyncNotifierProvider<NotificationsController, NotificationsFeed>(
   NotificationsController.new,
 );

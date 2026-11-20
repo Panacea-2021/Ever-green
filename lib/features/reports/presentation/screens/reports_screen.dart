@@ -304,6 +304,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 ref.read(reportDateRangeProvider.notifier).state =
                     ReportDateRange.thisYear();
                 break;
+              case 'Custom Date Range':
+                _pickCustomRange();
+                break;
             }
           },
           itemBuilder: (_) => const [
@@ -312,6 +315,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             PopupMenuItem(value: 'Last 30 Days', child: Text('Last 30 Days')),
             PopupMenuItem(value: 'Last 90 Days', child: Text('Last 90 Days')),
             PopupMenuItem(value: 'This Year', child: Text('This Year')),
+            PopupMenuItem(value: 'Custom Date Range', child: Text('Custom Date Range')),
           ],
         ),
       ],
@@ -376,6 +380,23 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           ),
       ],
     );
+  }
+
+  Future<void> _pickCustomRange() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 3, now.month, now.day),
+      lastDate: DateTime(now.year + 1, now.month, now.day),
+      initialDateRange: () {
+        final r = ref.read(reportDateRangeProvider);
+        return DateTimeRange(start: r.from, end: r.to);
+      }(),
+    );
+    if (picked != null) {
+      ref.read(reportDateRangeProvider.notifier).state =
+          ReportDateRange(from: picked.start, to: picked.end);
+    }
   }
 
   bool _isSameRange(ReportDateRange a, ReportDateRange b) {

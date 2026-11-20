@@ -557,6 +557,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome'**
   String get welcome;
+
+  /// No description provided for @exportServiceReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Service Report (CSV)'**
+  String get exportServiceReport;
+
+  /// No description provided for @offlineData.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Data'**
+  String get offlineData;
+
+  /// No description provided for @cached.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached'**
+  String get cached;
+
+  /// No description provided for @helpCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center'**
+  String get helpCenter;
+
+  /// No description provided for @sendFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Feedback'**
+  String get sendFeedback;
+
+  /// No description provided for @termsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @equipmentList.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment List'**
+  String get equipmentList;
+
+  /// No description provided for @createIndividualTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Individual Task'**
+  String get createIndividualTask;
+
+  /// No description provided for @issueTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue Types'**
+  String get issueTypes;
+
+  /// No description provided for @uploadEquipments.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Equipments Excel Data'**
+  String get uploadEquipments;
+
+  /// No description provided for @uploadTechnicians.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Service Engineers Excel Data'**
+  String get uploadTechnicians;
+
+  /// No description provided for @uploadCompanies.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Company Excel Data'**
+  String get uploadCompanies;
+
+  /// No description provided for @menu.
+  ///
+  /// In en, this message translates to:
+  /// **'MENU'**
+  String get menu;
 }
 
 class _AppLocalizationsDelegate

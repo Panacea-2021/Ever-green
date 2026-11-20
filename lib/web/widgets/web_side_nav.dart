@@ -66,39 +66,42 @@ class WebSideNav extends ConsumerWidget {
       ),
       if (Permissions.canAccessRoute(role, Routes.amcs))
         WebNavEntry(
-          label: "Company's List",
+          label: l10n?.companyList ?? "Company's List",
           route: Routes.amcs,
           svgIcon: 'assets/images/menu_company_list.svg',
           badge: companiesCount?.toString(),
         ),
       if (Permissions.canAccessEquipmentList(role))
         WebNavEntry(
-          label: 'Equipment List',
+          label: l10n?.equipmentList ?? 'Equipment List',
           route: Routes.equipmentList,
           icon: Icons.precision_manufacturing_outlined,
         ),
       WebNavEntry(
         label: role.isTechnicianLevel
-            ? 'My Tasks'
+            ? (l10n?.myTasks ?? 'My Tasks')
             : role.isClientSide
-                ? 'My Service Tasks'
-                : 'Task Board',
+                ? (l10n?.myServiceTasks ?? 'My Service Tasks')
+                : (l10n?.taskBoard ?? 'Task Board'),
         route: Routes.tasks,
         svgIcon: 'assets/images/menu_tasks_list.svg',
       ),
-      // Super Admin also gets the personal task views other roles have.
+      // Super Admin gets the personal My Service Tasks view only (My Tasks
+      // is intentionally not shown for Super Admin).
       if (role == UserRole.superAdmin) ...[
         WebNavEntry(
-          label: 'My Tasks',
-          route: Routes.myTasks,
-          icon: Icons.task_alt_outlined,
-        ),
-        WebNavEntry(
-          label: 'My Service Tasks',
+          label: l10n?.myServiceTasks ?? 'My Service Tasks',
           route: Routes.myServiceTasks,
           icon: Icons.home_repair_service_outlined,
         ),
       ],
+      // EG Manager gets a personal My Tasks view.
+      if (role == UserRole.manager)
+        WebNavEntry(
+          label: l10n?.myTasks ?? 'My Tasks',
+          route: Routes.myTasks,
+          icon: Icons.task_alt_outlined,
+        ),
       WebNavEntry(
         label: l10n?.search ?? 'Search',
         route: Routes.globalSearch,
@@ -111,19 +114,19 @@ class WebSideNav extends ConsumerWidget {
       ),
       if (Permissions.canRaiseTasks(role))
         WebNavEntry(
-          label: 'Create Task',
+          label: l10n?.createTask ?? 'Create Task',
           route: '${Routes.addTask}/new',
           svgIcon: 'assets/images/menu_add.svg',
         ),
       if (Permissions.canCreateIndividualTask(role))
         WebNavEntry(
-          label: 'Create Individual Task',
+          label: l10n?.createIndividualTask ?? 'Create Individual Task',
           route: Routes.createIndividualTask,
           svgIcon: 'assets/images/menu_technicians.svg',
         ),
       if (Permissions.canManageAmcs(role))
         WebNavEntry(
-          label: 'Add Equipment',
+          label: l10n?.addEquipment ?? 'Add Equipment',
           route: '${Routes.addEquipment}/new',
           svgIcon: 'assets/images/menu_add.svg',
         ),
@@ -137,19 +140,19 @@ class WebSideNav extends ConsumerWidget {
         ),
       if (Permissions.canAssignTasks(role))
         WebNavEntry(
-          label: 'Ticket Queue',
+          label: l10n?.ticketQueue ?? 'Ticket Queue',
           route: Routes.ticketQueue,
           svgIcon: 'assets/images/menu_assign_tasks.svg',
         ),
       if (Permissions.canManageAmcs(role))
         WebNavEntry(
-          label: 'Create Company',
+          label: l10n?.createCompany ?? 'Create Company',
           route: Routes.createAmc,
           svgIcon: 'assets/images/menu_flag.svg',
         ),
       if (Permissions.canManageIssueTypes(role))
         WebNavEntry(
-          label: 'Issue Types',
+          label: l10n?.issueTypes ?? 'Issue Types',
           route: Routes.issueTypes,
           icon: Icons.build_circle_outlined,
         ),
@@ -167,29 +170,29 @@ class WebSideNav extends ConsumerWidget {
         ),
       if (Permissions.canBulkUpload(role)) ...[
         WebNavEntry(
-          label: 'Upload Equipments Excel Data',
+          label: l10n?.uploadEquipments ?? 'Upload Equipments Excel Data',
           route: Routes.uploadEquipments,
           svgIcon: 'assets/images/menu_cloud_upload.svg',
         ),
         WebNavEntry(
-          label: 'Upload Service Engineers Excel Data',
+          label: l10n?.uploadTechnicians ?? 'Upload Service Engineers Excel Data',
           route: Routes.uploadTechnicians,
           svgIcon: 'assets/images/menu_cloud_upload.svg',
         ),
         WebNavEntry(
-          label: 'Upload Company Excel Data',
+          label: l10n?.uploadCompanies ?? 'Upload Company Excel Data',
           route: Routes.uploadAmc,
           svgIcon: 'assets/images/menu_cloud_upload.svg',
         ),
         WebNavEntry(
-          label: 'Download QR',
+          label: l10n?.downloadQr ?? 'Download QR',
           route: Routes.downloadQr,
           svgIcon: 'assets/images/menu_qr_scanner.svg',
         ),
       ],
       if (Permissions.canViewTechnicianPerformance(role))
         WebNavEntry(
-          label: 'Service Engineer Performance',
+          label: l10n?.technicianPerformance ?? 'Service Engineer Performance',
           route: Routes.technicianPerformance,
           svgIcon: 'assets/images/menu_technicians.svg',
         ),
@@ -301,7 +304,7 @@ class WebSideNav extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(28, 0, 0, 8),
               child: Text(
-                'MENU',
+                l10n?.menu ?? 'MENU',
                 style: WebTokens.eyebrow(color: Colors.white54),
               ),
             ),

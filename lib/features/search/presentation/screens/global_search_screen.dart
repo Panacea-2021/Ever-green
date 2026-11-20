@@ -65,7 +65,11 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   String _query = '';
   SearchTab? _selected;
 
-  // (no memoization: recomputing per build keeps loading states correct)
+  // Memoized filtered hits per tab. Recompute only when the query or the
+  // underlying source data changes; this avoids re-filtering large datasets on
+  // every rebuild (keystrokes, tab switches, parent rebuilds).
+  final Map<SearchTab, (String query, Object? srcKey, List<_Hit> hits)>
+      _searchCache = {};
 
   @override
   void dispose() {
@@ -75,7 +79,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   }
 
   void _onChanged(String value) {
-    setState(() {}); // clear button visibility
+    // Do not rebuild the whole tree on every keystroke (that re-filters every
+    // tab immediately). The clear button visibility is handled by a
+    // ValueListenableBuilder; the debounced query update drives filtering.
     _timer?.cancel();
     _timer = Timer(_debounce, () {
       if (mounted) setState(() => _query = value.trim());
@@ -202,14 +208,25 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     switch (tab) {
       case SearchTab.companies:
         final src = ref.watch(companiesProvider);
-        final items = filterByQuery(
-          src.valueOrNull ?? const <Company>[],
-          _query,
-          companySearchFields,
-        );
+        final srcKey = src;
+        final cached = _searchCache[tab];
+        List<_Hit> hits;
+        if (cached != null &&
+            cached.$1 == _query &&
+            identical(cached.$2, srcKey)) {
+          hits = cached.$3;
+        } else {
+          final items = filterByQuery(
+            src.valueOrNull ?? const <Company>[],
+            _query,
+            companySearchFields,
+          );
+          hits = items.map(_companyHit).toList();
+          _searchCache[tab] = (_query, srcKey, hits);
+        }
         return _TabResult(
           src,
-          items.map(_companyHit).toList(),
+          hits,
           () => ref.invalidate(companiesProvider),
           () => ref.refresh(companiesProvider.future),
         );
@@ -218,43 +235,76 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         final companies = tabs.contains(SearchTab.companies)
             ? ref.watch(companiesProvider).valueOrNull ?? const <Company>[]
             : const <Company>[];
-        final names = {for (final c in companies) c.id: c.displayName};
-        String? nameOf(Equipment e) =>
-            e.company?.displayName ?? names[e.companyId];
-        final items = filterByQuery(
-          src.valueOrNull ?? const <Equipment>[],
-          _query,
-          (Equipment e) => equipmentSearchFields(e, companyName: nameOf(e)),
-        );
+        final srcKey = (src, companies);
+        final cached = _searchCache[tab];
+        List<_Hit> hits;
+        if (cached != null &&
+            cached.$1 == _query &&
+            identical(cached.$2, srcKey)) {
+          hits = cached.$3;
+        } else {
+          final names = {for (final c in companies) c.id: c.displayName};
+          String? nameOf(Equipment e) =>
+              e.company?.displayName ?? names[e.companyId];
+          final items = filterByQuery(
+            src.valueOrNull ?? const <Equipment>[],
+            _query,
+            (Equipment e) => equipmentSearchFields(e, companyName: nameOf(e)),
+          );
+          hits = [for (final e in items) _equipmentHit(e, nameOf(e))];
+          _searchCache[tab] = (_query, srcKey, hits);
+        }
         return _TabResult(
           src,
-          [for (final e in items) _equipmentHit(e, nameOf(e))],
+          hits,
           () => ref.invalidate(equipmentsProvider(null)),
           () => ref.refresh(equipmentsProvider(null).future),
         );
       case SearchTab.tasks:
         final src = ref.watch(tasksProvider);
-        final items = filterByQuery(
-          src.valueOrNull ?? const <ServiceTask>[],
-          _query,
-          taskSearchFields,
-        );
+        final srcKey = src;
+        final cached = _searchCache[tab];
+        List<_Hit> hits;
+        if (cached != null &&
+            cached.$1 == _query &&
+            identical(cached.$2, srcKey)) {
+          hits = cached.$3;
+        } else {
+          final items = filterByQuery(
+            src.valueOrNull ?? const <ServiceTask>[],
+            _query,
+            taskSearchFields,
+          );
+          hits = items.map(_taskHit).toList();
+          _searchCache[tab] = (_query, srcKey, hits);
+        }
         return _TabResult(
           src,
-          items.map(_taskHit).toList(),
+          hits,
           () => ref.invalidate(tasksProvider),
           () => ref.refresh(tasksProvider.future),
         );
       case SearchTab.serviceEngineers:
         final src = ref.watch(techniciansProvider);
-        final items = filterByQuery(
-          src.valueOrNull ?? const <User>[],
-          _query,
-          engineerSearchFields,
-        );
+        final srcKey = src;
+        final cached = _searchCache[tab];
+        List<_Hit> hits;
+        if (cached != null &&
+            cached.$1 == _query &&
+            identical(cached.$2, srcKey)) {
+          hits = cached.$3;
+        } else {
+          final items = filterByQuery(
+            src.valueOrNull ?? const <User>[],
+            _query,
+            engineerSearchFields,
+          );
+          hits = items.map(_engineerHit).toList();
+          _searchCache[tab] = (_query, srcKey, hits);
+        }
         return _TabResult(
           src,
-          items.map(_engineerHit).toList(),
+          hits,
           () => ref.invalidate(techniciansProvider),
           () => ref.refresh(techniciansProvider.future),
         );
@@ -328,13 +378,16 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               color: Color(0xFF9B9B9B),
             ),
             prefixIcon: const Icon(Icons.search, color: Color(0xFF9B9B9B)),
-            suffixIcon: _controller.text.isEmpty
-                ? null
-                : IconButton(
-                    tooltip: 'Clear',
-                    icon: const Icon(Icons.close, color: Color(0xFF9B9B9B)),
-                    onPressed: _clear,
-                  ),
+            suffixIcon: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _controller,
+              builder: (context, value, _) => value.text.isEmpty
+                  ? const SizedBox.shrink()
+                  : IconButton(
+                      tooltip: 'Clear',
+                      icon: const Icon(Icons.close, color: Color(0xFF9B9B9B)),
+                      onPressed: _clear,
+                    ),
+            ),
             border: InputBorder.none,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
@@ -666,16 +719,19 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               child: Icon(Icons.search, color: Color(0xFF6B6B6B), size: 22),
             ),
             prefixIconConstraints: const BoxConstraints(minWidth: 50),
-            suffixIcon: _controller.text.isEmpty
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: IconButton(
-                      tooltip: 'Clear search',
-                      icon: const Icon(Icons.close, color: Color(0xFF9B9B9B), size: 20),
-                      onPressed: _clear,
+            suffixIcon: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _controller,
+              builder: (context, value, _) => value.text.isEmpty
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: IconButton(
+                        tooltip: 'Clear search',
+                        icon: const Icon(Icons.close, color: Color(0xFF9B9B9B), size: 20),
+                        onPressed: _clear,
+                      ),
                     ),
-                  ),
+            ),
             border: InputBorder.none,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 16),

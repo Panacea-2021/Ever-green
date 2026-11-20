@@ -14,6 +14,9 @@ import 'core/widgets/root_tab_back_handling.dart';
 import 'shared/providers/auth_state_provider.dart';
 import 'shared/widgets/global_scroll_to_top.dart';
 import 'features/settings/data/settings_preferences.dart';
+import 'features/notifications/data/notifications_provider.dart';
+import 'features/dashboard/data/analytics_provider.dart';
+import 'features/dashboard/data/analytics_history_provider.dart';
 import 'l10n/app_localizations.dart';
 import 'web/widgets/web_module_frame.dart';
 
@@ -49,6 +52,7 @@ class _EverGreenAppState extends ConsumerState<EverGreenApp> {
   StreamSubscription<int>? _tapSub;
   GoRouter? _router;
   int? _pendingTaskId;
+  bool _notificationsWarmed = false;
 
   @override
   void initState() {
@@ -91,6 +95,26 @@ class _EverGreenAppState extends ConsumerState<EverGreenApp> {
     final router = ref.watch(appRouterProvider);
     _attach(router);
     final prefs = ref.watch(settingsPreferencesProvider);
+
+    // Warm up the backend + critical caches as early as possible after login
+    // so the first Dashboard/Notifications open is fast instead of waiting for
+    // a cold Render instance. Runs once per auth session.
+    final isAuth = ref.watch(authStateProvider).isAuthenticated;
+    if (isAuth && !_notificationsWarmed) {
+      _notificationsWarmed = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        // Fire-and-forget: primes the backend and caches the first page.
+        ref.read(notificationsControllerProvider.future).catchError((_) {});
+        ref.read(unreadNotificationsCountProvider.future).catchError((_) {});
+        // Prime dashboard data for all roles.
+        ref.read(dashboardAnalyticsProvider.future).catchError((_) {});
+        ref.read(analyticsHistoryProvider.future).catchError((_) {});
+      });
+    }
+    if (!isAuth) {
+      _notificationsWarmed = false;
+    }
 
     final lang = prefs.language;
     final locale = switch (lang) {

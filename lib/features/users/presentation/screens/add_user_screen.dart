@@ -29,8 +29,10 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController(text: generatePassword());
   final _companyController = TextEditingController();
+  final _designationController = TextEditingController();
 
   UserRole? _selectedRole;
+  bool _othersSelected = false;
   int? _selectedCompanyId;
   bool _isPasswordVisible = true;
   bool _sendCredentials = true;
@@ -45,6 +47,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _companyController.dispose();
+    _designationController.dispose();
     super.dispose();
   }
 
@@ -58,9 +61,16 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   /// Client-side users must belong to an AMC (company); technicians never do.
   bool get _needsCompany => _selectedRole?.isClientSide ?? false;
 
+  /// Company/AMC selection is hidden for Super Admin, EG Manager and
+  /// Technician/Service Engineer roles.
+  bool get _hideCompanyField =>
+      _selectedRole == UserRole.superAdmin ||
+      _selectedRole == UserRole.manager ||
+      (_selectedRole?.isTechnicianLevel ?? false);
+
   Future<void> _handleSave() async {
     if (_isSaving || !(_formKey.currentState?.validate() ?? false)) return;
-    final role = _selectedRole!;
+    final role = _selectedRole ?? UserRole.client;
 
     setState(() => _isSaving = true);
     final result = await ref.read(usersRepositoryProvider).createUser(
@@ -72,6 +82,9 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
           companyIds:
               _selectedCompanyId != null ? [_selectedCompanyId!] : const [],
           sendCredentials: _sendCredentials,
+          designation: _selectedRole == null
+              ? _designationController.text.trim()
+              : null,
         );
     if (!mounted) return;
     setState(() => _isSaving = false);
@@ -273,16 +286,50 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              _buildDropdownField<UserRole>(
+              _buildDropdownField<UserRole?>(
                 value: _selectedRole,
                 hintText: 'Access Type',
-                items: {for (final r in _creatableRoles(actorRole)) r: r.label},
+                items: {
+                  for (final r in _creatableRoles(actorRole)) r: r.label,
+                  null: 'Others',
+                },
                 validator: (v) =>
-                    v == null ? 'Please select access type' : null,
-                onChanged: (value) => setState(() => _selectedRole = value),
+                    (_selectedRole == null && !_othersSelected)
+                        ? 'Please select access type'
+                        : null,
+                onChanged: (value) => setState(() {
+                  if (value == null) {
+                    _othersSelected = true;
+                    _selectedRole = null;
+                  } else {
+                    _othersSelected = false;
+                    _selectedRole = value;
+                  }
+                  if (value == UserRole.superAdmin ||
+                      value == UserRole.manager ||
+                      (value?.isTechnicianLevel ?? false)) {
+                    _selectedCompanyId = null;
+                    _companyController.clear();
+                  }
+                  if (value != null) {
+                    _designationController.clear();
+                  }
+                }),
               ),
-              const SizedBox(height: 16),
-              _buildCompanyField(),
+              if (!_hideCompanyField) ...[
+                const SizedBox(height: 16),
+                _buildCompanyField(),
+              ],
+              if (_othersSelected) ...[
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: _designationController,
+                  hintText: 'Designation',
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Please enter designation'
+                      : null,
+                ),
+              ],
             ],
           ),
         ),

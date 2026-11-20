@@ -40,12 +40,24 @@ class ReportsApi {
 
   ReportsApi(this._api);
 
-  Future<ReportsDashboard> getDashboard() async {
-    final result = await _api.get<dynamic>('reports/dashboard');
+  Future<ReportsDashboard> getDashboard({
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final result = await _api.get<dynamic>(
+      'reports/dashboard',
+      queryParameters: {
+        if (from != null) 'from': _fmt(from),
+        if (to != null) 'to': _fmt(to),
+      },
+    );
     final body = _unwrap(result);
     final data = _dataMap(body);
     return ReportsDashboard.fromJson(data);
   }
+
+  static String _fmt(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Future<TaskSummaryReport> getTaskSummary({
     DateTime? from,
@@ -54,8 +66,8 @@ class ReportsApi {
     final result = await _api.get<dynamic>(
       'reports/tasks',
       queryParameters: {
-        if (from != null) 'from': from.toIso8601String(),
-        if (to != null) 'to': to.toIso8601String(),
+        if (from != null) 'from': _fmt(from),
+        if (to != null) 'to': _fmt(to),
       },
     );
     final body = _unwrap(result);
@@ -70,8 +82,8 @@ class ReportsApi {
     final result = await _api.get<dynamic>(
       'reports/technicians',
       queryParameters: {
-        if (from != null) 'from': from.toIso8601String(),
-        if (to != null) 'to': to.toIso8601String(),
+        if (from != null) 'from': _fmt(from),
+        if (to != null) 'to': _fmt(to),
       },
     );
     final body = _unwrap(result);
@@ -79,18 +91,78 @@ class ReportsApi {
     return TechnicianPerformanceReport.fromJson(data);
   }
 
-  Future<AmcStatusReport> getAmcStatus() async {
-    final result = await _api.get<dynamic>('reports/amcs');
+  Future<AmcStatusReport> getAmcStatus({
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final result = await _api.get<dynamic>(
+      'reports/amcs',
+      queryParameters: {
+        if (from != null) 'from': _fmt(from),
+        if (to != null) 'to': _fmt(to),
+      },
+    );
     final body = _unwrap(result);
     final data = _dataMap(body);
     return AmcStatusReport.fromJson(data);
   }
 
-  Future<EquipmentHealthReport> getEquipmentHealth() async {
-    final result = await _api.get<dynamic>('reports/equipment');
+  Future<EquipmentHealthReport> getEquipmentHealth({
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final result = await _api.get<dynamic>(
+      'reports/equipment',
+      queryParameters: {
+        if (from != null) 'from': _fmt(from),
+        if (to != null) 'to': _fmt(to),
+      },
+    );
     final body = _unwrap(result);
     final data = _dataMap(body);
     return EquipmentHealthReport.fromJson(data);
+  }
+
+  Future<List<int>> getReportYears() async {
+    final result = await _api.get<dynamic>('reports/years');
+    final body = _unwrap(result);
+    final years = <int>[];
+    // Accept several possible response shapes.
+    dynamic source = body;
+    if (body is Map) {
+      for (final key in const ['years', 'data', 'available_years', 'availableYears']) {
+        if (body[key] is List) {
+          source = body[key];
+          break;
+        }
+      }
+    }
+    if (source is List) {
+      for (final v in source) {
+        if (v is num) {
+          years.add(v.toInt());
+        } else if (v is String) {
+          final n = int.tryParse(v);
+          if (n != null) years.add(n);
+        } else if (v is Map) {
+          for (final key in const ['year', 'value', 'y']) {
+            final n = v[key];
+            if (n is num) {
+              years.add(n.toInt());
+              break;
+            } else if (n is String) {
+              final parsed = int.tryParse(n);
+              if (parsed != null) {
+                years.add(parsed);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+    years.sort();
+    return years;
   }
 
   Future<SlaComplianceReport> getSlaCompliance({
@@ -100,8 +172,8 @@ class ReportsApi {
     final result = await _api.get<dynamic>(
       'reports/sla',
       queryParameters: {
-        if (from != null) 'from': from.toIso8601String(),
-        if (to != null) 'to': to.toIso8601String(),
+        if (from != null) 'from': _fmt(from),
+        if (to != null) 'to': _fmt(to),
       },
     );
     final body = _unwrap(result);
@@ -115,9 +187,25 @@ final reportsApiProvider = Provider<ReportsApi>((ref) {
   return ReportsApi(ref.watch(apiClientProvider));
 });
 
+/// Available report years from the backend.
+final reportYearsProvider = FutureProvider<List<int>>((ref) async {
+  try {
+    final years = await ref.watch(reportsApiProvider).getReportYears();
+    if (years.isNotEmpty) return years;
+  } catch (_) {
+    // Fall back to locally generated years if the endpoint is unavailable.
+  }
+  final now = DateTime.now().year;
+  return [for (var y = now - 2; y <= now; y++) y];
+});
+
 /// Dashboard provider
 final reportsDashboardProvider = FutureProvider<ReportsDashboard>((ref) async {
-  return ref.watch(reportsApiProvider).getDashboard();
+  final range = ref.watch(reportDateRangeProvider);
+  return ref.watch(reportsApiProvider).getDashboard(
+        from: range.from,
+        to: range.to,
+      );
 });
 
 /// Date range for reports
@@ -147,7 +235,7 @@ class ReportDateRange {
   static ReportDateRange last30Days() {
     final now = DateTime.now();
     return ReportDateRange(
-      from: now.subtract(const Duration(days: 30)),
+      from: DateTime(now.year, now.month, now.day).subtract(const Duration(days: 29)),
       to: now,
     );
   }
@@ -155,7 +243,7 @@ class ReportDateRange {
   static ReportDateRange last90Days() {
     final now = DateTime.now();
     return ReportDateRange(
-      from: now.subtract(const Duration(days: 90)),
+      from: DateTime(now.year, now.month, now.day).subtract(const Duration(days: 89)),
       to: now,
     );
   }
@@ -196,13 +284,21 @@ final technicianPerformanceReportProvider =
 
 /// AMC status report provider
 final amcStatusReportProvider = FutureProvider<AmcStatusReport>((ref) async {
-  return ref.watch(reportsApiProvider).getAmcStatus();
+  final range = ref.watch(reportDateRangeProvider);
+  return ref.watch(reportsApiProvider).getAmcStatus(
+        from: range.from,
+        to: range.to,
+      );
 });
 
 /// Equipment health report provider
 final equipmentHealthReportProvider =
     FutureProvider<EquipmentHealthReport>((ref) async {
-  return ref.watch(reportsApiProvider).getEquipmentHealth();
+  final range = ref.watch(reportDateRangeProvider);
+  return ref.watch(reportsApiProvider).getEquipmentHealth(
+        from: range.from,
+        to: range.to,
+      );
 });
 
 /// SLA compliance report provider

@@ -36,6 +36,17 @@ class _CreateIndividualTaskScreenState
   int? _issueTypeId;
   TaskPriority? _priority;
 
+  // Persistent keys so the dropdown overlay always anchors to THIS field's
+  // render box (a GlobalKey created inside build() changes identity on every
+  // rebuild and lets the anchor go stale).
+  final GlobalKey _issueTypeKey = GlobalKey();
+  final GlobalKey _priorityKey = GlobalKey();
+
+  // LayerLinks for robust overlay anchoring (CompositedTransformFollower
+  // converts coordinates automatically, avoiding manual global->overlay math).
+  final LayerLink _issueTypeLink = LayerLink();
+  final LayerLink _priorityLink = LayerLink();
+
   /// Locally picked images (uploaded on save).
   final List<XFile> _selectedImages = [];
 
@@ -132,108 +143,119 @@ class _CreateIndividualTaskScreenState
         .map((t) => t.name)
         .firstOrNull;
 
-    final key = GlobalKey();
-    return Material(
-      key: key,
-      color: Colors.white,
-      elevation: 0,
-      shape: WebForm.fieldShape(32),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: types.isEmpty
-            ? null
-            : () {
-                final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
-                if (renderBox == null) return;
-                final pos = renderBox.localToGlobal(Offset.zero);
-                final size = renderBox.size;
-                final overlay = Overlay.of(context, rootOverlay: true);
-                late OverlayEntry oe;
-                oe = OverlayEntry(
-                  builder: (_) => Stack(
-                    children: [
-                      Positioned.fill(
-                        child: GestureDetector(
-                          onTap: () => oe.remove(),
-                          behavior: HitTestBehavior.translucent,
-                          child: const SizedBox.expand(),
+    return CompositedTransformTarget(
+      link: _issueTypeLink,
+      child: Material(
+        key: _issueTypeKey,
+        color: Colors.white,
+        elevation: 0,
+        shape: WebForm.fieldShape(32),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          onTap: types.isEmpty
+              ? null
+              : () {
+                  final renderBox =
+                      _issueTypeKey.currentContext?.findRenderObject()
+                          as RenderBox?;
+                  final fieldWidth = renderBox?.size.width ?? 200.0;
+                  final overlay = Overlay.of(context, rootOverlay: true);
+                  late OverlayEntry oe;
+                  oe = OverlayEntry(
+                    builder: (_) => Stack(
+                      children: [
+                        Positioned.fill(
+                          child: GestureDetector(
+                            onTap: () => oe.remove(),
+                            behavior: HitTestBehavior.translucent,
+                            child: const SizedBox.expand(),
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        left: pos.dx,
-                        top: pos.dy + size.height + 4,
-                        width: size.width,
-                        child: Material(
-                          elevation: 8,
-                          borderRadius: BorderRadius.circular(12),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 300),
-                            child: ListView(
-                              shrinkWrap: true,
-                              padding: EdgeInsets.zero,
-                              children: [
-                                for (final t in types)
-                                  InkWell(
-                                    onTap: () {
-                                      oe.remove();
-                                      setState(() => _issueTypeId = t.id);
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 12,
-                                      ),
-                                      child: Text(
-                                        t.name,
-                                        style: const TextStyle(
-                                          fontFamily: 'Montserrat',
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black,
+                        CompositedTransformFollower(
+                          link: _issueTypeLink,
+                          showWhenUnlinked: false,
+                          offset: const Offset(0, 52),
+                          child: Material(
+                            elevation: 8,
+                            borderRadius: BorderRadius.circular(12),
+                            child: SizedBox(
+                              width: fieldWidth,
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxHeight: 300),
+                                child: ListView(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  children: [
+                                    for (final t in types)
+                                      InkWell(
+                                        onTap: () {
+                                          oe.remove();
+                                          setState(() => _issueTypeId = t.id);
+                                        },
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                          child: Text(
+                                            t.name,
+                                            style: const TextStyle(
+                                              fontFamily: 'Montserrat',
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                              ],
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-                overlay.insert(oe);
-              },
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: async.isLoading
-                    ? const Align(
-                        alignment: Alignment.centerLeft,
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                      ],
+                    ),
+                  );
+                  overlay.insert(oe);
+                },
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: async.isLoading
+                      ? const Align(
+                          alignment: Alignment.centerLeft,
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : Text(
+                          selectedName ?? 'Issue Type',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: selectedName == null
+                                ? Colors.black.withValues(alpha: 0.4)
+                                : Colors.black,
+                          ),
                         ),
-                      )
-                    : Text(
-                        selectedName ?? 'Issue Type',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: selectedName == null
-                              ? Colors.black.withValues(alpha: 0.4)
-                              : Colors.black,
-                        ),
-                      ),
-              ),
-              const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
-            ],
+                ),
+                const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
+              ],
+            ),
           ),
         ),
       ),
@@ -241,97 +263,107 @@ class _CreateIndividualTaskScreenState
   }
 
   Widget _webPriorityField() {
-    final key = GlobalKey();
-    return Material(
-      key: key,
-      color: Colors.white,
-      elevation: 0,
-      shape: WebForm.fieldShape(32),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
-          if (renderBox == null) return;
-          final pos = renderBox.localToGlobal(Offset.zero);
-          final size = renderBox.size;
-          final overlay = Overlay.of(context, rootOverlay: true);
-          late OverlayEntry oe;
-          oe = OverlayEntry(
-            builder: (_) => Stack(
-              children: [
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: () => oe.remove(),
-                    behavior: HitTestBehavior.translucent,
-                    child: const SizedBox.expand(),
+    final selectedName = _priority?.label;
+    final overlay = Overlay.of(context, rootOverlay: true);
+
+    return CompositedTransformTarget(
+      link: _priorityLink,
+      child: Material(
+        key: _priorityKey,
+        color: Colors.white,
+        elevation: 0,
+        shape: WebForm.fieldShape(32),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          onTap: () {
+            final renderBox =
+                _priorityKey.currentContext?.findRenderObject() as RenderBox?;
+            final fieldWidth = renderBox?.size.width ?? 200.0;
+            late OverlayEntry oe;
+            oe = OverlayEntry(
+              builder: (_) => Stack(
+                children: [
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () => oe.remove(),
+                      behavior: HitTestBehavior.translucent,
+                      child: const SizedBox.expand(),
+                    ),
                   ),
-                ),
-                Positioned(
-                  left: pos.dx,
-                  top: pos.dy + size.height + 4,
-                  width: size.width,
-                  child: Material(
-                    elevation: 8,
-                    borderRadius: BorderRadius.circular(12),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 300),
-                      child: ListView(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.zero,
-                        children: [
-                          for (final p in TaskPriority.values)
-                            InkWell(
-                              onTap: () {
-                                oe.remove();
-                                setState(() => _priority = p);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                child: Text(
-                                  p.label,
-                                  style: const TextStyle(
-                                    fontFamily: 'Montserrat',
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black,
+                  CompositedTransformFollower(
+                    link: _priorityLink,
+                    showWhenUnlinked: false,
+                    offset: const Offset(0, 52),
+                    child: Material(
+                      elevation: 8,
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: fieldWidth,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 300),
+                          child: ListView(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            children: [
+                              for (final p in TaskPriority.values)
+                                InkWell(
+                                  onTap: () {
+                                    oe.remove();
+                                    setState(() => _priority = p);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Text(
+                                      p.label,
+                                      style: const TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                        ],
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-          overlay.insert(oe);
-        },
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _priority?.label ?? 'Priority',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: _priority == null
-                        ? Colors.black.withValues(alpha: 0.4)
-                        : Colors.black,
+                ],
+              ),
+            );
+            overlay.insert(oe);
+          },
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    selectedName ?? 'Priority',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: selectedName == null
+                          ? Colors.black.withValues(alpha: 0.4)
+                          : Colors.black,
+                    ),
                   ),
                 ),
-              ),
-              const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
-            ],
+                const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
+              ],
+            ),
           ),
         ),
       ),
@@ -444,7 +476,7 @@ class _CreateIndividualTaskScreenState
                   ),
                   _individualTaskSection(
                     children: [
-                      WebForm.row(_issueTypeField(), _priorityField()),
+                      WebForm.row(_webIssueTypeField(), _webPriorityField()),
                       const SizedBox(height: WebForm.gap),
                       _buildTextField(
                         controller: _titleController,
