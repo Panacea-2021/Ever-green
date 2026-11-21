@@ -89,7 +89,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('six cards wrap into balanced rows on narrower screens',
+  testWidgets('six cards stay in one scrollable row on narrower screens',
       (tester) async {
     tester.view.physicalSize = const Size(800, 1000);
     tester.view.devicePixelRatio = 1;
@@ -105,17 +105,12 @@ void main() {
 
     final firstRowTop =
         tester.getTopLeft(find.byKey(const ValueKey('web-filter-All'))).dy;
-    final secondRowTop =
-        tester.getTopLeft(find.byKey(const ValueKey('web-filter-Non AMC'))).dy;
-    expect(secondRowTop, greaterThan(firstRowTop));
-    expect(
-      tester.getTopLeft(find.byKey(const ValueKey('web-filter-Regular'))).dy,
-      secondRowTop,
-    );
-    expect(
-      tester.getTopLeft(find.byKey(const ValueKey('web-filter-Inactive'))).dy,
-      secondRowTop,
-    );
+    for (final label in labels) {
+      expect(
+        tester.getTopLeft(find.byKey(ValueKey('web-filter-$label'))).dy,
+        firstRowTop,
+      );
+    }
     expect(tester.takeException(), isNull);
   });
 }

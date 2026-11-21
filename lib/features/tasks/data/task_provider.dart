@@ -60,13 +60,10 @@ Map<QueueTab, List<TaskItem>> queueTabs(
     for (final tab in QueueTab.values)
       tab: tasks.where((t) => t.inQueueTab(tab, now)).toList(),
   };
-  tabs[QueueTab.unassigned]!
-      .sort((a, b) => _byOverdueThenPriorityThenAge(a, b, now));
-  tabs[QueueTab.awaiting]!.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-  tabs[QueueTab.assigned]!
-      .sort((a, b) => _byOverdueThenPriorityThenAge(a, b, now));
-  tabs[QueueTab.escalation]!
-      .sort((a, b) => a.statusChangedAt.compareTo(b.statusChangedAt));
+  // Newest created ticket first in every tab, by the backend creation time.
+  for (final tab in QueueTab.values) {
+    tabs[tab]!.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
   return tabs;
 }
 
@@ -239,6 +236,7 @@ class TaskActions {
       if (priority != null) 'priority': priority.key,
       if (dueDate != null) 'due_date': _date(dueDate),
     });
+    _ref.invalidate(tasksProvider);
     _ref.invalidate(activeTaskForEquipmentProvider(equipmentId));
   }
 
@@ -290,6 +288,7 @@ class TaskActions {
         images: images,
       ),
     );
+    _ref.invalidate(tasksProvider);
   }
 
   Future<void> update(

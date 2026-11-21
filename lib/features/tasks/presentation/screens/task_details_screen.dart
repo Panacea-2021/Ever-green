@@ -149,15 +149,6 @@ class TaskDetailsScreen extends ConsumerWidget {
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (kIsWeb && canEdit)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: _webEditButton(context, ref, task, title, loc, stat, company,
-                  client, mob, tech, techMob, created, sNo, desc),
-            ),
-          ),
         _buildHeroHeader(context, img),
         if (task != null && task.attachments.length > 1)
           _buildImageGallery(task.attachments),
@@ -241,9 +232,35 @@ class TaskDetailsScreen extends ConsumerWidget {
       body: kIsWeb
           ? Column(
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1040),
+                      child: Row(
+                        children: [
+                          const Text(
+                            'Task Details',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          const Spacer(),
+                          if (canEdit)
+                            _webEditButton(context, ref, task, title, loc, stat,
+                                company, client, mob, tech, techMob, created,
+                                sNo, desc),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 1040),
@@ -295,8 +312,10 @@ class TaskDetailsScreen extends ConsumerWidget {
             ),
           ),
 
-          // Title only (back icon removed per design)
-          SafeArea(
+          // Title only (back icon removed per design); web shows the heading
+          // in the header row instead of over the banner.
+          if (!kIsWeb)
+            SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -601,18 +620,6 @@ class TaskDetailsScreen extends ConsumerWidget {
                           color: _blueTitle, size: 24),
                 ),
                 const SizedBox(height: 12),
-
-                // Title
-                const Text(
-                  'Task Details',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: _blueTitle,
-                    letterSpacing: -0.54,
-                  ),
-                ),
                 const SizedBox(height: 24),
 
                 Align(

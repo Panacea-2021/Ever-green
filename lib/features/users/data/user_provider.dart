@@ -103,6 +103,7 @@ class AppUser {
       companies: companies,
       avatarUrl: avatarUrl,
       createdAt: createdAt,
+      createdBy: createdBy,
     );
   }
 

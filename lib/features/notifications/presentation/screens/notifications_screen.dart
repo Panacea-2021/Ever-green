@@ -28,11 +28,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(_loadAllNotifications());
-      });
-    }
   }
 
   void _onNotificationTap(NotificationEntry entry) {
@@ -63,8 +58,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     }
 
     _loadingAllPages = true;
+    var pages = 0;
     try {
-      while (mounted) {
+      while (mounted && pages < 100) {
         feed = ref.read(notificationsControllerProvider).valueOrNull;
         if (feed == null ||
             !feed.hasMore ||
@@ -73,9 +69,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           break;
         }
         await ref.read(notificationsControllerProvider.notifier).loadMore();
+        pages++;
       }
     } finally {
-      _loadingAllPages = false;
+      if (mounted) _loadingAllPages = false;
     }
   }
 
@@ -84,10 +81,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (!notification.isRead) {
       try {
         await ref
-            .read(notificationsRepositoryProvider)
+            .read(notificationsControllerProvider.notifier)
             .markRead(ids: [notification.id]);
-        ref.invalidate(notificationsControllerProvider);
-        ref.invalidate(unreadNotificationsCountProvider);
       } catch (error) {
         _showWebError("Couldn't mark this notification as read: $error");
       }
@@ -110,10 +105,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (_markingAllRead) return;
     setState(() => _markingAllRead = true);
     try {
-      await ref.read(notificationsRepositoryProvider).markRead();
+      await ref.read(notificationsControllerProvider.notifier).markRead();
       if (!mounted) return;
-      ref.invalidate(notificationsControllerProvider);
-      ref.invalidate(unreadNotificationsCountProvider);
     } catch (error) {
       _showWebError("Couldn't mark all notifications as read: $error");
     } finally {
@@ -140,20 +133,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
-      ref.listen<AsyncValue<NotificationsFeed>>(
-        notificationsControllerProvider,
-        (previous, next) {
-          final feed = next.valueOrNull;
-          if (feed != null &&
-              feed.hasMore &&
-              !feed.loadingMore &&
-              feed.loadMoreError == null) {
-            unawaited(_loadAllNotifications());
-          }
-        },
-      );
-    }
     final feed = ref.watch(notificationsControllerProvider);
     if (kIsWeb) return _buildWebNotifications(feed);
 
@@ -243,12 +222,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget _buildWebNotifications(AsyncValue<NotificationsFeed> state) {
     final feed = state.valueOrNull;
     final items = feed?.items ?? const <NotificationEntry>[];
-    final unreadCount =
+    final loadedUnread =
         items.where((entry) => !entry.notification.isRead).length;
-    final isLoadingAll = feed?.hasMore == true && feed?.loadMoreError == null;
-    final totalLabel = isLoadingAll ? '…' : '${items.length}';
-    final unreadLabel = isLoadingAll ? '…' : '$unreadCount';
-    final readLabel = isLoadingAll ? '…' : '${items.length - unreadCount}';
+    final apiUnread = ref.watch(unreadNotificationsCountProvider).valueOrNull;
+    final unreadCount = apiUnread ?? loadedUnread;
+    final total = feed?.totalCount ?? items.length;
+    final totalLabel = '$total';
+    final unreadLabel = '$unreadCount';
+    final readLabel = '${(total - unreadCount).clamp(0, total)}';
     final query = _webSearch.trim().toLowerCase();
     final filteredItems = items.where((entry) {
       final notification = entry.notification;
@@ -282,7 +263,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   unreadLabel: unreadLabel,
                   readLabel: readLabel,
                   unreadCount: unreadCount,
-                  loadingAll: isLoadingAll,
+                  loadingAll: false,
                 ),
               ),
               if (feed != null)
@@ -291,7 +272,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     totalLabel: totalLabel,
                     unreadLabel: unreadLabel,
                     readLabel: readLabel,
-                    enabled: !isLoadingAll,
+                    enabled: true,
                   ),
                 ),
               if (feed?.loadMoreError != null)
@@ -453,7 +434,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       builder: (context, constraints) {
         final horizontal = constraints.maxWidth >= 1000;
         return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
           child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
@@ -644,7 +625,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
         child: constraints.maxWidth >= 760
             ? Row(
                 children: [

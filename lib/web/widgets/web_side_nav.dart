@@ -265,75 +265,89 @@ class WebSideNav extends ConsumerWidget {
           colors: [Color(0xFF0E501B), WebTokens.greenDeep],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: collapsed ? 0 : 22,
-              vertical: 24,
-            ),
-            child: Row(
-              mainAxisAlignment:
-                  collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child:
-                      const Icon(Icons.eco, color: WebTokens.green, size: 20),
-                ),
-                if (!collapsed) ...[
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Text(
-                      'Evergreen',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: WebTokens.heading(20, color: Colors.white),
+      child: CustomScrollView(
+        primary: false,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: collapsed ? 0 : 22,
+                vertical: 24,
+              ),
+              child: Row(
+                mainAxisAlignment: collapsed
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
                     ),
+                    child:
+                        const Icon(Icons.eco, color: WebTokens.green, size: 20),
                   ),
+                  if (!collapsed) ...[
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        'Evergreen',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: WebTokens.heading(20, color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           if (!collapsed)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(28, 0, 0, 8),
-              child: Text(
-                l10n?.menu ?? 'MENU',
-                style: WebTokens.eyebrow(color: Colors.white54),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(28, 0, 0, 8),
+                child: Text(
+                  l10n?.menu ?? 'MENU',
+                  style: WebTokens.eyebrow(color: Colors.white54),
+                ),
               ),
             ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.only(bottom: 8),
-              children: [
-                for (final entry in entries)
-                  _WebNavTile(
+          SliverPadding(
+            padding: const EdgeInsets.only(bottom: 8),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final entry = entries[index];
+                  return _WebNavTile(
                     entry: entry,
                     active: _isActive(entry.route),
                     collapsed: collapsed,
                     onTap: () => onNavigate(entry.route),
-                  ),
-              ],
+                  );
+                },
+                childCount: entries.length,
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16, top: 4),
-            child: _WebNavTile(
-              entry: WebNavEntry(
-                label: l10n?.logout ?? 'Logout',
-                route: Routes.login,
-                icon: Icons.logout,
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16, top: 4),
+                child: _WebNavTile(
+                  entry: WebNavEntry(
+                    label: l10n?.logout ?? 'Logout',
+                    route: Routes.login,
+                    icon: Icons.logout,
+                  ),
+                  active: false,
+                  collapsed: collapsed,
+                  onTap: onSignOut,
+                ),
               ),
-              active: false,
-              collapsed: collapsed,
-              onTap: onSignOut,
             ),
           ),
         ],
@@ -345,11 +359,57 @@ class WebSideNav extends ConsumerWidget {
     if (activeRoute == route) return true;
     // Sub-routes (e.g. /tasks/123) keep their parent module highlighted.
     if (activeRoute.startsWith('$route/')) return true;
-    // Task details opened from anywhere defaults to the Task Board highlight.
+    // Task details opened from anywhere defaults to the Tasks highlight.
     if (activeRoute.startsWith(Routes.taskDetails) && route == Routes.tasks) {
       return true;
     }
+    // Nested/detail pages keep their parent module highlighted.
+    final parent = _parentRoute(activeRoute);
+    if (parent != null && parent == route) return true;
     return false;
+  }
+
+  static String? _parentRoute(String location) {
+    if (location == Routes.addUser ||
+        location.startsWith('${Routes.addUser}/')) {
+      return Routes.usersList;
+    }
+    if (location == Routes.addTask ||
+        location.startsWith('${Routes.addTask}/') ||
+        location == Routes.createIndividualTask ||
+        location.startsWith('${Routes.createIndividualTask}/') ||
+        location == Routes.assignTasks ||
+        location.startsWith('${Routes.assignTasks}/')) {
+      return Routes.tasks;
+    }
+    if (location == Routes.createAmc ||
+        location.startsWith('${Routes.createAmc}/') ||
+        location == Routes.addEquipment ||
+        location.startsWith('${Routes.addEquipment}/') ||
+        location.startsWith(Routes.equipmentDetails) ||
+        location.startsWith(Routes.companyDetails) ||
+        location.startsWith(Routes.companyTasks) ||
+        location.startsWith(Routes.companyEquipments)) {
+      return Routes.amcs;
+    }
+    if (location.startsWith(Routes.equipmentQr) ||
+        location.startsWith(Routes.verifiedEquipments)) {
+      return Routes.equipmentList;
+    }
+    if (location.startsWith(Routes.technicianTasks) ||
+        location.startsWith(Routes.techniciansList)) {
+      return Routes.techniciansList;
+    }
+    if (location == Routes.editProfile ||
+        location.startsWith('${Routes.editProfile}/') ||
+        location == Routes.changePassword ||
+        location.startsWith('${Routes.changePassword}/')) {
+      return Routes.profile;
+    }
+    if (location.startsWith(Routes.taskBoard)) {
+      return Routes.taskBoard;
+    }
+    return null;
   }
 }
 

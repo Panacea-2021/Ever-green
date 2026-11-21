@@ -30,10 +30,18 @@ class WebFilterTiles extends StatelessWidget {
     super.key,
     required this.options,
     this.unselectedColor = Colors.white,
-  });
+    this.selectedColor,
+    this.minTileWidth,
+    this.scrollController,
+    this.compact = false,
+  }) : assert(minTileWidth == null || scrollController != null);
 
   final List<WebFilterOption> options;
   final Color unselectedColor;
+  final Color? selectedColor;
+  final double? minTileWidth;
+  final ScrollController? scrollController;
+  final bool compact;
 
   static const double _gap = 12;
 
@@ -41,6 +49,43 @@ class WebFilterTiles extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
+        if (options.isEmpty) return const SizedBox.shrink();
+        if (minTileWidth != null) {
+          final minRowWidth =
+              minTileWidth! * options.length + _gap * (options.length - 1);
+          final rowWidth =
+              c.maxWidth < minRowWidth ? minRowWidth : c.maxWidth;
+          final tileWidth =
+              (rowWidth - _gap * (options.length - 1)) / options.length;
+          return Scrollbar(
+            controller: scrollController,
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              controller: scrollController,
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: rowWidth,
+                child: Row(
+                  children: [
+                    for (var i = 0; i < options.length; i++) ...[
+                      if (i > 0) const SizedBox(width: _gap),
+                      SizedBox(
+                        width: tileWidth,
+                        child: _FilterTile(
+                          key: ValueKey('web-filter-${options[i].label}'),
+                          option: options[i],
+                          unselectedColor: unselectedColor,
+                          selectedColor: selectedColor,
+                          compact: compact,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
         final cols = c.maxWidth >= 1100
             ? options.length
             : c.maxWidth >= 720
@@ -58,6 +103,8 @@ class WebFilterTiles extends StatelessWidget {
                   key: ValueKey('web-filter-${o.label}'),
                   option: o,
                   unselectedColor: unselectedColor,
+                  selectedColor: selectedColor,
+                  compact: compact,
                 ),
               ),
           ],
@@ -68,10 +115,18 @@ class WebFilterTiles extends StatelessWidget {
 }
 
 class _FilterTile extends StatefulWidget {
-  const _FilterTile({super.key, required this.option, required this.unselectedColor});
+  const _FilterTile({
+    super.key,
+    required this.option,
+    required this.unselectedColor,
+    this.selectedColor,
+    this.compact = false,
+  });
 
   final WebFilterOption option;
   final Color unselectedColor;
+  final Color? selectedColor;
+  final bool compact;
 
   @override
   State<_FilterTile> createState() => _FilterTileState();
@@ -98,7 +153,10 @@ class _FilterTileState extends State<_FilterTile> {
           decoration: BoxDecoration(
             gradient: sel
                 ? LinearGradient(
-                    colors: [c, Color.lerp(c, Colors.black, 0.22)!],
+                    colors: [
+                      widget.selectedColor ?? c,
+                      Color.lerp(widget.selectedColor ?? c, Colors.black, 0.22)!,
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
@@ -112,7 +170,7 @@ class _FilterTileState extends State<_FilterTile> {
             ),
             boxShadow: [
               BoxShadow(
-                color: (sel ? c : Colors.black)
+                color: (sel ? (widget.selectedColor ?? c) : Colors.black)
                     .withValues(alpha: sel ? 0.28 : (_hover ? 0.08 : 0.04)),
                 blurRadius: sel || _hover ? 20 : 10,
                 offset: const Offset(0, 6),
@@ -133,21 +191,26 @@ class _FilterTileState extends State<_FilterTile> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                padding: EdgeInsets.fromLTRB(
+                  widget.compact ? 10 : 14,
+                  widget.compact ? 10 : 14,
+                  widget.compact ? 10 : 14,
+                  widget.compact ? 10 : 14,
+                ),
                 child: Row(
                   children: [
                     Container(
-                      width: 42,
-                      height: 42,
+                      width: widget.compact ? 34 : 42,
+                      height: widget.compact ? 34 : 42,
                       decoration: BoxDecoration(
                         color: sel
                             ? Colors.white.withValues(alpha: 0.2)
                             : c.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(13),
+                        borderRadius: BorderRadius.circular(widget.compact ? 10 : 13),
                       ),
-                      child: Icon(o.icon, size: 21, color: sel ? Colors.white : c),
+                      child: Icon(o.icon, size: widget.compact ? 17 : 21, color: sel ? Colors.white : c),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: widget.compact ? 8 : 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,7 +219,7 @@ class _FilterTileState extends State<_FilterTile> {
                             o.count == null ? '–' : '${o.count}',
                             style: TextStyle(
                               fontFamily: WebTokens.fontFamily,
-                              fontSize: 21,
+                              fontSize: widget.compact ? 17 : 21,
                               height: 1.15,
                               fontWeight: FontWeight.w800,
                               color: sel ? Colors.white : WebTokens.ink,
@@ -169,7 +232,7 @@ class _FilterTileState extends State<_FilterTile> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: WebTokens.fontFamily,
-                              fontSize: 12.5,
+                              fontSize: widget.compact ? 11 : 12.5,
                               fontWeight: FontWeight.w600,
                               color: sel
                                   ? Colors.white.withValues(alpha: 0.92)

@@ -22,6 +22,33 @@ const _user = User(
 
 void main() {
   testWidgets(
+    'web profile hides task history for Super Admin only',
+    (tester) async {
+      await _pumpProfile(tester, const Size(1280, 900));
+
+      expect(find.text('My Tasks History'), findsNothing);
+      expect(find.text('Company Profile'), findsOneWidget);
+      expect(find.text('Activity History'), findsOneWidget);
+      expect(find.text('Manage Employees'), findsOneWidget);
+
+      await _pumpProfile(
+        tester,
+        const Size(1280, 900),
+        role: UserRole.manager,
+      );
+      expect(find.text('My Tasks History'), findsOneWidget);
+
+      await _pumpProfile(
+        tester,
+        const Size(1280, 900),
+        role: UserRole.client,
+      );
+      expect(find.text('My Service History'), findsOneWidget);
+    },
+    skip: !kIsWeb,
+  );
+
+  testWidgets(
     'web profile scrolls its menu independently and opens a closable company dialog',
     (tester) async {
       await _pumpProfile(tester, const Size(1280, 560));
@@ -106,7 +133,11 @@ void main() {
   );
 }
 
-Future<void> _pumpProfile(WidgetTester tester, Size size) async {
+Future<void> _pumpProfile(
+  WidgetTester tester,
+  Size size, {
+  UserRole role = UserRole.superAdmin,
+}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -115,7 +146,7 @@ Future<void> _pumpProfile(WidgetTester tester, Size size) async {
     ProviderScope(
       overrides: [
         currentUserProvider.overrideWithValue(_user),
-        currentUserRoleProvider.overrideWithValue(UserRole.superAdmin),
+        currentUserRoleProvider.overrideWithValue(role),
         myCompaniesProvider.overrideWith((ref) async => const []),
       ],
       child: const MaterialApp(home: ProfileScreen()),
