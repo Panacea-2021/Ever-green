@@ -1,0 +1,75 @@
+name: Mobile APK Release
+
+on:
+  push:
+    branches:
+      - mobile-code
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build and release Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout mobile-code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "Missing GOOGLE_SERVICES_JSON secret" >&2
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          BASE_BUILD_NUMBER=$(sed -n 's/^version: *[^+]*+\([0-9][0-9]*\).*$/\1/p' pubspec.yaml)
+          if ! [[ "$BASE_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Could not read the Android build number from pubspec.yaml" >&2
+            exit 1
+          fi
+          BUILD_NUMBER=$((BASE_BUILD_NUMBER + GITHUB_RUN_NUMBER))
+          flutter build apk --release --build-number "$BUILD_NUMBER"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: evergreen-mobile-code-${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mobile-code-apk-${{ github.run_number }}
+          name: Mobile-code APK ${{ github.run_number }}
+          body: Automated APK built from commit ${{ github.sha }}.
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          files: build/app/outputs/flutter-apk/app-release.apk
