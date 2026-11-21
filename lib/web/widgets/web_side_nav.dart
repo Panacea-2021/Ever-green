@@ -176,7 +176,8 @@ class WebSideNav extends ConsumerWidget {
           svgIcon: 'assets/images/menu_cloud_upload.svg',
         ),
         WebNavEntry(
-          label: l10n?.uploadTechnicians ?? 'Upload Service Engineers Excel Data',
+          label:
+              l10n?.uploadTechnicians ?? 'Upload Service Engineers Excel Data',
           route: Routes.uploadTechnicians,
           svgIcon: 'assets/images/menu_cloud_upload.svg',
         ),
@@ -255,6 +256,60 @@ class WebSideNav extends ConsumerWidget {
       usersCount: usersCount,
       l10n: l10n,
     );
+    final header = Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: collapsed ? 0 : 22,
+        vertical: 24,
+      ),
+      child: Row(
+        mainAxisAlignment:
+            collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.eco, color: WebTokens.green, size: 20),
+          ),
+          if (!collapsed) ...[
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                'Evergreen',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: WebTokens.heading(20, color: Colors.white),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+    final menuLabel = !collapsed
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(28, 0, 0, 8),
+            child: Text(
+              l10n?.menu ?? 'MENU',
+              style: WebTokens.eyebrow(color: Colors.white54),
+            ),
+          )
+        : null;
+    final logoutTile = Padding(
+      padding: const EdgeInsets.only(bottom: 16, top: 4),
+      child: _WebNavTile(
+        entry: WebNavEntry(
+          label: l10n?.logout ?? 'Logout',
+          route: Routes.login,
+          icon: Icons.logout,
+        ),
+        active: false,
+        collapsed: collapsed,
+        onTap: onSignOut,
+      ),
+    );
 
     return Container(
       width: widthFor(screenWidth),
@@ -265,92 +320,59 @@ class WebSideNav extends ConsumerWidget {
           colors: [Color(0xFF0E501B), WebTokens.greenDeep],
         ),
       ),
-      child: CustomScrollView(
-        primary: false,
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: collapsed ? 0 : 22,
-                vertical: 24,
-              ),
-              child: Row(
-                mainAxisAlignment: collapsed
-                    ? MainAxisAlignment.center
-                    : MainAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxHeight < 160) {
+            return CustomScrollView(
+              primary: false,
+              slivers: [
+                SliverToBoxAdapter(child: header),
+                if (menuLabel != null) SliverToBoxAdapter(child: menuLabel),
+                SliverPadding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final entry = entries[index];
+                        return _WebNavTile(
+                          entry: entry,
+                          active: _isActive(entry.route),
+                          collapsed: collapsed,
+                          onTap: () => onNavigate(entry.route),
+                        );
+                      },
+                      childCount: entries.length,
                     ),
-                    child:
-                        const Icon(Icons.eco, color: WebTokens.green, size: 20),
                   ),
-                  if (!collapsed) ...[
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: Text(
-                        'Evergreen',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: WebTokens.heading(20, color: Colors.white),
+                ),
+                SliverToBoxAdapter(child: logoutTile),
+              ],
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              header,
+              if (menuLabel != null) menuLabel,
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  children: [
+                    for (final entry in entries)
+                      _WebNavTile(
+                        entry: entry,
+                        active: _isActive(entry.route),
+                        collapsed: collapsed,
+                        onTap: () => onNavigate(entry.route),
                       ),
-                    ),
                   ],
-                ],
-              ),
-            ),
-          ),
-          if (!collapsed)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 0, 8),
-                child: Text(
-                  l10n?.menu ?? 'MENU',
-                  style: WebTokens.eyebrow(color: Colors.white54),
                 ),
               ),
-            ),
-          SliverPadding(
-            padding: const EdgeInsets.only(bottom: 8),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final entry = entries[index];
-                  return _WebNavTile(
-                    entry: entry,
-                    active: _isActive(entry.route),
-                    collapsed: collapsed,
-                    onTap: () => onNavigate(entry.route),
-                  );
-                },
-                childCount: entries.length,
-              ),
-            ),
-          ),
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 16, top: 4),
-                child: _WebNavTile(
-                  entry: WebNavEntry(
-                    label: l10n?.logout ?? 'Logout',
-                    route: Routes.login,
-                    icon: Icons.logout,
-                  ),
-                  active: false,
-                  collapsed: collapsed,
-                  onTap: onSignOut,
-                ),
-              ),
-            ),
-          ),
-        ],
+              logoutTile,
+            ],
+          );
+        },
       ),
     );
   }
