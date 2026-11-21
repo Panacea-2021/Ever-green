@@ -206,33 +206,6 @@ class _Banner extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: 20,
-            top: 20,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () => context.pop(),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: SvgPicture.asset(
-                    'assets/images/arrow_back_white.svg',
-                    width: 20,
-                    height: 20,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
             left: 28,
             right: 28,
             bottom: 24,

@@ -340,7 +340,16 @@ class WebSideNav extends ConsumerWidget {
     );
   }
 
-  bool _isActive(String route) => activeRoute == route;
+  bool _isActive(String route) {
+    if (activeRoute == route) return true;
+    // Sub-routes (e.g. /tasks/123) keep their parent module highlighted.
+    if (activeRoute.startsWith('$route/')) return true;
+    // Task details opened from anywhere defaults to the Task Board highlight.
+    if (activeRoute.startsWith(Routes.taskDetails) && route == Routes.tasks) {
+      return true;
+    }
+    return false;
+  }
 }
 
 class _WebNavTile extends StatefulWidget {

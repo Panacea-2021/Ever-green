@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +11,6 @@ import '../../features/amcs/data/amc_provider.dart';
 import '../../features/amcs/domain/models/amc_contract.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/dashboard/data/analytics_history_provider.dart';
-import '../../features/reports/data/reports_provider.dart';
 import '../../features/dashboard/data/analytics_provider.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../shared/providers/auth_state_provider.dart';
@@ -355,7 +352,6 @@ class _WebDashboardMetricCard extends StatefulWidget {
     this.valueKey,
     this.compact = false,
     this.highlight = false,
-    this.animatedBorder = false,
   });
 
   final String title;
@@ -369,41 +365,15 @@ class _WebDashboardMetricCard extends StatefulWidget {
   final Key? valueKey;
   final bool compact;
   final bool highlight;
-  final bool animatedBorder;
 
   @override
   State<_WebDashboardMetricCard> createState() =>
       _WebDashboardMetricCardState();
 }
 
-class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
-    with SingleTickerProviderStateMixin {
+class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
   bool _hovered = false;
   bool _pressed = false;
-  AnimationController? _borderCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.animatedBorder) {
-      // Skip the repeating animation in the test environment so pumpAndSettle
-      // based tests can complete; the animation still runs in real (debug/release)
-      // builds.
-      final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
-      if (!isTest) {
-        _borderCtrl = AnimationController(
-          vsync: this,
-          duration: const Duration(seconds: 3),
-        )..repeat();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _borderCtrl?.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -419,61 +389,47 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
             : WebDashboardScreen._red;
     final radius = BorderRadius.circular(12);
 
-    final surface = widget.highlight
-        ? AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            constraints: BoxConstraints(
-              minHeight: widget.compact ? 112 : 136,
-            ),
-            padding: EdgeInsets.all(widget.compact ? 12 : 16),
-            transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
-            transformAlignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: widget.color.withValues(
+    final surface = AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      constraints: BoxConstraints(
+        minHeight: widget.compact ? 112 : 136,
+      ),
+      padding: EdgeInsets.all(widget.compact ? 12 : 16),
+      transform: widget.highlight
+          ? Matrix4.translationValues(0, _hovered ? -2 : 0, 0)
+          : null,
+      transformAlignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: widget.highlight
+            ? widget.color.withValues(
                 alpha: _hovered ? 0.095 : 0.055,
-              ),
-              borderRadius: radius,
-              border: Border.all(
-                color: widget.color.withValues(
+              )
+            : const Color(0xFFF5F5F5),
+        borderRadius: radius,
+        border: Border.all(
+          color: widget.highlight
+              ? widget.color.withValues(
                   alpha: _hovered ? 0.48 : 0.24,
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.color.withValues(
+                )
+              : const Color(0xFFE8E8E8),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: widget.highlight
+                ? widget.color.withValues(
                     alpha: _hovered ? 0.12 : 0.045,
-                  ),
-                  blurRadius: _hovered ? 14 : 8,
-                  offset: Offset(0, _hovered ? 6 : 3),
-                ),
-              ],
-            ),
-            child: _buildContent(positive, trendColor),
-          )
-        : Container(
-            constraints: BoxConstraints(
-              minHeight: widget.compact ? 112 : 136,
-            ),
-            padding: EdgeInsets.all(widget.compact ? 12 : 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: radius,
-              border: Border.all(
-                color: _borderCtrl != null
-                    ? Colors.transparent
-                    : const Color(0xFFE8E8E8),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.035),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: _buildContent(positive, trendColor),
-          );
+                  )
+                : Colors.black.withValues(alpha: 0.035),
+            blurRadius: widget.highlight ? (_hovered ? 14 : 8) : 8,
+            offset: widget.highlight
+                ? Offset(0, _hovered ? 6 : 3)
+                : const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: _buildContent(positive, trendColor),
+    );
     final interactiveSurface = widget.highlight
         ? AnimatedScale(
             scale: _pressed ? 0.99 : 1,
@@ -483,7 +439,7 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
           )
         : surface;
 
-    final mouseRegion = MouseRegion(
+    return MouseRegion(
       cursor: widget.onTap == null
           ? SystemMouseCursors.basic
           : SystemMouseCursors.click,
@@ -505,8 +461,6 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard>
         child: interactiveSurface,
       ),
     );
-
-    return mouseRegion;
   }
 
   Widget _buildContent(bool? positive, Color? trendColor) {
@@ -683,23 +637,38 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
 
   @override
   Widget build(BuildContext context) {
-    final yearOptions = ref.watch(reportYearsProvider).valueOrNull ?? const [];
+    final yearOptions = ref.watch(analyticsYearsProvider);
     final years = yearOptions.isEmpty ? [DateTime.now().year] : yearOptions;
     final selectedYear =
         years.contains(_selectedYear) ? _selectedYear : years.last;
     final snapshots = ref.watch(yearSnapshotsProvider(selectedYear));
-    final reportSnapshots = snapshots.length <= 7
-        ? snapshots
-        : snapshots.sublist(snapshots.length - 7);
+    // Always render all 12 months; missing months default to 0.
+    double valueFor(int month, TrendMetric metric) {
+      for (final s in snapshots) {
+        if (s.date.month == month) return s.metric(metric).toDouble();
+      }
+      return 0;
+    }
     final bars = [
-      for (final snapshot in reportSnapshots)
-        snapshot.metric(_barMetric).toDouble(),
+      for (var month = 1; month <= 12; month++) valueFor(month, _barMetric),
     ];
     final line = [
-      for (final snapshot in reportSnapshots)
-        snapshot.metric(_lineMetric).toDouble(),
+      for (var month = 1; month <= 12; month++) valueFor(month, _lineMetric),
     ];
-    final labels = reportSnapshots.map(snapshotMonthLabel).toList();
+    const labels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final labelsForLegend = _legendLabels;
     final openTasks = (widget.analytics.tasksByStatus['Open'] ?? 0) +
         (widget.analytics.tasksByStatus['Hold'] ?? 0) +
@@ -730,7 +699,6 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 onTap: widget.onOpenTasks,
                 valueKey: const ValueKey('web-report-open-tasks-count'),
                 compact: true,
-                animatedBorder: true,
               ),
               _WebDashboardMetricCard(
                 title: 'Closed (mo)',
@@ -741,7 +709,6 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 onTap: widget.onOpenTasks,
                 valueKey: const ValueKey('web-report-closed-tasks-count'),
                 compact: true,
-                animatedBorder: true,
               ),
             ],
           ),
@@ -822,19 +789,14 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
     List<double> line,
     List<String> labels,
   ) {
-    if (labels.isEmpty) {
-      return const Center(
-        child: Text(
-          'No monthly data for this year',
-          style: TextStyle(fontSize: 13, color: Color(0xFF888888)),
-        ),
-      );
-    }
-
-    final maxValue = [...bars, ...line, 1.0].reduce((a, b) => a > b ? a : b);
-    final maxY = (maxValue * 1.25).ceilToDouble();
-    final interval =
-        (maxY / 4).ceilToDouble().clamp(1.0, double.infinity).toDouble();
+    final hasData = bars.any((v) => v != 0) || line.any((v) => v != 0);
+    final maxValue = hasData
+        ? [...bars, ...line].reduce((a, b) => a > b ? a : b)
+        : 0.0;
+    final maxY = hasData ? (maxValue * 1.25).ceilToDouble() : 8.0;
+    final interval = hasData
+        ? (maxY / 4).ceilToDouble().clamp(1.0, double.infinity).toDouble()
+        : 2.0;
     final maxX = labels.length > 1 ? (labels.length - 1).toDouble() : 1.0;
     return Stack(
       children: [
@@ -1232,43 +1194,66 @@ class _TaskStatusChart extends StatelessWidget {
       _ChartData('Closed', closed, WebDashboardScreen._green),
     ];
 
+    final legend = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < data.length; i++) ...[
+          _LegendItem(
+            key: ValueKey('web-dashboard-status-${data[i].label}'),
+            color: data[i].color,
+            label: data[i].label,
+            value: data[i].value,
+            percentage: total > 0 ? (data[i].value / total * 100) : 0,
+          ),
+          if (i != data.length - 1) const SizedBox(height: 14),
+        ],
+      ],
+    );
+
     return _DashboardPanelCard(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Task Status Overview',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1A1A1A),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Task Status Overview',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A1A),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Distribution of tasks by status',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
-                  ),
-                ],
+                    SizedBox(height: 4),
+                    Text(
+                      'Distribution of tasks by status',
+                      style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 12),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   '$total total',
+                  maxLines: 1,
+                  softWrap: false,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
+                    height: 1.2,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF333333),
                   ),
@@ -1276,7 +1261,7 @@ class _TaskStatusChart extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           if (loading)
             const SizedBox(
               height: 220,
@@ -1304,138 +1289,134 @@ class _TaskStatusChart extends StatelessWidget {
               ),
             )
           else
-            SizedBox(
-              height: 220,
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: BarChart(
-                      BarChartData(
-                        alignment: BarChartAlignment.spaceAround,
-                        maxY: data
-                                .map((e) => e.value.toDouble())
-                                .reduce((a, b) => a > b ? a : b) *
-                            1.3,
-                        barTouchData: BarTouchData(
-                          touchTooltipData: BarTouchTooltipData(
-                            getTooltipColor: (_) => const Color(0xFF333333),
-                            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                              return BarTooltipItem(
-                                '${data[group.x.toInt()].label}\n${data[group.x.toInt()].value}',
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        titlesData: FlTitlesData(
-                          show: true,
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) {
-                                final labels = [
-                                  'Open',
-                                  'In Progress',
-                                  'Hold',
-                                  'Closed'
-                                ];
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    labels[value.toInt()],
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: Color(0xFF666666),
-                                    ),
-                                  ),
-                                );
-                              },
-                              reservedSize: 30,
-                            ),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 32,
-                              getTitlesWidget: (value, meta) {
-                                if (value == 0) return const SizedBox();
-                                return Text(
-                                  '${value.toInt()}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Color(0xFF999999),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                        ),
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
-                          horizontalInterval: 1,
-                          getDrawingHorizontalLine: (value) => const FlLine(
-                            color: Color(0xFFEEEEEE),
-                            strokeWidth: 1,
-                          ),
-                        ),
-                        borderData: FlBorderData(show: false),
-                        barGroups: [
-                          for (var i = 0; i < data.length; i++)
-                            BarChartGroupData(
-                              x: i,
-                              barRods: [
-                                BarChartRodData(
-                                  toY: data[i].value.toDouble(),
-                                  color: data[i].color,
-                                  width: 32,
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 560) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 200, child: _barChart(data)),
+                      const SizedBox(height: 20),
+                      legend,
+                    ],
+                  );
+                }
+                return SizedBox(
+                  height: 220,
+                  child: Row(
+                    children: [
+                      Expanded(child: _barChart(data)),
+                      const SizedBox(width: 32),
+                      SizedBox(
+                        width: 210,
+                        child: Center(child: legend),
                       ),
-                      duration: Duration.zero,
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        for (final d in data) ...[
-                          _LegendItem(
-                            key: ValueKey('web-dashboard-status-${d.label}'),
-                            color: d.color,
-                            label: d.label,
-                            value: d.value,
-                            percentage: total > 0 ? (d.value / total * 100) : 0,
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
         ],
       ),
+    );
+  }
+
+  Widget _barChart(List<_ChartData> data) {
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: data
+                .map((e) => e.value.toDouble())
+                .reduce((a, b) => a > b ? a : b) *
+            1.3,
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => const Color(0xFF333333),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                '${data[group.x.toInt()].label}\n${data[group.x.toInt()].value}',
+                const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                final labels = ['Open', 'In Progress', 'Hold', 'Closed'];
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    labels[value.toInt()],
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                );
+              },
+              reservedSize: 30,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 32,
+              getTitlesWidget: (value, meta) {
+                if (value == 0) return const SizedBox();
+                return Text(
+                  '${value.toInt()}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF999999),
+                  ),
+                );
+              },
+            ),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 1,
+          getDrawingHorizontalLine: (value) => const FlLine(
+            color: Color(0xFFEEEEEE),
+            strokeWidth: 1,
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: [
+          for (var i = 0; i < data.length; i++)
+            BarChartGroupData(
+              x: i,
+              barRods: [
+                BarChartRodData(
+                  toY: data[i].value.toDouble(),
+                  color: data[i].color,
+                  width: 32,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(6),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+      duration: Duration.zero,
     );
   }
 }
@@ -1464,6 +1445,7 @@ class _LegendItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 12,
@@ -1473,30 +1455,42 @@ class _LegendItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(3),
           ),
         ),
-        const SizedBox(width: 10),
-        Expanded(
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 88,
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 13,
               color: Color(0xFF666666),
             ),
           ),
         ),
-        Text(
-          '$value',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF333333),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 24,
+          child: Text(
+            '$value',
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF333333),
+            ),
           ),
         ),
         const SizedBox(width: 6),
-        Text(
-          '(${percentage.toStringAsFixed(0)}%)',
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF999999),
+        SizedBox(
+          width: 46,
+          child: Text(
+            '(${percentage.toStringAsFixed(0)}%)',
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF999999),
+            ),
           ),
         ),
       ],
@@ -1839,67 +1833,4 @@ class _BackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ChasingBorderDecoration extends Decoration {
-  final Color color;
-  final double progress;
-  final double radius;
-  final double strokeWidth;
-
-  const _ChasingBorderDecoration({
-    required this.color,
-    required this.progress,
-    required this.radius,
-    required this.strokeWidth,
-  });
-
-  @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      _ChasingBorderBoxPainter(color, progress, radius, strokeWidth);
-
-  @override
-  bool operator ==(Object other) =>
-      other is _ChasingBorderDecoration &&
-      other.color == color &&
-      other.progress == progress &&
-      other.radius == radius &&
-      other.strokeWidth == strokeWidth;
-
-  @override
-  int get hashCode => Object.hash(color, progress, radius, strokeWidth);
-}
-
-class _ChasingBorderBoxPainter extends BoxPainter {
-  final Color color;
-  final double progress;
-  final double radius;
-  final double strokeWidth;
-
-  _ChasingBorderBoxPainter(this.color, this.progress, this.radius, this.strokeWidth);
-
-  @override
-  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
-    final size = configuration.size;
-    if (size == null) return;
-    final rect = offset & size;
-    final rrect = RRect.fromRectAndRadius(
-      rect.deflate(strokeWidth / 2),
-      Radius.circular(radius),
-    );
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..shader = SweepGradient(
-        startAngle: progress * 2 * math.pi,
-        endAngle: progress * 2 * math.pi + 2 * math.pi,
-        colors: [
-          color.withValues(alpha: 0.0),
-          color.withValues(alpha: 0.9),
-          color.withValues(alpha: 0.0),
-        ],
-        stops: const [0.0, 0.5, 1.0],
-      ).createShader(rect);
-    canvas.drawRRect(rrect, paint);
-  }
 }

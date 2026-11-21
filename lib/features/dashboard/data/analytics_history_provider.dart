@@ -234,7 +234,8 @@ final metricMonthsProvider = Provider.autoDispose<List<String>>((ref) {
 /// Years offered by the Reports year dropdown, oldest-first.
 final analyticsYearsProvider = Provider.autoDispose<List<int>>((ref) {
   final year = DateTime.now().year;
-  return [for (var y = year - analyticsYearsBack; y <= year; y++) y];
+  // Include one future year so empty/future years can be viewed as zero charts.
+  return [for (var y = year - analyticsYearsBack; y <= year + 1; y++) y];
 });
 
 /// Snapshots of one calendar year (up to the current month), oldest-first.

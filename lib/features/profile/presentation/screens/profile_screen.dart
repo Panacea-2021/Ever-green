@@ -14,6 +14,7 @@ import '../../../tasks/presentation/screens/task_board_screen.dart'
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/scaffold_with_bottom_nav.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
+import '../../data/auth_profile_provider.dart';
 import '../../../../shared/widgets/app_drawer.dart';
 import '../../../../shared/widgets/custom_menu_icon.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -734,7 +735,18 @@ class _CompanyProfileSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(myCompaniesProvider);
+    final profileAsync = ref.watch(authProfileProvider);
+    final async = profileAsync.when(
+      data: (body) {
+        final fromProfile = companiesFromProfile(body);
+        if (fromProfile.isNotEmpty) {
+          return AsyncData<List<Company>>(fromProfile);
+        }
+        return ref.watch(myCompaniesProvider);
+      },
+      loading: () => ref.watch(myCompaniesProvider),
+      error: (_, __) => ref.watch(myCompaniesProvider),
+    );
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.8,

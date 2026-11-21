@@ -348,7 +348,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
                   const Padding(
                     padding: EdgeInsets.all(14),
                     child: Text(
-                      'No matching companies',
+                      'No companies found',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondaryLight,

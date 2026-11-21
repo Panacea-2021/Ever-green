@@ -91,7 +91,15 @@ class TaskActionHandler {
       case TaskAction.markCompleted:
       case TaskAction.closeTask:
         final closing = action == TaskAction.closeTask;
-        final note = await askTaskFinishNote(context, t, closing: closing);
+        final role = ref.read(currentUserRoleProvider);
+        final isManagerial =
+            role == UserRole.superAdmin || role == UserRole.manager;
+        final note = await askTaskFinishNote(
+          context,
+          t,
+          closing: closing,
+          requireNote: closing && isManagerial,
+        );
         if (note == null || !context.mounted) return;
         await runTaskAction(
           context,

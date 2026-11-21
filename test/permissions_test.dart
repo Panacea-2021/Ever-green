@@ -340,7 +340,7 @@ void main() {
     test('labels are human readable', () {
       expect(UserRole.superAdmin.label, 'Super Admin');
       expect(UserRole.manager.label, 'Manager');
-      expect(UserRole.seniorTechnician.label, 'Senior Service Engineer');
+      expect(UserRole.seniorTechnician.label, 'Jr. Service Engineer');
       expect(UserRole.technician.label, 'Service Engineer');
       expect(UserRole.clientAdmin.label, 'Company Manager');
       expect(UserRole.client.label, 'POC');

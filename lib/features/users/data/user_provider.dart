@@ -45,6 +45,7 @@ class AppUser {
   final List<UserCompany> companies;
   final String? avatarUrl;
   final DateTime? createdAt;
+  final String? createdBy;
 
   const AppUser({
     required this.id,
@@ -58,6 +59,7 @@ class AppUser {
     this.companies = const [],
     this.avatarUrl,
     this.createdAt,
+    this.createdBy,
   });
 
   factory AppUser.fromUser(User user) => AppUser(
@@ -72,6 +74,7 @@ class AppUser {
         companies: user.companies,
         avatarUrl: user.profilePictureUrl,
         createdAt: user.createdAt,
+        createdBy: user.createdBy,
       );
 
   bool get isActive => active;

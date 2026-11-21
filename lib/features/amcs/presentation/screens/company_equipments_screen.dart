@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -67,8 +68,23 @@ class _CompanyEquipmentsScreenState
               bottom: false,
               child: Column(
                 children: [
-                  _buildHeader(context, canManage),
-                  _buildSearchBar(),
+                  if (kIsWeb)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                      child: Row(
+                        children: [
+                          Expanded(child: _buildSearchBar(padded: false)),
+                          if (canManage && _companyId != null) ...[
+                            const SizedBox(width: 12),
+                            _buildAddButton(context),
+                          ],
+                        ],
+                      ),
+                    )
+                  else ...[
+                    _buildHeader(context, canManage),
+                    _buildSearchBar(),
+                  ],
                   Expanded(child: _buildBody(canManage)),
                 ],
               ),
@@ -104,7 +120,7 @@ class _CompanyEquipmentsScreenState
               ? ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [
-                    const SizedBox(height: 80),
+                    const SizedBox(height: 36),
                     _message(
                       items.isEmpty ? 'No equipment yet' : 'No matches',
                       items.isEmpty
@@ -113,12 +129,32 @@ class _CompanyEquipmentsScreenState
                     ),
                   ],
                 )
-              : ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(17, 0, 17, 24),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) =>
-                      _buildEquipmentCard(filtered[index], canManage),
+              : LayoutBuilder(
+                  builder: (context, c) {
+                    final columns = kIsWeb && c.maxWidth >= 900 ? 2 : 1;
+                    const gap = 17.0;
+                    final width =
+                        (c.maxWidth - 34 - gap * (columns - 1)) / columns;
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(17, 0, 17, 24),
+                      children: [
+                        Wrap(
+                          spacing: gap,
+                          children: [
+                            for (final equipment in filtered)
+                              SizedBox(
+                                width: width,
+                                child: _buildEquipmentCard(
+                                  equipment,
+                                  canManage,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
                 ),
         );
       },
@@ -205,52 +241,55 @@ class _CompanyEquipmentsScreenState
           ),
           const Spacer(),
           // Add button (outlined pill with green text + filled circle)
-          if (canManage && _companyId != null)
-            GestureDetector(
-              onTap: () {
-                context.push(
-                  '${Routes.addEquipment}/${widget.companyId}',
-                  extra: {'companyName': widget.companyName},
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: _addGreen, width: 1),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Add',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: _addGreen,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: const BoxDecoration(
-                        color: _addGreen,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                  ],
-                ),
+          if (canManage && _companyId != null) _buildAddButton(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.push(
+          '${Routes.addEquipment}/${widget.companyId}',
+          extra: {'companyName': widget.companyName},
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: _addGreen, width: 1),
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Add',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: _addGreen,
               ),
             ),
-        ],
+            const SizedBox(width: 8),
+            Container(
+              width: 24,
+              height: 24,
+              decoration: const BoxDecoration(
+                color: _addGreen,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -258,57 +297,59 @@ class _CompanyEquipmentsScreenState
   // ---------------------------------------------------------------------------
   // Search bar
   // ---------------------------------------------------------------------------
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
-      child: Material(
-        color: Colors.white,
-        elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(32),
-        child: TextField(
-          controller: _searchController,
-          onChanged: (v) => setState(() => _query = v.trim()),
-          cursorColor: _addGreen,
-          textAlignVertical: TextAlignVertical.center,
-          style: const TextStyle(
+  Widget _buildSearchBar({bool padded = true}) {
+    final field = Material(
+      color: Colors.white,
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(32),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (v) => setState(() => _query = v.trim()),
+        cursorColor: _addGreen,
+        textAlignVertical: TextAlignVertical.center,
+        style: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor: Colors.white,
+          hintText: 'Search Equipments',
+          hintStyle: TextStyle(
             fontFamily: 'Montserrat',
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Colors.black,
+            color: Colors.black.withValues(alpha: 0.2),
           ),
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: Colors.white,
-            hintText: 'Search Equipments',
-            hintStyle: TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.black.withValues(alpha: 0.2),
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              size: 24,
-              color: Colors.black.withValues(alpha: 0.4),
-            ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(32),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(32),
-              borderSide: const BorderSide(color: _addGreen, width: 1.5),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(32),
-              borderSide: BorderSide.none,
-            ),
+          prefixIcon: Icon(
+            Icons.search,
+            size: 24,
+            color: Colors.black.withValues(alpha: 0.4),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(32),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(32),
+            borderSide: const BorderSide(color: _addGreen, width: 1.5),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(32),
+            borderSide: BorderSide.none,
           ),
         ),
       ),
+    );
+    if (!padded) return field;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
+      child: field,
     );
   }
 

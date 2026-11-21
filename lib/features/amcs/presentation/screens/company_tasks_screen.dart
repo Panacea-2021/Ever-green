@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -108,6 +109,10 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
   Widget build(BuildContext context) {
     final tasksAsync = ref.watch(tasksProvider);
     final companyTasks = _companyTasks(tasksAsync.valueOrNull ?? const []);
+    final canAdd = Permissions.canAccessRoute(
+      ref.watch(currentUserRoleProvider),
+      Routes.addTask,
+    );
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -125,15 +130,35 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
             bottom: false,
             child: Column(
               children: [
-                const SizedBox(height: 12),
-                _buildHeader(context),
-                const SizedBox(height: 18),
+                // On web the module frame already shows the page title and a
+                // back button, so the in-card header is mobile-only.
+                if (kIsWeb)
+                  const SizedBox(height: 14)
+                else ...[
+                  const SizedBox(height: 12),
+                  _buildHeader(context),
+                  const SizedBox(height: 18),
+                ],
                 _buildStatCards(companyTasks),
-                const SizedBox(height: 18),
-                _buildSearchBar(),
-                const SizedBox(height: 16),
+                const SizedBox(height: kIsWeb ? 14 : 18),
+                if (kIsWeb)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Expanded(child: _buildSearchBar(padded: false)),
+                        if (canAdd) ...[
+                          const SizedBox(width: 12),
+                          _buildAddButton(context),
+                        ],
+                      ],
+                    ),
+                  )
+                else
+                  _buildSearchBar(),
+                const SizedBox(height: kIsWeb ? 14 : 16),
                 _buildTabBar(),
-                const SizedBox(height: 10),
+                const SizedBox(height: kIsWeb ? 8 : 10),
                 Expanded(
                   child: tasksAsync.when(
                     skipLoadingOnRefresh: true,
@@ -187,134 +212,112 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
             ),
           ),
           const Spacer(),
-          if (canAdd)
-            GestureDetector(
-              onTap: () {
-                context.push(
-                  '${Routes.addTask}/${widget.companyId}',
-                  extra: {'companyName': widget.companyName},
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 8, 8, 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: _green, width: 1),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Add',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: _green,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: const BoxDecoration(
-                        color: _green,
-                        shape: BoxShape.circle,
-                      ),
-                      child:
-                          const Icon(Icons.add, color: Colors.white, size: 16),
-                    ),
-                  ],
-                ),
+          if (canAdd) _buildAddButton(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.push(
+          '${Routes.addTask}/${widget.companyId}',
+          extra: {'companyName': widget.companyName},
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 8, 8, 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: _green, width: 1),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Add',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: _green,
               ),
             ),
-        ],
+            const SizedBox(width: 10),
+            Container(
+              width: 22,
+              height: 22,
+              decoration: const BoxDecoration(
+                color: _green,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.add, color: Colors.white, size: 16),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   /// Per-status count cards (Figma: Open / Hold / In progress / Closed).
   Widget _buildStatCards(List<ServiceTask> tasks) {
-    return SizedBox(
-      height: 84,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _Tab.values.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 6),
-        itemBuilder: (_, i) {
-          final tab = _Tab.values[i];
-          final count = tasks.where((t) => tab.matches(t.status)).length;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedTab = tab),
-            child: Container(
-              width: 112,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0xFFE0D9EE),
-                    blurRadius: 24,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  SvgPicture.asset(tab.icon, width: 41, height: 41),
-                  const SizedBox(width: 8),
+    final counts = [
+      for (final tab in _Tab.values)
+        tasks.where((t) => tab.matches(t.status)).length,
+    ];
+
+    Widget scrollable() {
+      return SizedBox(
+        height: 84,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _Tab.values.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 6),
+          itemBuilder: (_, i) => _statCard(_Tab.values[i], counts[i], width: 112),
+        ),
+      );
+    }
+
+    if (!kIsWeb) return scrollable();
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        // Share the full card width on wide screens; scroll on narrow ones.
+        if (c.maxWidth < 760) return scrollable();
+        return SizedBox(
+          height: 84,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                for (var i = 0; i < _Tab.values.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$count',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 28,
-                            height: 1.1,
-                            fontWeight: FontWeight.w600,
-                            color: tab.color,
-                          ),
-                        ),
-                        Text(
-                          tab.statLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: _statCard(_Tab.values[i], counts[i]),
                   ),
                 ],
-              ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildSearchBar() {
-    const none = OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(32)),
-      borderSide: BorderSide.none,
-    );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DecoratedBox(
+  Widget _statCard(_Tab tab, int count, {double? width}) {
+    return GestureDetector(
+      onTap: () => setState(() => _selectedTab = tab),
+      child: Container(
+        width: width,
+        height: 84,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(32),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: const [
             BoxShadow(
               color: Color(0xFFE0D9EE),
@@ -323,40 +326,99 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
             ),
           ],
         ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: (v) => setState(() => _searchQuery = v),
-          cursorColor: _green,
-          textAlignVertical: TextAlignVertical.center,
-          style: const TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: Colors.white,
-            hintText: 'Search Tasks',
-            hintStyle: TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: Colors.black.withValues(alpha: 0.25),
+        child: Row(
+          children: [
+            SvgPicture.asset(tab.icon, width: 41, height: 41),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$count',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 28,
+                      height: 1.1,
+                      fontWeight: FontWeight.w600,
+                      color: tab.color,
+                    ),
+                  ),
+                  Text(
+                    tab.statLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: Colors.black.withValues(alpha: 0.3),
-              size: 24,
-            ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
-            enabledBorder: none,
-            focusedBorder: none,
-            border: none,
-          ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSearchBar({bool padded = true}) {
+    const none = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(32)),
+      borderSide: BorderSide.none,
+    );
+    final field = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0xFFE0D9EE),
+            blurRadius: 24,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (v) => setState(() => _searchQuery = v),
+        cursorColor: _green,
+        textAlignVertical: TextAlignVertical.center,
+        style: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor: Colors.white,
+          hintText: 'Search Tasks',
+          hintStyle: TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.black.withValues(alpha: 0.25),
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: Colors.black.withValues(alpha: 0.3),
+            size: 24,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          enabledBorder: none,
+          focusedBorder: none,
+          border: none,
+        ),
+      ),
+    );
+    if (!padded) return field;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: field,
     );
   }
 
@@ -366,48 +428,54 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: kIsWeb
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.spaceBetween,
         children: [
-          for (final tab in _Tab.values)
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => _selectedTab = tab),
-              child: IntrinsicWidth(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 6),
-                    Text(
-                      tab.label,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 15,
-                        fontWeight: _selectedTab == tab
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                        color: _selectedTab == tab
-                            ? _green
-                            : const Color(0xFF8A8A8A),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    AnimatedOpacity(
-                      duration: const Duration(milliseconds: 200),
-                      opacity: _selectedTab == tab ? 1 : 0,
-                      child: Container(
-                        height: 2,
-                        decoration: BoxDecoration(
-                          color: _green,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ],
+          for (var i = 0; i < _Tab.values.length; i++) ...[
+            if (kIsWeb && i > 0) const SizedBox(width: 36),
+            _tabButton(_Tab.values[i]),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _tabButton(_Tab tab) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _selectedTab = tab),
+      child: IntrinsicWidth(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 6),
+            Text(
+              tab.label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 15,
+                fontWeight:
+                    _selectedTab == tab ? FontWeight.w600 : FontWeight.w500,
+                color:
+                    _selectedTab == tab ? _green : const Color(0xFF8A8A8A),
+              ),
+            ),
+            const SizedBox(height: 6),
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _selectedTab == tab ? 1 : 0,
+              child: Container(
+                height: 2,
+                decoration: BoxDecoration(
+                  color: _green,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -419,23 +487,39 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
       child: tasks.isEmpty
           ? ListView(
               physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 36, 20, 60),
               children: [
-                SizedBox(
-                  height: 260,
-                  child: AmcEmptyState(
-                    message: _searchQuery.isNotEmpty
-                        ? 'No matching tasks'
-                        : 'No ${_selectedTab.label} tasks',
-                  ),
+                AmcEmptyState(
+                  message: _searchQuery.isNotEmpty
+                      ? 'No matching tasks'
+                      : 'No ${_selectedTab.label} tasks',
                 ),
               ],
             )
-          : ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(17, 8, 17, 100),
-              itemCount: tasks.length,
-              itemBuilder: (context, index) => _buildTaskCard(tasks[index]),
+          : _taskGrid(tasks),
+    );
+  }
+
+  Widget _taskGrid(List<ServiceTask> tasks) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final columns = kIsWeb && c.maxWidth >= 900 ? 2 : 1;
+        const gap = 17.0;
+        final width = (c.maxWidth - 34 - gap * (columns - 1)) / columns;
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(17, 8, 17, kIsWeb ? 24 : 100),
+          children: [
+            Wrap(
+              spacing: gap,
+              children: [
+                for (final task in tasks)
+                  SizedBox(width: width, child: _buildTaskCard(task)),
+              ],
             ),
+          ],
+        );
+      },
     );
   }
 

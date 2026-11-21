@@ -15,6 +15,9 @@ import '../../../../web/widgets/web_filter_tiles.dart';
 import '../../../../web/widgets/web_header_actions.dart';
 import '../widgets/amc_async_states.dart';
 
+// Renewal filter cards on this page.
+enum _RenewalFilter { all, expiringSoon, expired, due }
+
 /// Super Admin / Manager view of AMC contracts that need attention —
 /// expiring soon or already expired — with one-tap renewal.
 class AmcRenewalsScreen extends ConsumerStatefulWidget {
@@ -28,8 +31,8 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
     with WebHeaderActionsMixin {
   static const Color _green = Color(0xFF106220);
 
-  // null = All flagged; otherwise filter to this status.
-  AmcStatus? _filter;
+  // Default: All.
+  _RenewalFilter _filter = _RenewalFilter.all;
 
   @override
   Widget build(BuildContext context) {
@@ -48,9 +51,13 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
     final expiredCount =
         all.where((c) => c.status() == AmcStatus.expired).length;
 
-    final visible = _filter == null
-        ? flagged
-        : flagged.where((c) => c.status() == _filter).toList();
+    final visible = switch (_filter) {
+      _RenewalFilter.all || _RenewalFilter.due => flagged,
+      _RenewalFilter.expiringSoon =>
+        flagged.where((c) => c.status() == AmcStatus.expiringSoon).toList(),
+      _RenewalFilter.expired =>
+        flagged.where((c) => c.status() == AmcStatus.expired).toList(),
+    };
     final canRenew =
         Permissions.canManageAmcs(ref.watch(currentUserRoleProvider));
 
@@ -178,103 +185,52 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
               builder: (context, c) {
                 final filters = WebFilterTiles(
                   options: [
-                    for (final f in <(String, AmcStatus?, int, IconData, Color)>[
-                      ('All', null, dueCount, Icons.dashboard_outlined, _green),
-                      (
-                        'Expiring Soon',
-                        AmcStatus.expiringSoon,
-                        expiring,
-                        Icons.schedule,
-                        const Color(0xFFE08600),
-                      ),
-                      (
-                        'Expired',
-                        AmcStatus.expired,
-                        expired,
-                        Icons.error_outline,
-                        const Color(0xFFD32F2F),
-                      ),
-                    ])
-                      WebFilterOption(
-                        label: f.$1,
-                        count: f.$3,
-                        icon: f.$4,
-                        color: f.$5,
-                        selected: _filter == f.$2,
-                        onTap: () => setState(() => _filter = f.$2),
-                      ),
+                    WebFilterOption(
+                      label: 'All',
+                      count: dueCount,
+                      icon: Icons.dashboard_outlined,
+                      color: _green,
+                      lightSelected: true,
+                      selected: _filter == _RenewalFilter.all,
+                      onTap: () => setState(() => _filter = _RenewalFilter.all),
+                    ),
+                    WebFilterOption(
+                      label: 'Expiring Soon',
+                      count: expiring,
+                      icon: Icons.schedule,
+                      color: const Color(0xFFE08600),
+                      lightSelected: true,
+                      selected: _filter == _RenewalFilter.expiringSoon,
+                      onTap: () =>
+                          setState(() => _filter = _RenewalFilter.expiringSoon),
+                    ),
+                    WebFilterOption(
+                      label: 'Expired',
+                      count: expired,
+                      icon: Icons.error_outline,
+                      color: const Color(0xFF475569),
+                      lightSelected: true,
+                      selected: _filter == _RenewalFilter.expired,
+                      onTap: () => setState(() => _filter = _RenewalFilter.expired),
+                    ),
+                    WebFilterOption(
+                      label: 'Due',
+                      count: dueCount,
+                      icon: Icons.autorenew,
+                      color: const Color(0xFF166534),
+                      lightSelected: true,
+                      selected: _filter == _RenewalFilter.due,
+                      onTap: () => setState(() => _filter = _RenewalFilter.due),
+                    ),
                   ],
                 );
-                if (c.maxWidth < 900) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _webDueTile(dueCount),
-                      const SizedBox(height: 14),
-                      filters,
-                    ],
-                  );
-                }
-                return Row(
-                  children: [
-                    SizedBox(width: 280, child: _webDueTile(dueCount)),
-                    const SizedBox(width: 16),
-                    Expanded(child: filters),
-                  ],
-                );
+                return filters;
               },
             ),
             const SizedBox(height: 24),
             body,
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _webDueTile(int count) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF106220), Color(0xFF0B4517)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: _green.withValues(alpha: 0.28),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: const Icon(Icons.autorenew, color: Colors.white, size: 26),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              '$count due',
-              style: const TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -386,7 +342,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
     final status = c.status();
     final days = c.daysUntilExpiry();
     final (Color accent, Color bg) = switch (status) {
-      AmcStatus.expired => (const Color(0xFFD32F2F), const Color(0xFFFDE8E8)),
+      AmcStatus.expired => (const Color(0xFF475569), const Color(0xFFF1F5F9)),
       AmcStatus.expiringSoon => (
           const Color(0xFFE08600),
           const Color(0xFFFFF4E5)
@@ -539,8 +495,12 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
                     const SizedBox(height: 8),
                     _metaRow(
                       Icons.person_outline,
-                      'POC ${c.pocName.isEmpty ? '—' : c.pocName}',
+                      'Manager ${c.managerName.isEmpty ? '—' : c.managerName}${c.managerCount > 1 ? '  (+${c.managerCount - 1} more)' : ''}',
                     ),
+                    if (c.managerPhone.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _metaRow(Icons.phone_outlined, c.managerPhone),
+                    ],
                     if (canRenew) ...[
                       const Spacer(),
                       const SizedBox(height: 16),
@@ -660,8 +620,8 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
             child: _summaryCard(
               'Expired',
               expired,
-              const Color(0xFFFDE8E8),
-              const Color(0xFFD32F2F),
+              const Color(0xFFF1F5F9),
+              const Color(0xFF475569),
               Icons.error_outline,
             ),
           ),
@@ -729,10 +689,10 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
   }
 
   Widget _buildFilters() {
-    final chips = <MapEntry<String, AmcStatus?>>[
-      const MapEntry('All', null),
-      const MapEntry('Expiring Soon', AmcStatus.expiringSoon),
-      const MapEntry('Expired', AmcStatus.expired),
+    final chips = <MapEntry<String, _RenewalFilter>>[
+      const MapEntry('All', _RenewalFilter.all),
+      const MapEntry('Expiring Soon', _RenewalFilter.expiringSoon),
+      const MapEntry('Expired', _RenewalFilter.expired),
     ];
     return SizedBox(
       height: 44,
@@ -785,7 +745,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
     final status = c.status();
     final days = c.daysUntilExpiry();
     final (Color accent, Color bg) = switch (status) {
-      AmcStatus.expired => (const Color(0xFFD32F2F), const Color(0xFFFDE8E8)),
+      AmcStatus.expired => (const Color(0xFF475569), const Color(0xFFF1F5F9)),
       AmcStatus.expiringSoon => (
           const Color(0xFFE08600),
           const Color(0xFFFFF4E5)
@@ -930,8 +890,12 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
                       const SizedBox(height: 6),
                       _metaRow(
                         Icons.person_outline,
-                        'POC ${c.pocName.isEmpty ? '—' : c.pocName}',
+                        'Manager ${c.managerName.isEmpty ? '—' : c.managerName}${c.managerCount > 1 ? '  (+${c.managerCount - 1} more)' : ''}',
                       ),
+                      if (c.managerPhone.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        _metaRow(Icons.phone_outlined, c.managerPhone),
+                      ],
                       if (canRenew) ...[
                         const SizedBox(height: 14),
                         SizedBox(
@@ -1066,7 +1030,7 @@ class _AmcRenewalsScreenState extends ConsumerState<AmcRenewalsScreen>
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('$e'), backgroundColor: const Color(0xFFD32F2F)),
+        SnackBar(content: Text('$e'), backgroundColor: const Color(0xFF475569)),
       );
     }
   }
@@ -1338,7 +1302,7 @@ class _RenewAmcDialogState extends State<_RenewAmcDialog> {
                           fontFamily: 'Montserrat',
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFFD32F2F),
+                          color: Color(0xFFE08600),
                         ),
                       ),
                     ),

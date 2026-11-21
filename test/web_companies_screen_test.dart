@@ -7,6 +7,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+const _companies = [
+  Company(
+    id: 1,
+    name: 'Active Company',
+    serviceType: CompanyServiceType.regular,
+  ),
+  Company(
+    id: 2,
+    name: 'Inactive One',
+    serviceType: CompanyServiceType.regular,
+    isActive: false,
+  ),
+  Company(
+    id: 3,
+    name: 'Inactive Two',
+    serviceType: CompanyServiceType.regular,
+    isActive: false,
+  ),
+];
+
+Widget _screen() {
+  return ProviderScope(
+    overrides: [
+      currentUserRoleProvider.overrideWithValue(UserRole.superAdmin),
+      companiesProvider.overrideWith((ref) async => _companies),
+    ],
+    child: const MaterialApp(home: WebCompaniesScreen()),
+  );
+}
+
 void main() {
   testWidgets('companies screen loads and lays out its web grid',
       (tester) async {
@@ -14,26 +44,78 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          currentUserRoleProvider.overrideWithValue(UserRole.superAdmin),
-          companiesProvider.overrideWith(
-            (ref) async => const [
-              Company(
-                id: 1,
-                name: 'Example Company',
-                serviceType: CompanyServiceType.regular,
-              ),
-            ],
-          ),
-        ],
-        child: const MaterialApp(home: WebCompaniesScreen()),
-      ),
-    );
+    await tester.pumpWidget(_screen());
     await tester.pumpAndSettle();
 
-    expect(find.text('Example Company'), findsOneWidget);
+    expect(find.text('Active Company'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('inactive card shows the API count and filters the list',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_screen());
+    await tester.pumpAndSettle();
+
+    final allTile = find.byKey(const ValueKey('web-filter-All'));
+    final inactiveTile = find.byKey(const ValueKey('web-filter-Inactive'));
+    expect(allTile, findsOneWidget);
+    expect(inactiveTile, findsOneWidget);
+    expect(
+      find.descendant(of: allTile, matching: find.text('3')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: inactiveTile, matching: find.text('2')),
+      findsOneWidget,
+    );
+
+    // Only inactive companies remain after selecting the card.
+    await tester.tap(inactiveTile);
+    await tester.pumpAndSettle();
+    expect(find.text('Active Company'), findsNothing);
+    expect(find.text('Inactive One'), findsOneWidget);
+    expect(find.text('Inactive Two'), findsOneWidget);
+
+    // Back to All restores every company.
+    await tester.tap(allTile);
+    await tester.pumpAndSettle();
+    expect(find.text('Active Company'), findsOneWidget);
+    expect(find.text('Inactive One'), findsOneWidget);
+    expect(find.text('Inactive Two'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('six cards wrap into balanced rows on narrower screens',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_screen());
+    await tester.pumpAndSettle();
+
+    const labels = ['All', 'C-AMC', 'NC-AMC', 'Non AMC', 'Regular', 'Inactive'];
+    for (final label in labels) {
+      expect(find.byKey(ValueKey('web-filter-$label')), findsOneWidget);
+    }
+
+    final firstRowTop =
+        tester.getTopLeft(find.byKey(const ValueKey('web-filter-All'))).dy;
+    final secondRowTop =
+        tester.getTopLeft(find.byKey(const ValueKey('web-filter-Non AMC'))).dy;
+    expect(secondRowTop, greaterThan(firstRowTop));
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('web-filter-Regular'))).dy,
+      secondRowTop,
+    );
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('web-filter-Inactive'))).dy,
+      secondRowTop,
+    );
     expect(tester.takeException(), isNull);
   });
 }

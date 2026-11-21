@@ -315,18 +315,15 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
                 (emailFailed
                     ? ' The login email to the company manager could not be sent.'
                     : ''),
+            style: const TextStyle(color: Colors.white),
           ),
-          backgroundColor:
-              emailFailed ? Colors.orange.shade800 : AppColors.primary,
+          // Website: a successful creation is always a green success notification.
+          backgroundColor: kIsWeb
+              ? AppColors.primary
+              : (emailFailed ? Colors.orange.shade800 : AppColors.primary),
         ),
       );
-      if (mounted) {
-        if (context.canPop()) {
-          context.pop(true);
-        } else {
-          context.go(Routes.amcs);
-        }
-      }
+      if (mounted) context.pop(true);
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
@@ -929,6 +926,9 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
               child: DropdownButton<String>(
                 value: value,
                 isExpanded: true,
+                // Open the menu just below the field, never overlapping it.
+                alignment: Alignment.centerLeft,
+                menuMaxHeight: 280,
                 borderRadius: BorderRadius.circular(14),
                 icon: Icon(
                   Icons.keyboard_arrow_down_rounded,

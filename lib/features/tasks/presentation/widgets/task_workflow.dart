@@ -150,18 +150,24 @@ Future<String?> askTaskFinishNote(
   BuildContext context,
   TaskItem t, {
   required bool closing,
+  bool requireNote = false,
 }) {
   return showDialog<String>(
     context: context,
-    builder: (_) => _FinishTaskDialog(task: t, closing: closing),
+    builder: (_) => _FinishTaskDialog(task: t, closing: closing, requireNote: requireNote),
   );
 }
 
 class _FinishTaskDialog extends StatefulWidget {
-  const _FinishTaskDialog({required this.task, required this.closing});
+  const _FinishTaskDialog({
+    required this.task,
+    required this.closing,
+    this.requireNote = false,
+  });
 
   final TaskItem task;
   final bool closing;
+  final bool requireNote;
 
   @override
   State<_FinishTaskDialog> createState() => _FinishTaskDialogState();
@@ -207,8 +213,9 @@ class _FinishTaskDialogState extends State<_FinishTaskDialog> {
             maxLines: 3,
             maxLength: 300,
             textCapitalization: TextCapitalization.sentences,
+            onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: 'Note (optional)',
+              labelText: widget.requireNote ? 'Note (required)' : 'Note (optional)',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -222,7 +229,9 @@ class _FinishTaskDialogState extends State<_FinishTaskDialog> {
           TaskDialogButton.cancel(onPressed: () => Navigator.pop(context)),
           TaskDialogButton(
             label: verb,
-            onPressed: () => Navigator.pop(context, _note.text.trim()),
+            onPressed: (widget.requireNote && _note.text.trim().isEmpty)
+                ? null
+                : () => Navigator.pop(context, _note.text.trim()),
           ),
         ]),
       ],
@@ -302,7 +311,10 @@ Future<bool> runTaskAction(
     await action();
     navigator.pop();
     messenger.showSnackBar(
-      SnackBar(content: Text(success), backgroundColor: _green),
+      SnackBar(
+        content: Text(success, style: const TextStyle(color: Colors.white)),
+        backgroundColor: _green,
+      ),
     );
     return true;
   } catch (e) {

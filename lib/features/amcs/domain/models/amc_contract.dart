@@ -101,6 +101,9 @@ class AmcContract {
   final String branchName;
   final String pocName;
   final String mobile;
+  final String managerName;
+  final String managerPhone;
+  final int managerCount;
   final String email;
   final DateTime startDate;
   final DateTime endDate;
@@ -122,6 +125,9 @@ class AmcContract {
     required this.branchName,
     required this.pocName,
     required this.mobile,
+    this.managerName = '',
+    this.managerPhone = '',
+    this.managerCount = 0,
     required this.email,
     required this.startDate,
     required this.endDate,
@@ -143,6 +149,9 @@ class AmcContract {
       branchName: c.branchName,
       pocName: c.poc?.name ?? '',
       mobile: c.poc?.phone ?? '',
+      managerName: c.managerName,
+      managerPhone: c.managerPhone,
+      managerCount: c.managerCount,
       email: c.pocEmail ?? c.email,
       startDate: c.amcStartDay ?? end,
       endDate: end,
@@ -181,6 +190,9 @@ class AmcContract {
     String? branchName,
     String? pocName,
     String? mobile,
+    String? managerName,
+    String? managerPhone,
+    int? managerCount,
     String? email,
     DateTime? startDate,
     DateTime? endDate,
@@ -194,6 +206,9 @@ class AmcContract {
       branchName: branchName ?? this.branchName,
       pocName: pocName ?? this.pocName,
       mobile: mobile ?? this.mobile,
+      managerName: managerName ?? this.managerName,
+      managerPhone: managerPhone ?? this.managerPhone,
+      managerCount: managerCount ?? this.managerCount,
       email: email ?? this.email,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
@@ -211,6 +226,9 @@ class AmcContract {
       'branchName': branchName,
       'pocName': pocName,
       'mobile': mobile,
+      'managerName': managerName,
+      'managerPhone': managerPhone,
+      'managerCount': managerCount,
       'email': email,
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
@@ -227,6 +245,11 @@ class AmcContract {
       branchName: '${json['branchName'] ?? ''}',
       pocName: '${json['pocName'] ?? ''}',
       mobile: '${json['mobile'] ?? ''}',
+      managerName: '${json['managerName'] ?? ''}',
+      managerPhone: '${json['managerPhone'] ?? ''}',
+      managerCount: json['managerCount'] is num
+          ? (json['managerCount'] as num).toInt()
+          : int.tryParse('${json['managerCount']}') ?? 0,
       email: '${json['email'] ?? ''}',
       startDate: DateTime.tryParse('${json['startDate'] ?? ''}') ?? DateTime.now(),
       endDate: DateTime.tryParse('${json['endDate'] ?? ''}') ?? DateTime.now(),
