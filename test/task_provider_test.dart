@@ -164,9 +164,9 @@ void main() {
       expect(taskActionsFor(rated, user(UserRole.clientAdmin, 8)), isNot(contains(TaskAction.rate)));
     });
 
-    test('super admin keeps controls on closed tickets; managers do not', () {
+    test('closed tickets show only Service Report for all roles', () {
       final closed = item(row(status: 'closed', approval: 'confirmed', technician: tech));
-      expect(taskActionsFor(closed, user(UserRole.superAdmin, 1)), contains(TaskAction.status));
+      expect(taskActionsFor(closed, user(UserRole.superAdmin, 1)), [TaskAction.serviceReport]);
       expect(taskActionsFor(closed, user(UserRole.manager, 1)), [TaskAction.serviceReport]);
     });
 

@@ -11,6 +11,7 @@ import '../../features/amcs/data/amc_provider.dart';
 import '../../features/amcs/domain/models/amc_contract.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/dashboard/data/analytics_history_provider.dart';
+import '../../features/reports/data/reports_provider.dart';
 import '../../features/dashboard/data/analytics_provider.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../shared/providers/auth_state_provider.dart';
@@ -152,20 +153,21 @@ class _WebOrganizationSections extends ConsumerWidget {
     final analytics = ref.watch(dashboardAnalyticsProvider);
     final history = ref.watch(analyticsHistoryProvider);
 
-    if (analytics.hasError || history.hasError) {
-      return _DashboardDataError(
-        message: 'Organization analytics could not be loaded.',
-        error: analytics.error ?? history.error,
-        onRetry: () {
-          ref.invalidate(dashboardAnalyticsProvider);
-          ref.invalidate(analyticsHistoryProvider);
-        },
-      );
-    }
-
     final data = analytics.valueOrNull;
+    // Keep the dashboard content hidden while analytics load — do not show a
+    // large centred spinner or partially loaded cards.
     if (data == null) {
-      return const _DashboardAnalyticsLoading();
+      if (analytics.hasError || history.hasError) {
+        return _DashboardDataError(
+          message: 'Organization analytics could not be loaded.',
+          error: analytics.error ?? history.error,
+          onRetry: () {
+            ref.invalidate(dashboardAnalyticsProvider);
+            ref.invalidate(analyticsHistoryProvider);
+          },
+        );
+      }
+      return const SizedBox.shrink();
     }
 
     final users = data.usersByRole;
@@ -352,6 +354,7 @@ class _WebDashboardMetricCard extends StatefulWidget {
     this.valueKey,
     this.compact = false,
     this.highlight = false,
+    this.coloredBorder = true,
   });
 
   final String title;
@@ -365,6 +368,7 @@ class _WebDashboardMetricCard extends StatefulWidget {
   final Key? valueKey;
   final bool compact;
   final bool highlight;
+  final bool coloredBorder;
 
   @override
   State<_WebDashboardMetricCard> createState() =>
@@ -389,47 +393,61 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
             : WebDashboardScreen._red;
     final radius = BorderRadius.circular(12);
 
-    final surface = AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      constraints: BoxConstraints(
-        minHeight: widget.compact ? 112 : 136,
-      ),
-      padding: EdgeInsets.all(widget.compact ? 12 : 16),
-      transform: widget.highlight
-          ? Matrix4.translationValues(0, _hovered ? -2 : 0, 0)
-          : null,
-      transformAlignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: widget.highlight
-            ? widget.color.withValues(
+    final surface = widget.highlight
+        ? AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            constraints: BoxConstraints(
+              minHeight: widget.compact ? 100 : 136,
+            ),
+            padding: EdgeInsets.all(widget.compact ? 10 : 16),
+            transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
+            transformAlignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: widget.color.withValues(
                 alpha: _hovered ? 0.095 : 0.055,
-              )
-            : const Color(0xFFF5F5F5),
-        borderRadius: radius,
-        border: Border.all(
-          color: widget.highlight
-              ? widget.color.withValues(
-                  alpha: _hovered ? 0.48 : 0.24,
-                )
-              : const Color(0xFFE8E8E8),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: widget.highlight
-                ? widget.color.withValues(
+              ),
+              borderRadius: radius,
+              border: Border.all(
+                color: widget.coloredBorder
+                    ? widget.color.withValues(
+                        alpha: _hovered ? 0.48 : 0.24,
+                      )
+                    : const Color(0xFFE8E8E8),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.color.withValues(
                     alpha: _hovered ? 0.12 : 0.045,
-                  )
-                : Colors.black.withValues(alpha: 0.035),
-            blurRadius: widget.highlight ? (_hovered ? 14 : 8) : 8,
-            offset: widget.highlight
-                ? Offset(0, _hovered ? 6 : 3)
-                : const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: _buildContent(positive, trendColor),
-    );
+                  ),
+                  blurRadius: _hovered ? 14 : 8,
+                  offset: Offset(0, _hovered ? 6 : 3),
+                ),
+              ],
+            ),
+            child: _buildContent(positive, trendColor),
+          )
+        : Container(
+            constraints: BoxConstraints(
+              minHeight: widget.compact ? 100 : 136,
+            ),
+            padding: EdgeInsets.all(widget.compact ? 10 : 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: radius,
+              border: Border.all(
+                color: const Color(0xFFE8E8E8),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.035),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: _buildContent(positive, trendColor),
+          );
     final interactiveSurface = widget.highlight
         ? AnimatedScale(
             scale: _pressed ? 0.99 : 1,
@@ -439,7 +457,7 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
           )
         : surface;
 
-    return MouseRegion(
+    final mouseRegion = MouseRegion(
       cursor: widget.onTap == null
           ? SystemMouseCursors.basic
           : SystemMouseCursors.click,
@@ -461,6 +479,8 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
         child: interactiveSurface,
       ),
     );
+
+    return mouseRegion;
   }
 
   Widget _buildContent(bool? positive, Color? trendColor) {
@@ -473,9 +493,7 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
               width: widget.compact ? 34 : 38,
               height: widget.compact ? 34 : 38,
               decoration: BoxDecoration(
-                color: widget.highlight
-                    ? widget.color.withValues(alpha: 0.1)
-                    : const Color(0xFFF5F5F5),
+                color: const Color(0xFFF5F5F5),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -499,7 +517,7 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
             ),
           ],
         ),
-        SizedBox(height: widget.compact ? 8 : 14),
+        SizedBox(height: widget.compact ? 6 : 14),
         Text(
           '${widget.value}',
           key: widget.valueKey,
@@ -517,7 +535,7 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
                   letterSpacing: -0.5,
                 ),
         ),
-        SizedBox(height: widget.compact ? 2 : 4),
+        SizedBox(height: widget.compact ? 1 : 4),
         if (widget.trend != null)
           Row(
             children: [
@@ -637,38 +655,31 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
 
   @override
   Widget build(BuildContext context) {
-    final yearOptions = ref.watch(analyticsYearsProvider);
+    final yearOptions = ref.watch(reportYearsProvider).valueOrNull ?? const [];
     final years = yearOptions.isEmpty ? [DateTime.now().year] : yearOptions;
     final selectedYear =
         years.contains(_selectedYear) ? _selectedYear : years.last;
     final snapshots = ref.watch(yearSnapshotsProvider(selectedYear));
-    // Always render all 12 months; missing months default to 0.
-    double valueFor(int month, TrendMetric metric) {
-      for (final s in snapshots) {
-        if (s.date.month == month) return s.metric(metric).toDouble();
-      }
-      return 0;
-    }
-    final bars = [
-      for (var month = 1; month <= 12; month++) valueFor(month, _barMetric),
-    ];
-    final line = [
-      for (var month = 1; month <= 12; month++) valueFor(month, _lineMetric),
-    ];
-    const labels = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
+    final reportSnapshots = snapshots.length <= 7
+        ? snapshots
+        : snapshots.sublist(snapshots.length - 7);
+    // When a year has no monthly data, still render all 12 months at zero
+    // instead of a blank chart.
+    final bars = reportSnapshots.isEmpty
+        ? List<double>.filled(12, 0.0)
+        : [
+            for (final snapshot in reportSnapshots)
+              snapshot.metric(_barMetric).toDouble(),
+          ];
+    final line = reportSnapshots.isEmpty
+        ? List<double>.filled(12, 0.0)
+        : [
+            for (final snapshot in reportSnapshots)
+              snapshot.metric(_lineMetric).toDouble(),
+          ];
+    final labels = reportSnapshots.isEmpty
+        ? const ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        : reportSnapshots.map(snapshotMonthLabel).toList();
     final labelsForLegend = _legendLabels;
     final openTasks = (widget.analytics.tasksByStatus['Open'] ?? 0) +
         (widget.analytics.tasksByStatus['Hold'] ?? 0) +
@@ -699,6 +710,8 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 onTap: widget.onOpenTasks,
                 valueKey: const ValueKey('web-report-open-tasks-count'),
                 compact: true,
+                highlight: true,
+                coloredBorder: false,
               ),
               _WebDashboardMetricCard(
                 title: 'Closed (mo)',
@@ -709,6 +722,8 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 onTap: widget.onOpenTasks,
                 valueKey: const ValueKey('web-report-closed-tasks-count'),
                 compact: true,
+                highlight: true,
+                coloredBorder: false,
               ),
             ],
           ),
@@ -789,14 +804,10 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
     List<double> line,
     List<String> labels,
   ) {
-    final hasData = bars.any((v) => v != 0) || line.any((v) => v != 0);
-    final maxValue = hasData
-        ? [...bars, ...line].reduce((a, b) => a > b ? a : b)
-        : 0.0;
-    final maxY = hasData ? (maxValue * 1.25).ceilToDouble() : 8.0;
-    final interval = hasData
-        ? (maxY / 4).ceilToDouble().clamp(1.0, double.infinity).toDouble()
-        : 2.0;
+    final maxValue = [...bars, ...line, 1.0].reduce((a, b) => a > b ? a : b);
+    final maxY = (maxValue * 1.25).ceilToDouble();
+    final interval =
+        (maxY / 4).ceilToDouble().clamp(1.0, double.infinity).toDouble();
     final maxX = labels.length > 1 ? (labels.length - 1).toDouble() : 1.0;
     return Stack(
       children: [
@@ -1125,7 +1136,7 @@ class _WelcomeHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFFE5E5E5)),
           ),
@@ -1194,66 +1205,43 @@ class _TaskStatusChart extends StatelessWidget {
       _ChartData('Closed', closed, WebDashboardScreen._green),
     ];
 
-    final legend = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var i = 0; i < data.length; i++) ...[
-          _LegendItem(
-            key: ValueKey('web-dashboard-status-${data[i].label}'),
-            color: data[i].color,
-            label: data[i].label,
-            value: data[i].value,
-            percentage: total > 0 ? (data[i].value / total * 100) : 0,
-          ),
-          if (i != data.length - 1) const SizedBox(height: 14),
-        ],
-      ],
-    );
-
     return _DashboardPanelCard(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Task Status Overview',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A1A),
-                      ),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Task Status Overview',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A1A),
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Distribution of tasks by status',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
-                    ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Distribution of tasks by status',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '$total total',
-                  maxLines: 1,
-                  softWrap: false,
                   style: const TextStyle(
-                    fontSize: 12,
-                    height: 1.2,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF333333),
                   ),
@@ -1261,12 +1249,9 @@ class _TaskStatusChart extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           if (loading)
-            const SizedBox(
-              height: 220,
-              child: Center(child: CircularProgressIndicator()),
-            )
+            const SizedBox.shrink()
           else if (total == 0)
             SizedBox(
               height: 220,
@@ -1289,134 +1274,138 @@ class _TaskStatusChart extends StatelessWidget {
               ),
             )
           else
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth < 560) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 200, child: _barChart(data)),
-                      const SizedBox(height: 20),
-                      legend,
-                    ],
-                  );
-                }
-                return SizedBox(
-                  height: 220,
-                  child: Row(
-                    children: [
-                      Expanded(child: _barChart(data)),
-                      const SizedBox(width: 32),
-                      SizedBox(
-                        width: 210,
-                        child: Center(child: legend),
+            SizedBox(
+              height: 220,
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: BarChart(
+                      BarChartData(
+                        alignment: BarChartAlignment.spaceEvenly,
+                        maxY: data
+                                .map((e) => e.value.toDouble())
+                                .reduce((a, b) => a > b ? a : b) *
+                            1.3,
+                        barTouchData: BarTouchData(
+                          touchTooltipData: BarTouchTooltipData(
+                            getTooltipColor: (_) => const Color(0xFF333333),
+                            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                              return BarTooltipItem(
+                                '${data[group.x.toInt()].label}\n${data[group.x.toInt()].value}',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                final labels = [
+                                  'Open',
+                                  'In Progress',
+                                  'Hold',
+                                  'Closed'
+                                ];
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    labels[value.toInt()],
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1A1A1A),
+                                    ),
+                                  ),
+                                );
+                              },
+                              reservedSize: 30,
+                            ),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 32,
+                              getTitlesWidget: (value, meta) {
+                                if (value == 0) return const SizedBox();
+                                return Text(
+                                  '${value.toInt()}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF999999),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                        ),
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                          horizontalInterval: 1,
+                          getDrawingHorizontalLine: (value) => const FlLine(
+                            color: Color(0xFFEEEEEE),
+                            strokeWidth: 1,
+                          ),
+                        ),
+                        borderData: FlBorderData(show: false),
+                        barGroups: [
+                          for (var i = 0; i < data.length; i++)
+                            BarChartGroupData(
+                              x: i,
+                              barRods: [
+                                BarChartRodData(
+                                  toY: data[i].value.toDouble(),
+                                  color: data[i].color,
+                                  width: 32,
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _barChart(List<_ChartData> data) {
-    return BarChart(
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: data
-                .map((e) => e.value.toDouble())
-                .reduce((a, b) => a > b ? a : b) *
-            1.3,
-        barTouchData: BarTouchData(
-          touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (_) => const Color(0xFF333333),
-            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              return BarTooltipItem(
-                '${data[group.x.toInt()].label}\n${data[group.x.toInt()].value}',
-                const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              );
-            },
-          ),
-        ),
-        titlesData: FlTitlesData(
-          show: true,
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final labels = ['Open', 'In Progress', 'Hold', 'Closed'];
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    labels[value.toInt()],
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF666666),
+                      duration: Duration.zero,
                     ),
                   ),
-                );
-              },
-              reservedSize: 30,
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 32,
-              getTitlesWidget: (value, meta) {
-                if (value == 0) return const SizedBox();
-                return Text(
-                  '${value.toInt()}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF999999),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (final d in data) ...[
+                          _LegendItem(
+                            key: ValueKey('web-dashboard-status-${d.label}'),
+                            color: d.color,
+                            label: d.label,
+                            value: d.value,
+                            percentage: total > 0 ? (d.value / total * 100) : 0,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-        ),
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          horizontalInterval: 1,
-          getDrawingHorizontalLine: (value) => const FlLine(
-            color: Color(0xFFEEEEEE),
-            strokeWidth: 1,
-          ),
-        ),
-        borderData: FlBorderData(show: false),
-        barGroups: [
-          for (var i = 0; i < data.length; i++)
-            BarChartGroupData(
-              x: i,
-              barRods: [
-                BarChartRodData(
-                  toY: data[i].value.toDouble(),
-                  color: data[i].color,
-                  width: 32,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(6),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
         ],
       ),
-      duration: Duration.zero,
     );
   }
 }
@@ -1445,7 +1434,6 @@ class _LegendItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 12,
@@ -1455,22 +1443,20 @@ class _LegendItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(3),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         SizedBox(
-          width: 88,
+          width: 96,
           child: Text(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF666666),
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF333333),
             ),
           ),
         ),
-        const SizedBox(width: 10),
         SizedBox(
-          width: 24,
+          width: 36,
           child: Text(
             '$value',
             textAlign: TextAlign.right,
@@ -1483,7 +1469,7 @@ class _LegendItem extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         SizedBox(
-          width: 46,
+          width: 52,
           child: Text(
             '(${percentage.toStringAsFixed(0)}%)',
             textAlign: TextAlign.right,

@@ -239,6 +239,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get welcome => 'स्वागत है';
 
   @override
+  String get support => 'सहायता';
+
+  @override
   String get exportServiceReport => 'सेवा रिपोर्ट निर्यात (CSV)';
 
   @override

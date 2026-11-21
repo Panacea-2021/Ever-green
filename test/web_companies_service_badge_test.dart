@@ -56,8 +56,8 @@ void main() {
     await tester.pumpWidget(_screen());
     await tester.pumpAndSettle();
 
-    expect(find.text('NC AMC'), findsOneWidget);
-    expect(find.text('C AMC'), findsOneWidget);
+    expect(find.text('NC-AMC'), findsWidgets);
+    expect(find.text('C-AMC'), findsWidgets);
     // "Regular" also appears as a filter-tile label, so allow multiple.
     expect(find.text('Regular'), findsWidgets);
     expect(find.text('Non-AMC'), findsOneWidget);

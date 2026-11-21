@@ -32,7 +32,7 @@ enum _TypeFilter {
         _TypeFilter.ncAmc => Icons.handshake_outlined,
         _TypeFilter.nonAmc => Icons.build_circle_outlined,
         _TypeFilter.regular => Icons.storefront_outlined,
-        _TypeFilter.inactive => Icons.block,
+        _TypeFilter.inactive => Icons.block_outlined,
       };
 
   Color get color => switch (this) {
@@ -70,8 +70,10 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
 
   _TypeFilter _typeFilter = _TypeFilter.all;
 
-  List<Company> _visible(List<Company> companies) =>
-      companies.where(_typeFilter.matches).toList();
+  List<Company> _visible(List<Company> companies) {
+    final seen = <int>{};
+    return companies.where((c) => seen.add(c.id) && _typeFilter.matches(c)).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,14 +141,15 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
 
   Widget _toolbar(List<Company> all) {
     return WebFilterTiles(
-      minTileWidth: 190,
       options: [
         for (final type in _TypeFilter.values)
           WebFilterOption(
             label: type.label,
             icon: type.icon,
             color: type.color,
-            count: all.isEmpty ? null : all.where(type.matches).length,
+            count: all.isEmpty
+                ? null
+                : all.where((c) => type.matches(c)).map((c) => c.id).toSet().length,
             selected: _typeFilter == type,
             onTap: () => setState(() => _typeFilter = type),
           ),
@@ -406,21 +409,16 @@ class _CompanyCell extends StatelessWidget {
   }
 }
 
-/// Service type as wrapping chips ("AMC · C AMC" -> [C AMC]) so the full
-/// label stays visible in a narrow column. The plain "AMC" marker is dropped;
-/// "C AMC", "NC AMC", "Regular" and "Non-AMC" are shown unchanged.
+/// Service type as wrapping chips ("AMC · C AMC" -> [AMC] [C AMC]) so the
+/// full label stays visible in a narrow column.
 class _ServiceCell extends StatelessWidget {
   const _ServiceCell({required this.label});
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    final parts = [
-      for (final part in label.split(' · '))
-        if (part.trim().isNotEmpty && part.trim().toUpperCase() != 'AMC')
-          part,
-    ];
-    if (parts.isEmpty) return const WebCellText('—');
+    if (label.isEmpty) return const WebCellText('—');
+    final parts = label.split(' · ');
     return Wrap(
       spacing: 5,
       runSpacing: 5,

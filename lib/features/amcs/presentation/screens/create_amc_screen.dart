@@ -181,9 +181,24 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
   String _formatDate(DateTime? date) => date == null ? '' : displayDate(date);
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: const Color(0xFFD32F2F)),
+    _showTopNotification(context, message: msg, type: _NotifType.error);
+  }
+
+  void _showTopNotification(
+    BuildContext ctx, {
+    required String message,
+    required _NotifType type,
+  }) {
+    final overlay = Overlay.of(ctx, rootOverlay: true);
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => _TopNotification(
+        message: message,
+        type: type,
+        onDismiss: () => entry.remove(),
+      ),
     );
+    overlay.insert(entry);
   }
 
   /// Mirrors the backend's createCompany / updateCompany validation so the
@@ -306,24 +321,27 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
             original != null ? 'Company details updated' : 'Branch: $branch',
       );
 
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            (original != null
-                    ? 'Company updated successfully!'
-                    : 'Company created successfully!') +
-                (emailFailed
-                    ? ' The login email to the company manager could not be sent.'
-                    : ''),
-            style: const TextStyle(color: Colors.white),
-          ),
-          // Website: a successful creation is always a green success notification.
-          backgroundColor: kIsWeb
-              ? AppColors.primary
-              : (emailFailed ? Colors.orange.shade800 : AppColors.primary),
-        ),
+      _showTopNotification(
+        context,
+        message: (original != null
+                ? 'Company updated successfully!'
+                : 'Company created successfully!') +
+            (emailFailed
+                ? ' The login email to the company manager could not be sent.'
+                : ''),
+        type: emailFailed ? _NotifType.warning : _NotifType.success,
       );
-      if (mounted) context.pop(true);
+      if (mounted) {
+        try {
+          if (context.canPop()) {
+            context.pop(true);
+          } else {
+            context.go(Routes.amcs);
+          }
+        } catch (_) {
+          context.go(Routes.amcs);
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
@@ -353,45 +371,64 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
         context: context,
         barrierDismissible: true,
         builder: (ctx) => Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Upload Company Image',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child:
-                        const Icon(Icons.photo_library, color: AppColors.primary),
-                  ),
-                  title: const Text(
-                    'Choose from Gallery',
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Upload Company Image',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Montserrat',
-                      fontWeight: FontWeight.w500,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _pickImage(ImageSource.gallery);
-                  },
-                ),
-                const SizedBox(height: 10),
-              ],
+                  const SizedBox(height: 20),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _pickImage(ImageSource.gallery);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F8F4),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.photo_library,
+                                color: AppColors.primary),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Choose from Gallery',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
             ),
           ),
         ),
@@ -583,6 +620,60 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
                           subtitle: 'Enter primary contact details',
                           children: _webClientFields(),
                         ),
+                        const SizedBox(height: 24),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: SizedBox(
+                            height: 48,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF106220),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF106220)
+                                        .withValues(alpha: 0.32),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(14),
+                                  onTap: _saving ? null : _handleSave,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.add_business_outlined,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          widget.isEdit
+                                              ? 'Update Company'
+                                              : 'Create Company',
+                                          style: const TextStyle(
+                                            fontFamily: 'Montserrat',
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -710,17 +801,10 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
           hint: 'Company Name *',
           icon: Icons.business_outlined,
         ),
-        _webDropdown(
-          hint: 'Branch Name *',
+        _webField(
+          controller: _branchNameController,
+          hint: 'Enter Branch Name *',
           icon: Icons.account_tree_outlined,
-          value: _selectedBranch,
-          items: _branchOptions,
-          onChanged: (v) {
-            setState(() {
-              _selectedBranch = v;
-              _branchNameController.text = v ?? '';
-            });
-          },
         ),
       ),
       const SizedBox(height: 18),
@@ -913,41 +997,99 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
-    return Container(
-      height: 52,
-      padding: const EdgeInsets.only(left: 13, right: 12),
-      decoration: _webBoxDecoration,
-      child: Row(
-        children: [
-          _webIcon(icon),
-          const SizedBox(width: 12),
-          Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: value,
-                isExpanded: true,
-                // Open the menu just below the field, never overlapping it.
-                alignment: Alignment.centerLeft,
-                menuMaxHeight: 280,
-                borderRadius: BorderRadius.circular(14),
-                icon: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Colors.black.withValues(alpha: 0.55),
+    final key = GlobalKey();
+    final link = LayerLink();
+    final selectedName = value;
+    return CompositedTransformTarget(
+      link: link,
+      child: Container(
+        key: key,
+        height: 52,
+        padding: const EdgeInsets.only(left: 13, right: 12),
+        decoration: _webBoxDecoration,
+        child: Row(
+          children: [
+            _webIcon(icon),
+            const SizedBox(width: 12),
+            Expanded(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: items.isEmpty
+                    ? null
+                    : () {
+                        final renderBox =
+                            key.currentContext?.findRenderObject() as RenderBox?;
+                        if (renderBox == null || !renderBox.attached) return;
+                        final fieldWidth = renderBox.size.width;
+                        final overlay = Overlay.of(context, rootOverlay: true);
+                        late OverlayEntry oe;
+                        oe = OverlayEntry(
+                          builder: (_) => Stack(
+                            children: [
+                              Positioned.fill(
+                                child: GestureDetector(
+                                  onTap: () => oe.remove(),
+                                  behavior: HitTestBehavior.translucent,
+                                  child: const SizedBox.expand(),
+                                ),
+                              ),
+                              CompositedTransformFollower(
+                                link: link,
+                                showWhenUnlinked: false,
+                                offset: const Offset(0, 56),
+                                child: Material(
+                                  elevation: 8,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: SizedBox(
+                                    width: fieldWidth,
+                                    child: ConstrainedBox(
+                                      constraints:
+                                          const BoxConstraints(maxHeight: 300),
+                                      child: ListView(
+                                        shrinkWrap: true,
+                                        padding: EdgeInsets.zero,
+                                        children: [
+                                          for (final item in items)
+                                            InkWell(
+                                              onTap: () {
+                                                oe.remove();
+                                                onChanged(item);
+                                              },
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 12,
+                                                ),
+                                                child: Text(
+                                                  item,
+                                                  style: _webValueStyle,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        overlay.insert(oe);
+                      },
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    selectedName ?? hint,
+                    style: selectedName == null ? _webHintStyle : _webValueStyle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                hint: Text(hint, style: _webHintStyle),
-                items: items
-                    .map(
-                      (e) => DropdownMenuItem<String>(
-                        value: e,
-                        child: Text(e, style: _webValueStyle),
-                      ),
-                    )
-                    .toList(),
-                onChanged: onChanged,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1410,7 +1552,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
             const SizedBox(height: 19),
             _pillField(
               controller: _branchNameController,
-              hint: 'Branch Name *',
+              hint: 'Enter Branch Name *',
             ),
             const SizedBox(height: 19),
             _pillField(
@@ -1756,6 +1898,103 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _NotifType { success, warning, error }
+
+class _TopNotification extends StatefulWidget {
+  const _TopNotification({
+    required this.message,
+    required this.type,
+    required this.onDismiss,
+  });
+
+  final String message;
+  final _NotifType type;
+  final VoidCallback onDismiss;
+
+  @override
+  State<_TopNotification> createState() => _TopNotificationState();
+}
+
+class _TopNotificationState extends State<_TopNotification>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+  )..forward();
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) {
+        _ctrl.reverse().then((_) {
+          if (mounted) widget.onDismiss();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color bg, Color fg, IconData icon) = switch (widget.type) {
+      _NotifType.success => (const Color(0xFF106220), Colors.white, Icons.check_circle),
+      _NotifType.warning => (const Color(0xFFF59E0B), Colors.white, Icons.warning_amber_rounded),
+      _NotifType.error => (const Color(0xFFD32F2F), Colors.white, Icons.error_outline),
+    };
+    return Positioned(
+      top: 16,
+      right: 16,
+      child: FadeTransition(
+        opacity: _ctrl,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.2, 0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut)),
+          child: Material(
+            color: bg,
+            borderRadius: BorderRadius.circular(12),
+            elevation: 6,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 420),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: fg, size: 22),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      widget.message,
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        color: fg,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: widget.onDismiss,
+                    child: Icon(Icons.close, color: fg, size: 18),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

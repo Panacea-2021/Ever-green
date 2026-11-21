@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/data/evergreen_repository.dart';
 import '../../core/models/backend_models.dart';
 import '../../core/router/routes.dart';
+import '../../features/auth/domain/models/user_model.dart';
+import '../../features/users/data/user_provider.dart';
 import '../theme/web_tokens.dart';
 
 const Color _trendDown = Color(0xFFBF0F0F);
@@ -154,6 +156,8 @@ class WebCompanyDetailsScreen extends ConsumerWidget {
                     );
                   },
                 ),
+                const SizedBox(height: 22),
+                _CompanyContactsSection(companyId: id),
               ],
             ),
           ),
@@ -407,6 +411,110 @@ class _WebStatCardState extends State<_WebStatCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CompanyContactsSection extends ConsumerWidget {
+  const _CompanyContactsSection({required this.companyId});
+
+  final int? companyId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final users = ref.watch(usersListProvider).valueOrNull ?? const [];
+    User? manager;
+    User? poc;
+    if (companyId != null) {
+      for (final u in users) {
+        if (!u.companies.any((c) => c.id == companyId)) continue;
+        if (manager == null && u.role == UserRole.clientAdmin) manager = u;
+        if (poc == null && u.role == UserRole.client) poc = u;
+      }
+    }
+
+    Widget card(String title, User? u, IconData icon) {
+      final name = u?.name ?? 'Not Assigned';
+      final email = (u?.email ?? '').isEmpty ? 'Not Available' : u!.email;
+      final mobile = (u?.phone ?? '').isEmpty ? 'Not Available' : u!.phone;
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: WebTokens.line),
+          boxShadow: WebTokens.softShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: WebTokens.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: WebTokens.green, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(title, style: WebTokens.heading(17, color: WebTokens.body)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _contactRow(Icons.person_outline, 'Name', name),
+            const SizedBox(height: 8),
+            _contactRow(Icons.email_outlined, 'Email', email),
+            const SizedBox(height: 8),
+            _contactRow(Icons.phone_outlined, 'Mobile', mobile),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Company Contacts', style: WebTokens.heading(18, color: WebTokens.ink)),
+        const SizedBox(height: 14),
+        LayoutBuilder(
+          builder: (context, c) {
+            if (c.maxWidth < 720) {
+              return Column(
+                children: [
+                  card('Company Manager', manager, Icons.manage_accounts_outlined),
+                  const SizedBox(height: 18),
+                  card('Point of Contact (POC)', poc, Icons.person_outline),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: card('Company Manager', manager, Icons.manage_accounts_outlined)),
+                const SizedBox(width: 18),
+                Expanded(child: card('Point of Contact (POC)', poc, Icons.person_outline)),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _contactRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: WebTokens.green),
+        const SizedBox(width: 8),
+        Text('$label: ', style: WebTokens.bodyText(13, color: WebTokens.body, weight: FontWeight.w600)),
+        Expanded(
+          child: Text(value, style: WebTokens.bodyText(13, color: WebTokens.ink, weight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+        ),
+      ],
     );
   }
 }

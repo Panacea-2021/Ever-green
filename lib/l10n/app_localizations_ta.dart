@@ -239,6 +239,9 @@ class AppLocalizationsTa extends AppLocalizations {
   String get welcome => 'வரவேற்கிறோம்';
 
   @override
+  String get support => 'ஆதரவு';
+
+  @override
   String get exportServiceReport => 'சேவை அறிக்கை ஏற்றுமதி (CSV)';
 
   @override

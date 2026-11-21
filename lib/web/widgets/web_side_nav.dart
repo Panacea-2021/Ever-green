@@ -86,6 +86,12 @@ class WebSideNav extends ConsumerWidget {
         route: Routes.tasks,
         svgIcon: 'assets/images/menu_tasks_list.svg',
       ),
+      if (Permissions.canAssignTasks(role))
+        WebNavEntry(
+          label: l10n?.ticketQueue ?? 'Ticket Queue',
+          route: Routes.ticketQueue,
+          svgIcon: 'assets/images/menu_assign_tasks.svg',
+        ),
       // Super Admin gets the personal My Service Tasks view only (My Tasks
       // is intentionally not shown for Super Admin).
       if (role == UserRole.superAdmin) ...[
@@ -138,12 +144,7 @@ class WebSideNav extends ConsumerWidget {
           badge: usersCount?.toString(),
           badgeColor: const Color(0xFFFF2F00),
         ),
-      if (Permissions.canAssignTasks(role))
-        WebNavEntry(
-          label: l10n?.ticketQueue ?? 'Ticket Queue',
-          route: Routes.ticketQueue,
-          svgIcon: 'assets/images/menu_assign_tasks.svg',
-        ),
+
       if (Permissions.canManageAmcs(role))
         WebNavEntry(
           label: l10n?.createCompany ?? 'Create Company',
