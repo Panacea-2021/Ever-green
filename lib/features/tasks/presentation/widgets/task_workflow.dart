@@ -90,8 +90,8 @@ List<TaskButton> taskButtonsFor(TaskItem t, User? user) {
         add(TaskAction.assign, TaskButtonKind.filled);
       }
     }
-    // Super Admin keeps priority/status on closed tickets; managers do not.
-    if (isSuperAdmin || !t.isClosed) {
+    // Priority and Change Status are hidden for closed tickets (all roles).
+    if (!t.isClosed) {
       add(TaskAction.priority);
       add(TaskAction.status);
     }

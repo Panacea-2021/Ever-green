@@ -56,6 +56,9 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
 
   final FocusNode _yearFocus = FocusNode();
   final FocusNode _frequencyFocus = FocusNode();
+  final GlobalKey _pmFreqKey = GlobalKey();
+  final LayerLink _pmFreqLink = LayerLink();
+  OverlayEntry? _pmFrequencyEntry;
   int? _serviceTypeId;
   String? _serviceTypeName;
   int? _companyId;
@@ -142,6 +145,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
     _serialNumberController.dispose();
     _locationController.dispose();
     _descriptionController.dispose();
+    _closePmFrequencyMenu();
     _yearFocus.dispose();
     _frequencyFocus.dispose();
     super.dispose();
@@ -642,104 +646,175 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
   }
 
   Widget _webPmFrequencyField() {
-    final key = GlobalKey();
-    return Material(
-      key: key,
-      color: Colors.white,
-      elevation: 0,
-      shape: WebForm.fieldShape(32),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
-          if (renderBox == null) return;
-          final pos = renderBox.localToGlobal(Offset.zero);
-          final size = renderBox.size;
-          final overlay = Overlay.of(context, rootOverlay: true);
-          late OverlayEntry oe;
-          oe = OverlayEntry(
-            builder: (_) => Stack(
+    return CompositedTransformTarget(
+      link: _pmFreqLink,
+      child: Material(
+        key: _pmFreqKey,
+        color: Colors.white,
+        elevation: 0,
+        shape: WebForm.fieldShape(32),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          onTap: _frequencies.isEmpty ? null : _openWebPmFrequencyMenu,
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
               children: [
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: () => oe.remove(),
-                    behavior: HitTestBehavior.translucent,
-                    child: const SizedBox.expand(),
-                  ),
-                ),
-                Positioned(
-                  left: pos.dx,
-                  top: pos.dy + size.height + 4,
-                  width: size.width,
-                  child: Material(
-                    elevation: 8,
-                    borderRadius: BorderRadius.circular(12),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 300),
-                      child: ListView(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.zero,
-                        children: [
-                          for (final f in _frequencies)
-                            InkWell(
-                              onTap: () {
-                                oe.remove();
-                                setState(() => _selectedFrequency = f);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                child: Text(
-                                  f,
-                                  style: const TextStyle(
-                                    fontFamily: 'Montserrat',
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+                Expanded(
+                  child: Text(
+                    _selectedFrequency ?? 'PM Frequency',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: _selectedFrequency == null
+                          ? Colors.black.withValues(alpha: 0.4)
+                          : Colors.black,
                     ),
                   ),
                 ),
+                const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
               ],
             ),
-          );
-          overlay.insert(oe);
-        },
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _selectedFrequency ?? 'PM Frequency',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: _selectedFrequency == null
-                        ? Colors.black.withValues(alpha: 0.4)
-                        : Colors.black,
-                  ),
-                ),
-              ),
-              const Icon(Icons.arrow_drop_down, color: Color(0xFF6B6B6B)),
-            ],
           ),
         ),
       ),
     );
   }
 
+  Future<void> _openWebPmFrequencyMenu() async {
+    if (_pmFrequencyEntry != null) {
+      _closePmFrequencyMenu();
+      return;
+    }
 
+    final fieldContext = _pmFreqKey.currentContext;
+    if (fieldContext == null) return;
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final overlayObject = overlay.context.findRenderObject();
+    final fieldObject = fieldContext.findRenderObject();
+    if (overlayObject is! RenderBox ||
+        fieldObject is! RenderBox ||
+        !overlayObject.hasSize ||
+        !fieldObject.hasSize) {
+      return;
+    }
+
+    double availableBelow() {
+      final fieldTop = fieldObject.localToGlobal(Offset.zero).dy -
+          overlayObject.localToGlobal(Offset.zero).dy;
+      return overlayObject.size.height -
+          fieldTop -
+          fieldObject.size.height -
+          12;
+    }
+
+    final requiredHeight =
+        (_frequencies.length * 48.0).clamp(48.0, 300.0).toDouble();
+    if (availableBelow() < requiredHeight) {
+      await Scrollable.ensureVisible(
+        fieldContext,
+        alignment: 0.08,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+      );
+      if (!mounted || !fieldContext.mounted || !overlay.mounted) return;
+    }
+
+    final updatedField = fieldContext.findRenderObject();
+    final updatedOverlay = overlay.context.findRenderObject();
+    if (updatedOverlay is! RenderBox ||
+        updatedField is! RenderBox ||
+        !updatedOverlay.hasSize ||
+        !updatedField.hasSize) {
+      return;
+    }
+
+    final fieldTop = updatedField.localToGlobal(Offset.zero).dy -
+        updatedOverlay.localToGlobal(Offset.zero).dy;
+    final maxHeight = (updatedOverlay.size.height -
+            fieldTop -
+            updatedField.size.height -
+            12)
+        .clamp(0.0, 300.0)
+        .toDouble();
+    if (maxHeight <= 0) return;
+
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _closePmFrequencyMenu,
+              behavior: HitTestBehavior.translucent,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          CompositedTransformFollower(
+            link: _pmFreqLink,
+            showWhenUnlinked: false,
+            offset: Offset(0, updatedField.size.height + 4),
+            child: Material(
+              elevation: 8,
+              clipBehavior: Clip.antiAlias,
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: updatedField.size.width,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxHeight),
+                  child: ListView(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    children: [
+                      for (final frequency in _frequencies)
+                        InkWell(
+                          onTap: () {
+                            _closePmFrequencyMenu();
+                            setState(() => _selectedFrequency = frequency);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Text(
+                              frequency,
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    _pmFrequencyEntry = entry;
+    overlay.insert(entry);
+  }
+
+  void _closePmFrequencyMenu() {
+    final entry = _pmFrequencyEntry;
+    _pmFrequencyEntry = null;
+    if (entry == null) return;
+    if (entry.mounted) entry.remove();
+    entry.dispose();
+  }
   Widget _buildDescriptionField() {
     return Material(
       color: Colors.white,

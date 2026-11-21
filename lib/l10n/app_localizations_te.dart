@@ -239,6 +239,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get welcome => 'స్వాగతం';
 
   @override
+  String get support => 'సహాయం';
+
+  @override
   String get exportServiceReport => 'సేవా నివేదిక ఎగుమతి (CSV)';
 
   @override

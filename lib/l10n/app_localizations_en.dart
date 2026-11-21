@@ -239,6 +239,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcome => 'Welcome';
 
   @override
+  String get support => 'Support';
+
+  @override
   String get exportServiceReport => 'Export Service Report (CSV)';
 
   @override

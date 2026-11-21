@@ -231,11 +231,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         _accountCard(role),
         if (canAnalytics) ...[
           const SizedBox(height: 22),
-          _sectionLabel('Reports'),
+          _sectionLabel(l10n?.reports ?? 'Reports'),
           _reportsCard(),
         ],
         const SizedBox(height: 22),
-        _sectionLabel('Support'),
+        _sectionLabel(l10n?.support ?? 'Support'),
         _supportCard(),
         const SizedBox(height: 22),
         _logoutButton(),
@@ -248,27 +248,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Widget _webBody(UserRole role, SettingsPreferences prefs, bool canAnalytics) {
     final l10n = AppLocalizations.of(context);
     final preferences = _webSection(
-      'Preferences',
+      l10n?.preferences ?? 'Preferences',
       Icons.tune_rounded,
       const Color(0xFF106220),
       _preferencesCard(prefs),
     );
     final account = _webSection(
-      'Account',
+      l10n?.account ?? 'Account',
       Icons.manage_accounts_outlined,
       const Color(0xFF2563EB),
       _accountCard(role),
     );
     final reports = canAnalytics
         ? _webSection(
-            'Reports',
+            l10n?.reports ?? 'Reports',
             Icons.insert_chart_outlined_rounded,
             const Color(0xFF7C3AED),
             _reportsCard(),
           )
         : null;
     final support = _webSection(
-      'Support',
+      l10n?.support ?? 'Support',
       Icons.support_agent_rounded,
       const Color(0xFFD97706),
       _supportCard(),

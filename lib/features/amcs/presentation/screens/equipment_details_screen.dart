@@ -355,7 +355,7 @@ class _EquipmentDetailsScreenState
             ),
           ),
 
-          // Top bar
+          // Top bar (action buttons only; title/back live in the web frame)
           Positioned(
             top: 0,
             left: 0,
@@ -366,26 +366,6 @@ class _EquipmentDetailsScreenState
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 child: Row(
                   children: [
-                    // Back arrow
-                    GestureDetector(
-                      onTap: () => context.pop(),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Equipment Details',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: -0.6,
-                      ),
-                    ),
                     const Spacer(),
                     // Edit button (green filled circle)
                     if (canManage) ...[

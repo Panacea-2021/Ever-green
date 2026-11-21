@@ -40,7 +40,7 @@ void main() {
       final c = AmcContract.fromCompany(company(id: 7, endInDays: 10))!;
       expect(c.id, '7');
       expect(c.companyId, 7);
-      expect(c.amcCategory, 'C AMC');
+      expect(c.amcCategory, 'C-AMC');
       expect(c.pocName, 'POC');
       expect(c.daysUntilExpiry(), 10);
       expect(c.status(), AmcStatus.expiringSoon);

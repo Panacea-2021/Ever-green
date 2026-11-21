@@ -8,6 +8,7 @@ import '../../../../core/router/routes.dart';
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../data/task_provider.dart';
+import '../../../users/data/user_provider.dart' show usersListProvider;
 import '../../domain/models/task_item.dart';
 import '../widgets/task_timeline.dart';
 import '../widgets/task_action_button.dart';
@@ -78,7 +79,7 @@ class TaskDetailsScreen extends ConsumerWidget {
     // Use passed values or fallback to provider data
     final task = match.isNotEmpty ? match.first : null;
 
-    if (task == null && taskTitle == null && async.isLoading) {
+    if (task == null && async.isLoading) {
       return const Scaffold(
         backgroundColor: Colors.white,
         body: Center(child: CircularProgressIndicator(color: _green)),
@@ -108,15 +109,27 @@ class TaskDetailsScreen extends ConsumerWidget {
     final company = companyName ?? task?.companyName ?? '';
     final companyContact = task?.source?.company?.poc;
     final hasCompany = task?.source?.company != null;
+    final allUsers = ref.watch(usersListProvider).valueOrNull ?? const [];
+    User? userById(int? id) {
+      if (id == null) return null;
+      for (final u in allUsers) {
+        if (u.backendId == id) return u;
+      }
+      return null;
+    }
+    final clientUser = userById(task?.source?.client?.id);
+    final techUser = userById(task?.source?.technician?.id);
     final client = hasCompany
-        ? companyContact?.name ?? ''
-        : clientName ?? task?.clientName ?? '';
+        ? (companyContact?.name ?? '')
+        : (clientUser?.name ?? clientName ?? task?.clientName ?? '');
     final mob = hasCompany
-        ? companyContact?.phone ?? ''
-        : mobile ?? task?.clientPhone ?? '';
+        ? (companyContact?.phone ?? '')
+        : (clientUser?.phone ?? mobile ?? task?.clientPhone ?? '');
     final tech =
         technician ?? (task != null && task.hasAssignee ? task.assignee : '');
+    final resolvedTech = techUser?.name ?? tech;
     final techMob = technicianMobile ?? task?.technicianPhone ?? '';
+    final resolvedTechMob = techUser?.phone ?? techMob;
     final created = createdOn ?? _fmt(task?.createdAt);
     final sNo = serialNumber ?? serial;
     final desc = description ?? task?.description ?? '';
@@ -201,14 +214,14 @@ class TaskDetailsScreen extends ConsumerWidget {
         _buildTaskDetailsCard(
           task?.ticketNo ?? '',
           task?.source?.issueTypeLabel ?? '',
-          tech,
-          techMob,
+          resolvedTech,
+          resolvedTechMob,
           created,
           individual ? null : sNo,
           desc,
           lastUpdated,
           task?.source?.equipment?.serviceType?.name,
-          acceptedBy: task != null && task.hasAssignee ? tech : null,
+          acceptedBy: task != null && task.hasAssignee ? resolvedTech : null,
           equipmentImageUrl: task?.source?.equipment?.imageUrl,
         ),
         if (task != null && actions.isNotEmpty) ...[
@@ -520,8 +533,12 @@ class TaskDetailsScreen extends ConsumerWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: _infoField(
-              'Address',
-              task.address.isEmpty ? '-' : task.address,
+              'Raised By',
+              (task.clientName.isNotEmpty
+                      ? task.clientName
+                      : (task.contactName.isNotEmpty
+                          ? task.contactName
+                          : 'Not Available')),
             ),
           ),
         ],

@@ -223,7 +223,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
                       ),
                       decoration: BoxDecoration(
                         color:
-                            noEngineer > 0 ? const Color(0xFFD32F2F) : _green,
+                            noEngineer > 0 ? const Color(0xFF6B7280) : _green,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -289,15 +289,15 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFFDE8E8),
+          color: const Color(0xFFFFF4E5),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFD32F2F)),
+          border: Border.all(color: const Color(0xFFE08600)),
         ),
         child: Row(
           children: [
             const Icon(
               Icons.warning_amber_rounded,
-              color: Color(0xFFD32F2F),
+              color: Color(0xFFE08600),
               size: 22,
             ),
             const SizedBox(width: 12),
@@ -308,7 +308,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
                   fontFamily: 'Montserrat',
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF8A1A1A),
+                  color: Color(0xFF8A5A00),
                 ),
               ),
             ),
@@ -346,7 +346,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: unassignedCount > 0 ? const Color(0xFFD32F2F) : _green,
+              color: unassignedCount > 0 ? const Color(0xFF6B7280) : _green,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -370,13 +370,13 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFFDE8E8),
+          color: const Color(0xFFFFF4E5),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFD32F2F)),
+          border: Border.all(color: const Color(0xFFE08600)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Color(0xFFD32F2F)),
+            const Icon(Icons.warning_amber_rounded, color: Color(0xFFE08600)),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -385,7 +385,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
                   fontFamily: 'Montserrat',
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF8A1A1A),
+                  color: Color(0xFF8A5A00),
                 ),
               ),
             ),
@@ -399,12 +399,12 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
     QueueTab.unassigned: (
       'Unassigned',
       Icons.person_off_outlined,
-      Color(0xFFD32F2F),
+      Color(0xFF106220),
     ),
     QueueTab.awaiting: (
       'Awaiting',
       Icons.hourglass_top_rounded,
-      Color(0xFFE08600),
+      Color(0xFF106220),
     ),
     QueueTab.assigned: (
       'Assigned',
@@ -414,7 +414,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
     QueueTab.escalation: (
       'Escalation',
       Icons.trending_up,
-      Color(0xFF6A1B9A),
+      Color(0xFF106220),
     ),
   };
 
@@ -422,6 +422,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: WebFilterTiles(
+        unselectedColor: const Color(0xFFE8F5E9),
         options: [
           for (final tab in QueueTab.values)
             WebFilterOption(
@@ -520,7 +521,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: alert ? const Color(0xFFD32F2F) : Colors.grey.shade200,
+            color: alert ? const Color(0xFF6B7280) : Colors.grey.shade200,
             width: alert ? 1.4 : 1,
           ),
           boxShadow: [
@@ -585,8 +586,8 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
                 if (t.escalated)
                   _tag(
                     'Escalated',
-                    const Color(0xFFFDE8E8),
-                    const Color(0xFFD32F2F),
+                    const Color(0xFFFFF4E5),
+                    const Color(0xFFE08600),
                   ),
                 if (t.clientName.isNotEmpty)
                   _tag(

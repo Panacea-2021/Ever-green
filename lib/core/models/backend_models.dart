@@ -39,8 +39,8 @@ enum CompanyServiceType {
 
 /// `company.amc_type` (only for AMC companies).
 enum AmcType {
-  cAmc('c_amc', 'C AMC'),
-  ncAmc('nc_amc', 'NC AMC');
+  cAmc('c_amc', 'C-AMC'),
+  ncAmc('nc_amc', 'NC-AMC');
 
   const AmcType(this.key, this.label);
   final String key;
@@ -324,8 +324,10 @@ class Company {
   /// "AMC · C AMC", "Non-AMC", or "" when unset.
   String get serviceLabel {
     if (serviceType == null) return '';
-    if (serviceType == CompanyServiceType.amc && amcType != null) {
-      return '${serviceType!.label} · ${amcType!.label}';
+    if (serviceType == CompanyServiceType.amc) {
+      // Show only the AMC category (C-AMC / NC-AMC). Plain AMC (no category)
+      // shows nothing so the cell renders a dash instead of a bare "AMC".
+      return amcType?.label ?? '';
     }
     return serviceType!.label;
   }
