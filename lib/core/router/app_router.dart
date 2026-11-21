@@ -54,6 +54,7 @@ import '../../features/upload/presentation/screens/upload_technicians_screen.dar
 import '../../features/qr/presentation/screens/download_qr_screen.dart';
 import '../../features/users/presentation/screens/users_list_screen.dart';
 import '../../features/users/presentation/screens/add_user_screen.dart';
+import '../../features/users/presentation/screens/select_amc_screen.dart';
 import '../../features/technicians/presentation/screens/technicians_list_screen.dart';
 import '../../features/technicians/presentation/screens/technician_tasks_screen.dart';
 import '../../features/scanner/presentation/screens/verified_equipments_screen.dart';
@@ -265,6 +266,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.notifications,
         name: 'notifications',
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: Routes.selectAmc,
+        name: 'selectAmc',
+        builder: (context, state) => const SelectAmcScreen(),
       ),
       if (kIsWeb)
         GoRoute(

@@ -835,9 +835,23 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
     final selected = range != null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 2, 28, 6),
-      child: Row(
-        children: [
-          MouseRegion(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 480;
+          final dateLabel = Text(
+            selected
+                ? '${_short(range.start)} – ${_short(range.end)}'
+                : 'Pick dates',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : const Color(0xFF14201A),
+            ),
+          );
+          final datePicker = MouseRegion(
             cursor: SystemMouseCursors.click,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -867,18 +881,7 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                       color: selected ? Colors.white : _green,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      selected
-                          ? '${_short(range.start)} – ${_short(range.end)}'
-                          : 'Pick dates',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            selected ? Colors.white : const Color(0xFF14201A),
-                      ),
-                    ),
+                    if (compact) Flexible(child: dateLabel) else dateLabel,
                     if (selected) ...[
                       const SizedBox(width: 6),
                       GestureDetector(
@@ -902,34 +905,60 @@ class _PmScheduleScreenState extends ConsumerState<PmScheduleScreen> {
                 ),
               ),
             ),
-          ),
-          const Spacer(),
-          if (loaded)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: _green.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _green.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.build_outlined, size: 14, color: _green),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$count due',
-                    style: const TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: _green,
-                    ),
-                  ),
-                ],
-              ),
+          );
+          final countBadge = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: _green.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _green.withValues(alpha: 0.2)),
             ),
-        ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.build_outlined, size: 14, color: _green),
+                const SizedBox(width: 6),
+                Text(
+                  '$count due',
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _green,
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                    child: datePicker,
+                  ),
+                ),
+                if (loaded)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: countBadge,
+                  ),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              datePicker,
+              const Spacer(),
+              if (loaded) countBadge,
+            ],
+          );
+        },
       ),
     );
   }

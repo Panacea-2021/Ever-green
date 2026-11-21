@@ -90,5 +90,22 @@
   "uploadEquipments": "उपकरण एक्सेल डेटा अपलोड",
   "uploadTechnicians": "सेवा इंजीनियर एक्सेल डेटा अपलोड",
   "uploadCompanies": "कंपनी एक्सेल डेटा अपलोड",
-  "menu": "मेनू"
+  "menu": "मेनू",
+  "searchUsers": "Search Users",
+  "createdBy": "Created By",
+  "createdOn": "Created On",
+  "active": "Active",
+  "inactive": "Inactive",
+  "email": "Email",
+  "mobile": "Mobile",
+  "company": "Company",
+  "notAssigned": "Not Assigned",
+  "notAvailable": "Not Available",
+  "allUsersCount": "All Users",
+  "superAdmins": "Super Admins",
+  "egManagersSection": "EG Managers",
+  "companyManagersSection": "Company Managers",
+  "pocsSection": "POCs",
+  "serviceEngineersSection": "Service Engineers",
+  "othersSection": "Others"
 }

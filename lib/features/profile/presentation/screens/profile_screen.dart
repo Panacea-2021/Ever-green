@@ -290,23 +290,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         const Color(0xFF106220),
       ),
-      (
-        _MenuEntry(
-          icon: Icons.assignment_outlined,
-          label: role.isClientSide ? 'My Service History' : 'My Tasks History',
-          onTap: () => context.push(
-            Routes.taskBoard,
-            extra: {
-              'status': TaskStatus.closed,
-              'title': 'Task History',
-              'scope': role.isClientSide
-                  ? TaskBoardScope.raisedByMe
-                  : TaskBoardScope.assignedToMe,
-            },
+      if (role != UserRole.superAdmin)
+        (
+          _MenuEntry(
+            icon: Icons.assignment_outlined,
+            label:
+                role.isClientSide ? 'My Service History' : 'My Tasks History',
+            onTap: () => context.push(
+              Routes.taskBoard,
+              extra: {
+                'status': TaskStatus.closed,
+                'title': 'Task History',
+                'scope': role.isClientSide
+                    ? TaskBoardScope.raisedByMe
+                    : TaskBoardScope.assignedToMe,
+              },
+            ),
           ),
+          const Color(0xFF2563EB),
         ),
-        const Color(0xFF2563EB),
-      ),
       if (Permissions.canViewAuditLog(role))
         (
           _MenuEntry(

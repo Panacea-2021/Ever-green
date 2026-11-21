@@ -17,6 +17,28 @@ DateTime? _date(dynamic v) =>
 bool? _boolOrNull(dynamic v) => v is bool ? v : null;
 Map<String, dynamic>? _map(dynamic v) => v is Map<String, dynamic> ? v : null;
 
+/// Returns the first non-null Map found under any of [keys] in [json],
+/// unwrapping a nested `user`/`data` object when present is NOT done here;
+/// callers handle nesting.
+Map<String, dynamic>? _firstMap(Map<String, dynamic> json, List<String> keys) {
+  for (final k in keys) {
+    final v = json[k];
+    if (v is Map<String, dynamic>) return v;
+    if (v is Map) return v.map((kk, vv) => MapEntry('$kk', vv));
+  }
+  return null;
+}
+
+/// Returns the first non-empty string among [values].
+String _firstNonEmpty(List<dynamic> values) {
+  for (final v in values) {
+    if (v == null) continue;
+    final s = '$v'.trim();
+    if (s.isNotEmpty && s.toLowerCase() != 'null') return s;
+  }
+  return '';
+}
+
 /// `company.service_type`.
 enum CompanyServiceType {
   amc('amc', 'AMC'),
@@ -274,6 +296,7 @@ class Company {
   final String email;
   final String? gstNumber;
   final String? location;
+  final String? imageUrl;
   final CompanyServiceType? serviceType;
   final AmcType? amcType;
   final DateTime? startDate;
@@ -302,6 +325,7 @@ class Company {
     this.email = '',
     this.gstNumber,
     this.location,
+    this.imageUrl,
     this.serviceType,
     this.amcType,
     this.startDate,
@@ -338,13 +362,32 @@ class Company {
       endDate!.isBefore(DateTime.now());
 
   factory Company.fromJson(Map<String, dynamic> json) {
-    final pocUser = _map(_map(json['poc_details'])?['user']);
-    final managerUser = _map(_map(json['manager_details'])?['user']);
+    // Accept several possible backend shapes for the linked company manager /
+    // POC user so the name is recovered regardless of the exact key used.
+    final pocUser = _firstMap(json, const [
+      'poc_details',
+      'pocDetails',
+      'poc',
+      'point_of_contact',
+      'pointOfContact',
+    ]);
+    final managerUser = _firstMap(json, const [
+      'manager_details',
+      'managerDetails',
+      'manager',
+      'company_manager',
+      'companyManager',
+      'admin_details',
+      'adminDetails',
+      'admin',
+      'client_admin',
+      'clientAdmin',
+    ]);
     final managerCount = json['managerCount'] != null
         ? _int(json['managerCount'])
         : (json['managers'] is List
             ? (json['managers'] as List).length
-            : (managerUser != null ? 1 : 0));
+            : ((managerUser != null || pocUser != null) ? 1 : 0));
     return Company(
       id: _int(json['id']),
       name: _str(json['name']),
@@ -352,6 +395,13 @@ class Company {
       email: _str(json['email']),
       gstNumber: _strOrNull(json['gst_number']),
       location: _strOrNull(json['location']),
+      imageUrl: _strOrNull(json['image_url'] ??
+          json['imageUrl'] ??
+          json['logo_url'] ??
+          json['logo'] ??
+          json['avatar_url'] ??
+          json['photo'] ??
+          json['image']),
       serviceType: CompanyServiceType.fromKey(json['service_type']),
       amcType: AmcType.fromKey(json['amc_type']),
       startDate: _date(json['start_date']),
@@ -364,10 +414,38 @@ class Company {
           .whereType<Map<String, dynamic>>()
           .map(Equipment.fromJson)
           .toList(),
-      poc: TaskPerson.fromJson(pocUser),
-      pocEmail: _strOrNull(pocUser?['email']),
-      managerName: _str(json['managerName'] ?? managerUser?['name']),
-      managerPhone: _str(json['managerPhone'] ?? managerUser?['phone']),
+      poc: TaskPerson.fromJson(pocUser?['user'] is Map ? pocUser!['user'] as Map<String, dynamic> : pocUser),
+      pocEmail: _strOrNull((pocUser?['user'] is Map ? pocUser!['user'] : pocUser)?['email']),
+      managerName: _firstNonEmpty([
+        json['managerName'],
+        json['manager_name'],
+        json['companyManagerName'],
+        json['company_manager_name'],
+        json['adminName'],
+        json['admin_name'],
+        json['pocName'],
+        json['poc_name'],
+        (managerUser?['user'] is Map ? managerUser!['user']['name'] : null),
+        managerUser?['name'],
+        managerUser?['full_name'],
+        (pocUser?['user'] is Map ? pocUser!['user']['name'] : null),
+        pocUser?['name'],
+        pocUser?['full_name'],
+      ]),
+      managerPhone: _firstNonEmpty([
+        json['managerPhone'],
+        json['manager_phone'],
+        json['companyManagerPhone'],
+        json['company_manager_phone'],
+        json['adminPhone'],
+        json['admin_phone'],
+        json['pocPhone'],
+        json['poc_phone'],
+        (managerUser?['user'] is Map ? managerUser!['user']['phone'] : null),
+        managerUser?['phone'],
+        (pocUser?['user'] is Map ? pocUser!['user']['phone'] : null),
+        pocUser?['phone'],
+      ]),
       managerCount: managerCount,
       raw: json,
     );
@@ -723,13 +801,31 @@ class AppNotification {
 
   factory AppNotification.fromJson(Map<String, dynamic> json) =>
       AppNotification(
-        id: _int(json['id']),
-        title: _str(json['title']),
-        description: _str(json['description']),
-        imageUrl: _strOrNull(json['image_url']),
-        taskId: _intOrNull(json['task_link']),
-        isRead: json['is_read'] == true,
-        createdAt: _date(json['created_at']),
+        id: _int(json['id'] ?? json['notification_id'] ?? json['notificationId']),
+        title: _str(json['title'] ?? json['subject'] ?? json['name']),
+        description: _str(json['description'] ??
+            json['message'] ??
+            json['body'] ??
+            json['content'] ??
+            json['text']),
+        imageUrl: _strOrNull(json['image_url'] ??
+            json['imageUrl'] ??
+            json['image'] ??
+            json['avatar_url']),
+        taskId: _intOrNull(json['task_link'] ??
+            json['task_id'] ??
+            json['taskId'] ??
+            json['task']),
+        isRead: json['is_read'] == true ||
+            json['isRead'] == true ||
+            json['read'] == true ||
+            json['read_at'] != null ||
+            json['readAt'] != null,
+        createdAt: _date(json['created_at'] ??
+            json['createdAt'] ??
+            json['timestamp'] ??
+            json['time'] ??
+            json['date']),
       );
 }
 

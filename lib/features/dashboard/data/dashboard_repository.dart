@@ -267,7 +267,7 @@ final dashboardDataProvider =
   final counts = await ref.watch(taskCountsProvider.future);
   var recent = const <DashboardActivity>[];
   try {
-    final (items, _) =
+    final (items, _, _) =
         await ref.watch(notificationsRepositoryProvider).getPage(1);
     recent = [
       for (final e in items.take(3))

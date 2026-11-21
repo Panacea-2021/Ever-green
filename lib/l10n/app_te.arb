@@ -90,5 +90,22 @@
   "uploadEquipments": "పరికరాల ఎక్సెల్ డేటా అప్లోడ్",
   "uploadTechnicians": "సేవా ఇంజనీర్ల ఎక్సెల్ డేటా అప్లోడ్",
   "uploadCompanies": "కంపెనీ ఎక్సెల్ డేటా అప్లోడ్",
-  "menu": "మెనూ"
+  "menu": "మెనూ",
+  "searchUsers": "Search Users",
+  "createdBy": "Created By",
+  "createdOn": "Created On",
+  "active": "Active",
+  "inactive": "Inactive",
+  "email": "Email",
+  "mobile": "Mobile",
+  "company": "Company",
+  "notAssigned": "Not Assigned",
+  "notAvailable": "Not Available",
+  "allUsersCount": "All Users",
+  "superAdmins": "Super Admins",
+  "egManagersSection": "EG Managers",
+  "companyManagersSection": "Company Managers",
+  "pocsSection": "POCs",
+  "serviceEngineersSection": "Service Engineers",
+  "othersSection": "Others"
 }

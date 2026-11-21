@@ -26,8 +26,8 @@ class _MemoryNotificationsRepository implements NotificationsRepository {
   final List<NotificationEntry> items;
 
   @override
-  Future<(List<NotificationEntry>, bool)> getPage(int page) async =>
-      (List.of(items), false);
+  Future<(List<NotificationEntry>, bool, int?)> getPage(int page) async =>
+      (List.of(items), false, items.length);
 
   @override
   Future<void> markRead({List<int>? ids}) async {

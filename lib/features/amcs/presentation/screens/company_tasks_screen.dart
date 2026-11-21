@@ -102,7 +102,7 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
         ].any((v) => v.toLowerCase().contains(q));
       }).toList();
     }
-    return tasks.where((t) => _selectedTab.matches(t.status)).toList();
+    return tasks;
   }
 
   @override
@@ -157,8 +157,6 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
                 else
                   _buildSearchBar(),
                 const SizedBox(height: kIsWeb ? 14 : 16),
-                _buildTabBar(),
-                const SizedBox(height: kIsWeb ? 8 : 10),
                 Expanded(
                   child: tasksAsync.when(
                     skipLoadingOnRefresh: true,
@@ -492,7 +490,7 @@ class _CompanyTasksScreenState extends ConsumerState<CompanyTasksScreen> {
                 AmcEmptyState(
                   message: _searchQuery.isNotEmpty
                       ? 'No matching tasks'
-                      : 'No ${_selectedTab.label} tasks',
+                      : 'No tasks',
                 ),
               ],
             )

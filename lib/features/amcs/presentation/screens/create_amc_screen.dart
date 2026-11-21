@@ -329,7 +329,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
             (emailFailed
                 ? ' The login email to the company manager could not be sent.'
                 : ''),
-        type: emailFailed ? _NotifType.warning : _NotifType.success,
+        type: _NotifType.success,
       );
       if (mounted) {
         try {
@@ -616,7 +616,7 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
                         const SizedBox(height: 24),
                         _webSection(
                           icon: Icons.person_outline,
-                          title: 'Client Details',
+                          title: 'Company Manager Details',
                           subtitle: 'Enter primary contact details',
                           children: _webClientFields(),
                         ),

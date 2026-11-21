@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/permissions.dart';
 import '../../../../core/data/evergreen_repository.dart' as repo;
 import '../../../../core/models/backend_models.dart';
+import 'select_amc_screen.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/password_generator.dart';
@@ -30,10 +31,8 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController(text: generatePassword());
   final _companyController = TextEditingController();
-  final _designationController = TextEditingController();
 
   UserRole? _selectedRole;
-  bool _othersSelected = false;
   int? _selectedCompanyId;
   bool _isPasswordVisible = true;
   bool _sendCredentials = true;
@@ -48,7 +47,6 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _companyController.dispose();
-    _designationController.dispose();
     super.dispose();
   }
 
@@ -93,9 +91,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
           companyIds:
               _selectedCompanyId != null ? [_selectedCompanyId!] : const [],
           sendCredentials: _sendCredentials,
-          designation: _selectedRole == null
-              ? _designationController.text.trim()
-              : null,
+          designation: null,
         );
     if (!mounted) return;
     setState(() => _isSaving = false);
@@ -164,16 +160,15 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final horizontalPadding =
-                      constraints.maxWidth < 600 ? 16.0 : 24.0;
+                  final horizontalPadding = 16.0;
                   final formWidth =
                       (constraints.maxWidth - horizontalPadding * 2)
-                          .clamp(0.0, 820.0)
+                          .clamp(0.0, 1100.0)
                           .toDouble();
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
                       horizontalPadding,
-                      20,
+                      8,
                       horizontalPadding,
                       20,
                     ),
@@ -358,44 +353,22 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
                 hintText: 'Access Type',
                 items: {
                   for (final r in _creatableRoles(actorRole)) r: r.label,
-                  null: 'Others',
                 },
                 validator: (v) =>
-                    (_selectedRole == null && !_othersSelected)
-                        ? 'Please select access type'
-                        : null,
+                    _selectedRole == null ? 'Please select access type' : null,
                 onChanged: (value) => setState(() {
-                  if (value == null) {
-                    _othersSelected = true;
-                    _selectedRole = null;
-                  } else {
-                    _othersSelected = false;
-                    _selectedRole = value;
-                  }
+                  _selectedRole = value;
                   if (value == UserRole.superAdmin ||
                       value == UserRole.manager ||
                       (value?.isTechnicianLevel ?? false)) {
                     _selectedCompanyId = null;
                     _companyController.clear();
                   }
-                  if (value != null) {
-                    _designationController.clear();
-                  }
                 }),
               ),
               if (!_hideCompanyField) ...[
                 const SizedBox(height: 16),
                 _buildCompanyField(),
-              ],
-              if (_othersSelected) ...[
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _designationController,
-                  hintText: 'Designation',
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Please enter designation'
-                      : null,
-                ),
               ],
             ],
           ),
@@ -414,23 +387,22 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Autocomplete<Company>(
-          displayStringForOption: (c) => c.displayName,
-          optionsBuilder: (textEditingValue) {
-            final q = textEditingValue.text.trim().toLowerCase();
-            if (q.isEmpty) return companies;
-            return companies.where((c) {
-              return [c.name, c.branchName, c.location ?? '', c.gstNumber ?? '']
-                  .any((f) => f.toLowerCase().contains(q));
-            });
+        GestureDetector(
+          onTap: () async {
+            final selected = await context.push<Company>(Routes.selectAmc);
+            if (selected != null && mounted) {
+              setState(() {
+                _selectedCompanyId = selected.id;
+                _companyController.text = selected.displayName;
+              });
+            }
           },
-          onSelected: (c) {
-            setState(() {
-              _selectedCompanyId = c.id;
-              _companyController.text = c.displayName;
-            });
-          },
-          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+          child: AbsorbPointer(
+            child: Autocomplete<Company>(
+              displayStringForOption: (c) => c.displayName,
+              optionsBuilder: (textEditingValue) => const <Company>[],
+              onSelected: (_) {},
+              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
             // Keep our controller in sync with the autocomplete controller.
             if (controller.text != _companyController.text &&
                 !_companyController.selection.isValid) {
@@ -503,48 +475,9 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
               ),
             );
           },
-          optionsViewBuilder: (context, onSelected, options) {
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                elevation: 4,
-                borderRadius: BorderRadius.circular(12),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: 360, maxWidth: MediaQuery.of(context).size.width * 0.9),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    itemCount: options.length,
-                    itemBuilder: (context, index) {
-                      final c = options.elementAt(index);
-                      return ListTile(
-                        dense: true,
-                        title: Text(
-                          c.displayName,
-                          style: const TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 14,
-                          ),
-                        ),
-                        subtitle: c.location == null || c.location!.isEmpty
-                            ? null
-                            : Text(
-                                c.location!,
-                                style: TextStyle(
-                                  fontFamily: 'Montserrat',
-                                  fontSize: 12,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                        onTap: () => onSelected(c),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
         ),
+        ),
+      ),
         if (companiesAsync.hasError)
           TextButton.icon(
             onPressed: () => ref.invalidate(repo.companiesProvider),
@@ -866,16 +799,18 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
           icon: const Icon(Icons.cloud_upload_outlined, size: 18),
           label: const Text('Bulk Upload'),
           style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
+            minimumSize: const Size(0, 40),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             foregroundColor: _green,
             backgroundColor: Colors.white,
             side: const BorderSide(color: _green, width: 1.4),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(20),
             ),
             textStyle: const TextStyle(
               fontFamily: 'Montserrat',
-              fontSize: 15,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -884,15 +819,17 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
           key: const Key('add-user-save'),
           onPressed: _isSaving ? null : _handleSave,
           style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
+            minimumSize: const Size(0, 40),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             backgroundColor: _green,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(20),
             ),
             textStyle: const TextStyle(
               fontFamily: 'Montserrat',
-              fontSize: 15,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -926,26 +863,32 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
               ),
             ],
           ),
-          child: compact
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (showBulkUpload) ...[
-                      bulkButton,
-                      const SizedBox(height: 10),
-                    ],
-                    saveButton,
-                  ],
-                )
-              : Row(
-                  children: [
-                    if (showBulkUpload) ...[
-                      Expanded(child: bulkButton),
-                      const SizedBox(width: 16),
-                    ],
-                    Expanded(child: saveButton),
-                  ],
-                ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: compact ? 360 : 600),
+              child: compact
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (showBulkUpload) ...[
+                          bulkButton,
+                          const SizedBox(height: 10),
+                        ],
+                        saveButton,
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (showBulkUpload) ...[
+                          SizedBox(width: 135, height: 40, child: bulkButton),
+                          const SizedBox(width: 12),
+                        ],
+                        SizedBox(width: 120, height: 40, child: saveButton),
+                      ],
+                    ),
+            ),
+          ),
         );
       },
     );

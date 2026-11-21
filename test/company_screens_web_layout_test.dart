@@ -88,7 +88,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('No Open tasks'), findsOneWidget);
+    expect(find.text('No tasks'), findsOneWidget);
     expect(
       find.text('Company Tasks'),
       kIsWeb ? findsNothing : findsOneWidget,

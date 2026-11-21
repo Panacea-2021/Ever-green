@@ -8,6 +8,7 @@ import '../../core/data/evergreen_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/router/routes.dart';
 import '../../features/amcs/data/amc_provider.dart';
+import '../../features/tasks/domain/models/task_item.dart';
 import '../../features/amcs/domain/models/amc_contract.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/dashboard/data/analytics_history_provider.dart';
@@ -89,12 +90,12 @@ class WebDashboardScreen extends ConsumerWidget {
                       _WebOrganizationSections(
                         amcCount: amcCount,
                         onOpenUsers: open(Routes.usersList),
-                        onOpenPocs: open(Routes.usersList, extra: {'tab': 2}),
+                        onOpenPocs: open(Routes.usersList, extra: {'tab': 4}),
                         onOpenCompanyManagers:
-                            open(Routes.usersList, extra: {'tab': 1}),
+                            open(Routes.usersList, extra: {'tab': 3}),
                         onOpenManagers:
-                            open(Routes.usersList, extra: {'tab': 4}),
-                        onOpenServiceEngineers: open(Routes.usersList, extra: {'tab': 3}),
+                            open(Routes.usersList, extra: {'tab': 2}),
+                        onOpenServiceEngineers: open(Routes.usersList, extra: {'tab': 5}),
                         onOpenAmcs: open(Routes.amcs),
                         onOpenTasks: open(Routes.tasks),
                       ),
@@ -154,8 +155,53 @@ class _WebOrganizationSections extends ConsumerWidget {
     final history = ref.watch(analyticsHistoryProvider);
 
     final data = analytics.valueOrNull;
-    // Keep the dashboard content hidden while analytics load — do not show a
-    // large centred spinner or partially loaded cards.
+    final users = data?.usersByRole ?? const {};
+
+    // Business Summary is rendered immediately (with available/placeholder
+    // values) so it is the first visible dashboard content; only the
+    // Overview/Reports sections wait for analytics to finish loading.
+    final businessSummary = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _WebDashboardSectionHeading(
+          title: l10n?.businessSummary ?? 'Business Summary',
+        ),
+        const SizedBox(height: 12),
+        _WebDashboardMetricGrid(
+          desktopColumns: 3,
+          children: [
+            _WebDashboardMetricCard(
+              title: l10n?.totalUsers ?? 'Users',
+              value: data?.totalUsers ?? 0,
+              subtitle: 'Across access levels',
+              icon: Icons.groups_outlined,
+              color: WebDashboardScreen._blue,
+              highlight: true,
+              onTap: onOpenUsers,
+            ),
+            _WebDashboardMetricCard(
+              title: l10n?.totalAmcs ?? 'AMCs',
+              value: amcCount ?? data?.totalAmcs ?? 0,
+              subtitle: 'Service contracts',
+              icon: Icons.verified_outlined,
+              color: WebDashboardScreen._green,
+              highlight: true,
+              onTap: onOpenAmcs,
+            ),
+            _WebDashboardMetricCard(
+              title: l10n?.totalTasks ?? 'Tasks',
+              value: data?.totalTasks ?? 0,
+              subtitle: 'All statuses',
+              icon: Icons.checklist_rtl_outlined,
+              color: WebDashboardScreen._purple,
+              highlight: true,
+              onTap: onOpenTasks,
+            ),
+          ],
+        ),
+      ],
+    );
+
     if (data == null) {
       if (analytics.hasError || history.hasError) {
         return _DashboardDataError(
@@ -167,10 +213,16 @@ class _WebOrganizationSections extends ConsumerWidget {
           },
         );
       }
-      return const SizedBox.shrink();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          businessSummary,
+          const SizedBox(height: 20),
+          const _DashboardAnalyticsLoading(),
+        ],
+      );
     }
 
-    final users = data.usersByRole;
     final serviceEngineers = (users[UserRole.seniorTechnician] ?? 0) +
         (users[UserRole.technician] ?? 0) +
         (users[UserRole.coldRoomTechnician] ?? 0);
@@ -178,59 +230,22 @@ class _WebOrganizationSections extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _WebDashboardSectionHeading(
-          title: l10n?.businessSummary ?? 'Business Summary',
-          subtitle: l10n?.currentTotals ?? 'Current totals',
-        ),
-        const SizedBox(height: 12),
-        _WebDashboardMetricGrid(
-          desktopColumns: 3,
-          children: [
-            _WebDashboardMetricCard(
-              title: l10n?.totalUsers ?? 'Users',
-              value: data.totalUsers,
-              subtitle: 'Across access levels',
-              icon: Icons.groups_outlined,
-              color: WebDashboardScreen._blue,
-              highlight: true,
-              onTap: onOpenUsers,
-            ),
-            _WebDashboardMetricCard(
-              title: l10n?.totalAmcs ?? 'AMCs',
-              value: amcCount ?? data.totalAmcs,
-              subtitle: 'Service contracts',
-              icon: Icons.verified_outlined,
-              color: WebDashboardScreen._green,
-              highlight: true,
-              onTap: onOpenAmcs,
-            ),
-            _WebDashboardMetricCard(
-              title: l10n?.totalTasks ?? 'Tasks',
-              value: data.totalTasks,
-              subtitle: 'All statuses',
-              icon: Icons.checklist_rtl_outlined,
-              color: WebDashboardScreen._purple,
-              highlight: true,
-              onTap: onOpenTasks,
-            ),
-          ],
-        ),
+        businessSummary,
         const SizedBox(height: 24),
         _WebDashboardSectionHeading(
           title: l10n?.overview ?? 'Overview',
-          subtitle: l10n?.thisMonth ?? 'This month',
         ),
         const SizedBox(height: 12),
         _WebDashboardMetricGrid(
           desktopColumns: 4,
           children: [
             _OverviewMetricCard(
-              title: 'POC',
-              value: users[UserRole.client] ?? 0,
-              metric: TrendMetric.poc,
-              icon: Icons.person_outline,
-              color: const Color(0xFF2E8B45),
-              onTap: onOpenPocs,
+              title: 'EG Managers',
+              value: (users[UserRole.superAdmin] ?? 0) + (users[UserRole.manager] ?? 0),
+              metric: TrendMetric.managers,
+              icon: Icons.admin_panel_settings_outlined,
+              color: const Color(0xFF9E663B),
+              onTap: onOpenManagers,
             ),
             _OverviewMetricCard(
               title: 'Company Managers',
@@ -241,12 +256,12 @@ class _WebOrganizationSections extends ConsumerWidget {
               onTap: onOpenCompanyManagers,
             ),
             _OverviewMetricCard(
-              title: 'EG Managers',
-              value: (users[UserRole.superAdmin] ?? 0) + (users[UserRole.manager] ?? 0),
-              metric: TrendMetric.managers,
-              icon: Icons.admin_panel_settings_outlined,
-              color: const Color(0xFF9E663B),
-              onTap: onOpenManagers,
+              title: 'POC',
+              value: users[UserRole.client] ?? 0,
+              metric: TrendMetric.poc,
+              icon: Icons.person_outline,
+              color: const Color(0xFF2E8B45),
+              onTap: onOpenPocs,
             ),
             _OverviewMetricCard(
               title: 'Service Engineers',
@@ -271,11 +286,11 @@ class _WebOrganizationSections extends ConsumerWidget {
 class _WebDashboardSectionHeading extends StatelessWidget {
   const _WebDashboardSectionHeading({
     required this.title,
-    required this.subtitle,
+    this.subtitle,
   });
 
   final String title;
-  final String subtitle;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -293,13 +308,14 @@ class _WebDashboardSectionHeading extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 13,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+        if (subtitle != null && subtitle!.trim().isNotEmpty)
+          Text(
+            subtitle!,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -684,9 +700,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
     final openTasks = (widget.analytics.tasksByStatus['Open'] ?? 0) +
         (widget.analytics.tasksByStatus['Hold'] ?? 0) +
         (widget.analytics.tasksByStatus['In Progress'] ?? 0);
-    final openTrend = ref.watch(trendProvider(TrendMetric.openTasks));
     final closedTrend = ref.watch(trendProvider(TrendMetric.closedTasks));
-
     return _DashboardPanelCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -694,7 +708,6 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
         children: [
           const _WebDashboardSectionHeading(
             title: 'Reports',
-            subtitle: 'Monthly trends',
           ),
           const SizedBox(height: 14),
           _WebDashboardMetricGrid(
@@ -705,9 +718,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 value: openTasks,
                 icon: Icons.assignment_outlined,
                 color: WebDashboardScreen._green,
-                trend: openTrend,
-                invertTrend: true,
-                onTap: widget.onOpenTasks,
+                onTap: () => context.go(Routes.tasks, extra: TaskStatus.open),
                 valueKey: const ValueKey('web-report-open-tasks-count'),
                 compact: true,
                 highlight: true,
@@ -718,8 +729,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 value: closedTrend.current,
                 icon: Icons.task_alt,
                 color: const Color(0xFF5B899E),
-                trend: closedTrend,
-                onTap: widget.onOpenTasks,
+                onTap: () => context.go(Routes.tasks, extra: TaskStatus.closed),
                 valueKey: const ValueKey('web-report-closed-tasks-count'),
                 compact: true,
                 highlight: true,
@@ -770,28 +780,31 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
             ],
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final metric in _DashboardReportMetric.values)
-                ChoiceChip(
-                  label: Text(metric.label),
-                  selected: _metric == metric,
-                  selectedColor: const Color(0xFFF5F5F5),
-                  labelStyle: TextStyle(
-                    color: _metric == metric
-                        ? const Color(0xFF333333)
-                        : const Color(0xFF555555),
-                    fontWeight: FontWeight.w600,
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final metric in _DashboardReportMetric.values) ...[
+                  _ReportTab(
+                    key: ValueKey('report-tab-${metric.label}'),
+                    label: metric.label,
+                    selected: _metric == metric,
+                    onTap: () => setState(() => _metric = metric),
                   ),
-                  onSelected: (_) => setState(() => _metric = metric),
-                ),
-            ],
+                  if (metric != _DashboardReportMetric.values.last)
+                    const SizedBox(width: 4),
+                ],
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           SizedBox(
-            height: 260,
+            height: 300,
             child: _buildCombinedChart(bars, line, labels),
           ),
         ],
@@ -922,8 +935,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
               lineTouchData: const LineTouchData(enabled: false),
               lineBarsData: [
                 LineChartBarData(
-                  isCurved: true,
-                  curveSmoothness: 0.35,
+                  isCurved: false,
                   color: WebDashboardScreen._blue,
                   barWidth: 3,
                   isStrokeCapRound: true,
@@ -961,6 +973,65 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ReportTab extends StatelessWidget {
+  const _ReportTab({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(9),
+        gradient: selected
+            ? const LinearGradient(
+                colors: [Color(0xFF106220), Color(0xFF1A801A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        color: selected ? null : Colors.transparent,
+        boxShadow: selected
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF106220).withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(9),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(9),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : const Color(0xFF1F1F1F),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1142,9 +1213,6 @@ class _WelcomeHeader extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.calendar_today,
-                  size: 18, color: Color(0xFF666666)),
-              const SizedBox(width: 10),
               Text(
                 _formatDate(now),
                 style: const TextStyle(
@@ -1382,7 +1450,7 @@ class _TaskStatusChart extends StatelessWidget {
                       duration: Duration.zero,
                     ),
                   ),
-                  const SizedBox(width: 24),
+                  const SizedBox(width: 48),
                   Expanded(
                     flex: 2,
                     child: Column(
