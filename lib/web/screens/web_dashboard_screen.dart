@@ -389,59 +389,47 @@ class _WebDashboardMetricCardState extends State<_WebDashboardMetricCard> {
             : WebDashboardScreen._red;
     final radius = BorderRadius.circular(12);
 
-    final surface = widget.highlight
-        ? AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            constraints: BoxConstraints(
-              minHeight: widget.compact ? 112 : 136,
-            ),
-            padding: EdgeInsets.all(widget.compact ? 12 : 16),
-            transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
-            transformAlignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: widget.color.withValues(
+    final surface = AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      constraints: BoxConstraints(
+        minHeight: widget.compact ? 112 : 136,
+      ),
+      padding: EdgeInsets.all(widget.compact ? 12 : 16),
+      transform: widget.highlight
+          ? Matrix4.translationValues(0, _hovered ? -2 : 0, 0)
+          : null,
+      transformAlignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: widget.highlight
+            ? widget.color.withValues(
                 alpha: _hovered ? 0.095 : 0.055,
-              ),
-              borderRadius: radius,
-              border: Border.all(
-                color: widget.color.withValues(
+              )
+            : const Color(0xFFF5F5F5),
+        borderRadius: radius,
+        border: Border.all(
+          color: widget.highlight
+              ? widget.color.withValues(
                   alpha: _hovered ? 0.48 : 0.24,
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.color.withValues(
+                )
+              : const Color(0xFFE8E8E8),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: widget.highlight
+                ? widget.color.withValues(
                     alpha: _hovered ? 0.12 : 0.045,
-                  ),
-                  blurRadius: _hovered ? 14 : 8,
-                  offset: Offset(0, _hovered ? 6 : 3),
-                ),
-              ],
-            ),
-            child: _buildContent(positive, trendColor),
-          )
-        : Container(
-            constraints: BoxConstraints(
-              minHeight: widget.compact ? 112 : 136,
-            ),
-            padding: EdgeInsets.all(widget.compact ? 12 : 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: radius,
-              border: Border.all(
-                color: const Color(0xFFE8E8E8),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.035),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: _buildContent(positive, trendColor),
-          );
+                  )
+                : Colors.black.withValues(alpha: 0.035),
+            blurRadius: widget.highlight ? (_hovered ? 14 : 8) : 8,
+            offset: widget.highlight
+                ? Offset(0, _hovered ? 6 : 3)
+                : const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: _buildContent(positive, trendColor),
+    );
     final interactiveSurface = widget.highlight
         ? AnimatedScale(
             scale: _pressed ? 0.99 : 1,
