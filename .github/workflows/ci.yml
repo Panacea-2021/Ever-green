@@ -18,6 +18,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle*
+            android/gradle/wrapper/gradle-wrapper.properties
 
       - uses: subosito/flutter-action@v2
         with:
@@ -41,4 +45,16 @@ jobs:
 
       - name: Build debug APK
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-        run: flutter build apk --debug
+        run: |
+          for attempt in 1 2 3; do
+            if flutter build apk --debug; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Debug APK build failed after 3 attempts." >&2
+              exit 1
+            fi
+            delay=$((30 * attempt))
+            echo "Build failed; retrying in ${delay}s (attempt $((attempt + 1))/3)."
+            sleep "$delay"
+          done

@@ -102,6 +102,7 @@ class DashboardAnalytics {
 /// Admin-only (uses global stats endpoints).
 final dashboardAnalyticsProvider =
     FutureProvider.autoDispose<DashboardAnalytics>((ref) async {
+  cacheFor(ref, listCacheDuration);
   final results = await Future.wait([
     ref.watch(dashboardUsersProvider.future),
     ref.watch(taskCountsProvider.future),

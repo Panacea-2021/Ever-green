@@ -282,4 +282,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get menu => 'MENU';
+
+  @override
+  String get searchUsers => 'Search Users';
+
+  @override
+  String get createdBy => 'Created By';
+
+  @override
+  String get createdOn => 'Created On';
+
+  @override
+  String get active => 'Active';
+
+  @override
+  String get inactive => 'Inactive';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get mobile => 'Mobile';
+
+  @override
+  String get company => 'Company';
+
+  @override
+  String get notAssigned => 'Not Assigned';
+
+  @override
+  String get notAvailable => 'Not Available';
+
+  @override
+  String get allUsersCount => 'All Users';
+
+  @override
+  String get superAdmins => 'Super Admins';
+
+  @override
+  String get egManagersSection => 'EG Managers';
+
+  @override
+  String get companyManagersSection => 'Company Managers';
+
+  @override
+  String get pocsSection => 'POCs';
+
+  @override
+  String get serviceEngineersSection => 'Service Engineers';
+
+  @override
+  String get othersSection => 'Others';
 }

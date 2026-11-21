@@ -90,5 +90,22 @@
   "uploadEquipments": "உபகரண எக்செல் தரவு பதிவேற்றம்",
   "uploadTechnicians": "சேவை பொறியாளர் எக்செல் தரவு பதிவேற்றம்",
   "uploadCompanies": "நிறுவன எக்செல் தரவு பதிவேற்றம்",
-  "menu": "பட்டியல்"
+  "menu": "பட்டியல்",
+  "searchUsers": "Search Users",
+  "createdBy": "Created By",
+  "createdOn": "Created On",
+  "active": "Active",
+  "inactive": "Inactive",
+  "email": "Email",
+  "mobile": "Mobile",
+  "company": "Company",
+  "notAssigned": "Not Assigned",
+  "notAvailable": "Not Available",
+  "allUsersCount": "All Users",
+  "superAdmins": "Super Admins",
+  "egManagersSection": "EG Managers",
+  "companyManagersSection": "Company Managers",
+  "pocsSection": "POCs",
+  "serviceEngineersSection": "Service Engineers",
+  "othersSection": "Others"
 }

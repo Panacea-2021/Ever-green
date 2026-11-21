@@ -90,5 +90,22 @@
   "uploadEquipments": "Upload Equipments Excel Data",
   "uploadTechnicians": "Upload Service Engineers Excel Data",
   "uploadCompanies": "Upload Company Excel Data",
-  "menu": "MENU"
+  "menu": "MENU",
+  "searchUsers": "Search Users",
+  "createdBy": "Created By",
+  "createdOn": "Created On",
+  "active": "Active",
+  "inactive": "Inactive",
+  "email": "Email",
+  "mobile": "Mobile",
+  "company": "Company",
+  "notAssigned": "Not Assigned",
+  "notAvailable": "Not Available",
+  "allUsersCount": "All Users",
+  "superAdmins": "Super Admins",
+  "egManagersSection": "EG Managers",
+  "companyManagersSection": "Company Managers",
+  "pocsSection": "POCs",
+  "serviceEngineersSection": "Service Engineers",
+  "othersSection": "Others"
 }

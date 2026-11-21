@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -278,11 +279,11 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                 ),
               );
             }
-            const gap = 18.0;
-            final inner = c.maxWidth - 48;
-            final cols = inner >= 1250
-                ? 3
-                : inner >= 720
+            const gap = 24.0;
+            final inner = c.maxWidth - 32;
+            final cols = inner >= 1100
+                ? 2
+                : inner >= 640
                     ? 2
                     : 1;
             final w = (inner - gap * (cols - 1)) / cols;
@@ -291,31 +292,32 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
               for (final u in users) {
                 String section;
                 if (u.role == UserRole.superAdmin) {
-                  section = 'Super Admins';
+                  section = AppLocalizations.of(context)?.superAdmins ?? 'Super Admins';
                 } else if (u.role == UserRole.manager) {
-                  section = 'EG Managers';
+                  section = AppLocalizations.of(context)?.egManagersSection ?? 'EG Managers';
                 } else if (u.role == UserRole.clientAdmin) {
-                  section = 'Company Managers';
+                  section = AppLocalizations.of(context)?.companyManagersSection ?? 'Company Managers';
                 } else if (u.role == UserRole.client) {
-                  section = 'POCs';
+                  section = AppLocalizations.of(context)?.pocsSection ?? 'POCs';
                 } else if (u.role.isTechnicianLevel) {
-                  section = 'Service Engineers';
+                  section = AppLocalizations.of(context)?.serviceEngineersSection ?? 'Service Engineers';
                 } else {
-                  section = 'Others';
+                  section = AppLocalizations.of(context)?.othersSection ?? 'Others';
                 }
                 grouped.putIfAbsent(section, () => []).add(u);
               }
+              final l10n = AppLocalizations.of(context);
               final sectionOrder = [
-                'Super Admins',
-                'EG Managers',
-                'Company Managers',
-                'POCs',
-                'Service Engineers',
-                'Others',
+                l10n?.superAdmins ?? 'Super Admins',
+                l10n?.egManagersSection ?? 'EG Managers',
+                l10n?.companyManagersSection ?? 'Company Managers',
+                l10n?.pocsSection ?? 'POCs',
+                l10n?.serviceEngineersSection ?? 'Service Engineers',
+                l10n?.othersSection ?? 'Others',
               ];
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
                 children: [
                   for (final section in sectionOrder)
                     if (grouped.containsKey(section) &&
@@ -369,7 +371,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
             }
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
               children: [
                 Wrap(
                   spacing: gap,
@@ -394,17 +396,21 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               child: _webToolbar(),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: WebFilterTiles(
                 unselectedColor: const Color(0xFFE8F5E9),
+                compact: true,
+                minTileWidth: _tabs.length > 1 ? 150 : null,
+                scrollController:
+                    _tabs.length > 1 ? _tabsScrollController : null,
                 options: [
                   for (var i = 0; i < _tabs.length; i++)
                     WebFilterOption(
-                      label: _tabs[i],
+                      label: _localizedTabLabel(context, _tabs[i]),
                       icon: _webTabMeta[i].$1,
                       color: _webTabMeta[i].$2,
                       selected: _selectedTab == i,
@@ -417,7 +423,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
             const SizedBox(height: 18),
             if (_selectedTab != 0)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _buildResultHeader(users.length),
               ),
             if (_selectedTab != 0) const SizedBox(height: 12),
@@ -458,7 +464,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
           isDense: true,
           filled: true,
           fillColor: const Color(0xFFF7FAF8),
-          hintText: 'Search Users',
+          hintText: AppLocalizations.of(context)?.searchUsers ?? 'Search Users',
           hintStyle: TextStyle(
             fontFamily: 'Montserrat',
             fontSize: 14.5,
@@ -607,7 +613,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                user.isActive ? 'Active' : 'Inactive',
+                                user.isActive ? (AppLocalizations.of(context)?.active ?? 'Active') : (AppLocalizations.of(context)?.inactive ?? 'Inactive'),
                                 style: TextStyle(
                                   fontFamily: 'Montserrat',
                                   fontSize: 11.5,
@@ -621,20 +627,20 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                         const SizedBox(height: 12),
                         _webInfoRow(
                           Icons.email_outlined,
-                          'Email',
+                          AppLocalizations.of(context)?.email ?? 'Email',
                           user.email.isEmpty ? '-' : user.email,
                         ),
                         const SizedBox(height: 7),
                         _webInfoRow(
                           Icons.phone_outlined,
-                          'Mobile',
+                          AppLocalizations.of(context)?.mobile ?? 'Mobile',
                           user.mobile,
                         ),
                         const SizedBox(height: 7),
                         _webInfoRow(
                           Icons.business_outlined,
-                          'Company',
-                          user.companyNames.isEmpty ? 'Not Assigned' : user.companyNames,
+                          AppLocalizations.of(context)?.company ?? 'Company',
+                          user.companyNames.isEmpty ? (AppLocalizations.of(context)?.notAssigned ?? 'Not Assigned') : user.companyNames,
                         ),
                       ],
                     ),
@@ -678,28 +684,40 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                     ),
                   ),
                   const Spacer(),
-                  Tooltip(
-                    message: 'Not Available',
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.person_add_alt_1_outlined,
-                          size: 14,
-                          color: _addGreen,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Created By',
-                          style: TextStyle(
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.person_add_alt_1_outlined,
+                        size: 14,
+                        color: _addGreen,
+                      ),
+                      const SizedBox(width: 6),
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
                             fontFamily: 'Montserrat',
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black.withValues(alpha: 0.45),
                           ),
+                          children: [
+                            TextSpan(
+                              text: '${AppLocalizations.of(context)?.createdBy ?? 'Created By'}: ',
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.45),
+                              ),
+                            ),
+                            TextSpan(
+                              text: _creatorName(user.createdBy) ?? (AppLocalizations.of(context)?.notAvailable ?? 'Not Available'),
+                              style: const TextStyle(
+                                color: Color(0xFF1A1A1A),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -726,7 +744,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
         const SizedBox(width: 9),
         Expanded(
           child: RichText(
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             text: TextSpan(
               style: const TextStyle(
@@ -848,7 +866,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
             isDense: true,
             filled: true,
             fillColor: Colors.white,
-            hintText: 'Search Users',
+            hintText: AppLocalizations.of(context)?.searchUsers ?? 'Search Users',
             hintStyle: TextStyle(
               fontFamily: 'Montserrat',
               fontSize: 16,
@@ -1387,11 +1405,52 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
     );
   }
 
+  String _localizedTabLabel(BuildContext context, String label) {
+    final l10n = AppLocalizations.of(context);
+    switch (label) {
+      case 'All Users':
+        return l10n?.allUsersCount ?? label;
+      case 'Super Admin':
+        return l10n?.superAdmins ?? label;
+      case 'EG Managers':
+        return l10n?.egManagersSection ?? label;
+      case 'Company Managers':
+        return l10n?.companyManagersSection ?? label;
+      case 'POCs':
+        return l10n?.pocsSection ?? label;
+      case 'Service Engineers':
+        return l10n?.serviceEngineersSection ?? label;
+      default:
+        return label;
+    }
+  }
+
   String _formatDate(DateTime? date) {
     if (date == null) return '-';
     final d = date.toLocal();
     String two(int v) => v.toString().padLeft(2, '0');
     return '${two(d.day)}-${two(d.month)}-${d.year}';
+  }
+
+  /// Resolves a creator id to a display name using the already-loaded users.
+  /// Returns null when no creator id is available or it cannot be resolved,
+  /// so the caller can show "Not Available" instead of guessing.
+  String? _creatorName(String? createdBy) {
+    if (createdBy == null || createdBy.trim().isEmpty) return null;
+    final id = createdBy.trim();
+    final users = ref.read(userProvider);
+    for (final u in users) {
+      if (u.id == id) return u.name;
+    }
+    // Also try the raw users list provider snapshot.
+    final async = ref.read(usersListProvider);
+    final list = async.valueOrNull;
+    if (list != null) {
+      for (final u in list) {
+        if (u.id == id) return u.name;
+      }
+    }
+    return null;
   }
 
   Future<void> _toggleActive(AppUser user) async {

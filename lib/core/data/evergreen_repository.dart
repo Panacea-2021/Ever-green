@@ -220,8 +220,9 @@ void cacheFor(Ref ref, Duration duration) {
 }
 
 final companiesProvider = FutureProvider.autoDispose<List<Company>>((ref) {
-  // No cross-route cache: company data (and the AMC count derived from it)
-  // must reflect the latest backend state on every dashboard load.
+  // Keep the result cached briefly so returning to the Dashboard shows the
+  // previously fetched companies immediately instead of refetching.
+  cacheFor(ref, listCacheDuration);
   return ref.watch(evergreenRepositoryProvider).getCompanies();
 });
 

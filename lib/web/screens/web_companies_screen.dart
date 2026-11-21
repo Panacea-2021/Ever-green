@@ -69,6 +69,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
   static const Color _danger = Color(0xFFD32F2F);
 
   _TypeFilter _typeFilter = _TypeFilter.all;
+  final ScrollController _filterScrollController = ScrollController();
 
   List<Company> _visible(List<Company> companies) {
     final seen = <int>{};
@@ -141,6 +142,11 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
 
   Widget _toolbar(List<Company> all) {
     return WebFilterTiles(
+      unselectedColor: const Color(0xFFE8F5E9),
+      selectedColor: _green,
+      compact: true,
+      minTileWidth: 150,
+      scrollController: _filterScrollController,
       options: [
         for (final type in _TypeFilter.values)
           WebFilterOption(
@@ -171,7 +177,7 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
           const WebColumn('Company', flex: 5),
           const WebColumn('GST', flex: 3),
           const WebColumn('Service', flex: 3),
-          const WebColumn('POC', flex: 3),
+          const WebColumn('Company Manager', flex: 5),
           const WebColumn('Company Email', flex: 4),
           const WebColumn('Contract', flex: 3),
           const WebColumn('Status', flex: 2),
@@ -182,10 +188,16 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
           for (final c in companies)
             [
               _CompanyCell(company: c),
-              WebCellText(c.gstNumber ?? ''),
+              Tooltip(
+                message: (c.gstNumber ?? '').isEmpty ? '-' : c.gstNumber!,
+                waitDuration: const Duration(milliseconds: 200),
+                child: WebCellText(c.gstNumber ?? ''),
+              ),
               _ServiceCell(label: c.serviceLabel),
               WebCellText(
-                c.poc?.name ?? '',
+                (c.poc?.name?.isNotEmpty ?? false)
+                    ? c.poc!.name
+                    : (c.managerName.isNotEmpty ? c.managerName : ''),
                 subtitle: [
                   c.poc?.phone,
                   c.pocEmail,

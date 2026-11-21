@@ -72,6 +72,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
   /// page background instead of inside a framed panel.
   static const _webDesignedPaths = {
     Routes.webDashboard,
+    Routes.selectAmc,
     Routes.tasks,
     Routes.myTasks,
     Routes.myServiceTasks,
@@ -120,6 +121,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.myServiceTasks: 'My Service Tasks',
     Routes.editProfile: 'Edit Profile',
     Routes.addUser: 'Add User',
+    Routes.selectAmc: 'Select AMC',
     Routes.technicianTasks: 'Service Engineer Tasks',
     Routes.techniciansList: 'Service Engineers',
     Routes.assignTasks: 'Assign Tasks',
@@ -195,6 +197,10 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
       ref.read(webHeaderActionsProvider).clearActions();
       setState(() => _location = location);
       _refreshIfStale();
+    } else {
+      // Ensure the frame rebuilds so the sidebar reflects the current route
+      // even when the location string is unchanged.
+      setState(() {});
     }
   }
 
@@ -284,8 +290,10 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     if (!framed) return content;
 
     final role = ref.watch(currentUserRoleProvider);
-    final webDesigned = WebModuleFrame._webDesignedPaths.contains(_location) ||
-        _location.startsWith('${Routes.companyDetails}/');
+    final currentLocation = _currentLocation();
+    final webDesigned = WebModuleFrame._webDesignedPaths.contains(currentLocation) ||
+        currentLocation.startsWith('${Routes.companyDetails}/') ||
+        WebModuleFrame._webDesignedPaths.contains(_location);
     final bannered = WebModuleFrame._bannerPaths
         .any((p) => _location == p || _location.startsWith('$p/'));
     final title = _titleFor(role);
@@ -317,9 +325,13 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                     builder: (context, constraints) {
                       final mq = MediaQuery.of(context);
                       if (webDesigned) {
+                        final safeSize = (constraints.maxWidth > 0 &&
+                                constraints.maxHeight > 0)
+                            ? constraints.biggest
+                            : mq.size;
                         return MediaQuery(
                           data: mq.copyWith(
-                            size: constraints.biggest,
+                            size: safeSize,
                             padding: EdgeInsets.zero,
                             viewPadding: EdgeInsets.zero,
                           ),

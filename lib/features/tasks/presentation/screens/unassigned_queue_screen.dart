@@ -36,6 +36,7 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
   static const Color _green = Color(0xFF106220);
   QueueTab _tab = QueueTab.unassigned;
   bool _webHeaderActionsCleared = false;
+  String? _selectedTicketId;
 
   TaskActionHandler get _handler => TaskActionHandler(context, ref);
 
@@ -649,13 +650,19 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
           ),
           itemCount: list.length,
           itemBuilder: (_, index) =>
-              _WebQueueHover(child: _webCard(list[index])),
+              _WebQueueHover(
+                selected: _selectedTicketId == list[index].id,
+                child: _webCard(
+                  list[index],
+                  selected: _selectedTicketId == list[index].id,
+                ),
+              ),
         );
       },
     );
   }
 
-  Widget _webCard(TaskItem t) {
+  Widget _webCard(TaskItem t, {bool selected = false}) {
     final overdue = t.isOverdue();
     final alert =
         _tab == QueueTab.awaiting || _tab == QueueTab.escalation || overdue;
@@ -700,16 +707,15 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => context.push('${Routes.taskDetails}/${t.id}'),
+      onTap: () {
+        setState(() => _selectedTicketId = t.id);
+        context.push('${Routes.taskDetails}/${t.id}');
+      },
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: selected ? const Color(0xFFF1F8F2) : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: alert ? red.withValues(alpha: 0.6) : const Color(0xFFE2E8E3),
-            width: alert ? 1.4 : 1,
-          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1411,9 +1417,10 @@ class _UnassignedQueueScreenState extends ConsumerState<UnassignedQueueScreen>
 }
 
 class _WebQueueHover extends StatefulWidget {
-  const _WebQueueHover({required this.child});
+  const _WebQueueHover({required this.child, this.selected = false});
 
   final Widget child;
+  final bool selected;
 
   @override
   State<_WebQueueHover> createState() => _WebQueueHoverState();
@@ -1424,6 +1431,12 @@ class _WebQueueHoverState extends State<_WebQueueHover> {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = widget.selected
+        ? const Color(0xFF106220)
+        : (_hover
+            ? const Color(0xFF106220).withValues(alpha: 0.45)
+            : const Color(0xFFDCE8DE));
+    final borderWidth = widget.selected ? 2.0 : 1.0;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -1432,6 +1445,7 @@ class _WebQueueHoverState extends State<_WebQueueHover> {
         transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor, width: borderWidth),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: _hover ? 0.09 : 0.04),

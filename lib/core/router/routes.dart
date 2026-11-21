@@ -47,6 +47,7 @@ abstract class Routes {
   // Users routes
   static const String usersList = '/users-list';
   static const String addUser = '/add-user';
+  static const String selectAmc = '/select-amc';
 
   // Technicians routes
   static const String techniciansList = '/technicians-list';

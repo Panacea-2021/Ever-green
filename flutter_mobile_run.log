@@ -1,0 +1,519 @@
+Launching lib\main.dart on sdk gphone64 x86 64 in debug mode...
+Running Gradle task 'assembleDebug'...                          
+Running Gradle task 'assembleDebug'...                            371.9s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           7.1s
+I/FlutterActivityAndFragmentDelegate( 7986): If you are attempting to set --enable-dart-profiling via Intent extras to launch a Flutter component outside of using the Flutter CLI, note that support for setting engine flags on Android via Intent will soon be dropped; see https://github.com/flutter/flutter/issues/180686 for more information on this breaking change. To migrate, set --enable-dart-profiling or any other flags specified via Intent extras on the command line instead or see https://github.com/flutter/flutter/blob/main/docs/engine/Flutter-Android-Engine-Flags.md for alternative methods.
+D/FlutterJNI( 7986): Beginning load of flutter...
+D/FlutterJNI( 7986): flutter (null) was loaded normally!
+I/flutter ( 7986): [IMPORTANT:flutter/shell/platform/android/android_context_gl_impeller.cc(104)] Using the Impeller rendering backend (OpenGLES).
+D/FlutterRenderer( 7986): Width is zero. 0,0
+D/FlutterRenderer( 7986): Width is zero. 0,0
+D/FlutterJNI( 7986): Sending viewport metrics to the engine.
+I/Choreographer( 7986): Skipped 53 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl( 7986): Register WindowLayoutInfoListener on Context=com.evergreen.MainActivity@5988fd4, of which baseContext=android.app.ContextImpl@98f6735
+D/FlutterJNI( 7986): Sending viewport metrics to the engine.
+Syncing files to device sdk gphone64 x86 64...                  
+D/FlutterJNI( 7986): Sending viewport metrics to the engine.
+Syncing files to device sdk gphone64 x86 64...                     221ms
+
+Flutter run key commands.
+r Hot reload. 
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on sdk gphone64 x86 64 is available at: http://127.0.0.1:54986/spNYDSZCyVo=/
+The Flutter DevTools debugger and profiler on sdk gphone64 x86 64 is available at: http://127.0.0.1:54986/spNYDSZCyVo=/devtools/?uri=ws://127.0.0.1:54986/spNYDSZCyVo=/ws
+I/Choreographer( 7986): Skipped 161 frames!  The application may be doing too much work on its main thread.
+D/ProfileInstaller( 7986): Installing profile for com.evergreen
+I/com.evergreen( 7986): Background concurrent mark compact GC freed 3969KB AllocSpace bytes, 14(332KB) LOS objects, 49% free, 3814KB/7628KB, paused 7.311ms,5.631ms total 135.732ms
+D/InsetsController( 7986): hide(ime(), fromIme=false)
+I/ImeTracker( 7986): com.evergreen:48ce6166: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/com.evergreen( 7986): Background concurrent mark compact GC freed 2053KB AllocSpace bytes, 51(1804KB) LOS objects, 49% free, 3942KB/7884KB, paused 2.021ms,24.639ms total 328.525ms
+I/ExoPlayerImpl( 7986): Init 82aa4e2 [AndroidXMedia3/1.9.2] [emu64xa, sdk_gphone64_x86_64, Google, 36]
+D/AudioSystem( 7986): onNewServiceWithAdapter: media.audio_flinger service obtained 0x73f386f6fbd0
+D/AudioSystem( 7986): getService: checking for service media.audio_flinger: 0x73f4a6f346f0
+D/AudioSystem( 7986): onNewService: media.audio_policy service obtained 0x73f4a6f148f0
+D/AudioSystem( 7986): getService: checking for service media.audio_policy: 0x73f4a6f148f0
+I/DMCodecAdapterFactory( 7986): Creating an asynchronous MediaCodec adapter for track type video
+D/CCodec  ( 7986): allocate(c2.goldfish.h264.decoder)
+I/ApexCodecsLazy( 7986): Failed to load libcom.android.media.swcodec.apexcodecs.so: dlopen failed: library "libcom.android.media.swcodec.apexcodecs.so" not found
+I/Codec2Client( 7986): Available Codec2 services: "default" "software"
+I/CCodec  ( 7986): setting up 'default' as default (vendor) store
+I/CCodec  ( 7986): Created component [c2.goldfish.h264.decoder] for [c2.goldfish.h264.decoder]
+D/CCodecConfig( 7986): read media type: video/avc
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: algo.buffers.max-count.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: output.subscribed-indices.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: input.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: output.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: algo.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: output.buffers.pool-ids.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: algo.buffers.pool-ids.values
+D/ReflectedParamUpdater( 7986): ignored struct field coded.color-format.locations
+D/ReflectedParamUpdater( 7986): ignored struct field resources.needed.values
+D/CCodecConfig( 7986): ignoring local param raw.size (0xd2001800) as it is already supported
+D/CCodecConfig( 7986): ignoring local param default.color (0x5200180b) as it is already supported
+D/ReflectedParamUpdater( 7986): ignored struct field raw.hdr-static-info.mastering
+I/CCodecConfig( 7986): query failed after returning 12 values (BAD_INDEX)
+D/CCodecConfig( 7986): c2 config diff is Dict {
+D/CCodecConfig( 7986):   c2::u32 coded.pl.level = 20496
+D/CCodecConfig( 7986):   c2::u32 coded.pl.profile = 20481
+D/CCodecConfig( 7986):   c2::u32 coded.vui.color.matrix = 0
+D/CCodecConfig( 7986):   c2::u32 coded.vui.color.primaries = 0
+D/CCodecConfig( 7986):   c2::u32 coded.vui.color.range = 2
+D/CCodecConfig( 7986):   c2::u32 coded.vui.color.transfer = 0
+D/CCodecConfig( 7986):   c2::u32 default.color.matrix = 0
+D/CCodecConfig( 7986):   c2::u32 default.color.primaries = 0
+D/CCodecConfig( 7986):   c2::u32 default.color.range = 0
+D/CCodecConfig( 7986):   c2::u32 default.color.transfer = 0
+D/CCodecConfig( 7986):   c2::u32 input.buffers.max-size.value = 6291456
+D/CCodecConfig( 7986):   c2::u32 input.delay.value = 0
+D/CCodecConfig( 7986):   string input.media-type.value = "video/avc"
+D/CCodecConfig( 7986):   c2::u32 output.delay.value = 8
+D/CCodecConfig( 7986):   string output.media-type.value = "video/raw"
+D/CCodecConfig( 7986):   c2::u32 raw.color.matrix = 0
+D/CCodecConfig( 7986):   c2::u32 raw.color.primaries = 0
+D/CCodecConfig( 7986):   c2::u32 raw.color.range = 2
+D/CCodecConfig( 7986):   c2::u32 raw.color.transfer = 0
+D/CCodecConfig( 7986):   c2::u32 raw.max-size.height = 240
+D/CCodecConfig( 7986):   c2::u32 raw.max-size.width = 320
+D/CCodecConfig( 7986):   c2::u32 raw.pixel-format.value = 35
+D/CCodecConfig( 7986):   c2::i32 raw.rotation.flip = 0
+D/CCodecConfig( 7986):   c2::i32 raw.rotation.value = 0
+D/CCodecConfig( 7986):   c2::u32 raw.sar.height = 1
+D/CCodecConfig( 7986):   c2::u32 raw.sar.width = 1
+D/CCodecConfig( 7986):   c2::u32 raw.size.height = 240
+D/CCodecConfig( 7986):   c2::u32 raw.size.width = 320
+D/CCodecConfig( 7986):   c2:
+W/ColorUtils( 7986): expected specified color aspects (2:0:0:0)
+I/MediaCodec( 7986): MediaCodec will operate in async mode
+E/MediaCodec( 7986): Media Quality Service not found.
+D/SurfaceUtils( 7986): connecting to surface 0x73f406f204b0, reason connectToSurface
+I/MediaCodec( 7986): [c2.goldfish.h264.decoder] setting surface generation to 8177665
+D/SurfaceUtils( 7986): disconnecting from surface 0x73f406f204b0, reason connectToSurface(reconnect)
+D/SurfaceUtils( 7986): connecting to surface 0x73f406f204a0, reason connectToSurface(reconnect-with-listener)
+D/CCodec  ( 7986): [c2.goldfish.h264.decoder] buffers are bound to CCodec for this session
+D/CCodecConfig( 7986): no c2 equivalents for log-session-id
+D/CCodecConfig( 7986): no c2 equivalents for importance
+D/CCodecConfig( 7986): no c2 equivalents for color-standard
+D/CCodecConfig( 7986): no c2 equivalents for csd-1
+D/CCodecConfig( 7986): no c2 equivalents for native-window
+D/CCodecConfig( 7986): no c2 equivalents for native-window-generation
+D/CCodecConfig( 7986): no c2 equivalents for flags
+D/CCodecConfig( 7986): config failed => CORRUPTED
+D/CCodecConfig( 7986): c2 config diff is   c2::u32 default.color.matrix = 3
+D/CCodecConfig( 7986):   c2::u32 default.color.primaries = 3
+D/CCodecConfig( 7986):   c2::u32 default.color.range = 2
+D/CCodecConfig( 7986):   c2::u32 default.color.transfer = 3
+D/CCodecConfig( 7986):   c2::u32 raw.size.height = 176
+W/Codec2Client( 7986): query -- param skipped: index = 1107298332.
+D/CCodec  ( 7986): client requested max input size 22332, which is smaller than what component recommended (6291456); overriding with component recommendation.
+W/CCodec  ( 7986): This behavior is subject to change. It is recommended that app developers double check whether the requested max input size is in reasonable range.
+D/CCodec  ( 7986): encoding statistics level = 0
+D/CCodec  ( 7986): setup formats input: AMessage(what = 0x00000000) = {
+D/CCodec  ( 7986):   int32_t height = 176
+D/CCodec  ( 7986):   int32_t level = 65536
+D/CCodec  ( 7986):   int32_t max-input-size = 6291456
+D/CCodec  ( 7986):   string mime = "video/avc"
+D/CCodec  ( 7986):   int32_t profile = 65536
+D/CCodec  ( 7986):   int32_t width = 320
+D/CCodec  ( 7986):   Rect crop(0, 0, 319, 175)
+D/CCodec  ( 7986): }
+D/CCodec  ( 7986): setup formats output: AMessage(what = 0x00000000) = {
+D/CCodec  ( 7986):   int32_t android._color-format = 2135033992
+D/CCodec  ( 7986):   int32_t android._video-scaling = 1
+D/CCodec  ( 7986):   int32_t rotation-degrees = 0
+D/CCodec  ( 7986):   int32_t color-standard = 4
+D/CCodec  ( 7986):   int32_t color-range = 2
+D/CCodec  ( 7986):   int32_t color-transfer = 3
+D/CCodec  ( 7986):   int32_t sar-height = 1
+D/CCodec  ( 7986):   int32_t sar-width = 1
+D/CCodec  ( 7986):   Rect crop(0, 0, 319, 175)
+D/CCodec  ( 7986):   int32_t width = 320
+D/CCodec  ( 7986):   int32_t height = 176
+D/CCodec  ( 7986):   int32_t max-height = 240
+D/CCodec  ( 7986):   int32_t max-width = 320
+D/CCodec  ( 7986):   string mime = "video/raw"
+D/CCodec  ( 7986):   int32_t android._dataspace = 259
+D/CCodec  ( 7986):   int32_t color-format = 2130708361
+D/CCodec  ( 7986): }
+I/CCodecConfig( 7986): query failed after returning 12 values (BAD_INDEX)
+D/CCodecConfig( 7986): c2 config diff is   c2::u32 raw.color.matrix = 3
+D/CCodecConfig( 7986):   c2::u32 raw.color.primaries = 3
+D/CCodecConfig( 7986):   c2::u32 raw.color.transfer = 3
+D/MediaCodec( 7986): keep callback message for reclaim
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+W/Codec2Client( 7986): query -- param skipped: index = 2684356609.
+D/C2Store ( 7986): Using DMABUF Heaps
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] Created input block pool with allocatorID 16 => poolID 17 - OK (0)
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] Query output surface allocator returned 0 params => BAD_INDEX (6)
+I/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] Created output block pool with allocatorID 18 => poolID 21 - OK
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] Configured output block pool ids 21 => OK
+D/Codec2-OutputBufferQueue( 7986): remote graphic buffer migration 0/0
+D/Codec2Client( 7986): setOutputSurface -- failed to set consumer usage (6/BAD_INDEX)
+D/Codec2Client( 7986): setOutputSurface -- generation=8177665 consumer usage=0x900
+D/Codec2Client( 7986): Surface configure completed
+I/com.evergreen( 7986): Background concurrent mark compact GC freed 3989KB AllocSpace bytes, 120(4368KB) LOS objects, 49% free, 6418KB/12MB, paused 3.116ms,2.645ms total 414.263ms
+I/DMABUFHEAPS( 7986): Using DMA-BUF heap named: system
+I/DMCodecAdapterFactory( 7986): Creating an asynchronous MediaCodec adapter for track type audio
+D/CCodec  ( 7986): allocate(c2.android.aac.decoder)
+I/CCodec  ( 7986): setting up 'default' as default (vendor) store
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] Ignoring stale input buffer done callback: last flush index = 0, frameIndex = 0
+I/CCodec  ( 7986): Created component [c2.android.aac.decoder] for [c2.android.aac.decoder]
+D/CCodecConfig( 7986): read media type: audio/mp4a-latm
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: algo.buffers.max-count.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: output.subscribed-indices.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: input.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: output.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: algo.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: output.buffers.pool-ids.values
+D/ReflectedParamUpdater( 7986): extent() != 1 for single value type: algo.buffers.pool-ids.values
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+D/CCodecConfig( 7986): c2 config diff is Dict {
+D/CCodecConfig( 7986):   c2::u32 coded.aac-packaging.value = 0
+D/CCodecConfig( 7986):   c2::u32 coded.bitrate.value = 64000
+D/CCodecConfig( 7986):   c2::u32 coded.pl.level = 0
+D/CCodecConfig( 7986):   c2::u32 coded.pl.profile = 8192
+D/CCodecConfig( 7986):   c2::i32 coding.drc.album-mode.value = 0
+D/CCodecConfig( 7986):   c2::float coding.drc.attenuation-factor.value = 1
+D/CCodecConfig( 7986):   c2::float coding.drc.boost-factor.value = 1
+D/CCodecConfig( 7986):   c2::i32 coding.drc.compression-mode.value = 3
+D/CCodecConfig( 7986):   c2::i32 coding.drc.effect-type.value = 3
+D/CCodecConfig( 7986):   c2::float coding.drc.encoded-level.value = 0.25
+D/CCodecConfig( 7986):   c2::float coding.drc.reference-level.value = -16
+D/CCodecConfig( 7986):   c2::u32 input.buffers.max-size.value = 8192
+D/CCodecConfig( 7986):   c2::u32 input.delay.value = 0
+D/CCodecConfig( 7986):   string input.media-type.value = "audio/mp4a-latm"
+D/CCodecConfig( 7986):   c2::u32 output.delay.value = 2
+D/CCodecConfig( 7986):   c2::float output.drc.output-loudness.value = 0.25
+D/CCodecConfig( 7986):   c2::u32 output.large-frame.max-size = 0
+D/CCodecConfig( 7986):   c2::u32 output.large-frame.threshold-size = 0
+D/CCodecConfig( 7986):   string output.media-type.value = "audio/raw"
+D/CCodecConfig( 7986):   c2::u32 raw.channel-count.value = 1
+D/CCodecConfig( 7986):   c2::u32 raw.channel-mask.value = 0
+D/CCodecConfig( 7986):   c2::u32 raw.max-channel-count.value = 8
+D/CCodecConfig( 7986):   c2::u32 raw.sample-rate.value = 44100
+D/CCodecConfig( 7986): }
+I/MediaCodec( 7986): MediaCodec will operate in async mode
+E/MediaCodec( 7986): Media Quality Service not found.
+D/CCodec  ( 7986): [c2.android.aac.decoder] buffers are bound to CCodec for this session
+D/CCodecConfig( 7986): no c2 equivalents for log-session-id
+D/CCodecConfig( 7986): no c2 equivalents for importance
+D/CCodecConfig( 7986): no c2 equivalents for flags
+D/CCodecConfig( 7986): config failed => CORRUPTED
+D/CCodecConfig( 7986): c2 config diff is   c2::u32 raw.channel-count.value = 2
+D/CCodecConfig( 7986):   c2::u32 raw.sample-rate.value = 48000
+W/Codec2Client( 7986): query -- param skipped: index = 1107298332.
+D/CCodec  ( 7986): client requested max input size 571, which is smaller than what component recommended (8192); overriding with component recommendation.
+W/CCodec  ( 7986): This behavior is subject to change. It is recommended that app developers double check whether the requested max input size is in reasonable range.
+D/CCodec  ( 7986): encoding statistics level = 0
+D/CCodec  ( 7986): setup formats input: AMessage(what = 0x00000000) = {
+D/CCodec  ( 7986):   int32_t aac-drc-album-mode = 0
+D/CCodec  ( 7986):   int32_t aac-drc-boost-level = 127
+D/CCodec  ( 7986):   int32_t aac-drc-cut-level = 127
+D/CCodec  ( 7986):   int32_t aac-drc-effect-type = 3
+D/CCodec  ( 7986):   int32_t aac-encoded-target-level = -1
+D/CCodec  ( 7986):   int32_t aac-max-output-channel_count = 8
+D/CCodec  ( 7986):   int32_t aac-target-ref-level = 64
+D/CCodec  ( 7986):   int32_t bitrate = 64000
+D/CCodec  ( 7986):   int32_t channel-count = 2
+D/CCodec  ( 7986):   int32_t channel-mask = 0
+D/CCodec  ( 7986):   int32_t level = 0
+D/CCodec  ( 7986):   int32_t max-input-size = 8192
+D/CCodec  ( 7986):   int32_t max-output-channel-count = 8
+D/CCodec  ( 7986):   string mime = "audio/mp4a-latm"
+D/CCodec  ( 7986):   int32_t profile = 2
+D/CCodec  ( 7986):   int32_t sample-rate = 48000
+D/CCodec  ( 7986): }
+D/CCodec  ( 7986): setup formats output: AMessage(what = 0x00000000) = {
+D/CCodec  ( 7986):   int32_t aac-drc-album-mode = 0
+D/CCodec  ( 7986):   int32_t aac-drc-boost-level = 127
+D/CCodec  ( 7986):   int32_t aac-drc-cut-level = 127
+D/CCodec  ( 7986):   int32_t aac-drc-effect-type = 3
+D/CCodec  ( 7986):   int32_t aac-drc-output-loudness = -1
+D/CCodec  ( 7986):   int32_t aac-encoded-target-level = -1
+D/CCodec  ( 7986):   int32_t aac-max-output-channel_count = 8
+D/CCodec  ( 7986):   int32_t aac-target-ref-level = 64
+D/CCodec  ( 7986):   int32_t buffer-batch-max-output-size = 0
+D/CCodec  ( 7986):   int32_t buffer-batch-threshold-output-size = 0
+D/CCodec  ( 7986):   int32_t channel-count = 2
+D/CCodec  ( 7986):   int32_t channel-mask = 0
+D/CCodec  ( 7986):   int32_t max-output-channel-count = 8
+D/CCodec  ( 7986):   string mime = "audio/raw"
+D/CCodec  ( 7986):   int32_t sample-rate = 48000
+D/CCodec  ( 7986):   int32_t android._config-pcm-encoding = 2
+D/CCodec  ( 7986): }
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+E/com.evergreen( 7986): Failed to query component interface for required system resources: 6
+D/MediaCodec( 7986): keep callback message for reclaim
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/CCodecBufferChannel( 7986): [c2.android.aac.decoder#418] Created input block pool with allocatorID 16 => poolID 18 - OK (0)
+I/CCodecBufferChannel( 7986): [c2.android.aac.decoder#418] Created output block pool with allocatorID 16 => poolID 48 - OK
+D/CCodecBufferChannel( 7986): [c2.android.aac.decoder#418] Configured output block pool ids 48 => OK
+D/CCodecConfig( 7986): c2 config diff is   c2::u32 raw.channel-mask.value = 12
+D/CCodecBuffers( 7986): [c2.android.aac.decoder#418:Output[N]] popFromStashAndRegister: at 1000000000000us, output format changed to AMessage(what = 0x00000000) = {
+D/CCodecBuffers( 7986):   int32_t aac-drc-album-mode = 0
+D/CCodecBuffers( 7986):   int32_t aac-drc-boost-level = 127
+D/CCodecBuffers( 7986):   int32_t aac-drc-cut-level = 127
+D/CCodecBuffers( 7986):   int32_t aac-drc-effect-type = 3
+D/CCodecBuffers( 7986):   int32_t aac-drc-output-loudness = -1
+D/CCodecBuffers( 7986):   int32_t aac-encoded-target-level = -1
+D/CCodecBuffers( 7986):   int32_t aac-max-output-channel_count = 8
+D/CCodecBuffers( 7986):   int32_t aac-target-ref-level = 64
+D/CCodecBuffers( 7986):   int32_t buffer-batch-max-output-size = 0
+D/CCodecBuffers( 7986):   int32_t buffer-batch-threshold-output-size = 0
+D/CCodecBuffers( 7986):   int32_t channel-count = 2
+D/CCodecBuffers( 7986):   int32_t channel-mask = 12
+D/CCodecBuffers( 7986):   int32_t max-output-channel-count = 8
+D/CCodecBuffers( 7986):   string mime = "audio/raw"
+D/CCodecBuffers( 7986):   int32_t sample-rate = 48000
+D/CCodecBuffers( 7986):   int32_t android._config-pcm-encoding = 2
+D/CCodecBuffers( 7986): }
+D/CCodecConfig( 7986): c2 config diff is   c2::u32 raw.color.primaries = 4
+D/CCodecConfig( 7986):   c2::u32 raw.crop.height = 176
+D/CCodecConfig( 7986):   c2::u32 raw.crop.left = 0
+D/CCodecConfig( 7986):   c2::u32 raw.crop.top = 0
+D/CCodecConfig( 7986):   c2::u32 raw.crop.width = 320
+D/CCodecBuffers( 7986): [c2.goldfish.h264.decoder#27:2D-Output] popFromStashAndRegister: at 1000000000000us, output format changed to AMessage(what = 0x00000000) = {
+D/CCodecBuffers( 7986):   int32_t android._color-format = 2135033992
+D/CCodecBuffers( 7986):   int32_t android._video-scaling = 1
+D/CCodecBuffers( 7986):   int32_t rotation-degrees = 0
+D/CCodecBuffers( 7986):   int32_t color-standard = 4
+D/CCodecBuffers( 7986):   int32_t color-range = 2
+D/CCodecBuffers( 7986):   int32_t color-transfer = 3
+D/CCodecBuffers( 7986):   int32_t sar-height = 1
+D/CCodecBuffers( 7986):   int32_t sar-width = 1
+D/CCodecBuffers( 7986):   Rect crop(0, 0, 319, 175)
+D/CCodecBuffers( 7986):   int32_t width = 320
+D/CCodecBuffers( 7986):   int32_t height = 176
+D/CCodecBuffers( 7986):   int32_t max-height = 240
+D/CCodecBuffers( 7986):   int32_t max-width = 320
+D/CCodecBuffers( 7986):   string mime = "video/raw"
+D/CCodecBuffers( 7986):   int32_t android._dataspace = 259
+D/CCodecBuffers( 7986):   int32_t color-format = 2130708361
+D/CCodecBuffers( 7986): }
+I/com.evergreen( 7986): hiddenapi: Accessing hidden method Landroid/media/AudioTrack;->getLatency()I (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/media3/exoplayer/audio/AudioTrackPositionTracker; (domain=app) using reflection: allowed
+I/com.evergreen( 7986): Background concurrent mark compact GC freed 2789KB AllocSpace bytes, 106(3816KB) LOS objects, 49% free, 6441KB/12MB, paused 59.757ms,3.528ms total 253.130ms
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8650656656500
+I/com.evergreen( 7986): Background concurrent mark compact GC freed 1721KB AllocSpace bytes, 42(1704KB) LOS objects, 49% free, 10MB/21MB, paused 2.005ms,2.747ms total 235.009ms
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8652873261400
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 77/83 (recycle/alloc) - 6/82 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 2(16384 size) used buffers - 173/178 (recycle/alloc) - 5/177 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 201/207 (recycle/alloc) - 6/206 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 4(32768 size) used buffers - 417/422 (recycle/alloc) - 5/419 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 324/330 (recycle/alloc) - 6/330 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 641/646 (recycle/alloc) - 5/640 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8668607257200
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 449/455 (recycle/alloc) - 6/454 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 873/878 (recycle/alloc) - 5/872 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 583/589 (recycle/alloc) - 6/589 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 4(32768 size) used buffers - 1133/1138 (recycle/alloc) - 5/1125 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8680298069700
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 712/718 (recycle/alloc) - 6/717 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 1359/1364 (recycle/alloc) - 5/1353 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8682304376800
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+I/Choreographer( 7986): Skipped 33 frames!  The application may be doing too much work on its main thread.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 822/828 (recycle/alloc) - 6/824 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 4(32768 size) used buffers - 1579/1584 (recycle/alloc) - 5/1566 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 941/947 (recycle/alloc) - 6/946 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 1813/1818 (recycle/alloc) - 5/1802 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8694658325800
+W/AudioTrack( 7986): getTimestamp_l(22): retrograde timestamp time corrected, 8694982418400 < 8694983845600
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 1052/1058 (recycle/alloc) - 6/1055 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8696938378500
+W/AudioTrack( 7986): getTimestamp_l(22): retrograde timestamp time corrected, 8696936357100 < 8696938378500
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 4(32768 size) used buffers - 1995/2000 (recycle/alloc) - 5/1977 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8697349938700
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8698994598800
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8700851686900
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 1154/1160 (recycle/alloc) - 6/1159 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 4(32768 size) used buffers - 2206/2211 (recycle/alloc) - 5/2189 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8703449536300
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8704989838200
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 1269/1275 (recycle/alloc) - 6/1273 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 4(32768 size) used buffers - 2438/2443 (recycle/alloc) - 5/2415 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8708563928300
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8710920931900
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 1383/1389 (recycle/alloc) - 6/1387 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8712690927400
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 2655/2660 (recycle/alloc) - 5/2634 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8714913991900
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8717124023300
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 1508/1514 (recycle/alloc) - 6/1513 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 3(24576 size) used buffers - 2877/2882 (recycle/alloc) - 5/2849 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8720185681200
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8722789371300
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 1620/1626 (recycle/alloc) - 6/1625 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 3098/3103 (recycle/alloc) - 5/3072 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8724848501000
+I/com.evergreen( 7986): Background concurrent mark compact GC freed 7077KB AllocSpace bytes, 33(1684KB) LOS objects, 49% free, 12MB/25MB, paused 4.845ms,47.234ms total 632.822ms
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8728017832100
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 1731/1737 (recycle/alloc) - 6/1736 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 2(16384 size) used buffers - 3319/3324 (recycle/alloc) - 5/3292 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+I/com.evergreen( 7986): Background concurrent mark compact GC freed 2335KB AllocSpace bytes, 37(1796KB) LOS objects, 49% free, 21MB/43MB, paused 1.998ms,4.079ms total 195.333ms
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8731120609500
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8732605010400
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 1854/1860 (recycle/alloc) - 6/1856 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 4(32768 size) used buffers - 3542/3547 (recycle/alloc) - 5/3510 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8736855969700
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8738678048100
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 1970/1976 (recycle/alloc) - 6/1975 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 5(40960 size) used buffers - 3761/3766 (recycle/alloc) - 5/3727 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8741548227500
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8742272603500
+W/AudioTrack( 7986): getTimestamp_l(22): retrograde timestamp time corrected, 8742496633500 < 8742498328900
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 2083/2089 (recycle/alloc) - 6/2088 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 3988/3993 (recycle/alloc) - 5/3952 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8749393154200
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 2205/2211 (recycle/alloc) - 6/2210 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 4204/4209 (recycle/alloc) - 5/4168 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 2332/2338 (recycle/alloc) - 6/2337 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 4(32768 size) used buffers - 4435/4440 (recycle/alloc) - 5/4392 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 2458/2464 (recycle/alloc) - 6/2464 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 5(40960 size) used buffers - 4668/4673 (recycle/alloc) - 5/4625 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 2581/2587 (recycle/alloc) - 6/2586 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 3(24576 size) used buffers - 4920/4925 (recycle/alloc) - 5/4872 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8769783190900
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 2710/2716 (recycle/alloc) - 6/2715 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 2(16384 size) used buffers - 5155/5160 (recycle/alloc) - 5/5110 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 2837/2843 (recycle/alloc) - 6/2842 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 5393/5398 (recycle/alloc) - 5/5342 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 2967/2973 (recycle/alloc) - 6/2973 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 5638/5643 (recycle/alloc) - 5/5587 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8784616050400
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 3093/3099 (recycle/alloc) - 6/3097 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 5883/5888 (recycle/alloc) - 5/5827 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8790117158600
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8792631620600
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 3219/3225 (recycle/alloc) - 6/3222 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 6114/6119 (recycle/alloc) - 5/6058 (fetch/transfer)
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 3341/3347 (recycle/alloc) - 6/3346 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 6354/6359 (recycle/alloc) - 5/6293 (fetch/transfer)
+I/Choreographer( 7986): Skipped 31 frames!  The application may be doing too much work on its main thread.
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8801113263200
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 3466/3472 (recycle/alloc) - 6/3471 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 4(32768 size) used buffers - 6581/6586 (recycle/alloc) - 5/6519 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8804385746300
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 3591/3597 (recycle/alloc) - 6/3597 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 5(40960 size) total buffers - 1(8192 size) used buffers - 6834/6839 (recycle/alloc) - 5/6768 (fetch/transfer)
+D/AudioTrack( 7986): getTimestamp_l(22): device stall time corrected using current time 8811062654800
+W/WindowOnBackDispatcher( 7986): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 7986): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ExoPlayerImpl( 7986): Release 82aa4e2 [AndroidXMedia3/1.9.2] [emu64xa, sdk_gphone64_x86_64, Google, 36] [media3.common, media3.exoplayer, media3.decoder, media3.datasource, media3.extractor]
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 12 values (BAD_INDEX)
+D/CCodecConfig( 7986): c2 config diff is   c2::u32 coded.vui.color.matrix = 3
+D/CCodecConfig( 7986):   c2::u32 coded.vui.color.primaries = 4
+D/CCodecConfig( 7986):   c2::u32 coded.vui.color.transfer = 3
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] flushed work; ignored.
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] Discard frames from previous generation.
+D/MediaCodec( 7986): keep callback message for reclaim
+I/CCodecConfig( 7986): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 7986): query -- param skipped: index = 1342179345.
+W/Codec2Client( 7986): query -- param skipped: index = 2415921170.
+W/Codec2Client( 7986): query -- param skipped: index = 1610614798.
+D/SurfaceUtils( 7986): connecting to surface 0x73f406f339b0, reason connectToSurface
+I/MediaCodec( 7986): [c2.goldfish.h264.decoder] setting surface generation to 8177666
+D/SurfaceUtils( 7986): disconnecting from surface 0x73f406f339b0, reason connectToSurface(reconnect)
+D/SurfaceUtils( 7986): connecting to surface 0x73f406f339a0, reason connectToSurface(reconnect-with-listener)
+D/Codec2-OutputBufferQueue( 7986): remote graphic buffer migration 0/0
+D/Codec2Client( 7986): setOutputSurface -- failed to set consumer usage (6/BAD_INDEX)
+D/Codec2Client( 7986): setOutputSurface -- generation=8177666 consumer usage=0x900
+D/Codec2Client( 7986): Surface configure completed
+D/SurfaceUtils( 7986): disconnecting from surface 0x73f406f204b0, reason disconnectFromSurface
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 7986): [c2.goldfish.h264.decoder#27] MediaCodec discarded an unknown buffer
+I/hw-BpHwBinder( 7986): onLastStrongRef automatically unlinking death recipients
+D/SurfaceUtils( 7986): disconnecting from surface 0x73f406f339b0, reason disconnectFromSurface
+D/CCodecBufferChannel( 7986): [c2.android.aac.decoder#418] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 7986): [c2.android.aac.decoder#418] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 7986): [c2.android.aac.decoder#418] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 7986): [c2.android.aac.decoder#418] MediaCodec discarded an unknown buffer
+I/hw-BpHwBinder( 7986): onLastStrongRef automatically unlinking death recipients
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436f5c578 : 0(0 size) total buffers - 0(0 size) used buffers - 6967/6972 (recycle/alloc) - 5/6897 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): evictor expired: 1, evicted: 1
+D/BufferPoolAccessor2.0( 7986): bufferpool2 0x73f436efd628 : 0(0 size) total buffers - 0(0 size) used buffers - 3673/3679 (recycle/alloc) - 6/3674 (fetch/transfer)
+D/BufferPoolAccessor2.0( 7986): evictor expired: 1, evicted: 1
+Lost connection to device.

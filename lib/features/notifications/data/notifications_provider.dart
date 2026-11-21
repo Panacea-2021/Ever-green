@@ -12,8 +12,25 @@ class NotificationEntry {
   const NotificationEntry(this.notification, {this.acceptedBy});
 
   factory NotificationEntry.fromJson(Map<String, dynamic> json) {
-    final accepted = json['accepted_by'];
-    final name = accepted is Map ? '${accepted['name'] ?? ''}'.trim() : '';
+    final accepted = json['accepted_by'] ??
+        json['acceptedBy'] ??
+        json['service_engineer'] ??
+        json['engineer'] ??
+        json['technician'];
+    String name = '';
+    if (accepted is Map) {
+      name = '${accepted['name'] ?? accepted['full_name'] ?? accepted['username'] ?? ''}'
+          .trim();
+    } else if (accepted is String) {
+      name = accepted.trim();
+    } else if (accepted != null) {
+      name = '$accepted'.trim();
+    }
+    // Also check top-level name fields.
+    if (name.isEmpty) {
+      final v = json['accepted_by_name'] ?? json['engineer_name'] ?? json['technician_name'];
+      name = v == null ? '' : '$v'.trim();
+    }
     return NotificationEntry(
       AppNotification.fromJson(json),
       acceptedBy: name.isEmpty ? null : name,
@@ -43,6 +60,8 @@ class NotificationsFeed {
   final bool hasMore;
   final bool loadingMore;
   final Object? loadMoreError;
+  /// Backend-reported total count, when available. Falls back to [items.length].
+  final int? totalCount;
 
   const NotificationsFeed({
     required this.items,
@@ -50,6 +69,7 @@ class NotificationsFeed {
     required this.hasMore,
     this.loadingMore = false,
     this.loadMoreError,
+    this.totalCount,
   });
 
   NotificationsFeed copyWith({
@@ -58,6 +78,7 @@ class NotificationsFeed {
     bool? hasMore,
     bool? loadingMore,
     Object? loadMoreError,
+    int? totalCount,
   }) {
     return NotificationsFeed(
       items: items ?? this.items,
@@ -65,6 +86,7 @@ class NotificationsFeed {
       hasMore: hasMore ?? this.hasMore,
       loadingMore: loadingMore ?? this.loadingMore,
       loadMoreError: loadMoreError,
+      totalCount: totalCount ?? this.totalCount,
     );
   }
 }
@@ -76,31 +98,128 @@ class NotificationsRepository {
 
   static const pageSize = 20;
 
-  /// The caller's own notifications, newest first.
-  Future<(List<NotificationEntry>, bool)> getPage(int page) async {
+  /// The caller's own notifications, newest first. Returns items, hasMore and
+  /// an optional backend-reported total count.
+  Future<(List<NotificationEntry>, bool, int?)> getPage(int page) async {
     final body = unwrap(await _repo.api.post<dynamic>(
       'user/getNotificationsPage',
       data: {'page': page, 'limit': pageSize},
     ),);
     // Accept several possible response shapes so records are not silently
-    // dropped when the backend uses a different envelope key.
+    // dropped when the backend uses a different envelope key. Also unwrap a
+    // nested `data` object (e.g. { data: { notifications: [...] } }).
     List<Map<String, dynamic>> rows = const [];
-    if (body is Map) {
-      for (final key in const ['data', 'notifications', 'items', 'results']) {
-        final v = body[key];
+    dynamic container = body;
+    if (container is Map) {
+      for (final key in const [
+        'data',
+        'notifications',
+        'items',
+        'results',
+        'rows',
+        'records',
+        'list',
+        'notification_list',
+      ]) {
+        final v = container[key];
+        if (v is List) {
+          rows = v.whereType<Map<String, dynamic>>().toList();
+          container = null;
+          break;
+        }
+        if (v is Map) {
+          // Nested envelope: keep searching inside.
+          container = v;
+        }
+      }
+    }
+    if (rows.isEmpty && container is Map) {
+      for (final v in container.values) {
         if (v is List) {
           rows = v.whereType<Map<String, dynamic>>().toList();
           break;
         }
       }
-    } else if (body is List) {
+    }
+    if (rows.isEmpty && body is List) {
       rows = body.whereType<Map<String, dynamic>>().toList();
     }
     final items = rows.map(NotificationEntry.fromJson).toList();
-    final hasMore = body is Map && body['has_more'] is bool
-        ? body['has_more'] as bool
-        : items.length >= pageSize;
-    return (items, hasMore);
+    // Determine hasMore from any common pagination flag, falling back to a
+    // page-full heuristic.
+    bool hasMore = items.length >= pageSize;
+    // Check both the top-level body and the common nested `data` object.
+    final nestedData = body is Map ? body['data'] : null;
+    for (final src in <dynamic>[body, nestedData]) {
+      if (src is! Map) continue;
+      for (final key in const [
+        'has_more',
+        'hasMore',
+        'has_next',
+        'hasNext',
+        'more',
+      ]) {
+        final v = src[key];
+        if (v is bool) {
+          hasMore = v;
+          break;
+        }
+        if (v is num) {
+          hasMore = v != 0;
+          break;
+        }
+      }
+      for (final key in const ['pagination', 'meta', 'page_info']) {
+        final v = src[key];
+        if (v is Map) {
+          for (final k in const [
+            'has_more',
+            'hasMore',
+            'has_next',
+            'hasNext',
+            'more',
+          ]) {
+            final vv = v[k];
+            if (vv is bool) {
+              hasMore = vv;
+              break;
+            }
+            if (vv is num) {
+              hasMore = vv != 0;
+              break;
+            }
+          }
+        }
+      }
+    }
+    // Optional backend-reported total count.
+    int? total;
+    for (final src in <dynamic>[body, nestedData]) {
+      if (src is! Map) continue;
+      for (final key in const [
+        'total',
+        'total_count',
+        'totalCount',
+        'totalRecords',
+        'total_items',
+        'totalItems',
+      ]) {
+        final v = src[key];
+        if (v is num) {
+          total = v.toInt();
+          break;
+        }
+        if (v is String) {
+          final p = int.tryParse(v);
+          if (p != null) {
+            total = p;
+            break;
+          }
+        }
+      }
+      if (total != null) break;
+    }
+    return (items, hasMore, total);
   }
 
   Future<void> markRead({List<int>? ids}) async {
@@ -115,9 +234,49 @@ class NotificationsRepository {
       'user/getUnreadNotificationsCount',
       data: {},
     ),);
-    final data = body is Map ? body['data'] : null;
-    final count = data is Map ? data['count'] : null;
-    return count is num ? count.toInt() : int.tryParse('$count') ?? 0;
+    // Be tolerant of several envelope shapes.
+    dynamic count;
+    if (body is num) {
+      count = body;
+    } else if (body is Map) {
+      for (final key in const [
+        'count',
+        'unread_count',
+        'unreadCount',
+        'total',
+        'value',
+      ]) {
+        if (body[key] != null) {
+          count = body[key];
+          break;
+        }
+      }
+      if (count == null) {
+        for (final nestedKey in const ['data', 'result', 'payload', 'meta']) {
+          final v = body[nestedKey];
+          if (v is Map) {
+            for (final key in const [
+              'count',
+              'unread_count',
+              'unreadCount',
+              'total',
+              'value',
+            ]) {
+              if (v[key] != null) {
+                count = v[key];
+                break;
+              }
+            }
+            if (count != null) break;
+          } else if (v is num) {
+            count = v;
+            break;
+          }
+        }
+      }
+    }
+    if (count is num) return count.toInt();
+    return int.tryParse('$count') ?? 0;
   }
 }
 
@@ -128,6 +287,7 @@ final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) 
 /// Unread badge count. Falls back to 0 if the endpoint is unavailable so the
 /// badge never blocks the UI.
 final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
+  cacheFor(ref, listCacheDuration);
   try {
     return await ref.watch(notificationsRepositoryProvider).getUnreadCount();
   } catch (_) {
@@ -140,8 +300,9 @@ class NotificationsController extends AsyncNotifier<NotificationsFeed> {
 
   @override
   Future<NotificationsFeed> build() async {
-    final (items, hasMore) = await ref.watch(notificationsRepositoryProvider).getPage(1);
-    return NotificationsFeed(items: items, page: 1, hasMore: hasMore);
+    final (items, hasMore, total) =
+        await ref.watch(notificationsRepositoryProvider).getPage(1);
+    return NotificationsFeed(items: items, page: 1, hasMore: hasMore, totalCount: total);
   }
 
   Future<void> loadMore() async {
@@ -149,22 +310,25 @@ class NotificationsController extends AsyncNotifier<NotificationsFeed> {
     if (feed == null || !feed.hasMore || feed.loadingMore) return;
     state = AsyncData(feed.copyWith(loadingMore: true));
     try {
-      final (items, hasMore) = await _repo.getPage(feed.page + 1);
+      final (items, hasMore, total) = await _repo.getPage(feed.page + 1);
       final seen = feed.items.map((e) => e.notification.id).toSet();
       state = AsyncData(feed.copyWith(
         items: [...feed.items, ...items.where((e) => !seen.contains(e.notification.id))],
         page: feed.page + 1,
         hasMore: hasMore,
         loadingMore: false,
+        totalCount: total ?? feed.totalCount,
       ),);
     } catch (e) {
       state = AsyncData(feed.copyWith(loadingMore: false, loadMoreError: e));
     }
   }
 
-  /// Marks [ids] (or everything when null) read locally, then on the server.
-  /// Server failures are ignored: the next refresh shows the true state.
+  /// Marks [ids] (or everything when null) read on the server first, then
+  /// updates local state only after confirmation. Failures propagate so the
+  /// caller can show an error and the unread state is preserved.
   Future<void> markRead({List<int>? ids}) async {
+    await _repo.markRead(ids: ids);
     final feed = state.valueOrNull;
     if (feed != null) {
       state = AsyncData(feed.copyWith(
@@ -176,11 +340,6 @@ class NotificationsController extends AsyncNotifier<NotificationsFeed> {
               e,
         ],
       ),);
-    }
-    try {
-      await _repo.markRead(ids: ids);
-    } catch (_) {
-      // Endpoint missing or failed; keep the optimistic state.
     }
     ref.invalidate(unreadNotificationsCountProvider);
   }

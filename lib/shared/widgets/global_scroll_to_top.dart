@@ -140,6 +140,7 @@ class _GlobalScrollToTopState extends State<GlobalScrollToTop>
         autofocus: kIsWeb,
         onKeyEvent: _handleWebScrollKeys,
         child: Stack(
+          fit: StackFit.expand,
           children: [
             widget.child,
             ValueListenableBuilder<bool>(

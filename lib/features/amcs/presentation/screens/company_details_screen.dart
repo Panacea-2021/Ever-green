@@ -122,7 +122,7 @@ class CompanyDetailsScreen extends ConsumerWidget {
       onRetry: () => ref.invalidate(equipmentsProvider(id)),
     );
 
-    final headerImage = mediaUrl(company?.logo ?? imageUrl);
+    final headerImage = mediaUrl(company?.imageUrl ?? imageUrl);
 
     return Scaffold(
       backgroundColor: Colors.white,

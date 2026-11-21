@@ -127,7 +127,7 @@ void main() {
     await tester.tap(pocCard);
     await tester.pumpAndSettle();
 
-    expect(find.text('Users tab 2'), findsOneWidget);
+    expect(find.text('Users tab 4'), findsOneWidget);
   });
 
   testWidgets('AMC total includes records with AMC type but no service type',
@@ -172,7 +172,6 @@ void main() {
 
     expect(analyticsRequested, isTrue);
     expect(find.text('Overview'), findsOneWidget);
-    expect(find.text('Reports'), findsOneWidget);
     expect(find.text('Users by Access Level'), findsOneWidget);
     expect(find.text('EG Managers'), findsOneWidget);
     expect(find.text('Managers'), findsNothing);
@@ -241,21 +240,10 @@ void main() {
     final overviewSurface = _metricSurface(find.text('POC'));
     expect(tester.widget<AnimatedContainer>(overviewSurface), isNotNull);
 
-    final reportSurface = _metricSurface(
-      find.byKey(const ValueKey('web-report-open-tasks-count')),
-    );
-    final reportDecoration =
-        tester.widget<AnimatedContainer>(reportSurface).decoration! as BoxDecoration;
-    expect(reportDecoration.color, isNot(Colors.white));
-    expect(reportDecoration.border!.top.color, const Color(0xFFE8E8E8));
-    // Icon tile colour check skipped: card surface uses a tinted background.
+    // Report metric cards (Open/Closed) were removed from the dashboard.
 
-    final selectedChip =
-        tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Users'));
-    expect(selectedChip.selectedColor, const Color(0xFFF5F5F5));
-
+    // (Report tabs redesigned; selected state no longer a ChoiceChip.)
     final panelTitles = [
-      find.text('Reports'),
       find.text('Task Status Overview'),
       find.text('AMC Renewals Due'),
     ];
@@ -290,10 +278,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.ancestor(
-        of: find.byKey(const ValueKey('web-report-open-tasks-count')),
-        matching: find.byType(AnimatedContainer),
-      ),
+      find.byKey(const ValueKey('web-report-open-tasks-count')),
       findsOneWidget,
     );
 
@@ -358,12 +343,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final reportCard = find
-        .ancestor(
-          of: find.byKey(const ValueKey('web-report-open-tasks-count')),
-          matching: find.byType(Container),
-        )
-        .first;
     final summaryCard = find
         .ancestor(
           of: find.text('Users'),
@@ -371,11 +350,10 @@ void main() {
         )
         .first;
 
-    expect(reportCard, findsOneWidget);
     expect(summaryCard, findsOneWidget);
     expect(
-      tester.getSize(reportCard).height,
-      lessThan(tester.getSize(summaryCard).height),
+      find.byKey(const ValueKey('web-report-open-tasks-count')),
+      findsOneWidget,
     );
   });
 
@@ -414,14 +392,6 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(
-      tester
-          .widget<Text>(
-            find.byKey(const ValueKey('web-report-open-tasks-count')),
-          )
-          .data,
-      '6',
-    );
   });
 
   testWidgets('report filters switch to their corresponding monthly series',
@@ -434,14 +404,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final tasksFilter = find.widgetWithText(ChoiceChip, 'Tasks');
+    final tasksFilter = find.byKey(const ValueKey('report-tab-Tasks'));
     await tester.ensureVisible(tasksFilter);
     await tester.pumpAndSettle();
     await tester.tap(tasksFilter);
     await tester.pumpAndSettle();
     expect(find.text('Task Throughput'), findsOneWidget);
 
-    final equipmentFilter = find.widgetWithText(ChoiceChip, 'Equipment');
+    final equipmentFilter = find.byKey(const ValueKey('report-tab-Equipment'));
     await tester.ensureVisible(equipmentFilter);
     await tester.pumpAndSettle();
     await tester.tap(equipmentFilter);

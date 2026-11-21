@@ -647,6 +647,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'MENU'**
   String get menu;
+
+  /// No description provided for @searchUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Users'**
+  String get searchUsers;
+
+  /// No description provided for @createdBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Created By'**
+  String get createdBy;
+
+  /// No description provided for @createdOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Created On'**
+  String get createdOn;
+
+  /// No description provided for @active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get active;
+
+  /// No description provided for @inactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get inactive;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @mobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile'**
+  String get mobile;
+
+  /// No description provided for @company.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get company;
+
+  /// No description provided for @notAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Assigned'**
+  String get notAssigned;
+
+  /// No description provided for @notAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Available'**
+  String get notAvailable;
+
+  /// No description provided for @allUsersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'All Users'**
+  String get allUsersCount;
+
+  /// No description provided for @superAdmins.
+  ///
+  /// In en, this message translates to:
+  /// **'Super Admins'**
+  String get superAdmins;
+
+  /// No description provided for @egManagersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'EG Managers'**
+  String get egManagersSection;
+
+  /// No description provided for @companyManagersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Company Managers'**
+  String get companyManagersSection;
+
+  /// No description provided for @pocsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'POCs'**
+  String get pocsSection;
+
+  /// No description provided for @serviceEngineersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Service Engineers'**
+  String get serviceEngineersSection;
+
+  /// No description provided for @othersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get othersSection;
 }
 
 class _AppLocalizationsDelegate

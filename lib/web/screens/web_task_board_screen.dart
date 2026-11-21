@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/auth/permissions.dart';
 import '../../core/data/evergreen_repository.dart';
+import '../../core/models/backend_models.dart' show ServiceTask;
 import '../../core/router/routes.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/tasks/data/task_provider.dart';
@@ -39,6 +40,8 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
   static const Color _orange = Color(0xFFE08600);
 
   late TaskStatus? _statusFilter = widget.initialStatus;
+  bool _showDeleted = false;
+  final ScrollController _filterScrollController = ScrollController();
 
   TaskActionHandler get _handler => TaskActionHandler(context, ref);
 
@@ -48,6 +51,9 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     final user = ref.watch(currentUserProvider);
     final async = ref.watch(taskItemsProvider);
     final all = async.value ?? const <TaskItem>[];
+    final deletedAsync = ref.watch(deletedTasksProvider);
+    final deletedItems =
+        (deletedAsync.valueOrNull ?? const <ServiceTask>[]).map(TaskItem.fromService).toList();
 
     Iterable<TaskItem> scoped = all;
     if (widget.scope == TaskBoardScope.assignedToMe) {
@@ -72,17 +78,23 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
         .where((t) => _statusFilter == null || t.status == _statusFilter)
         .toList()
       ..sort((a, b) {
-        final ao = a.isOverdue() ? 1 : 0;
-        final bo = b.isOverdue() ? 1 : 0;
-        if (ao != bo) return bo - ao;
+        // Newest first by actual creation timestamp.
+        final cmp = b.createdAt.compareTo(a.createdAt);
+        if (cmp != 0) return cmp;
         if (a.priority.rank != b.priority.rank) {
           return b.priority.rank - a.priority.rank;
         }
-        return b.createdAt.compareTo(a.createdAt);
+        return 0;
       });
 
     Widget body;
-    if (all.isEmpty && async.isLoading) {
+    if (_showDeleted) {
+      if (deletedItems.isEmpty) {
+        body = _empty();
+      } else {
+        body = _cardGrid(deletedItems, role);
+      }
+    } else if (all.isEmpty && async.isLoading) {
       body = const Padding(
         padding: EdgeInsets.only(top: 100),
         child: Center(child: CircularProgressIndicator(color: _green)),
@@ -114,7 +126,7 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: _filters(scoped.toList())),
+                      Expanded(child: _filters(scoped.toList(), deletedItems.length)),
                       const SizedBox(width: 12),
                       _addButton(role),
                     ],
@@ -157,28 +169,41 @@ class _WebTaskBoardScreenState extends ConsumerState<WebTaskBoardScreen> {
     );
   }
 
-  Widget _filters(List<TaskItem> scoped) {
-    const chips = <(String, TaskStatus?, IconData, Color)>[
-      ('All', null, Icons.dashboard_outlined, Color(0xFF106220)),
-      ('Open', TaskStatus.open, Icons.radio_button_unchecked, Color(0xFF2E5AAC)),
-      ('Hold', TaskStatus.hold, Icons.pause_circle_outline, Color(0xFFB7791F)),
-      ('In Progress', TaskStatus.inProgress, Icons.timelapse, Color(0xFFE08600)),
-      ('Closed', TaskStatus.closed, Icons.check_circle_outline, Color(0xFF0F766E)),
+  Widget _filters(List<TaskItem> scoped, int deletedCount) {
+    const chips = <(String, TaskStatus?, bool, IconData, Color)>[
+      ('All', null, false, Icons.dashboard_outlined, Color(0xFF106220)),
+      ('Open', TaskStatus.open, false, Icons.radio_button_unchecked, Color(0xFF106220)),
+      ('Hold', TaskStatus.hold, false, Icons.pause_circle_outline, Color(0xFF106220)),
+      ('In Progress', TaskStatus.inProgress, false, Icons.timelapse, Color(0xFF106220)),
+      ('Closed', TaskStatus.closed, false, Icons.check_circle_outline, Color(0xFF106220)),
+      ('Deleted', null, true, Icons.delete_outline, Color(0xFF106220)),
     ];
     return WebFilterTiles(
+      unselectedColor: const Color(0xFFE8F5E9),
+      compact: true,
+      minTileWidth: 130,
+      scrollController: _filterScrollController,
       options: [
         for (final chip in chips)
           WebFilterOption(
             label: chip.$1,
-            icon: chip.$3,
-            color: chip.$4,
-            count: scoped.isEmpty
-                ? null
-                : chip.$2 == null
+            icon: chip.$4,
+            color: chip.$5,
+            count: chip.$3
+                ? deletedCount
+                : (chip.$2 == null
                     ? scoped.length
-                    : scoped.where((t) => t.status == chip.$2).length,
-            selected: _statusFilter == chip.$2,
-            onTap: () => setState(() => _statusFilter = chip.$2),
+                    : scoped.where((t) => t.status == chip.$2).length),
+            selected: chip.$3 ? _showDeleted : (!_showDeleted && _statusFilter == chip.$2),
+            onTap: () => setState(() {
+              if (chip.$3) {
+                _showDeleted = true;
+                _statusFilter = null;
+              } else {
+                _showDeleted = false;
+                _statusFilter = chip.$2;
+              }
+            }),
           ),
       ],
     );
