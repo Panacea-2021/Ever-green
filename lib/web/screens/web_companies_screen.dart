@@ -195,16 +195,12 @@ class _WebCompaniesScreenState extends ConsumerState<WebCompaniesScreen> {
               ),
               _ServiceCell(label: c.serviceLabel),
               WebCellText(
-                (c.poc?.name?.isNotEmpty ?? false)
-                    ? c.poc!.name
-                    : (c.managerName.isNotEmpty ? c.managerName : ''),
-                subtitle: [
-                  c.poc?.phone,
-                  c.pocEmail,
-                ]
-                    .whereType<String>()
-                    .where((value) => value.isNotEmpty)
-                    .join(' · '),
+                (c.managerName.isNotEmpty)
+                    ? c.managerName
+                    : (c.poc != null && c.poc!.name.isNotEmpty ? c.poc!.name : ''),
+                subtitle: (c.managerPhone.isNotEmpty
+                        ? c.managerPhone
+                        : (c.poc?.phone ?? '')),
               ),
               WebCellText(c.email),
               _contractCell(c),
