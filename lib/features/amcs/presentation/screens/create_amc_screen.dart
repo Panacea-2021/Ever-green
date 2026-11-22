@@ -1106,11 +1106,13 @@ class _CreateAmcScreenState extends ConsumerState<CreateAmcScreen>
         child: Container(
           height: 52,
           padding: const EdgeInsets.symmetric(horizontal: 13),
-          decoration: _webBoxDecoration,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _webFieldBorder),
+          ),
           child: Row(
             children: [
-              _webIcon(Icons.calendar_month),
-              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   value.isEmpty ? hint : value,

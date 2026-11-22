@@ -706,26 +706,9 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
       return;
     }
 
-    double availableBelow() {
-      final fieldTop = fieldObject.localToGlobal(Offset.zero).dy -
-          overlayObject.localToGlobal(Offset.zero).dy;
-      return overlayObject.size.height -
-          fieldTop -
-          fieldObject.size.height -
-          12;
-    }
-
-    final requiredHeight =
-        (_frequencies.length * 48.0).clamp(48.0, 300.0).toDouble();
-    if (availableBelow() < requiredHeight) {
-      await Scrollable.ensureVisible(
-        fieldContext,
-        alignment: 0.08,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-      );
-      if (!mounted || !fieldContext.mounted || !overlay.mounted) return;
-    }
+    // Keep a fixed, sensible menu height so all options are reachable via
+    // internal scrolling, regardless of the space below the field.
+    const menuMaxHeight = 240.0;
 
     final updatedField = fieldContext.findRenderObject();
     final updatedOverlay = overlay.context.findRenderObject();
@@ -736,15 +719,32 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
       return;
     }
 
+    // If there is not enough room below, try to bring the field into view.
+    await Scrollable.ensureVisible(
+      fieldContext,
+      alignment: 0.2,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+    );
+    if (!mounted || !fieldContext.mounted || !overlay.mounted) return;
+
     final fieldTop = updatedField.localToGlobal(Offset.zero).dy -
         updatedOverlay.localToGlobal(Offset.zero).dy;
-    final maxHeight = (updatedOverlay.size.height -
-            fieldTop -
-            updatedField.size.height -
-            12)
-        .clamp(0.0, 300.0)
+
+    // Decide whether to open below or above the field so the menu is never
+    // clipped by the viewport (which previously showed only "Daily").
+    final availableBelow = updatedOverlay.size.height -
+        fieldTop -
+        updatedField.size.height -
+        12;
+    final availableAbove = fieldTop - 12;
+    final openBelow = availableBelow >= availableAbove || availableBelow >= 120;
+    final maxHeight = (openBelow ? availableBelow : availableAbove)
+        .clamp(48.0, menuMaxHeight)
         .toDouble();
-    if (maxHeight <= 0) return;
+    final offset = openBelow
+        ? Offset(0, updatedField.size.height + 4)
+        : Offset(0, -maxHeight - 4);
 
     late OverlayEntry entry;
     entry = OverlayEntry(
@@ -760,7 +760,7 @@ class _AddEquipmentScreenState extends ConsumerState<AddEquipmentScreen>
           CompositedTransformFollower(
             link: _pmFreqLink,
             showWhenUnlinked: false,
-            offset: Offset(0, updatedField.size.height + 4),
+            offset: offset,
             child: Material(
               elevation: 8,
               clipBehavior: Clip.antiAlias,
