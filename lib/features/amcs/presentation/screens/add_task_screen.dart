@@ -619,12 +619,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                 )
               : SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: 960,
-                      ),
-                      child: WebForm.split(
+                  child: WebForm.split(
                         _webSection(
                           header: true,
                           children: [
@@ -788,8 +783,6 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                               rightFlex: 3,
                             ),
                           ),
-                        ),
-                      ),
         ],
       ),
     );

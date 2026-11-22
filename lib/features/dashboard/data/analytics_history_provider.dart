@@ -123,12 +123,17 @@ List<AnalyticsSnapshot> buildAnalyticsHistory({
     var opened = 0;
     var closed = 0;
     final stats = monthlyStats?.of(m);
-    if (stats != null) {
-      opened = stats.tasksCreated;
-      closed = stats.tasksClosed;
-    } else if (tasks != null) {
+    if (tasks != null) {
+      // Derive from the distinct task records so each task is counted once.
+      // Open = tasks created in this month that are still open (open/hold/
+      // in progress); Closed = tasks closed in this month.
       for (final t in tasks) {
-        if (_sameMonth(t.createdAt, m)) opened++;
+        if (_sameMonth(t.createdAt, m) &&
+            (t.status == TaskStatus.open ||
+                t.status == TaskStatus.hold ||
+                t.status == TaskStatus.inProgress)) {
+          opened++;
+        }
         final closedAt = t.closedAt ??
             t.resolvedAt ??
             (t.status == TaskStatus.closed || t.status == TaskStatus.completed
@@ -136,6 +141,9 @@ List<AnalyticsSnapshot> buildAnalyticsHistory({
                 : null);
         if (_sameMonth(closedAt, m)) closed++;
       }
+    } else if (stats != null) {
+      opened = stats.tasksCreated;
+      closed = stats.tasksClosed;
     }
 
     out.add(
@@ -172,9 +180,10 @@ final analyticsHistoryProvider =
   cacheFor(ref, listCacheDuration);
   final monthly = await ref.watch(monthlyStatsProvider.future);
   final usersF = _orNull(ref.watch(dashboardUsersProvider.future));
-  final tasksF = monthly == null
-      ? _orNull(ref.watch(tasksProvider.future))
-      : Future<List<ServiceTask>?>.value();
+  // Always fetch tasks so monthly open/closed counts can be derived from the
+  // distinct task records instead of the (possibly over-counted) backend
+  // monthly aggregate.
+  final tasksF = _orNull(ref.watch(tasksProvider.future));
   final companiesF = _orNull(ref.watch(companiesProvider.future));
   final equipmentF = _orNull(ref.watch(equipmentsProvider(null).future));
   final results = await Future.wait<dynamic>([usersF, tasksF, companiesF, equipmentF]);

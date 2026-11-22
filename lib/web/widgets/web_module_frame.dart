@@ -363,7 +363,9 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
                         child: Container(
                           width: width,
                           height: height,
-                          margin: const EdgeInsets.only(top: 24),
+                          margin: _location == Routes.usersList
+                              ? EdgeInsets.zero
+                              : const EdgeInsets.only(top: 24),
                           clipBehavior: Clip.antiAlias,
                           decoration: BoxDecoration(
                             color: Colors.white,

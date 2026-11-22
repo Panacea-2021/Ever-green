@@ -708,7 +708,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
                               ),
                             ),
                             TextSpan(
-                              text: _creatorName(user.createdBy) ?? (AppLocalizations.of(context)?.notAvailable ?? 'Not Available'),
+                              text: _creatorName(user.createdBy) ?? 'null',
                               style: const TextStyle(
                                 color: Color(0xFF1A1A1A),
                                 fontWeight: FontWeight.w600,
@@ -1438,19 +1438,21 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen>
   String? _creatorName(String? createdBy) {
     if (createdBy == null || createdBy.trim().isEmpty) return null;
     final id = createdBy.trim();
+    // Resolve against the loaded users by id OR phone, since older records
+    // may store the creator's phone instead of an id.
     final users = ref.read(userProvider);
     for (final u in users) {
-      if (u.id == id) return u.name;
+      if (u.id == id || u.mobile == id) return u.name;
     }
-    // Also try the raw users list provider snapshot.
     final async = ref.read(usersListProvider);
     final list = async.valueOrNull;
     if (list != null) {
       for (final u in list) {
-        if (u.id == id) return u.name;
+        if (u.id == id || u.phone == id) return u.name;
       }
     }
-    return null;
+    // If it cannot be resolved to a known user, show the raw stored value.
+    return id;
   }
 
   Future<void> _toggleActive(AppUser user) async {

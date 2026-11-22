@@ -14,6 +14,7 @@ import '../widgets/task_timeline.dart';
 import '../widgets/task_action_button.dart';
 import '../widgets/task_action_handler.dart';
 import '../widgets/task_workflow.dart';
+import '../../../../web/widgets/web_header_actions.dart';
 
 /// Task details screen matching Figma design with:
 /// - Hero image header with title overlay
@@ -227,49 +228,62 @@ class TaskDetailsScreen extends ConsumerWidget {
       ],
     );
 
+    // On web, register the Edit action in the module header so there is a
+    // single "Task Details" heading (the frame's) with the Edit button on the
+    // right, instead of a duplicate heading inside the page.
+    if (kIsWeb && canEdit && task != null) {
+      void editTask() {
+        if (task.isIndividual) {
+          showEditTaskSheet(context, task);
+          return;
+        }
+        context.push(
+          '${Routes.addTask}/edit',
+          extra: {
+            'isEdit': true,
+            'companyName': company,
+            'editTask': {
+              'taskId': taskId,
+              'taskTitle': title,
+              'location': loc,
+              'status': stat,
+              'companyName': company,
+              'clientName': client,
+              'mobile': mob,
+              'technician': tech,
+              'technicianMobile': techMob,
+              'createdOn': created,
+              'serialNumber': sNo,
+              'description': desc,
+            },
+          },
+        );
+      }
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ref.read(webHeaderActionsProvider).setActions([
+          WebHeaderAction(
+            label: 'Edit',
+            icon: Icons.edit,
+            isPrimary: true,
+            onPressed: editTask,
+          ),
+        ]);
+      });
+    }
+
     return Scaffold(
       backgroundColor: kIsWeb ? const Color(0xFFF3F7F3) : Colors.white,
       body: kIsWeb
-          ? Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1040),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Task Details',
-                            style: TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A1A),
-                            ),
-                          ),
-                          const Spacer(),
-                          if (canEdit)
-                            _webEditButton(context, ref, task, title, loc, stat,
-                                company, client, mob, tech, techMob, created,
-                                sNo, desc),
-                        ],
-                      ),
-                    ),
-                  ),
+          ? SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1040),
+                  child: details,
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1040),
-                        child: details,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             )
           : Column(
               children: [

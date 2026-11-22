@@ -60,8 +60,8 @@ class Validators {
   }
 
   static String? required(String? value, [String fieldName = 'This field']) {
-    if (value == null || value.isEmpty) {
-      return '$fieldName is required';
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter this value';
     }
     return null;
   }
