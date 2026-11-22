@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/permissions.dart';
 import '../../../../core/data/evergreen_repository.dart' as repo;
 import '../../../../core/models/backend_models.dart';
-import 'select_amc_screen.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/password_generator.dart';
@@ -38,6 +37,11 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   bool _sendCredentials = true;
   bool _isSaving = false;
 
+  // Web-only embedded AMC picker state.
+  bool _amcPickerOpen = false;
+  final TextEditingController _amcSearchController = TextEditingController();
+  String _amcQuery = '';
+
   static const Color _green = Color(0xFF106220);
 
   @override
@@ -47,6 +51,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _companyController.dispose();
+    _amcSearchController.dispose();
     super.dispose();
   }
 
@@ -388,15 +393,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: () async {
-            final selected = await context.push<Company>(Routes.selectAmc);
-            if (selected != null && mounted) {
-              setState(() {
-                _selectedCompanyId = selected.id;
-                _companyController.text = selected.displayName;
-              });
-            }
-          },
+          onTap: () => setState(() => _amcPickerOpen = !_amcPickerOpen),
           child: AbsorbPointer(
             child: Autocomplete<Company>(
               displayStringForOption: (c) => c.displayName,
@@ -478,6 +475,85 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
         ),
         ),
       ),
+        if (kIsWeb && _amcPickerOpen) ...[
+          const SizedBox(height: 8),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 360),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFDCE5DE)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: TextField(
+                    controller: _amcSearchController,
+                    autofocus: true,
+                    onChanged: (v) => setState(() => _amcQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search AMC',
+                      prefixIcon: const Icon(Icons.search, color: _green),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                    ),
+                  ),
+                ),
+                Flexible(
+                  child: Builder(
+                    builder: (context) {
+                      final companies = [...companiesAsync.valueOrNull ?? const <Company>[]]
+                        ..sort((a, b) => a.displayName.compareTo(b.displayName));
+                      final q = _amcQuery.trim().toLowerCase();
+                      final filtered = q.isEmpty
+                          ? companies
+                          : companies.where((c) => [c.name, c.branchName, c.location ?? '']
+                              .any((f) => f.toLowerCase().contains(q))).toList();
+                      if (filtered.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text('No results found'),
+                        );
+                      }
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final c = filtered[index];
+                          return ListTile(
+                            title: Text(c.displayName),
+                            subtitle: (c.location ?? '').isNotEmpty
+                                ? Text(c.location!)
+                                : null,
+                            onTap: () {
+                              setState(() {
+                                _selectedCompanyId = c.id;
+                                _companyController.text = c.displayName;
+                                _amcPickerOpen = false;
+                                _amcSearchController.clear();
+                                _amcQuery = '';
+                              });
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         if (companiesAsync.hasError)
           TextButton.icon(
             onPressed: () => ref.invalidate(repo.companiesProvider),
