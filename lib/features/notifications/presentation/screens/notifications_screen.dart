@@ -330,7 +330,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) => _buildWebNotificationCard(
@@ -434,7 +434,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       builder: (context, constraints) {
         final horizontal = constraints.maxWidth >= 1000;
         return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
           child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
