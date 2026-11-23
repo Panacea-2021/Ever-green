@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/data/evergreen_repository.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/models/backend_models.dart' hide TaskStatus;
 import '../../../../shared/providers/auth_state_provider.dart';
 import '../../../../web/widgets/web_form_kit.dart';
@@ -124,6 +125,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
   }
 
   void _showImagePickerDialog() {
+    final l10n = AppLocalizations.of(context);
     if (kIsWeb) {
       showDialog<void>(
         context: context,
@@ -135,8 +137,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Upload Image',
+                Text(
+                  l10n?.uploadImage ?? 'Upload Image',
                   style: TextStyle(
                     fontFamily: 'Montserrat',
                     fontSize: 18,
@@ -147,7 +149,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                 const SizedBox(height: 24),
                 _buildImagePickerOption(
                   icon: Icons.photo_library,
-                  label: 'Gallery',
+                  label: l10n?.gallery ?? 'Gallery',
                   onTap: () {
                     Navigator.pop(ctx);
                     _addImage(ImageSource.gallery);
@@ -181,8 +183,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Upload Image',
+            Text(
+              l10n?.uploadImage ?? 'Upload Image',
               style: TextStyle(
                 fontFamily: 'Montserrat',
                 fontSize: 18,
@@ -196,7 +198,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
               children: [
                 _buildImagePickerOption(
                   icon: Icons.camera_alt,
-                  label: 'Camera',
+                  label: l10n?.camera ?? 'Camera',
                   onTap: () {
                     Navigator.pop(context);
                     _addImage(ImageSource.camera);
@@ -204,7 +206,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                 ),
                 _buildImagePickerOption(
                   icon: Icons.photo_library,
-                  label: 'Gallery',
+                  label: l10n?.gallery ?? 'Gallery',
                   onTap: () {
                     Navigator.pop(context);
                     _addImage(ImageSource.gallery);
@@ -304,9 +306,10 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
     ActiveEquipmentTask? activeTask,
   ) async {
     final subject = _subjectController.text.trim();
-    if (_companyName == null) return _snack('Please select a company');
-    if (_companyId == null) return _snack('Please select a branch');
-    if (_equipmentId == null) return _snack('Please select equipment');
+    final l10n = AppLocalizations.of(context);
+    if (_companyName == null) return _snack(l10n?.pleaseSelectCompany ?? 'Please select a company');
+    if (_companyId == null) return _snack(l10n?.pleaseSelectBranch ?? 'Please select a branch');
+    if (_equipmentId == null) return _snack(l10n?.pleaseSelectEquipment ?? 'Please select equipment');
     if (!widget.isEdit && activeTask != null) {
       return _snack(
         'Ticket ${activeTask.ticketNo} is still active on this equipment. '
@@ -317,16 +320,16 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
     for (final it in issueTypes) {
       if (it.id == _issueTypeId) chosen = it;
     }
-    if (chosen == null) return _snack('Please choose an issue type');
+    if (chosen == null) return _snack(l10n?.pleaseChooseIssueType ?? 'Please choose an issue type');
     final issueType = chosen;
-    if (subject.isEmpty) return _snack('Please enter a subject');
+    if (subject.isEmpty) return _snack(l10n?.pleaseEnterSubject ?? 'Please enter a subject');
     final location = _locationController.text.trim();
 
     final actions = ref.read(taskActionsProvider);
     final description = _descriptionController.text.trim();
     final bool ok;
     if (widget.isEdit) {
-      if (editing == null) return _snack('This task is no longer available');
+      if (editing == null) return _snack(l10n?.taskNoLongerAvailable ?? 'This task is no longer available');
       ok = await runTaskAction(
         context,
         () => actions.update(
@@ -338,11 +341,11 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
           location: location,
           imageFiles: List.of(_selectedImages),
         ),
-        success: 'Task updated successfully',
+        success: l10n?.taskUpdatedSuccessfully ?? 'Task updated successfully',
       );
     } else {
       final user = ref.read(currentUserProvider);
-      if (user == null) return _snack('Please sign in again');
+      if (user == null) return _snack(l10n?.pleaseSignInAgain ?? 'Please sign in again');
       ok = await runTaskAction(
         context,
         () => actions.create(
@@ -354,7 +357,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
           location: location,
           imageFiles: List.of(_selectedImages),
         ),
-        success: 'Task created successfully',
+        success: l10n?.taskCreatedSuccessfully ?? 'Task created successfully',
       );
     }
     if (ok && mounted) context.pop();
@@ -362,6 +365,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final user = ref.watch(currentUserProvider);
     final role = ref.watch(currentUserRoleProvider);
     final tasksAsync = ref.watch(taskItemsProvider);
@@ -512,7 +516,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                                 )
                               else
                                 _buildInlineDropdownField<int>(
-                                  label: 'Issue Type',
+                                  label: l10n?.issueType ?? 'Issue Type',
                                   value: _issueTypeId,
                                   items: [
                                     for (final it in issueTypes)
@@ -579,16 +583,17 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
     List<IssueType> issueTypes,
     ActiveEquipmentTask? activeTask,
   ) {
+    final l10n = AppLocalizations.of(context);
     // Register header actions for the page header bar
     setHeaderActions([
       WebHeaderAction(
-        label: 'Reset',
+        label: l10n?.reset ?? 'Reset',
         icon: Icons.refresh_rounded,
         onPressed: _resetForm,
         isPrimary: false,
       ),
       WebHeaderAction(
-        label: 'Save',
+        label: l10n?.save ?? 'Save',
         icon: Icons.check_rounded,
         onPressed: () => _saveTask(editing, issueTypes, activeTask),
         isPrimary: true,
@@ -623,13 +628,13 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                           header: true,
                           children: [
                             _webLabelled(
-                              'Company',
+                              l10n?.company ?? 'Company',
                               _companyField(companies, _companyLocked),
                               Icons.apartment_rounded,
                             ),
                             const SizedBox(height: 18),
                             _webLabelled(
-                              'Branch',
+                              l10n?.branch ?? 'Branch',
                               _branchDropdown(
                                 companies,
                                 _companyLocked,
@@ -638,7 +643,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                             ),
                             const SizedBox(height: 18),
                             _webLabelled(
-                              'Location',
+                              l10n?.location ?? 'Location',
                               TextField(
                                 controller: _locationController,
                                 onChanged: (_) => _locationEdited = true,
@@ -653,7 +658,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                             ),
                             const SizedBox(height: 18),
                             _webLabelled(
-                              'Equipment',
+                              l10n?.equipment ?? 'Equipment',
                               _equipmentField(
                                 equipments,
                                 selectedEquipment,
@@ -687,9 +692,9 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                                             ),
                                           )
                                         : issueTypes.isEmpty
-                                        ? _statusField('No issue types available', onTap: null)
+                                        ? _statusField(l10n?.noIssueTypesAvailable ?? 'No issue types available', onTap: null)
                                         : _buildInlineDropdownField<int>(
-                                            label: 'Issue Type',
+                                            label: l10n?.issueType ?? 'Issue Type',
                                             value: _issueTypeId,
                                             items: [
                                               for (final it in issueTypes)
@@ -705,9 +710,9 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                                   _webLabelled(
                                     'Subject',
                                     _buildTextField(
-                                      label: 'Subject',
+                                      label: l10n?.subject ?? 'Subject',
                                       controller: _subjectController,
-                                      hintText: 'Enter subject',
+                                      hintText: l10n?.enterSubject ?? 'Enter subject',
                                     ),
                                     Icons.edit_outlined,
                                   ),
@@ -715,9 +720,9 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                                   _webLabelled(
                                     'Description',
                                     _buildTextField(
-                                      label: 'Description',
+                                      label: l10n?.description ?? 'Description',
                                       controller: _descriptionController,
-                                      hintText: 'Enter description',
+                                      hintText: l10n?.enterDescription ?? 'Enter description',
                                       maxLines: 4,
                                     ),
                                     Icons.notes_rounded,
@@ -760,7 +765,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Text(
-                                                    widget.isEdit ? 'Update Task' : 'Create Task',
+                                                    widget.isEdit ? (l10n?.updateTaskTitle ?? 'Update Task') : (l10n?.createTaskTitle ?? 'Create Task'),
                                                     style: const TextStyle(
                                                       fontFamily: 'Montserrat',
                                                       fontSize: 14,
@@ -790,6 +795,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
   /// White section card; with [header], it opens with the Task Information
   /// badge, title and subtitle aligned to the left.
   Widget _webSection({bool header = false, required List<Widget> children}) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(26, 24, 26, 26),
       decoration: BoxDecoration(
@@ -828,8 +834,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Task Information',
+                      Text(
+                        l10n?.taskInformation ?? 'Task Information',
                         style: TextStyle(
                           fontFamily: 'Montserrat',
                           fontSize: 17,
@@ -839,7 +845,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Provide basic details of the Task',
+                        l10n?.provideBasicDetailsOfTask ?? 'Provide basic details of the Task',
                         style: TextStyle(
                           fontFamily: 'Montserrat',
                           fontSize: 13.5,
@@ -1023,6 +1029,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
   }
 
   Widget _branchDropdown(AsyncValue<List<Company>> companies, bool locked) {
+    final l10n = AppLocalizations.of(context);
     if (companies.isLoading && !companies.hasValue) {
       return _statusField('Loading branches…', onTap: null);
     }
@@ -1036,7 +1043,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
         .where((c) => c.name == _companyName)
         .toList();
     if (branches.isEmpty) {
-      return _statusField('No branches available', onTap: null);
+      return _statusField(l10n?.noBranchesAvailable ?? 'No branches available', onTap: null);
     }
     return _buildInlineDropdownField<int>(
       label: 'Branch',
@@ -1111,6 +1118,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
   }
 
   Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
       child: Row(
@@ -1124,7 +1132,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
             ),
           ),
           Text(
-            widget.isEdit ? 'Edit Task' : 'Add Task',
+            widget.isEdit ? (l10n?.editTaskTitle ?? 'Edit Task') : (l10n?.addTaskTitle ?? 'Add Task'),
             style: const TextStyle(
               fontFamily: 'Montserrat',
               fontSize: 20,

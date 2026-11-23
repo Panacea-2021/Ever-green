@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -81,7 +83,7 @@ class WebDashboardScreen extends ConsumerWidget {
 
                     if (taskCountsAsync.hasError) ...[
                       _DashboardDataError(
-                        message: 'Task totals could not be loaded.',
+                        message: l10n?.taskTotalsCouldNotBeLoaded ?? 'Task totals could not be loaded.',
                         onRetry: () => ref.invalidate(taskCountsProvider),
                       ),
                       const SizedBox(height: 20),
@@ -184,7 +186,7 @@ class _WebOrganizationSections extends ConsumerWidget {
             _WebDashboardMetricCard(
               title: l10n?.totalUsers ?? 'Users',
               value: data?.totalUsers ?? 0,
-              subtitle: 'Across access levels',
+              subtitle: l10n?.acrossAccessLevels ?? 'Across access levels',
               icon: Icons.groups_outlined,
               color: WebDashboardScreen._blue,
               highlight: true,
@@ -193,7 +195,7 @@ class _WebOrganizationSections extends ConsumerWidget {
             _WebDashboardMetricCard(
               title: l10n?.totalAmcs ?? 'AMCs',
               value: amcCount ?? data?.totalAmcs ?? 0,
-              subtitle: 'Service contracts',
+              subtitle: l10n?.serviceContracts ?? 'Service contracts',
               icon: Icons.verified_outlined,
               color: WebDashboardScreen._green,
               highlight: true,
@@ -202,7 +204,7 @@ class _WebOrganizationSections extends ConsumerWidget {
             _WebDashboardMetricCard(
               title: l10n?.totalTasks ?? 'Tasks',
               value: data?.totalTasks ?? 0,
-              subtitle: 'All statuses',
+              subtitle: l10n?.allStatuses ?? 'All statuses',
               icon: Icons.checklist_rtl_outlined,
               color: WebDashboardScreen._purple,
               highlight: true,
@@ -216,7 +218,7 @@ class _WebOrganizationSections extends ConsumerWidget {
     if (data == null) {
       if (analytics.hasError || history.hasError) {
         return _DashboardDataError(
-          message: 'Organization analytics could not be loaded.',
+          message: l10n?.orgAnalyticsCouldNotBeLoaded ?? 'Organization analytics could not be loaded.',
           error: analytics.error ?? history.error,
           onRetry: () {
             ref.invalidate(dashboardAnalyticsProvider);
@@ -253,7 +255,7 @@ class _WebOrganizationSections extends ConsumerWidget {
           desktopColumns: 4,
           children: [
             _OverviewMetricCard(
-              title: 'EG Managers',
+              title: l10n?.egManagers ?? 'EG Managers',
               value: (users[UserRole.superAdmin] ?? 0) + (users[UserRole.manager] ?? 0),
               metric: TrendMetric.managers,
               icon: Icons.admin_panel_settings_outlined,
@@ -261,7 +263,7 @@ class _WebOrganizationSections extends ConsumerWidget {
               onTap: onOpenManagers,
             ),
             _OverviewMetricCard(
-              title: 'Company Managers',
+              title: l10n?.companyManagers ?? 'Company Managers',
               value: users[UserRole.clientAdmin] ?? 0,
               metric: TrendMetric.companyManagers,
               icon: Icons.groups_outlined,
@@ -269,7 +271,7 @@ class _WebOrganizationSections extends ConsumerWidget {
               onTap: onOpenCompanyManagers,
             ),
             _OverviewMetricCard(
-              title: 'POC',
+              title: l10n?.pocLabel ?? 'POC',
               value: users[UserRole.client] ?? 0,
               metric: TrendMetric.poc,
               icon: Icons.person_outline,
@@ -277,7 +279,7 @@ class _WebOrganizationSections extends ConsumerWidget {
               onTap: onOpenPocs,
             ),
             _OverviewMetricCard(
-              title: 'Service Engineers',
+              title: l10n?.serviceEngineers ?? 'Service Engineers',
               value: serviceEngineers,
               metric: TrendMetric.technicians,
               icon: Icons.build_outlined,
@@ -667,23 +669,39 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
         _DashboardReportMetric.equipment => TrendMetric.amcs,
       };
 
-  String get _chartTitle => switch (_metric) {
-        _DashboardReportMetric.users => 'Users by Access Level',
-        _DashboardReportMetric.tasks => 'Task Throughput',
-        _DashboardReportMetric.equipment => 'Equipment & Contracts',
-      };
+  String get _chartTitle {
+    final l10n = AppLocalizations.of(context);
+    return switch (_metric) {
+      _DashboardReportMetric.users =>
+        l10n?.usersByAccessLevel ?? 'Users by Access Level',
+      _DashboardReportMetric.tasks =>
+        l10n?.taskThroughput ?? 'Task Throughput',
+      _DashboardReportMetric.equipment =>
+        l10n?.equipmentAndContracts ?? 'Equipment & Contracts',
+    };
+  }
 
-  (String, String) get _legendLabels => switch (_metric) {
-        _DashboardReportMetric.users => (
-            'Service Engineers',
-            'Company Managers'
-          ),
-        _DashboardReportMetric.tasks => ('Open', 'Closed'),
-        _DashboardReportMetric.equipment => ('Equipment', 'AMCs'),
-      };
+  (String, String) get _legendLabels {
+    final l10n = AppLocalizations.of(context);
+    return switch (_metric) {
+      _DashboardReportMetric.users => (
+          l10n?.serviceEngineers ?? 'Service Engineers',
+          l10n?.companyManagers ?? 'Company Managers'
+        ),
+      _DashboardReportMetric.tasks => (
+          l10n?.openLabel ?? 'Open',
+          l10n?.closedLabel ?? 'Closed'
+        ),
+      _DashboardReportMetric.equipment => (
+          l10n?.equipmentLabel ?? 'Equipment',
+          l10n?.amcsLabel ?? 'AMCs'
+        ),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final yearOptions = ref.watch(reportYearsProvider).valueOrNull ?? const [];
     final years = yearOptions.isEmpty ? [DateTime.now().year] : yearOptions;
     final selectedYear =
@@ -730,7 +748,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
             desktopColumns: 2,
             children: [
               _WebDashboardMetricCard(
-                title: 'Open Tasks',
+                title: l10n?.openTasks ?? 'Open Tasks',
                 value: openCount,
                 icon: Icons.assignment_outlined,
                 color: WebDashboardScreen._green,
@@ -741,7 +759,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 coloredBorder: false,
               ),
               _WebDashboardMetricCard(
-                title: 'Closed (mo)',
+                title: l10n?.closedTasks ?? 'Closed Tasks',
                 value: closedCount,
                 icon: Icons.task_alt,
                 color: const Color(0xFF5B899E),
@@ -808,7 +826,11 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
                 for (final metric in _DashboardReportMetric.values) ...[
                   _ReportTab(
                     key: ValueKey('report-tab-${metric.label}'),
-                    label: metric.label,
+                    label: (metric == _DashboardReportMetric.users
+                        ? (l10n?.users ?? 'Users')
+                        : metric == _DashboardReportMetric.tasks
+                            ? (l10n?.tasks ?? 'Tasks')
+                            : (l10n?.equipmentLabel ?? 'Equipment')),
                     selected: _metric == metric,
                     onTap: () => setState(() => _metric = metric),
                   ),
@@ -1140,6 +1162,7 @@ class _DashboardDataError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1173,7 +1196,7 @@ class _DashboardDataError extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
+          TextButton(onPressed: onRetry, child: Text(l10n?.retry ?? 'Retry')),
         ],
       ),
     );
@@ -1187,11 +1210,12 @@ class _WelcomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final l10n = AppLocalizations.of(context);
     final greeting = now.hour < 12
-        ? 'Good morning'
+        ? (l10n?.goodMorning ?? 'Good morning')
         : now.hour < 17
-            ? 'Good afternoon'
-            : 'Good evening';
+            ? (l10n?.goodAfternoon ?? 'Good afternoon')
+            : (l10n?.goodEvening ?? 'Good evening');
 
     return Row(
       children: [
@@ -1210,7 +1234,7 @@ class _WelcomeHeader extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'Here\'s what\'s happening with your tasks today.',
+                l10n?.dashboardSubtitle ?? 'Here\'s what\'s happening with your tasks today.',
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey.shade600,
@@ -1281,6 +1305,7 @@ class _TaskStatusChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final total = open + inProgress + hold + closed;
     final data = [
       _ChartData('Open', open, WebDashboardScreen._orange),
@@ -1288,6 +1313,25 @@ class _TaskStatusChart extends StatelessWidget {
       _ChartData('Hold', hold, const Color(0xFF9E9E9E)),
       _ChartData('Closed', closed, WebDashboardScreen._green),
     ];
+
+    final rawMax = data.isEmpty
+        ? 0.0
+        : data.map((e) => e.value.toDouble()).reduce((a, b) => a > b ? a : b);
+    // Nice tick interval so labels are evenly spaced and never overlap.
+    final targetTicks = 5.0;
+    final roughInterval = rawMax <= 0 ? 1.0 : rawMax / targetTicks;
+    final magnitude = math.pow(10.0, (math.log(roughInterval) / math.ln10).floor()).toDouble();
+    final residual = roughInterval / magnitude;
+    final niceInterval = (residual <= 1.5
+            ? 1.0
+            : residual <= 3.0
+                ? 2.0
+                : residual <= 7.0
+                    ? 5.0
+                    : 10.0) *
+        magnitude;
+    final interval = niceInterval < 1.0 ? 1.0 : niceInterval;
+    final maxY = ((rawMax / interval).ceil() * interval).clamp(interval, double.infinity);
 
     return _DashboardPanelCard(
       padding: const EdgeInsets.all(24),
@@ -1297,11 +1341,11 @@ class _TaskStatusChart extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Task Status Overview',
+                    l10n?.taskStatusOverview ?? 'Task Status Overview',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -1310,7 +1354,7 @@ class _TaskStatusChart extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Distribution of tasks by status',
+                    l10n?.taskStatusDistribution ?? 'Distribution of tasks by status',
                     style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
                   ),
                 ],
@@ -1323,7 +1367,7 @@ class _TaskStatusChart extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '$total total',
+                  '$total ${l10n?.totalLabel ?? 'total'}',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -1347,7 +1391,7 @@ class _TaskStatusChart extends StatelessWidget {
                         size: 48, color: Colors.grey.shade400),
                     const SizedBox(height: 12),
                     Text(
-                      'No tasks yet',
+                      l10n?.noTasksYet ?? 'No tasks yet',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey.shade500,
@@ -1367,10 +1411,7 @@ class _TaskStatusChart extends StatelessWidget {
                     child: BarChart(
                       BarChartData(
                         alignment: BarChartAlignment.spaceEvenly,
-                        maxY: data
-                                .map((e) => e.value.toDouble())
-                                .reduce((a, b) => a > b ? a : b) *
-                            1.3,
+                        maxY: maxY,
                         barTouchData: BarTouchData(
                           touchTooltipData: BarTouchTooltipData(
                             getTooltipColor: (_) => const Color(0xFF333333),
@@ -1393,10 +1434,10 @@ class _TaskStatusChart extends StatelessWidget {
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
                                 final labels = [
-                                  'Open',
-                                  'In Progress',
-                                  'Hold',
-                                  'Closed'
+                                  l10n?.openLabel ?? 'Open',
+                                  l10n?.taskStatusInProgress ?? 'In Progress',
+                                  l10n?.taskStatusHold ?? 'Hold',
+                                  l10n?.taskStatusClosed ?? 'Closed'
                                 ];
                                 return Padding(
                                   padding: const EdgeInsets.only(top: 8),
@@ -1417,8 +1458,15 @@ class _TaskStatusChart extends StatelessWidget {
                             sideTitles: SideTitles(
                               showTitles: true,
                               reservedSize: 32,
+                              interval: interval,
                               getTitlesWidget: (value, meta) {
-                                if (value == 0) return const SizedBox();
+                                if (value < 0 || value > maxY) {
+                                  return const SizedBox.shrink();
+                                }
+                                // Only render whole-number ticks.
+                                if (value != value.toInt().toDouble()) {
+                                  return const SizedBox.shrink();
+                                }
                                 return Text(
                                   '${value.toInt()}',
                                   style: const TextStyle(
@@ -1439,7 +1487,7 @@ class _TaskStatusChart extends StatelessWidget {
                         gridData: FlGridData(
                           show: true,
                           drawVerticalLine: false,
-                          horizontalInterval: 1,
+                          horizontalInterval: interval,
                           getDrawingHorizontalLine: (value) => const FlLine(
                             color: Color(0xFFEEEEEE),
                             strokeWidth: 1,
@@ -1581,6 +1629,7 @@ class _RenewalsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final top = renewals.take(5).toList();
 
     return _DashboardPanelCard(
@@ -1593,8 +1642,8 @@ class _RenewalsPanel extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Text(
-                    'AMC Renewals Due',
+                  Text(
+                    l10n?.amcRenewalsDue ?? 'AMC Renewals Due',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -1627,8 +1676,8 @@ class _RenewalsPanel extends StatelessWidget {
               if (onViewAll != null && renewals.isNotEmpty)
                 TextButton(
                   onPressed: onViewAll,
-                  child: const Text(
-                    'View all',
+                  child: Text(
+                    l10n?.viewAll ?? 'View all',
                     style: TextStyle(color: WebDashboardScreen._green),
                   ),
                 ),
@@ -1747,13 +1796,16 @@ class _RenewalRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final expired = contract.status() == AmcStatus.expired;
     final accent =
         expired ? WebDashboardScreen._red : WebDashboardScreen._orange;
     final days = contract.daysUntilExpiry();
     final sub = expired
-        ? 'Expired ${-days} day${days == -1 ? '' : 's'} ago'
-        : 'Expires in $days day${days == 1 ? '' : 's'}';
+        ? (l10n?.expiredDaysAgo(-days) ?? 'Expired ${-days} day(s) ago')
+        : (days == 1
+            ? (l10n?.expiresInDay ?? 'Expires in 1 day')
+            : (l10n?.expiresInDays(days) ?? 'Expires in $days days'));
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),

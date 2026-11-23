@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../l10n/app_localizations.dart';
+
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 
@@ -49,7 +51,7 @@ class _EquipmentListScreenState extends ConsumerState<EquipmentListScreen> {
     return Scaffold(
       backgroundColor: kIsWeb ? const Color(0xFFF7F9F6) : Colors.white,
       appBar: AppBar(
-        title: const Text('Equipment List'),
+        title: Text(AppLocalizations.of(context)?.equipmentListTitle ?? 'Equipment List'),
         backgroundColor: _green,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -101,7 +103,7 @@ class _EquipmentListScreenState extends ConsumerState<EquipmentListScreen> {
               data: (items) {
                 final visible = _filtered(items);
                 if (visible.isEmpty) {
-                  return const Center(child: Text('No equipment found.'));
+                  return Center(child: Text(AppLocalizations.of(context)?.noEquipmentFound ?? 'No equipment found.'));
                 }
                 if (kIsWeb) {
                   return RefreshIndicator(
@@ -155,12 +157,12 @@ class _EquipmentListScreenState extends ConsumerState<EquipmentListScreen> {
               color: _green, size: 22),
         ),
         const SizedBox(width: 12),
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Equipment List',
+                AppLocalizations.of(context)?.equipmentListTitle ?? 'Equipment List',
                 style: TextStyle(
                   fontFamily: 'Montserrat',
                   fontSize: 20,
@@ -170,7 +172,7 @@ class _EquipmentListScreenState extends ConsumerState<EquipmentListScreen> {
               ),
               SizedBox(height: 2),
               Text(
-                'All equipment assigned to your companies',
+                AppLocalizations.of(context)?.equipmentListSubtitle ?? 'All equipment assigned to your companies',
                 style: TextStyle(
                   fontFamily: 'Montserrat',
                   fontSize: 13,
@@ -206,8 +208,8 @@ class _EquipmentListScreenState extends ConsumerState<EquipmentListScreen> {
           controller: _searchController,
           onChanged: (v) => setState(() => _query = v),
           style: const TextStyle(fontFamily: 'Montserrat', fontSize: 15),
-          decoration: const InputDecoration(
-            hintText: 'Search by name, serial number, location...',
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context)?.searchEquipment ?? 'Search by name, serial number, location...',
             hintStyle: TextStyle(
               fontFamily: 'Montserrat',
               fontSize: 15,

@@ -152,6 +152,13 @@ class AppLocalizationsTa extends AppLocalizations {
   String get retry => 'மீண்டும் முயற்சி';
 
   @override
+  String get taskTotalsCouldNotBeLoaded => 'Task totals could not be loaded.';
+
+  @override
+  String get orgAnalyticsCouldNotBeLoaded =>
+      'Organization analytics could not be loaded.';
+
+  @override
   String get loading => 'ஏற்றுகிறது...';
 
   @override
@@ -333,4 +340,208 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get othersSection => 'Others';
+
+  @override
+  String get equipmentListTitle => 'Equipment List';
+
+  @override
+  String get goodMorning => 'Good morning';
+
+  @override
+  String get goodAfternoon => 'Good afternoon';
+
+  @override
+  String get goodEvening => 'Good evening';
+
+  @override
+  String get dashboardSubtitle =>
+      'Here\'s what\'s happening with your tasks today.';
+
+  @override
+  String get acrossAccessLevels => 'Across access levels';
+
+  @override
+  String get serviceContracts => 'Service contracts';
+
+  @override
+  String get allStatuses => 'All statuses';
+
+  @override
+  String get pocLabel => 'POC';
+
+  @override
+  String get usersByAccessLevel => 'Users by Access Level';
+
+  @override
+  String get taskThroughput => 'Task Throughput';
+
+  @override
+  String get equipmentAndContracts => 'Equipment & Contracts';
+
+  @override
+  String get openLabel => 'Open';
+
+  @override
+  String get closedLabel => 'Closed';
+
+  @override
+  String get equipmentLabel => 'Equipment';
+
+  @override
+  String get amcsLabel => 'AMCs';
+
+  @override
+  String get reportsTitle => 'Reports';
+
+  @override
+  String get openTasksCard => 'Open Tasks';
+
+  @override
+  String get closedMoCard => 'Closed (mo)';
+
+  @override
+  String get taskStatusOverview => 'Task Status Overview';
+
+  @override
+  String get taskStatusDistribution => 'Distribution of tasks by status';
+
+  @override
+  String get noTasksYet => 'No tasks yet';
+
+  @override
+  String get totalLabel => 'total';
+
+  @override
+  String get taskStatusOpen => 'Open';
+
+  @override
+  String get taskStatusInProgress => 'In Progress';
+
+  @override
+  String get taskStatusHold => 'Hold';
+
+  @override
+  String get taskStatusClosed => 'Closed';
+
+  @override
+  String get equipmentListSubtitle =>
+      'All equipment assigned to your companies';
+
+  @override
+  String get amcRenewalsDue => 'AMC Renewals Due';
+
+  @override
+  String get viewAll => 'View all';
+
+  @override
+  String expiredDaysAgo(Object days) {
+    return 'Expired $days day(s) ago';
+  }
+
+  @override
+  String expiresInDays(Object days) {
+    return 'Expires in $days days';
+  }
+
+  @override
+  String get expiresInDay => 'Expires in 1 day';
+
+  @override
+  String get uploadImage => 'Upload Image';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get pleaseSelectCompany => 'Please select a company';
+
+  @override
+  String get pleaseSelectBranch => 'Please select a branch';
+
+  @override
+  String get pleaseSelectEquipment => 'Please select equipment';
+
+  @override
+  String get closeItBeforeRaisingAnother => 'Close it before raising another.';
+
+  @override
+  String get pleaseChooseIssueType => 'Please choose an issue type';
+
+  @override
+  String get pleaseEnterSubject => 'Please enter a subject';
+
+  @override
+  String get taskNoLongerAvailable => 'This task is no longer available';
+
+  @override
+  String get taskUpdatedSuccessfully => 'Task updated successfully';
+
+  @override
+  String get pleaseSignInAgain => 'Please sign in again';
+
+  @override
+  String get taskCreatedSuccessfully => 'Task created successfully';
+
+  @override
+  String get issueType => 'Issue Type';
+
+  @override
+  String get subject => 'Subject';
+
+  @override
+  String get enterSubject => 'Enter subject';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get enterDescription => 'Enter description';
+
+  @override
+  String get reset => 'Reset';
+
+  @override
+  String get branch => 'Branch';
+
+  @override
+  String get location => 'Location';
+
+  @override
+  String get equipment => 'Equipment';
+
+  @override
+  String get taskInformation => 'Task Information';
+
+  @override
+  String get provideBasicDetailsOfTask => 'Provide basic details of the Task';
+
+  @override
+  String get noIssueTypesAvailable => 'No issue types available';
+
+  @override
+  String get noBranchesAvailable => 'No branches available';
+
+  @override
+  String get createTaskTitle => 'Create Task';
+
+  @override
+  String get updateTaskTitle => 'Update Task';
+
+  @override
+  String get addTaskTitle => 'Add Task';
+
+  @override
+  String get editTaskTitle => 'Edit Task';
+
+  @override
+  String get searchEquipment => 'Search by name, serial number, location...';
+
+  @override
+  String get noEquipmentFound => 'No equipment found.';
+
+  @override
+  String get couldNotLoadEquipment => 'Could not load equipment';
 }
