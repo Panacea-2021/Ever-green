@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/data/evergreen_repository.dart';
 import '../../../../core/models/backend_models.dart';
 import '../../../../core/router/routes.dart';
-import '../../domain/models/amc_contract.dart';
+
 
 const Color _trendDown = Color(0xFFBF0F0F);
 const Color _trendUp = Color(0xFF106220);

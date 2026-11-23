@@ -496,20 +496,36 @@ class _EquipmentDetailsScreenState
           ),
           const SizedBox(height: 8),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Icon(Icons.location_on, color: _green, size: 16),
               const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  location ?? '',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: _green,
-                    letterSpacing: -0.42,
-                  ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Location / Address',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _green,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      location ?? '',
+                      softWrap: true,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF14201A),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
