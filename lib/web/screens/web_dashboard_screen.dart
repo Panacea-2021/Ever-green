@@ -8,6 +8,7 @@ import '../../core/data/evergreen_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/router/routes.dart';
 import '../../features/amcs/data/amc_provider.dart';
+import '../../features/tasks/data/task_provider.dart';
 import '../../features/tasks/domain/models/task_item.dart';
 import '../../features/amcs/domain/models/amc_contract.dart';
 import '../../features/auth/domain/models/user_model.dart';
@@ -160,6 +161,16 @@ class _WebOrganizationSections extends ConsumerWidget {
     // Business Summary is rendered immediately (with available/placeholder
     // values) so it is the first visible dashboard content; only the
     // Overview/Reports sections wait for analytics to finish loading.
+    final businessSummaryLoading = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _WebDashboardSectionHeading(
+          title: l10n?.businessSummary ?? 'Business Summary',
+        ),
+        const SizedBox(height: 12),
+        const _DashboardAnalyticsLoading(),
+      ],
+    );
     final businessSummary = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -213,10 +224,12 @@ class _WebOrganizationSections extends ConsumerWidget {
           },
         );
       }
+      // Show a compact, stable-size placeholder for the Business Summary
+      // cards instead of misleading zero values while analytics loads.
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          businessSummary,
+          businessSummaryLoading,
           const SizedBox(height: 20),
           const _DashboardAnalyticsLoading(),
         ],
@@ -697,6 +710,9 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
         ? const ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         : reportSnapshots.map(snapshotMonthLabel).toList();
     final labelsForLegend = _legendLabels;
+    final tasks = ref.watch(taskProvider);
+    final openCount = tasks.where((t) => t.status == TaskStatus.open).length;
+    final closedCount = tasks.where((t) => t.status == TaskStatus.closed).length;
     final openTasks = (widget.analytics.tasksByStatus['Open'] ?? 0) +
         (widget.analytics.tasksByStatus['Hold'] ?? 0) +
         (widget.analytics.tasksByStatus['In Progress'] ?? 0);
@@ -715,7 +731,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
             children: [
               _WebDashboardMetricCard(
                 title: 'Open Tasks',
-                value: openTasks,
+                value: openCount,
                 icon: Icons.assignment_outlined,
                 color: WebDashboardScreen._green,
                 onTap: () => context.go(Routes.tasks, extra: TaskStatus.open),
@@ -726,7 +742,7 @@ class _WebDashboardReportsState extends ConsumerState<_WebDashboardReports> {
               ),
               _WebDashboardMetricCard(
                 title: 'Closed (mo)',
-                value: closedTrend.current,
+                value: closedCount,
                 icon: Icons.task_alt,
                 color: const Color(0xFF5B899E),
                 onTap: () => context.go(Routes.tasks, extra: TaskStatus.closed),

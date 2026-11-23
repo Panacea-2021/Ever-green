@@ -37,7 +37,9 @@ class _EquipmentListScreenState extends ConsumerState<EquipmentListScreen> {
           (e.serialNumber ?? '').toLowerCase().contains(q) ||
           (e.egSerialNumber).toLowerCase().contains(q) ||
           (e.location ?? '').toLowerCase().contains(q) ||
-          company.toLowerCase().contains(q);
+          company.toLowerCase().contains(q) ||
+          (e.make ?? '').toLowerCase().contains(q) ||
+          (e.model ?? '').toLowerCase().contains(q);
     }).toList();
   }
 
@@ -82,7 +84,8 @@ class _EquipmentListScreenState extends ConsumerState<EquipmentListScreen> {
           ],
           Expanded(
             child: async.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(
+                  child: CircularProgressIndicator(color: _green)),
               error: (e, _) => Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -226,12 +229,15 @@ class _EquipmentListScreenState extends ConsumerState<EquipmentListScreen> {
 
   Widget _webCard(Equipment e) {
     final company = e.company?.name ?? '';
+    final branch = e.company?.branchName ?? '';
     final serial = (e.serialNumber ?? '').isNotEmpty
         ? e.serialNumber!
         : e.egSerialNumber;
+    final displayName = e.name.trim().isNotEmpty
+        ? e.name
+        : (serial.isNotEmpty ? serial : 'Equipment #${e.id}');
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -244,101 +250,189 @@ class _EquipmentListScreenState extends ConsumerState<EquipmentListScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: _green.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: 460,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: _green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.precision_manufacturing,
+                          color: _green, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    IntrinsicWidth(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF14201A),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F5E9),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'ID: ${e.id}',
+                                  style: const TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF106220),
+                                  ),
+                                ),
+                              ),
+                              if (e.status != EquipmentCondition.operational)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFDECEA),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    e.status.label,
+                                    style: const TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFFD32F2F),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          if ((e.make ?? '').isNotEmpty || (e.model ?? '').isNotEmpty)
+                            _detailLine('Model / Mfr',
+                                [if ((e.make ?? '').isNotEmpty) e.make!, if ((e.model ?? '').isNotEmpty) e.model!].join(' - ')),
+                          _detailLine('Serial No.', serial.isEmpty ? '—' : serial),
+                          if (company.isNotEmpty) _detailLine('Company', company),
+                          if (branch.isNotEmpty) _detailLine('Branch', branch),
+                          if ((e.type ?? '').isNotEmpty) _detailLine('Type', e.type!),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: const Icon(Icons.precision_manufacturing,
-                color: _green, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  e.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF14201A),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    left: BorderSide(color: Color(0xFFE2E8E3)),
+                  ),
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.business_outlined,
-                        size: 13, color: Color(0xFF6B6B6B)),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        company.isEmpty ? '—' : company,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    if ((e.location ?? '').isNotEmpty) ...[
+                      const Text(
+                        'Location / Address',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF106220),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        e.location!,
+                        softWrap: true,
                         style: const TextStyle(
                           fontFamily: 'Montserrat',
-                          fontSize: 12.5,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF14201A),
+                          height: 1.4,
+                        ),
+                      ),
+                    ] else
+                      const Text(
+                        'Location / Address: —',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: Color(0xFF6B6B6B),
                         ),
                       ),
-                    ),
                   ],
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(Icons.confirmation_number_outlined,
-                        size: 13, color: Color(0xFF6B6B6B)),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        serial.isEmpty ? '—' : serial,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF6B6B6B),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if ((e.location ?? '').isNotEmpty) ...[
-            const SizedBox(width: 10),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: _green.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                e.location!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: _green,
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailLine(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF6B6B6B),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              softWrap: true,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF14201A),
+              ),
+            ),
+          ),
         ],
       ),
     );

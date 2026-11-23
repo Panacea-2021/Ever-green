@@ -504,32 +504,44 @@ class Equipment {
   });
 
   factory Equipment.fromJson(Map<String, dynamic> json) {
-    final company = _map(json['company']);
+    final rawCompany = json['company'] ?? json['company_details'] ?? json['companyDetails'];
+    final company = rawCompany is Map<String, dynamic>
+        ? rawCompany
+        : (rawCompany is Map ? rawCompany.map((k, v) => MapEntry('$k', v)) : null);
+    // If the backend returns the company as a plain string/address, treat it
+    // as the company name so it is not lost.
+    final companyFromString = rawCompany is String ? rawCompany : null;
     return Equipment(
       id: _int(json['id']),
-      name: _str(json['name']),
-      make: _strOrNull(json['make']),
-      model: _strOrNull(json['model']),
-      egSerialNumber: _str(json['eg_serial_number']),
-      serialNumber: _strOrNull(json['serial_number']),
+      name: _str(json['name'] ?? json['equipment_name'] ?? json['equipmentName'] ?? json['title'] ?? json['equipmentName']),
+      make: _strOrNull(json['make'] ?? json['manufacturer']),
+      model: _strOrNull(json['model'] ?? json['model_number'] ?? json['modelNumber']),
+      egSerialNumber: _str(json['eg_serial_number'] ?? json['egSerialNumber'] ?? json['serial'] ?? json['asset_number']),
+      serialNumber: _strOrNull(json['serial_number'] ?? json['serialNumber']),
       specifications: _strOrNull(json['specifications']),
-      imageUrl: _strOrNull(json['image_url']),
+      imageUrl: _strOrNull(json['image_url'] ?? json['imageUrl'] ?? json['photo'] ?? json['image']),
       manufacturerDate:
           _date(json['manufacturer_date'] ?? json['manufacturerDate']),
-      location: _strOrNull(json['location']),
+      location: _strOrNull(json['location'] ?? json['address'] ?? json['company_address'] ?? json['site'] ?? json['site_address']),
       description: _strOrNull(json['description']),
       tmFrequency:
           TmFrequency.fromKey(json['tm_frequency'] ?? json['tmFrequency']),
-      companyId: _intOrNull(json['company_link']),
-      company: company == null ? null : Company.fromJson(company),
+      companyId: _intOrNull(json['company_link'] ?? json['companyId'] ?? json['company_id']),
+      company: company == null && companyFromString == null
+          ? null
+          : (company == null
+              ? Company(id: 0, name: companyFromString!, branchName: '')
+              : Company.fromJson(company)),
       manual: _strOrNull(json['manual']),
       isActive: json['is_active'] != false,
       status: EquipmentCondition.fromKey(json['status']),
-      type: _strOrNull(json['type']),
-      installedAt: _date(json['installed_at']),
-      verifiedAt: _date(json['verified_at']),
-      verifier: TaskPerson.fromJson(json['verifier']),
-      serviceType: ServiceType.fromNullable(json['service_type']),
+      type: _strOrNull(json['type'] ?? json['category'] ?? json['equipment_type'] ?? json['equipmentType']),
+      installedAt: _date(json['installed_at'] ?? json['installedAt']),
+      verifiedAt: _date(json['verified_at'] ?? json['verifiedAt']),
+      verifier: (json['verified_by'] ?? json['verifier']) is Map
+          ? TaskPerson.fromJson((json['verified_by'] ?? json['verifier']) as Map<String, dynamic>)
+          : null,
+      serviceType: ServiceType.fromNullable(json['service_type'] ?? json['serviceType']),
       raw: json,
     );
   }

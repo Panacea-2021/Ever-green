@@ -396,27 +396,36 @@ class WebSideNav extends ConsumerWidget {
         location.startsWith('${Routes.addUser}/')) {
       return Routes.usersList;
     }
-    if (location == Routes.addTask ||
-        location.startsWith('${Routes.addTask}/') ||
-        location == Routes.createIndividualTask ||
-        location.startsWith('${Routes.createIndividualTask}/') ||
-        location == Routes.assignTasks ||
+    // Task creation routes are their own sidebar entries; do not map them
+    // to the Tasks/My Service Tasks item (would double-highlight).
+    if (location.startsWith(Routes.taskDetails)) {
+      return Routes.tasks;
+    }
+    if (location == Routes.assignTasks ||
         location.startsWith('${Routes.assignTasks}/')) {
       return Routes.tasks;
     }
-    if (location == Routes.createAmc ||
-        location.startsWith('${Routes.createAmc}/') ||
-        location == Routes.addEquipment ||
-        location.startsWith('${Routes.addEquipment}/') ||
-        location.startsWith(Routes.equipmentDetails) ||
-        location.startsWith(Routes.companyDetails) ||
+    if (location.startsWith(Routes.equipmentDetails) ||
+        location.startsWith(Routes.equipmentQr) ||
+        location.startsWith(Routes.verifiedEquipments)) {
+      return Routes.equipmentList;
+    }
+    if (location.startsWith(Routes.companyDetails) ||
         location.startsWith(Routes.companyTasks) ||
         location.startsWith(Routes.companyEquipments)) {
       return Routes.amcs;
     }
-    if (location.startsWith(Routes.equipmentQr) ||
-        location.startsWith(Routes.verifiedEquipments)) {
+    if (location.startsWith(Routes.equipmentDetails) ||
+        location.startsWith(Routes.equipmentQr) ||
+        location.startsWith(Routes.verifiedEquipments) ||
+        location.startsWith(Routes.addEquipment)) {
       return Routes.equipmentList;
+    }
+    if (location.startsWith(Routes.companyDetails) ||
+        location.startsWith(Routes.companyTasks) ||
+        location.startsWith(Routes.companyEquipments) ||
+        location.startsWith(Routes.createAmc)) {
+      return Routes.amcs;
     }
     if (location.startsWith(Routes.technicianTasks) ||
         location.startsWith(Routes.techniciansList)) {

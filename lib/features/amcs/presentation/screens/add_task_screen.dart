@@ -378,11 +378,10 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen>
       );
     }
     final companyList = companies.valueOrNull ?? const <Company>[];
-    _companyLocked = role.isClientSide && companyList.length == 1;
-    if (_companyLocked && _companyId != companyList.first.id) {
-      _companyId = companyList.first.id;
-      _equipmentId = null;
-    }
+    // Do not auto-select the company even for single-company (client-side)
+    // users; the user must explicitly choose it. Access restrictions are
+    // still enforced via the filtered companyList below.
+    _companyLocked = false;
     Company? selectedCompany;
     for (final c in companyList) {
       if (c.id == _companyId) selectedCompany = c;
