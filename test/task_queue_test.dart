@@ -17,6 +17,7 @@ Map<String, dynamic> row({
   String? acceptedAt,
   String? startedAt,
   bool individual = false,
+  bool escalated = false,
   String updatedAt = '2026-10-02T10:00:00Z',
 }) =>
     {
@@ -30,6 +31,7 @@ Map<String, dynamic> row({
         'name': 'Ticket $id',
         'priority': 'medium',
         'created_at': '2026-10-01T10:00:00Z',
+        'escalated': escalated,
         if (assignedAt != null) 'assigned_at': assignedAt,
         if (acceptedAt != null) 'accepted_at': acceptedAt,
         if (startedAt != null) 'started_at': startedAt,
@@ -78,6 +80,7 @@ void main() {
       ),
       'completed': item(row(id: 9, status: 'completed', technician: _tech)),
       'closed': item(row(id: 10, status: 'closed', technician: _tech)),
+      'escalated': item(row(id: 13, escalated: true, technician: _tech)),
       'engineer without a name': item(
         row(id: 11, technician: {'id': 12, 'name': '', 'phone': ''}),
       ),
@@ -114,20 +117,22 @@ void main() {
     test('Assigned lists every unclosed ticket with an engineer', () {
       expect(
         ids(QueueTab.assigned, now),
-        unorderedEquals(['3', '4', '5', '6', '7', '8', '9', '11', '12']),
+        unorderedEquals(['3', '4', '5', '6', '7', '8', '9', '11', '12', '13']),
       );
     });
 
-    test('Escalation lists unclosed tickets with no status move for 24h', () {
-      expect(ids(QueueTab.escalation, now), isEmpty);
-      // 24h after creation: only tickets whose last move was the creation,
-      // or a move more than 24h ago.
+    test('Escalation lists only tickets marked escalated by the backend', () {
+      expect(
+        ids(QueueTab.escalation, now),
+        unorderedEquals(['13']),
+      );
       final later = DateTime.utc(2026, 10, 2, 10);
       expect(
         ids(QueueTab.escalation, later),
-        unorderedEquals(['1', '2', '4', '6', '7', '8', '9', '11']),
+        unorderedEquals(['13']),
       );
-      expect(ids(QueueTab.escalation, later), isNot(contains('10')));
+      // A stale-but-not-escalated ticket must not appear.
+      expect(ids(QueueTab.escalation, later), isNot(contains('1')));
     });
 
     test('a hold restarts the 24h escalation clock', () {

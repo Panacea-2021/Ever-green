@@ -29,6 +29,7 @@ enum TaskAction {
   priority('Priority', Icons.flag_outlined),
   status('Status', Icons.sync_alt_rounded),
   escalate('Escalate', Icons.trending_up_rounded),
+  deescalate('De-escalate', Icons.trending_down_rounded),
   accept('Accept', Icons.task_alt_rounded),
   addScreenshot('Add Screenshot', Icons.add_a_photo_outlined),
   complete('Complete Work', Icons.done_all_rounded),
@@ -95,8 +96,11 @@ List<TaskButton> taskButtonsFor(TaskItem t, User? user) {
       add(TaskAction.priority);
       add(TaskAction.status);
     }
-    if (!t.escalated && t.isOverdue() && !t.isClosed) {
+    if (!t.escalated && !t.isClosed) {
       add(TaskAction.escalate, TaskButtonKind.danger);
+    }
+    if (t.escalated && !t.isClosed) {
+      add(TaskAction.deescalate, TaskButtonKind.danger);
     }
   }
 

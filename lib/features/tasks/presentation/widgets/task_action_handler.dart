@@ -68,6 +68,12 @@ class TaskActionHandler {
           ),
           success: '${t.title} escalated to Manager',
         );
+      case TaskAction.deescalate:
+        await runTaskAction(
+          context,
+          () => _actions.deescalate(t),
+          success: '${t.title} de-escalated',
+        );
       case TaskAction.accept:
         await runTaskAction(
           context,
