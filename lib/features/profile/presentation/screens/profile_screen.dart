@@ -250,16 +250,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   SizedBox(width: 360, child: identity),
                   const SizedBox(width: 28),
                   Expanded(
-                    child: SizedBox.expand(
-                      child: SingleChildScrollView(
-                        primary: false,
-                        padding: const EdgeInsets.only(bottom: 28),
-                        child: _webMenuGrid(
-                          context,
-                          role,
-                          constraints.maxWidth - 56 >= 1000 ? 2 : 1,
-                        ),
-                      ),
+                    child: _webMenuGrid(
+                      context,
+                      role,
+                      1,
+                      fillHeight: true,
                     ),
                   ),
                 ],
@@ -280,16 +275,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       );
 
-  Widget _webMenuGrid(BuildContext context, UserRole role, int columns) {
+  Widget _webMenuGrid(BuildContext context, UserRole role, int columns, {bool fillHeight = false}) {
     final items = <(_MenuEntry, Color)>[
-      (
-        _MenuEntry(
-          icon: Icons.business_outlined,
-          label: 'Company Profile',
-          onTap: () => _showCompanySheet(context),
+      if (role.isClientSide)
+        (
+          _MenuEntry(
+            icon: Icons.business_outlined,
+            label: 'Company Profile',
+            onTap: () => _showCompanySheet(context),
+          ),
+          const Color(0xFF106220),
         ),
-        const Color(0xFF106220),
-      ),
       if (role != UserRole.superAdmin)
         (
           _MenuEntry(
@@ -338,6 +334,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     ];
 
     const gap = 18.0;
+
+    if (fillHeight && items.isNotEmpty) {
+      return Column(
+        children: [
+          for (int i = 0; i < items.length; i++) ...[
+            if (i > 0) const SizedBox(height: gap),
+            Expanded(
+              child: SizedBox(
+                width: double.infinity,
+                child: _WebMenuTile(
+                  entry: items[i].$1,
+                  color: items[i].$2,
+                  fillHeight: true,
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, c) {
         final w = (c.maxWidth - gap * (columns - 1)) / columns;
@@ -1049,10 +1066,15 @@ class _CompanyProfileSheet extends ConsumerWidget {
 }
 
 class _WebMenuTile extends StatefulWidget {
-  const _WebMenuTile({required this.entry, required this.color});
+  const _WebMenuTile({
+    required this.entry,
+    required this.color,
+    this.fillHeight = false,
+  });
 
   final _MenuEntry entry;
   final Color color;
+  final bool fillHeight;
 
   @override
   State<_WebMenuTile> createState() => _WebMenuTileState();
@@ -1092,69 +1114,135 @@ class _WebMenuTileState extends State<_WebMenuTile> {
               ),
             ],
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(width: 5, color: color),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                color.withValues(alpha: 0.18),
-                                color.withValues(alpha: 0.06),
-                              ],
-                            ),
+          child: widget.fillHeight
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(width: 5, color: color),
+                    Expanded(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 54,
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      color.withValues(alpha: 0.18),
+                                      color.withValues(alpha: 0.06),
+                                    ],
+                                  ),
+                                ),
+                                child:
+                                    Icon(widget.entry.icon, size: 26, color: color),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  widget.entry.label,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1C2B20),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _hover
+                                      ? color
+                                      : color.withValues(alpha: 0.08),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 18,
+                                  color: _hover ? Colors.white : color,
+                                ),
+                              ),
+                            ],
                           ),
-                          child:
-                              Icon(widget.entry.icon, size: 26, color: color),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Text(
-                            widget.entry.label,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1C2B20),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color:
-                                _hover ? color : color.withValues(alpha: 0.08),
-                          ),
-                          child: Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 18,
-                            color: _hover ? Colors.white : color,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
+                  ],
+                )
+              : IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(width: 5, color: color),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 54,
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      color.withValues(alpha: 0.18),
+                                      color.withValues(alpha: 0.06),
+                                    ],
+                                  ),
+                                ),
+                                child: Icon(widget.entry.icon,
+                                    size: 26, color: color,),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  widget.entry.label,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1C2B20),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _hover
+                                      ? color
+                                      : color.withValues(alpha: 0.08),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 18,
+                                  color: _hover ? Colors.white : color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
         ),
       ),
     );
