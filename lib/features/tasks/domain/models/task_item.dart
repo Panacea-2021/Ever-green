@@ -517,7 +517,7 @@ class TaskItem {
       case QueueTab.assigned:
         return hasAssignee && !isFinal;
       case QueueTab.escalation:
-        return !isFinal && (escalated || isStatusStale(now));
+        return !isFinal && escalated;
     }
   }
 

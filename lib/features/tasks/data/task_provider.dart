@@ -363,6 +363,10 @@ class TaskActions {
     await _post('user/escalateTask', {'task_link': t.taskId, 'reason': reason});
   }
 
+  Future<void> deescalate(TaskItem t) async {
+    await _post('user/deescalateTask', {'task_link': t.taskId});
+  }
+
   /// Moves the ticket to [status] (`updateTaskStatus`). Use [startWork] and
   /// [hold] for the transitions that carry hold-reason data.
   /// [note] is shown on the ticket's timeline (e.g. why it was closed).

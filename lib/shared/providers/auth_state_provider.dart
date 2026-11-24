@@ -7,6 +7,7 @@ import '../../core/push/push_service.dart';
 import '../../core/storage/token_storage.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
+import '../../features/dashboard/data/dashboard_repository.dart';
 
 /// Tracks whether the app has finished checking persisted session on startup.
 enum AuthStatus { unknown, authenticated, unauthenticated }
@@ -132,6 +133,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     _ref.invalidate(deletedTasksProvider);
     _ref.invalidate(equipmentsProvider);
     _ref.invalidate(techniciansProvider);
+    _ref.invalidate(taskCountsProvider);
   }
 
   void setAuthenticated(User user) {

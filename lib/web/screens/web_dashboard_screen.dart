@@ -48,6 +48,15 @@ class WebDashboardScreen extends ConsumerWidget {
     final companiesLoading = pending(companiesAsync);
     final amcCount = companiesAsync.valueOrNull?.length;
 
+    // Pre-cache technicians for roles that can access Search, so the Search
+    // module's Service Engineers card resolves instantly instead of fetching
+    // on first open.
+    if (Permissions.canAccessRoute(role, Routes.technicianTasks) &&
+        role != UserRole.technician &&
+        role != UserRole.coldRoomTechnician) {
+      ref.watch(techniciansProvider);
+    }
+
     final openStatusCount = statusCounts['Open'] ?? 0;
     final closedCount = statusCounts['Closed'] ?? 0;
     final inProgressCount = statusCounts['In Progress'] ?? 0;
