@@ -40,6 +40,14 @@ class _WebEnquiriesScreenState extends ConsumerState<WebEnquiriesScreen> {
     for (final e in [...results[0], ...results[1]]) {
       if (seen.add(e.tokenId)) all.add(e);
     }
+    all.sort((a, b) {
+      final da = a.submissionDate;
+      final db = b.submissionDate;
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return db.compareTo(da);
+    });
     return all.where((e) {
       final matchesSearch = _search.trim().isEmpty ||
           e.customerName.toLowerCase().contains(_search.trim().toLowerCase()) ||

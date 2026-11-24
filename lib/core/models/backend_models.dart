@@ -751,10 +751,24 @@ class ServiceTask {
       notes: _strOrNull(task['notes']),
       rating: _intOrNull(task['rating']),
       statusReason: nested != null ? _strOrNull(json['reason']) : null,
-      images: (task['image'] as List? ?? const [])
-          .map((e) => e is Map ? _str(e['url']) : _str(e))
-          .where((e) => e.isNotEmpty)
-          .toList(),
+      images: (() {
+        final raw = task['image'] ??
+            task['images'] ??
+            task['image_url'] ??
+            task['imageUrl'] ??
+            task['photo'] ??
+            task['photos'] ??
+            task['attachment'] ??
+            task['attachments'];
+        if (raw is List) {
+          return raw
+              .map((e) => e is Map ? _str(e['url'] ?? e['image_url'] ?? e['imageUrl'] ?? e['path'] ?? e['file']) : _str(e))
+              .where((e) => e.isNotEmpty)
+              .toList();
+        }
+        if (raw is String && raw.trim().isNotEmpty) return [raw.trim()];
+        return const <String>[];
+      })(),
       holdReasons: (task['hold_reason'] as List? ?? const [])
           .whereType<Map<String, dynamic>>()
           .map(HoldReason.fromJson)

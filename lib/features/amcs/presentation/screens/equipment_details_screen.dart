@@ -573,10 +573,10 @@ class _EquipmentDetailsScreenState
     String v(String? value) =>
         value == null || value.trim().isEmpty ? '-' : value.trim();
     final rows = <(String, String)>[
-      ('Service Type', v(e.serviceType?.name)),
+      ('Service Type', v(e.serviceType?.name ?? e.type)),
       ('Make', v(e.make)),
       ('Model', v(e.model)),
-      ('S.No', v(e.serialNumber)),
+      ('S.No', v(e.serialNumber ?? e.egSerialNumber)),
       ('Mfg.Year', v(e.manufacturerDate?.year.toString())),
       ('Maintainance Frequency', v(e.tmFrequency?.label)),
       ('EG Serial Number', v(e.egSerialNumber)),

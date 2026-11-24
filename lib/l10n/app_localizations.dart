@@ -384,6 +384,18 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retry;
 
+  /// No description provided for @taskTotalsCouldNotBeLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Task totals could not be loaded.'**
+  String get taskTotalsCouldNotBeLoaded;
+
+  /// No description provided for @orgAnalyticsCouldNotBeLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization analytics could not be loaded.'**
+  String get orgAnalyticsCouldNotBeLoaded;
+
   /// No description provided for @loading.
   ///
   /// In en, this message translates to:
@@ -749,6 +761,402 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Others'**
   String get othersSection;
+
+  /// No description provided for @equipmentListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment List'**
+  String get equipmentListTitle;
+
+  /// No description provided for @goodMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get goodMorning;
+
+  /// No description provided for @goodAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get goodAfternoon;
+
+  /// No description provided for @goodEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get goodEvening;
+
+  /// No description provided for @dashboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Here\'s what\'s happening with your tasks today.'**
+  String get dashboardSubtitle;
+
+  /// No description provided for @acrossAccessLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'Across access levels'**
+  String get acrossAccessLevels;
+
+  /// No description provided for @serviceContracts.
+  ///
+  /// In en, this message translates to:
+  /// **'Service contracts'**
+  String get serviceContracts;
+
+  /// No description provided for @allStatuses.
+  ///
+  /// In en, this message translates to:
+  /// **'All statuses'**
+  String get allStatuses;
+
+  /// No description provided for @pocLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'POC'**
+  String get pocLabel;
+
+  /// No description provided for @usersByAccessLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Users by Access Level'**
+  String get usersByAccessLevel;
+
+  /// No description provided for @taskThroughput.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Throughput'**
+  String get taskThroughput;
+
+  /// No description provided for @equipmentAndContracts.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment & Contracts'**
+  String get equipmentAndContracts;
+
+  /// No description provided for @openLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get openLabel;
+
+  /// No description provided for @closedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get closedLabel;
+
+  /// No description provided for @equipmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get equipmentLabel;
+
+  /// No description provided for @amcsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'AMCs'**
+  String get amcsLabel;
+
+  /// No description provided for @reportsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get reportsTitle;
+
+  /// No description provided for @openTasksCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Tasks'**
+  String get openTasksCard;
+
+  /// No description provided for @closedMoCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed (mo)'**
+  String get closedMoCard;
+
+  /// No description provided for @taskStatusOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Status Overview'**
+  String get taskStatusOverview;
+
+  /// No description provided for @taskStatusDistribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Distribution of tasks by status'**
+  String get taskStatusDistribution;
+
+  /// No description provided for @noTasksYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks yet'**
+  String get noTasksYet;
+
+  /// No description provided for @totalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'total'**
+  String get totalLabel;
+
+  /// No description provided for @taskStatusOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get taskStatusOpen;
+
+  /// No description provided for @taskStatusInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get taskStatusInProgress;
+
+  /// No description provided for @taskStatusHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold'**
+  String get taskStatusHold;
+
+  /// No description provided for @taskStatusClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get taskStatusClosed;
+
+  /// No description provided for @equipmentListSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All equipment assigned to your companies'**
+  String get equipmentListSubtitle;
+
+  /// No description provided for @amcRenewalsDue.
+  ///
+  /// In en, this message translates to:
+  /// **'AMC Renewals Due'**
+  String get amcRenewalsDue;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get viewAll;
+
+  /// No description provided for @expiredDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired {days} day(s) ago'**
+  String expiredDaysAgo(Object days);
+
+  /// No description provided for @expiresInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in {days} days'**
+  String expiresInDays(Object days);
+
+  /// No description provided for @expiresInDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in 1 day'**
+  String get expiresInDay;
+
+  /// No description provided for @uploadImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Image'**
+  String get uploadImage;
+
+  /// No description provided for @gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get gallery;
+
+  /// No description provided for @camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get camera;
+
+  /// No description provided for @pleaseSelectCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a company'**
+  String get pleaseSelectCompany;
+
+  /// No description provided for @pleaseSelectBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a branch'**
+  String get pleaseSelectBranch;
+
+  /// No description provided for @pleaseSelectEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select equipment'**
+  String get pleaseSelectEquipment;
+
+  /// No description provided for @closeItBeforeRaisingAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Close it before raising another.'**
+  String get closeItBeforeRaisingAnother;
+
+  /// No description provided for @pleaseChooseIssueType.
+  ///
+  /// In en, this message translates to:
+  /// **'Please choose an issue type'**
+  String get pleaseChooseIssueType;
+
+  /// No description provided for @pleaseEnterSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a subject'**
+  String get pleaseEnterSubject;
+
+  /// No description provided for @taskNoLongerAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This task is no longer available'**
+  String get taskNoLongerAvailable;
+
+  /// No description provided for @taskUpdatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Task updated successfully'**
+  String get taskUpdatedSuccessfully;
+
+  /// No description provided for @pleaseSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again'**
+  String get pleaseSignInAgain;
+
+  /// No description provided for @taskCreatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Task created successfully'**
+  String get taskCreatedSuccessfully;
+
+  /// No description provided for @issueType.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue Type'**
+  String get issueType;
+
+  /// No description provided for @subject.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get subject;
+
+  /// No description provided for @enterSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter subject'**
+  String get enterSubject;
+
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// No description provided for @enterDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter description'**
+  String get enterDescription;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
+
+  /// No description provided for @branch.
+  ///
+  /// In en, this message translates to:
+  /// **'Branch'**
+  String get branch;
+
+  /// No description provided for @location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get location;
+
+  /// No description provided for @equipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get equipment;
+
+  /// No description provided for @taskInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Information'**
+  String get taskInformation;
+
+  /// No description provided for @provideBasicDetailsOfTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide basic details of the Task'**
+  String get provideBasicDetailsOfTask;
+
+  /// No description provided for @noIssueTypesAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No issue types available'**
+  String get noIssueTypesAvailable;
+
+  /// No description provided for @noBranchesAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No branches available'**
+  String get noBranchesAvailable;
+
+  /// No description provided for @createTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Task'**
+  String get createTaskTitle;
+
+  /// No description provided for @updateTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Task'**
+  String get updateTaskTitle;
+
+  /// No description provided for @addTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Task'**
+  String get addTaskTitle;
+
+  /// No description provided for @editTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Task'**
+  String get editTaskTitle;
+
+  /// No description provided for @searchEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name, serial number, location...'**
+  String get searchEquipment;
+
+  /// No description provided for @noEquipmentFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No equipment found.'**
+  String get noEquipmentFound;
+
+  /// No description provided for @couldNotLoadEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load equipment'**
+  String get couldNotLoadEquipment;
 }
 
 class _AppLocalizationsDelegate

@@ -336,7 +336,7 @@ class WebSideNav extends ConsumerWidget {
                         final entry = entries[index];
                         return _WebNavTile(
                           entry: entry,
-                          active: _isActive(entry.route),
+                          active: _isActive(entry.route, role: role),
                           collapsed: collapsed,
                           onTap: () => onNavigate(entry.route),
                         );
@@ -377,7 +377,7 @@ class WebSideNav extends ConsumerWidget {
     );
   }
 
-  bool _isActive(String route) {
+  bool _isActive(String route, {UserRole? role}) {
     if (activeRoute == route) return true;
     // Sub-routes (e.g. /tasks/123) keep their parent module highlighted.
     if (activeRoute.startsWith('$route/')) return true;
@@ -386,12 +386,12 @@ class WebSideNav extends ConsumerWidget {
       return true;
     }
     // Nested/detail pages keep their parent module highlighted.
-    final parent = _parentRoute(activeRoute);
+    final parent = _parentRoute(activeRoute, role: role);
     if (parent != null && parent == route) return true;
     return false;
   }
 
-  static String? _parentRoute(String location) {
+  static String? _parentRoute(String location, {UserRole? role}) {
     if (location == Routes.addUser ||
         location.startsWith('${Routes.addUser}/')) {
       return Routes.usersList;
@@ -408,7 +408,10 @@ class WebSideNav extends ConsumerWidget {
     if (location.startsWith(Routes.equipmentDetails) ||
         location.startsWith(Routes.equipmentQr) ||
         location.startsWith(Routes.verifiedEquipments)) {
-      return Routes.equipmentList;
+      // Equipment List is exclusive to Company Manager; other roles reach
+      // equipment via Tasks, so highlight the Tasks module for them.
+      if (role == UserRole.clientAdmin) return Routes.equipmentList;
+      return Routes.tasks;
     }
     if (location.startsWith(Routes.companyDetails) ||
         location.startsWith(Routes.companyTasks) ||
@@ -432,9 +435,7 @@ class WebSideNav extends ConsumerWidget {
       return Routes.techniciansList;
     }
     if (location == Routes.editProfile ||
-        location.startsWith('${Routes.editProfile}/') ||
-        location == Routes.changePassword ||
-        location.startsWith('${Routes.changePassword}/')) {
+        location.startsWith('${Routes.editProfile}/')) {
       return Routes.profile;
     }
     if (location.startsWith(Routes.taskBoard)) {

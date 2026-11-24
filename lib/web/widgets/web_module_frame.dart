@@ -99,7 +99,6 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.downloadQr,
     Routes.technicianPerformance,
     Routes.auditLog,
-    Routes.profile,
     Routes.changePassword,
     Routes.settings,
   ];
@@ -119,6 +118,7 @@ class WebModuleFrame extends ConsumerStatefulWidget {
     Routes.announcements: 'Announcements',
     Routes.myTasks: 'My Tasks',
     Routes.myServiceTasks: 'My Service Tasks',
+    Routes.profile: 'Profile',
     Routes.editProfile: 'Edit Profile',
     Routes.addUser: 'Add User',
     Routes.selectAmc: 'Select AMC',
