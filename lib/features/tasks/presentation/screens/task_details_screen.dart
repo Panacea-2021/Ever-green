@@ -131,6 +131,7 @@ class TaskDetailsScreen extends ConsumerWidget {
     final resolvedTech = techUser?.name ?? tech;
     final techMob = technicianMobile ?? task?.technicianPhone ?? '';
     final resolvedTechMob = techUser?.phone ?? techMob;
+    final acceptedBy = task != null && task.hasAssignee ? resolvedTech : null;
     final created = createdOn ?? _fmt(task?.createdAt);
     final sNo = serialNumber ?? serial;
     final desc = description ?? task?.description ?? '';
@@ -192,12 +193,14 @@ class TaskDetailsScreen extends ConsumerWidget {
         ),
         SizedBox(height: kIsWeb ? 14 : 20),
         if (individual)
-          _buildContactCard(context, task!)
+          _buildContactCard(context, task!, resolvedTechMob, acceptedBy)
         else
           _buildCompanyCard(
             company,
             client,
             mob,
+            techMobile: resolvedTechMob,
+            acceptedBy: acceptedBy,
             imageUrl: task?.source?.company?.raw['image_url']?.toString() ??
                 task?.source?.company?.raw['logo_url']?.toString() ??
                 task?.source?.company?.raw['logo']?.toString(),
@@ -207,13 +210,11 @@ class TaskDetailsScreen extends ConsumerWidget {
           task?.ticketNo ?? '',
           task?.source?.issueTypeLabel ?? '',
           resolvedTech,
-          resolvedTechMob,
           created,
           individual ? null : sNo,
           desc,
           lastUpdated,
           task?.source?.equipment?.serviceType?.name,
-          acceptedBy: task != null && task.hasAssignee ? resolvedTech : null,
           equipmentImageUrl: task?.source?.equipment?.imageUrl,
         ),
         if (task != null && actions.isNotEmpty) ...[
@@ -411,7 +412,7 @@ class TaskDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildCompanyCard(String company, String client, String mobile,
-      {String? imageUrl}) {
+      {String? imageUrl, String techMobile = '', String? acceptedBy}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 11),
       padding: const EdgeInsets.fromLTRB(15, 18, 15, 20),
@@ -461,24 +462,16 @@ class TaskDetailsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Name
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _infoField('Name', company.isEmpty ? '-' : company),
-          ),
-          const SizedBox(height: 14),
-
-          // Client
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _infoField('Raised By', client.isEmpty ? '-' : client),
-          ),
-          const SizedBox(height: 14),
-
-          // Mobile
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _infoField('Mobile', mobile.isEmpty ? '-' : mobile),
+          // Name / Raised By / Mobile on the left, Accepted By + Mobile on the
+          // right.
+          _buildContactRow(
+            left: [
+              _infoField('Name', company.isEmpty ? '-' : company),
+              _infoField('Raised By', client.isEmpty ? '-' : client),
+              _infoField('Mobile', mobile.isEmpty ? '-' : mobile),
+            ],
+            acceptedBy: acceptedBy,
+            techMobile: techMobile,
           ),
         ],
       ),
@@ -487,7 +480,8 @@ class TaskDetailsScreen extends ConsumerWidget {
 
   /// Individual tickets: the person, a tap-to-copy mobile number and the
   /// address, in place of the company / equipment details.
-  Widget _buildContactCard(BuildContext context, TaskItem task) {
+  Widget _buildContactCard(
+      BuildContext context, TaskItem task, String techMobile, String? acceptedBy) {
     final phone = task.contactPhone;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 11),
@@ -527,55 +521,103 @@ class TaskDetailsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _infoField(
-              'Name',
-              task.contactName.isEmpty ? '-' : task.contactName,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: phone.isEmpty
-                ? _infoField('Mobile', '-')
-                : InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      await Clipboard.setData(ClipboardData(text: phone));
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Mobile number copied'),
-                          backgroundColor: _green,
-                        ),
-                      );
-                    },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                            child: _infoField('Mobile', phone, link: true),),
-                        const SizedBox(width: 6),
-                        const Icon(Icons.copy_rounded, size: 16, color: _green),
-                      ],
+          // Contact details on the left, Accepted By + Mobile on the right.
+          _buildContactRow(
+            left: [
+              _infoField(
+                'Name',
+                task.contactName.isEmpty ? '-' : task.contactName,
+              ),
+              phone.isEmpty
+                  ? _infoField('Mobile', '-')
+                  : InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        await Clipboard.setData(ClipboardData(text: phone));
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Mobile number copied'),
+                            backgroundColor: _green,
+                          ),
+                        );
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                              child: _infoField('Mobile', phone, link: true),),
+                          const SizedBox(width: 6),
+                          const Icon(Icons.copy_rounded, size: 16, color: _green),
+                        ],
+                      ),
                     ),
-                  ),
-          ),
-          const SizedBox(height: 14),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _infoField(
-              'Raised By',
-              (task.clientName.isNotEmpty
-                      ? task.clientName
-                      : (task.contactName.isNotEmpty
-                          ? task.contactName
-                          : 'Not Available')),
-            ),
+              _infoField(
+                'Raised By',
+                (task.clientName.isNotEmpty
+                        ? task.clientName
+                        : (task.contactName.isNotEmpty
+                            ? task.contactName
+                            : 'Not Available')),
+              ),
+            ],
+            acceptedBy: acceptedBy,
+            techMobile: techMobile,
           ),
         ],
       ),
+    );
+  }
+
+  /// Lays out the top card fields: the contact details on the left and
+  /// Accepted By + Mobile stacked on the right. On narrow screens the right
+  /// side wraps below the left content instead of overflowing.
+  Widget _buildContactRow({
+    required List<Widget> left,
+    required String techMobile,
+    String? acceptedBy,
+  }) {
+    final leftColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < left.length; i++) ...[
+          if (i > 0) const SizedBox(height: 14),
+          left[i],
+        ],
+      ],
+    );
+    final rightColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _infoField(
+          'Accepted By',
+          (acceptedBy == null || acceptedBy.isEmpty) ? '-' : acceptedBy,
+        ),
+        const SizedBox(height: 14),
+        _infoField('Mobile', techMobile.isEmpty ? '-' : techMobile),
+      ],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 420) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              leftColumn,
+              const SizedBox(height: 14),
+              rightColumn,
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 2, child: leftColumn),
+            const SizedBox(width: 16),
+            Expanded(flex: 1, child: rightColumn),
+          ],
+        );
+      },
     );
   }
 
@@ -583,13 +625,11 @@ class TaskDetailsScreen extends ConsumerWidget {
     String ticketNo,
     String issueType,
     String technician,
-    String techMobile,
     String createdOn,
     String? serialNo,
     String description,
     String lastUpdated,
     String? serviceType, {
-    String? acceptedBy,
     String? equipmentImageUrl,
   }) {
     return Container(
@@ -665,22 +705,6 @@ class TaskDetailsScreen extends ConsumerWidget {
                     'Service Engineer',
                     technician.isEmpty ? '-' : technician,
                   ),
-                ),
-                const SizedBox(height: 12),
-
-                if (acceptedBy != null && acceptedBy.isNotEmpty) ...[
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _infoField('Accepted by', acceptedBy),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Mobile
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: _infoField(
-                      'Mobile', techMobile.isEmpty ? '-' : techMobile,),
                 ),
                 const SizedBox(height: 12),
 

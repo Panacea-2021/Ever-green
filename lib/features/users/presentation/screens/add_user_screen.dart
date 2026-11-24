@@ -41,6 +41,8 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   bool _amcPickerOpen = false;
   final TextEditingController _amcSearchController = TextEditingController();
   String _amcQuery = '';
+  final GlobalKey _amcCardKey = GlobalKey();
+  final FocusNode _amcFocusNode = FocusNode();
 
   static const Color _green = Color(0xFF106220);
 
@@ -52,7 +54,48 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     _passwordController.dispose();
     _companyController.dispose();
     _amcSearchController.dispose();
+    _amcFocusNode.dispose();
     super.dispose();
+  }
+
+  /// Opens/closes the AMC search inside the selection card and makes sure the
+  /// expanded card is scrolled into view.
+  void _toggleAmcPicker() {
+    if (_amcPickerOpen) {
+      FocusScope.of(context).unfocus();
+      setState(() {
+        _amcPickerOpen = false;
+        _amcQuery = '';
+      });
+      _amcSearchController.clear();
+      return;
+    }
+
+    setState(() => _amcPickerOpen = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _amcFocusNode.requestFocus();
+      final ctx = _amcCardKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 200),
+          alignment: 0.05,
+        );
+      }
+    });
+  }
+
+  /// Keeps both the display name and the backend company id in the form state
+  /// so the selection survives further edits and is sent on save.
+  void _selectCompany(Company company) {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _selectedCompanyId = company.id;
+      _companyController.text = company.displayName;
+      _amcPickerOpen = false;
+      _amcQuery = '';
+    });
+    _amcSearchController.clear();
   }
 
   /// Only a super admin may create another super admin; client admins only
@@ -165,24 +208,9 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final horizontalPadding = 16.0;
-                  final formWidth =
-                      (constraints.maxWidth - horizontalPadding * 2)
-                          .clamp(0.0, 1100.0)
-                          .toDouble();
                   return SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                      horizontalPadding,
-                      8,
-                      horizontalPadding,
-                      20,
-                    ),
-                    child: Center(
-                      child: SizedBox(
-                        width: formWidth,
-                        child: _buildFormCard(),
-                      ),
-                    ),
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 20),
+                    child: _buildFormCard(),
                   );
                 },
               ),
@@ -363,6 +391,9 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
                     _selectedRole == null ? 'Please select access type' : null,
                 onChanged: (value) => setState(() {
                   _selectedRole = value;
+                  _amcPickerOpen = false;
+                  _amcQuery = '';
+                  _amcSearchController.clear();
                   if (value == UserRole.superAdmin ||
                       value == UserRole.manager ||
                       (value?.isTechnicianLevel ?? false)) {
@@ -388,162 +419,163 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     final companiesAsync = ref.watch(repo.companiesProvider);
     final companies = [...companiesAsync.valueOrNull ?? const <Company>[]]
       ..sort((a, b) => a.displayName.compareTo(b.displayName));
+    final isTech = _selectedRole?.isTechnicianLevel == true;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          onTap: () => setState(() => _amcPickerOpen = !_amcPickerOpen),
-          child: AbsorbPointer(
-            child: Autocomplete<Company>(
-              displayStringForOption: (c) => c.displayName,
-              optionsBuilder: (textEditingValue) => const <Company>[],
-              onSelected: (_) {},
-              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-            // Keep our controller in sync with the autocomplete controller.
-            if (controller.text != _companyController.text &&
-                !_companyController.selection.isValid) {
-              _companyController.text = controller.text;
-            }
-            return TextFormField(
-              controller: controller,
-              focusNode: focusNode,
-              onChanged: (v) {
-                _companyController.text = v;
-                // Clear selection if user edits the text.
-                if (_selectedCompanyId != null &&
-                    v.trim() != companies
-                        .firstWhere(
-                          (c) => c.id == _selectedCompanyId,
-                          orElse: () => companies.first,
-                        )
-                        .displayName) {
-                  setState(() => _selectedCompanyId = null);
-                }
-              },
-              validator: (v) => _needsCompany && _selectedCompanyId == null
-                  ? 'Please select a company.'
-                  : null,
-              style: const TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-              decoration: InputDecoration(
-                hintText: _selectedRole?.isTechnicianLevel == true
-                    ? 'Allocated Site (optional)'
-                    : 'Search and select AMC',
-                hintStyle: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey.shade400,
-                ),
-                filled: true,
-                fillColor: kIsWeb ? Colors.white : Colors.grey.shade50,
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                  borderSide: BorderSide(
-                    color: kIsWeb ? Color(0xFFDCE5DE) : Colors.transparent,
-                  ),
-                ),
-                enabledBorder: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                  borderSide: BorderSide(
-                    color: kIsWeb ? Color(0xFFDCE5DE) : Colors.transparent,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: _green,
-                    width: 1.5,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: kIsWeb ? 14 : 16,
-                ),
-                suffixIcon: Icon(
-                  Icons.search,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            );
-          },
-        ),
-        ),
-      ),
-        if (kIsWeb && _amcPickerOpen) ...[
-          const SizedBox(height: 8),
-          Container(
-            constraints: const BoxConstraints(maxHeight: 360),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFDCE5DE)),
+        Container(
+          key: _amcCardKey,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _amcPickerOpen ? _green : const Color(0xFFDCE5DE),
+              width: _amcPickerOpen ? 1.5 : 1,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: TextField(
-                    controller: _amcSearchController,
-                    autofocus: true,
-                    onChanged: (v) => setState(() => _amcQuery = v),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: (kIsWeb && !_amcPickerOpen) ? _toggleAmcPicker : null,
+                behavior: HitTestBehavior.opaque,
+                child: AbsorbPointer(
+                  absorbing: !kIsWeb || !_amcPickerOpen,
+                  child: TextFormField(
+                    controller: _amcPickerOpen
+                        ? _amcSearchController
+                        : _companyController,
+                    focusNode: _amcPickerOpen ? _amcFocusNode : null,
+                    onChanged: _amcPickerOpen
+                        ? (v) => setState(() => _amcQuery = v)
+                        : null,
+                    validator: (v) => _needsCompany && _selectedCompanyId == null
+                        ? 'Please select a company.'
+                        : null,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
                     decoration: InputDecoration(
-                      hintText: 'Search AMC',
-                      prefixIcon: const Icon(Icons.search, color: _green),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                      hintText: _amcPickerOpen
+                          ? 'Search AMC'
+                          : (isTech
+                              ? 'Allocated Site (optional)'
+                              : 'Search and select AMC'),
+                      hintStyle: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey.shade400,
                       ),
+                      prefixIcon: _amcPickerOpen
+                          ? const Icon(Icons.search, color: _green, size: 20)
+                          : null,
+                      suffixIcon: kIsWeb
+                          ? (_amcPickerOpen
+                              ? IconButton(
+                                  tooltip: 'Close search',
+                                  onPressed: _toggleAmcPicker,
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.grey,
+                                    size: 20,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.search,
+                                  color: Colors.grey,
+                                  size: 20,
+                                ))
+                          : const Icon(Icons.search, color: Colors.grey),
+                      filled: true,
+                      fillColor: kIsWeb ? Colors.white : Colors.grey.shade50,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
+                        horizontal: 16,
+                        vertical: kIsWeb ? 14 : 16,
                       ),
                     ),
                   ),
                 ),
-                Flexible(
+              ),
+              if (kIsWeb && _amcPickerOpen) ...[
+                const Divider(height: 1, color: Color(0xFFE6EDE7)),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 300),
                   child: Builder(
                     builder: (context) {
-                      final companies = [...companiesAsync.valueOrNull ?? const <Company>[]]
-                        ..sort((a, b) => a.displayName.compareTo(b.displayName));
                       final q = _amcQuery.trim().toLowerCase();
                       final filtered = q.isEmpty
                           ? companies
-                          : companies.where((c) => [c.name, c.branchName, c.location ?? '']
-                              .any((f) => f.toLowerCase().contains(q))).toList();
+                          : companies
+                              .where(
+                                (c) => [
+                                  c.name,
+                                  c.branchName,
+                                  c.location ?? '',
+                                ].any(
+                                  (f) => f.toLowerCase().contains(q),
+                                ),
+                              )
+                              .toList();
                       if (filtered.isEmpty) {
                         return const Padding(
                           padding: EdgeInsets.all(16),
-                          child: Text('No results found'),
+                          child: Text(
+                            'No results found',
+                            style: TextStyle(fontFamily: 'Montserrat'),
+                          ),
                         );
                       }
                       return ListView.builder(
                         shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(vertical: 4),
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           final c = filtered[index];
+                          final location = c.location ?? '';
+                          final isSelected = c.id == _selectedCompanyId;
                           return ListTile(
-                            title: Text(c.displayName),
-                            subtitle: (c.location ?? '').isNotEmpty
-                                ? Text(c.location!)
+                            dense: true,
+                            selected: isSelected,
+                            selectedTileColor:
+                                _green.withValues(alpha: 0.06),
+                            title: Text(
+                              c.displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: location.isNotEmpty
+                                ? Text(
+                                    location,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 12,
+                                    ),
+                                  )
                                 : null,
-                            onTap: () {
-                              setState(() {
-                                _selectedCompanyId = c.id;
-                                _companyController.text = c.displayName;
-                                _amcPickerOpen = false;
-                                _amcSearchController.clear();
-                                _amcQuery = '';
-                              });
-                            },
+                            trailing: isSelected
+                                ? const Icon(
+                                    Icons.check_circle,
+                                    color: _green,
+                                    size: 18,
+                                  )
+                                : null,
+                            onTap: () => _selectCompany(c),
                           );
                         },
                       );
@@ -551,9 +583,9 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
                   ),
                 ),
               ],
-            ),
+            ],
           ),
-        ],
+        ),
         if (companiesAsync.hasError)
           TextButton.icon(
             onPressed: () => ref.invalidate(repo.companiesProvider),

@@ -178,22 +178,21 @@ Future<T?> _orNull<T>(Future<T> future) async {
 final analyticsHistoryProvider =
     FutureProvider.autoDispose<List<AnalyticsSnapshot>>((ref) async {
   cacheFor(ref, listCacheDuration);
-  final monthly = await ref.watch(monthlyStatsProvider.future);
-  final usersF = _orNull(ref.watch(dashboardUsersProvider.future));
-  // Always fetch tasks so monthly open/closed counts can be derived from the
-  // distinct task records instead of the (possibly over-counted) backend
-  // monthly aggregate.
-  final tasksF = _orNull(ref.watch(tasksProvider.future));
-  final companiesF = _orNull(ref.watch(companiesProvider.future));
-  final equipmentF = _orNull(ref.watch(equipmentsProvider(null).future));
-  final results = await Future.wait<dynamic>([usersF, tasksF, companiesF, equipmentF]);
+  final results = await Future.wait<dynamic>([
+    ref.watch(monthlyStatsProvider.future),
+    _orNull(ref.watch(dashboardUsersProvider.future)),
+    _orNull(ref.watch(tasksProvider.future)),
+    _orNull(ref.watch(companiesProvider.future)),
+    _orNull(ref.watch(equipmentsProvider(null).future)),
+  ]);
+  final monthly = results[0] as MonthlyStats?;
   return buildAnalyticsHistory(
     now: DateTime.now(),
-    users: results[0] as List<User>?,
+    users: results[1] as List<User>?,
     monthlyStats: monthly,
-    tasks: results[1] as List<ServiceTask>?,
-    companies: results[2] as List<Company>?,
-    equipment: results[3] as List<Equipment>?,
+    tasks: results[2] as List<ServiceTask>?,
+    companies: results[3] as List<Company>?,
+    equipment: results[4] as List<Equipment>?,
   );
 });
 

@@ -1,5 +1,5 @@
 Launching lib\main.dart on Web Server in release mode...
-Compiling lib\main.dart for the Web...                             72.9s
+Compiling lib\main.dart for the Web...                             72.5s
 √ Built build\web
 lib\main.dart is being served at http://127.0.0.1:8080
 The web-server device requires the Dart Debug Chrome extension for debugging. Consider using the Chrome or Edge devices for an improved development workflow.
