@@ -41,7 +41,6 @@ class WebModuleFrame extends ConsumerStatefulWidget {
 
   /// Form and settings pages (matched by prefix, so `/add-task/new` counts).
   static const _formPaths = [
-    Routes.addUser,
     Routes.editProfile,
     Routes.downloadQr,
   ];
@@ -235,6 +234,9 @@ class _WebModuleFrameState extends ConsumerState<WebModuleFrame> {
     if (WebModuleFrame._uploadPaths
         .any((p) => location == p || location.startsWith('$p/'))) {
       return WebModuleFrame.uploadContentWidth;
+    }
+    if (location == Routes.addUser) {
+      return double.infinity;
     }
     for (final p in WebModuleFrame._formPaths) {
       if (location == p || location.startsWith('$p/')) {

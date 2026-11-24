@@ -44,6 +44,11 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   final GlobalKey _amcCardKey = GlobalKey();
   final FocusNode _amcFocusNode = FocusNode();
 
+  // Web-only embedded Access Type picker state.
+  bool _accessTypePickerOpen = false;
+  final GlobalKey _accessTypeCardKey = GlobalKey();
+  final TextEditingController _accessTypeController = TextEditingController();
+
   static const Color _green = Color(0xFF106220);
 
   @override
@@ -55,6 +60,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
     _companyController.dispose();
     _amcSearchController.dispose();
     _amcFocusNode.dispose();
+    _accessTypeController.dispose();
     super.dispose();
   }
 
@@ -96,6 +102,152 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
       _amcQuery = '';
     });
     _amcSearchController.clear();
+  }
+
+  /// Opens/closes the Access Type picker inside the selection card.
+  void _toggleAccessTypePicker() {
+    if (_accessTypePickerOpen) {
+      FocusScope.of(context).unfocus();
+      setState(() => _accessTypePickerOpen = false);
+      return;
+    }
+    setState(() => _accessTypePickerOpen = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _accessTypeCardKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 200),
+          alignment: 0.05,
+        );
+      }
+    });
+  }
+
+  /// Selects an Access Type, preserving the existing role-change side effects.
+  void _selectAccessType(UserRole value) {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _selectedRole = value;
+      _accessTypeController.text = value.label;
+      _accessTypePickerOpen = false;
+      _amcPickerOpen = false;
+      _amcQuery = '';
+      _amcSearchController.clear();
+      if (value == UserRole.superAdmin ||
+          value == UserRole.manager ||
+          (value.isTechnicianLevel)) {
+        _selectedCompanyId = null;
+        _companyController.clear();
+      }
+    });
+  }
+
+  Widget _buildAccessTypeField(UserRole actorRole) {
+    final options = _creatableRoles(actorRole);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          key: _accessTypeCardKey,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _accessTypePickerOpen
+                  ? _green
+                  : const Color(0xFFDCE5DE),
+              width: _accessTypePickerOpen ? 1.5 : 1,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: kIsWeb ? _toggleAccessTypePicker : null,
+                behavior: HitTestBehavior.opaque,
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    readOnly: true,
+                    controller: _accessTypeController,
+                    validator: (v) =>
+                        _selectedRole == null ? 'Please select access type' : null,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Access Type',
+                      hintStyle: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey.shade400,
+                      ),
+                      filled: true,
+                      fillColor: kIsWeb ? Colors.white : Colors.grey.shade50,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: kIsWeb ? 14 : 16,
+                      ),
+                      suffixIcon: Icon(
+                        _accessTypePickerOpen
+                            ? Icons.close
+                            : Icons.keyboard_arrow_down,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (kIsWeb && _accessTypePickerOpen) ...[
+                const Divider(height: 1, color: Color(0xFFE6EDE7)),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 240),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    itemCount: options.length,
+                    itemBuilder: (context, index) {
+                      final role = options[index];
+                      final isSelected = role == _selectedRole;
+                      return ListTile(
+                        dense: true,
+                        selected: isSelected,
+                        selectedTileColor: _green.withValues(alpha: 0.06),
+                        title: Text(
+                          role.label,
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(
+                                Icons.check_circle,
+                                color: _green,
+                                size: 18,
+                              )
+                            : null,
+                        onTap: () => _selectAccessType(role),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   /// Only a super admin may create another super admin; client admins only
@@ -209,8 +361,11 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 20),
-                    child: _buildFormCard(),
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      child: _buildFormCard(),
+                    ),
                   );
                 },
               ),
@@ -248,6 +403,7 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
   Widget _buildFormCard() {
     final actorRole = ref.watch(currentUserRoleProvider);
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -265,109 +421,202 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.assignment_ind,
-                  color: _green,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'User Information',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Provide basic details of the User',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey.shade500,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildTextField(
-                controller: _nameController,
-                hintText: 'Name',
-                validator: (value) => (value == null || value.trim().isEmpty)
-                    ? 'Please enter name'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _mobileController,
-                hintText: 'Mobile Number',
-                keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter mobile number';
-                  }
-                  if (!RegExp(r'^\d{10}$').hasMatch(value)) {
-                    return 'Mobile number must be 10 digits';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _emailController,
-                hintText: 'Email ID',
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) => Validators.email(value?.trim()),
-              ),
-              const SizedBox(height: 16),
-              if (kIsWeb) ...[
-                _buildTextField(
-                  controller: _passwordController,
-                  hintText: 'Password',
-                  isPassword: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter password';
-                    }
-                    if (value.length < 6 || value.length > 20) {
-                      return 'Password must be 6 to 20 characters';
-                    }
-                    return null;
-                  },
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    key: const Key('regeneratePassword'),
-                    onPressed: () => setState(
-                      () => _passwordController.text = generatePassword(),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    icon: const Icon(
-                      Icons.autorenew,
-                      size: 18,
+                    child: const Icon(
+                      Icons.assignment_ind,
                       color: _green,
-                    ),
-                    label: const Text(
-                      'Generate new password',
-                      style: TextStyle(fontFamily: 'Montserrat', color: _green),
+                      size: 24,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'User Information',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        'Provide basic details of the User',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Name',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        _buildTextField(
+                          controller: _nameController,
+                          hintText: 'Name',
+                          validator: (value) => (value == null || value.trim().isEmpty)
+                              ? 'Please enter name'
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Mobile Number',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        _buildTextField(
+                          controller: _mobileController,
+                          hintText: 'Mobile Number',
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter mobile number';
+                            }
+                            if (!RegExp(r'^\d{10}$').hasMatch(value)) {
+                              return 'Mobile number must be 10 digits';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Email ID',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        _buildTextField(
+                          controller: _emailController,
+                          hintText: 'Email ID',
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) => Validators.email(value?.trim()),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Password',
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            TextButton.icon(
+                              key: const Key('regeneratePassword'),
+                              onPressed: () => setState(
+                                () => _passwordController.text = generatePassword(),
+                              ),
+                              icon: const Icon(
+                                Icons.autorenew,
+                                size: 16,
+                                color: _green,
+                              ),
+                              label: const Text(
+                                'Generate new password',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 12,
+                                  color: _green,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        if (kIsWeb)
+                          _buildTextField(
+                            controller: _passwordController,
+                            hintText: 'Password',
+                            isPassword: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter password';
+                              }
+                              if (value.length < 6 || value.length > 20) {
+                                return 'Password must be 6 to 20 characters';
+                              }
+                              return null;
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               CheckboxListTile(
                 key: const Key('sendCredentialsCheckbox'),
                 value: _sendCredentials,
@@ -381,31 +630,49 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              _buildDropdownField<UserRole?>(
-                value: _selectedRole,
-                hintText: 'Access Type',
-                items: {
-                  for (final r in _creatableRoles(actorRole)) r: r.label,
-                },
-                validator: (v) =>
-                    _selectedRole == null ? 'Please select access type' : null,
-                onChanged: (value) => setState(() {
-                  _selectedRole = value;
-                  _amcPickerOpen = false;
-                  _amcQuery = '';
-                  _amcSearchController.clear();
-                  if (value == UserRole.superAdmin ||
-                      value == UserRole.manager ||
-                      (value?.isTechnicianLevel ?? false)) {
-                    _selectedCompanyId = null;
-                    _companyController.clear();
-                  }
-                }),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Access Type',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        _buildAccessTypeField(actorRole),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Company / AMC',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        if (!_hideCompanyField) _buildCompanyField(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              if (!_hideCompanyField) ...[
-                const SizedBox(height: 16),
-                _buildCompanyField(),
-              ],
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -586,19 +853,6 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
             ],
           ),
         ),
-        if (companiesAsync.hasError)
-          TextButton.icon(
-            onPressed: () => ref.invalidate(repo.companiesProvider),
-            icon: const Icon(Icons.refresh, size: 16, color: AppColors.error),
-            label: const Text(
-              'Could not load AMCs. Retry',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 12,
-                color: AppColors.error,
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -689,118 +943,6 @@ class _AddUserScreenState extends ConsumerState<AddUserScreen> {
       ),
     );
   }
-
-  Widget _buildDropdownField<T>({
-    required T? value,
-    required String hintText,
-    required Map<T, String> items,
-    required ValueChanged<T?> onChanged,
-    FormFieldValidator<T>? validator,
-  }) {
-    return DropdownButtonFormField<T>(
-      key: ValueKey('$hintText-$value'),
-      initialValue: value,
-      isExpanded: true,
-      validator: validator,
-      hint: Text(
-        hintText,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontFamily: 'Montserrat',
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: Colors.grey.shade400,
-        ),
-      ),
-      icon: Icon(
-        Icons.keyboard_arrow_down,
-        color: Colors.grey.shade600,
-      ),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: kIsWeb ? Colors.white : Colors.grey.shade50,
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12)),
-          borderSide: BorderSide(
-            color: kIsWeb ? Color(0xFFDCE5DE) : Colors.transparent,
-          ),
-        ),
-        enabledBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12)),
-          borderSide: BorderSide(
-            color: kIsWeb ? Color(0xFFDCE5DE) : Colors.transparent,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: _green,
-            width: 1.5,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: kIsWeb ? 14 : 16,
-        ),
-      ),
-      style: const TextStyle(
-        fontFamily: 'Montserrat',
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: Colors.black87,
-      ),
-      dropdownColor: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      // Clean, single-line text shown in the CLOSED field (no boxes/padding).
-      selectedItemBuilder: (context) {
-        return items.values.map((label) {
-          return Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-              style: const TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-            ),
-          );
-        }).toList();
-      },
-      // Styled items shown in the OPEN menu; selected one is highlighted.
-      items: items.entries.map((entry) {
-        final isSelected = entry.key == value;
-        return DropdownMenuItem<T>(
-          value: entry.key,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: isSelected
-                ? BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
-                    borderRadius: BorderRadius.circular(8),
-                  )
-                : null,
-            child: Text(
-              entry.value,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? _green : Colors.black87,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-      onChanged: onChanged,
-    );
-  }
-
   Widget _buildBottomButtons() {
     final showBulkUpload =
         Permissions.canBulkUpload(ref.watch(currentUserRoleProvider));
