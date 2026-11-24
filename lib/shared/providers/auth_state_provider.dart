@@ -63,15 +63,57 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         state = const AuthState(status: AuthStatus.unauthenticated);
         return;
       }
+      // Unblock the UI immediately from the cached session user (if any) so
+      // the Dashboard can start rendering while `auth/me` refreshes in the
+      // background. This avoids waiting on a slow/cold backend before any
+      // screen can paint.
+      final storage = _ref.read(tokenStorageProvider);
+      final cachedJson = await storage
+          .getSessionUser()
+          .timeout(const Duration(milliseconds: 100), onTimeout: () => null);
+      User? cachedUser;
+      if (cachedJson != null) {
+        try {
+          cachedUser = User.fromJson(cachedJson);
+        } catch (_) {
+          cachedUser = null;
+        }
+      }
+      if (cachedUser != null) {
+        state = AuthState(
+          status: AuthStatus.authenticated,
+          isLoading: false,
+          user: cachedUser,
+        );
+      }
+      // Refresh the user from the backend (validates the token).
       final result = await repo.getCurrentUser();
       await result.fold(
         (_) async {
-          await repo.logout();
-          state = const AuthState(status: AuthStatus.unauthenticated);
+          if (cachedUser == null) {
+            await repo.logout();
+            state = const AuthState(status: AuthStatus.unauthenticated);
+          }
+          // Otherwise keep the cached session; a transient backend failure
+          // must not log the user out.
         },
         (user) async => setAuthenticated(user),
       );
     } catch (_) {
+      final cached = await _ref
+          .read(tokenStorageProvider)
+          .getSessionUser()
+          .timeout(const Duration(milliseconds: 100), onTimeout: () => null);
+      if (cached != null) {
+        try {
+          state = AuthState(
+            status: AuthStatus.authenticated,
+            isLoading: false,
+            user: User.fromJson(cached),
+          );
+          return;
+        } catch (_) {}
+      }
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
   }
@@ -93,7 +135,12 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   }
 
   void setAuthenticated(User user) {
-    _clearSessionScopedCaches();
+    // Only drop session-scoped caches when the signed-in user actually
+    // changes, so a background refresh of the same user does not trigger a
+    // redundant refetch of dashboard/task data.
+    if (state.user?.id != user.id) {
+      _clearSessionScopedCaches();
+    }
     state = AuthState(
       status: AuthStatus.authenticated,
       isLoading: false,
